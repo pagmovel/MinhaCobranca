@@ -34,7 +34,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
 | 2 | T2.3 Clientes | testada (migração `clientes` aplicada no banco de desenvolvimento em 2026-10-09, autorizada) |
 | 3 | T3.1 Dinheiro e regra de valor em reais | testada |
-| 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
+| 3 | T3.2 Periodicidade e calculadora de períodos | testada |
 | 3 | T3.3 Contratos | pendente |
 | 3 | T3.4 Tabelas e models de cobranças e recibos | pendente |
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | pendente |
@@ -3791,7 +3791,7 @@ git commit -m "feat: conversão e formatação de valores em reais`n`nCo-Authore
 
 ### Tarefa T3.2: Periodicidade e calculadora de períodos
 
-**Estado:** pendente
+**Estado:** testada — CalculadoraDePeriodosTest 7/7; suíte verde
 
 **Arquivos:**
 - Criar: `app/Enums/Periodicidade.php`, `app/Support/Periodo.php`, `app/Services/CalculadoraDePeriodos.php`

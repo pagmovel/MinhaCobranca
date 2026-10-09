@@ -125,6 +125,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   "260.60"); ambíguo ou negativo → `null` e a regra `ValorEmReais` recusa. Formatação sem float
   (`intdiv`).
 
+- T3.2: período *i* = `data_inicio + i×meses` com `addMonthsNoOverflow`, **sempre a partir da data
+  original** (31/01 → 28/02 → 31/03, sem escorregar); vencimento = `dia_vencimento` no mês do início,
+  limitado ao último dia; devido quando `hoje >= vencimento − antecedência`. Calculadora é pura
+  (recebe `hoje`), testável sem banco nem relógio.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
