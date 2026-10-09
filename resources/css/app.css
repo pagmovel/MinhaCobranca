@@ -2,8 +2,37 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../js/**/*.vue';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+    --font-estreita: 'Archivo Narrow', 'Archivo', ui-sans-serif, sans-serif;
+
+    --color-papel: #F5F7F9;
+    --color-grafite: #1F2933;
+    --color-carbono: #2F3C9E;
+    --color-linha: #C9D1DA;
+    --color-tinta-verde: #2E7D4F;
+    --color-tinta-vermelha: #B3261E;
+}
+
+@layer components {
+    .entrada {
+        @apply w-full rounded-sm border border-linha bg-white px-3 py-2 text-sm text-grafite tabular-nums focus:border-carbono focus:outline-2 focus:outline-carbono/30;
+    }
+
+    .botao {
+        @apply inline-flex items-center justify-center rounded-sm bg-carbono px-4 py-2 text-sm font-semibold text-white hover:bg-carbono/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
+    }
+
+    .botao-secundario {
+        @apply inline-flex items-center justify-center rounded-sm border border-linha bg-white px-4 py-2 text-sm font-semibold text-grafite hover:bg-papel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0s !important;
+        animation-duration: 0s !important;
+    }
 }

@@ -20,7 +20,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 |---|---|---|
 | 0 | T0.1 Git + Laravel Boost | concluída (sem teste automatizado: tarefa de instalação) |
 | 0 | T0.2 Idioma, fuso e mensagens em pt-BR | testada |
-| 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | pendente |
+| 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | testada |
 | 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | pendente |
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | pendente |
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | pendente |
@@ -351,7 +351,7 @@ git commit -m "feat: idioma pt-BR, fuso de Brasília e mensagens de validação`
 
 ### Tarefa T0.3: Inertia v3 + Vue 3 + tokens visuais + página Entrar
 
-**Estado:** pendente
+**Estado:** testada — PaginaEntrarTest 1/1; npm run build ok; inertia-laravel v3.5.1
 
 **Arquivos:**
 - Modificar: `composer.json`, `package.json` (via instaladores), `vite.config.js`, `resources/css/app.css`, `resources/js/app.js`, `bootstrap/app.php`, `routes/web.php`, `tests/TestCase.php`
