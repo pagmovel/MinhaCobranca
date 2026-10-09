@@ -33,4 +33,16 @@ class PdfReciboTest extends TestCase
 
         $this->actingAs(User::factory()->create())->get("/recibos/{$recibo->id}/pdf")->assertNotFound();
     }
+
+    public function test_cliente_danfse_recebe_pdf_no_modelo_nacional(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create(['modelo' => 'danfse']);
+        $recibo = app(EmissorDeRecibos::class)->emitir(Cobranca::factory()->for($usuario)->for($cliente)->create());
+
+        $this->assertSame('recibos.pdf.danfse-v1', $recibo->modelo->view());
+        $this->actingAs($usuario)->get("/recibos/{$recibo->id}/pdf")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
 }

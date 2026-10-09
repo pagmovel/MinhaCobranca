@@ -191,6 +191,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Ao copiar código do plano por script, o nome do arquivo aparece antes na lista "Arquivos" da tarefa:
   ancorar a busca no cabeçalho do bloco (início de linha), senão copia o bloco errado.
 
+- T4.3: `danfse-v1` usa as mesmas chaves do renderizador; o modelo vem do cliente e fica gravado no
+  recibo (`recibos.modelo`), então trocar o modelo do cliente não muda PDF já emitido. View ausente
+  não derruba a página: o controller registra o erro e volta com `flash.erro`.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
