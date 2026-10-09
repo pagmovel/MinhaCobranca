@@ -94,6 +94,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Sem a tabela `migrations`, **não** rodar `migrate --pretend` (ele cria a tabela). No portão,
   listar os arquivos de migração pendentes.
 
+- Migrações rodaram no PostgreSQL 18.6 sem ajuste (portabilidade confirmada). Latência alta: cada
+  migração levou 2–12 s (servidor remoto) — as telas também sentem.
+- Sessões ficam no banco (`SESSION_DRIVER=database`): ao trocar de banco, todo mundo precisa
+  entrar de novo.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).

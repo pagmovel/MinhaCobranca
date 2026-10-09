@@ -40,7 +40,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
 | 3 | T3.6 Gerador de cobranças recorrentes | testada |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
-| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | em andamento (alvo mudou para PostgreSQL: banco `recibos` criado; migrate e seed aguardam autorização) |
+| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | concluída (no PostgreSQL: 8 migrações, 13 tabelas; seed do perfil inicial → admin id 1) |
 | 4 | T4.1 Valor por extenso | pendente |
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
 | 4 | T4.3 Modelo `danfse-v1` | pendente |
@@ -5921,7 +5921,7 @@ git commit -m "feat: cobrança avulsa, edição, cancelamento, baixa e registro 
 
 ### Tarefa T3.8: PORTÃO-BANCO — migrações da fase 3
 
-**Estado:** pendente
+**Estado:** concluída — alvo trocado para PostgreSQL a pedido do usuário. Autorizados e executados, um a um: `CREATE ROLE recibos_app`, `CREATE DATABASE recibos`, `REVOKE CONNECT ... FROM PUBLIC`, `php artisan migrate` (8 migrações, 13 tabelas) e `php artisan db:seed` (admin id 1 com perfil completo)
 
 - [ ] **Passo 1:** PORTÃO-BANCO para `php artisan migrate` (tabelas `contratos`, `cobrancas`, `recibos` — `clientes` já foi aplicada ao fim da Fase 2, a pedido do usuário). Mostrar o `--pretend`. Esperar "sim".
 - [ ] **Passo 2:** executar e mostrar `php artisan migrate:status`.
