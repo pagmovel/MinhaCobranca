@@ -29,7 +29,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
 | 1 | T1.4 Administração de usuários | testada |
 | 1 | T1.5 Comando `app:criar-admin` | testada |
-| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | pendente |
+| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | em andamento (migrate e admin feitos; smoke test pendente) |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | pendente |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | pendente |
 | 2 | T2.3 Clientes | pendente |
@@ -83,7 +83,8 @@ Vale para `migrate`, `app:criar-admin`, smoke test que cria dados ou sessões, e
 2. Contar o alvo: `php artisan db:show --counts` (linhas por tabela) e `php artisan migrate:status`.
 3. Mostrar o efeito literal: para migração, `php artisan migrate --pretend` (SQL que seria executado) — **só se a tabela `migrations` já existir**: verificado em `MigrateCommand.php:140-146` que, sem ela, o `--pretend` cria a tabela antes de simular (é escrita). Sem a tabela, mostrar o conteúdo das migrações pendentes em vez do `--pretend`. Para outros comandos, o comando exato e as tabelas/linhas que vai criar ou alterar.
 4. Perguntar ao usuário e **esperar o "sim" para aquele comando**. Autorização não é transitiva: um "sim" para `migrate` não autoriza `app:criar-admin` nem o smoke test.
-5. Executar e mostrar o resultado (`migrate:status` ou contagem depois).
+5. Logo antes de executar, **recontar em comando separado**; se a contagem mudou desde a autorização, parar e perguntar de novo (em 2026-10-09 a tabela `users` passou de 0 para 1 entre a autorização e o `migrate` — o usuário se cadastrou em paralelo).
+6. Executar e mostrar o resultado (`migrate:status` ou contagem depois).
 
 Se o usuário inserir dados de teste pelo smoke test, marcá-los com identificador próprio (ex.: e-mail `smoke-AAAAMMDD@teste.local`, cliente "SMOKE …") para limpeza **por esse identificador**, também só com autorização.
 
@@ -2357,7 +2358,7 @@ git commit -m "feat: comando para criar ou promover administrador`n`nCo-Authored
 
 ### Tarefa T1.6: PORTÃO-BANCO + criar admin + smoke test de contas
 
-**Estado:** pendente
+**Estado:** em andamento — passo 1: `migrate` autorizado e executado (lote 2); a conta do usuário (id 1, cadastrada em paralelo) ficou pendente. Passo 2: autorizado e executado `app:criar-admin marcos.ronaldo@gmail.com` → aprovado + admin. Passos 3–7 (smoke test) aguardam autorização
 
 **Arquivos:** nenhum de código. Altera `database/database.sqlite`.
 

@@ -58,6 +58,12 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - O banco de desenvolvimento já veio com as 3 migrações padrão aplicadas (lote 1) da instalação
   básica do usuário.
 
+- O usuário mexe no banco em paralelo: entre a autorização e o `migrate` da T1.6, `users` passou
+  de 0 para 1 (ele se cadastrou pela tela). Recontar **em comando separado** imediatamente antes
+  da escrita e parar se mudou. Migração aditiva: conta existente ganha `status=pendente`.
+- Administrador do sistema = `users.is_admin` (único nível; o usuário chama de "superadmin").
+  Conta do usuário: id 1, `marcos.ronaldo@gmail.com`, promovida em 2026-10-09.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
