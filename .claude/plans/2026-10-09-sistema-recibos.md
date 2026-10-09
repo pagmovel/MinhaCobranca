@@ -27,7 +27,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.1 Usuário: status, admin, dados do prestador | testada |
 | 1 | T1.2 Cadastro com aprovação pendente | testada |
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
-| 1 | T1.4 Administração de usuários | pendente |
+| 1 | T1.4 Administração de usuários | testada |
 | 1 | T1.5 Comando `app:criar-admin` | pendente |
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | pendente |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | pendente |
@@ -1999,7 +1999,7 @@ git commit -m "feat: entrar e sair com bloqueio por status da conta`n`nCo-Author
 
 ### Tarefa T1.4: Administração de usuários
 
-**Estado:** pendente
+**Estado:** testada — AdminUsuariosTest 4/4; suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Controllers/Admin/UsuarioController.php`, `resources/js/Pages/Admin/Usuarios.vue`

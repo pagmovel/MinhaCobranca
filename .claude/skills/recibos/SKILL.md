@@ -77,6 +77,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   está logado). Login limitado pelo RateLimiter `login` (5/min, chave e-mail|IP — regra de
   segurança do Boost), não por `throttle:6,1`.
 
+- T1.4: área admin protegida por Gate `admin` + `can:admin`; pendentes primeiro com
+  `orderByRaw("case when status = 'pendente' ...")` (SQL padrão, portátil). Padrões numéricos de
+  rota (`Route::pattern`) para `cliente`, `contrato`, `cobranca`, `recibo`, `usuario`, `nota`.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

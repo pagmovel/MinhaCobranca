@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PainelController;
@@ -19,4 +20,10 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/painel', PainelController::class)->name('painel');
 
     // Fases seguintes acrescentam rotas aqui, acima do grupo admin.
+
+    Route::middleware('can:admin')->prefix('admin')->group(function () {
+        Route::get('/usuarios', [UsuarioController::class, 'index']);
+        Route::post('/usuarios/{usuario}/aprovar', [UsuarioController::class, 'aprovar']);
+        Route::post('/usuarios/{usuario}/bloquear', [UsuarioController::class, 'bloquear']);
+    });
 });

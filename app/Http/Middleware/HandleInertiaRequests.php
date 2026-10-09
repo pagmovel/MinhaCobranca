@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\StatusUsuario;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,6 +42,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => fn () => $request->user()?->only('id', 'name', 'email', 'is_admin'),
             ],
+            'pendentes' => fn () => $request->user()?->is_admin
+                ? User::where('status', StatusUsuario::Pendente)->count()
+                : 0,
             'flash' => [
                 'sucesso' => fn () => $request->session()->get('sucesso'),
                 'erro' => fn () => $request->session()->get('erro'),
