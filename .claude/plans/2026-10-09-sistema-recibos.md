@@ -39,7 +39,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.4 Tabelas e models de cobranças e recibos | testada |
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
 | 3 | T3.6 Gerador de cobranças recorrentes | testada |
-| 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | pendente |
+| 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
 | 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | pendente |
 | 4 | T4.1 Valor por extenso | pendente |
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
@@ -5561,7 +5561,7 @@ git commit -m "feat: geração idempotente de cobranças recorrentes com recibo`
 
 ### Tarefa T3.7: Ações de cobrança (avulsa, editar, cancelar, baixa, enviada)
 
-**Estado:** pendente
+**Estado:** testada — AcoesCobrancaTest 9/9 (teste de isolamento reforçado: passava com rota ausente); suíte verde
 
 **Arquivos:**
 - Criar: `app/Http/Requests/CobrancaRequest.php`, `app/Http/Controllers/CobrancaController.php`

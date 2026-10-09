@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
@@ -28,6 +29,12 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
 
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
+
+    Route::post('/cobrancas', [CobrancaController::class, 'store']);
+    Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);
+    Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);
+    Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
+    Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
 
     // Fases seguintes acrescentam rotas aqui, acima do grupo admin.
 

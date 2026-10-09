@@ -79,6 +79,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Teste que só afirma `assertSessionHasNoErrors()` passa com 404 (rota inexistente não deixa erro
   na sessão). Sempre afirmar também o redirecionamento ou o estado gravado.
 
+- Teste de isolamento (404 para recurso alheio) passa à toa se a rota ainda não existe. Antes do
+  `assertNotFound`, chamar a mesma rota com recurso próprio e afirmar sucesso.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
@@ -146,6 +149,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   (depois id do contrato) e cria cobrança + recibo um a um em transação; corrida entre abas cai no
   índice único e é ignorada. Perfil incompleto = não gera nada. Nos testes, congelar o relógio no
   mesmo `hoje` passado ao gerador (o emissor usa `now()` para o ano do recibo).
+
+- T3.7: cobrança enviada não é editada (só cancelar + avulsa nova); editar não enviada refaz o
+  snapshot com o mesmo número; cobrança de contrato não muda cliente nem período. Baixa só com data
+  até hoje. `marcarEnviada` é chamado pelo front depois do compartilhamento/download.
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
