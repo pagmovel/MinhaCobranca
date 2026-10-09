@@ -183,11 +183,19 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   leva "de reais". Casos fixados em `tests/Unit/ValorPorExtensoTest.php` (inclui o valor da nota de
   referência, R$ 260,60).
 
+- T4.2: `RenderizadorDeRecibo::dados()` monta tudo a partir do **snapshot** (prestador/tomador/serviço)
+  e lê da cobrança só o que é vivo (situação, `pago_em`); campo vazio vira `-`, como nas notas.
+  Logo vai como data URI (o dompdf não lê disco nem rede). `GET /recibos/{recibo}/pdf` responde inline
+  com `Recibo::nomeArquivo()`; isolamento por `$request->user()->recibos()->findOrFail()`.
+- `Recibo` não tem relação `user` — o dono se alcança por `$recibo->cobranca->user` (ou `user_id`).
+- Ao copiar código do plano por script, o nome do arquivo aparece antes na lista "Arquivos" da tarefa:
+  ancorar a busca no cabeçalho do bloco (início de linha), senão copia o bloco errado.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
 - Imagem em data URI: embutida (2 imagens no PDF).
 - PDF de 1 página.
 - `transform: rotate`, absoluto dentro da caixa `relative` e rodapé `position: fixed`:
-  **[A VERIFICAR]** — conferência visual do usuário em
+  **[A VERIFICAR]** — sem renderizador de PDF na máquina; a conferência passou para o recibo real (T4.4) — conferência visual do usuário em
   `storage/app/private/verificacao/prova-dompdf.pdf`.

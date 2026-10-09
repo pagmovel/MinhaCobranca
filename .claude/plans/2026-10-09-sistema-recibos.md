@@ -42,7 +42,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
 | 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | concluída (no PostgreSQL: 8 migrações, 13 tabelas; seed do perfil inicial → admin id 1) |
 | 4 | T4.1 Valor por extenso | testada |
-| 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
+| 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | testada (carimbo: conferência visual na T4.4) |
 | 4 | T4.3 Modelo `danfse-v1` | pendente |
 | 4 | T4.4 Comparação visual com as notas originais | pendente |
 | 5 | T5.1 Painel completo (três blocos, enviar, baixa) | pendente |
@@ -6127,7 +6127,7 @@ git commit -m "feat: valor por extenso em reais`n`nCo-Authored-By: Claude Opus 5
 
 ### Tarefa T4.2: Renderizador + rota do PDF + modelo `webiss-v1`
 
-**Estado:** pendente
+**Estado:** testada (7 testes; suíte 145/145). Conferência visual do carimbo adiada para a T4.4.
 
 **Arquivos:**
 - Criar: `app/Services/RenderizadorDeRecibo.php`, `app/Http/Controllers/ReciboPdfController.php`, `resources/views/recibos/pdf/_carimbo.blade.php`, `resources/views/recibos/pdf/webiss-v1.blade.php`

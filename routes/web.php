@@ -8,6 +8,7 @@ use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\ReciboPdfController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/painel');
@@ -35,6 +36,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
+
+    Route::get('/recibos/{recibo}/pdf', ReciboPdfController::class);
 
     // Fases seguintes acrescentam rotas aqui, acima do grupo admin.
 
