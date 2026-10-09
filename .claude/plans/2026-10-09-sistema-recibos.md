@@ -19,7 +19,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | Fase | Tarefa | Estado |
 |---|---|---|
 | 0 | T0.1 Git + Laravel Boost | concluída (sem teste automatizado: tarefa de instalação) |
-| 0 | T0.2 Idioma, fuso e mensagens em pt-BR | pendente |
+| 0 | T0.2 Idioma, fuso e mensagens em pt-BR | testada |
 | 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | pendente |
 | 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | pendente |
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | pendente |
@@ -197,7 +197,7 @@ git commit -m "chore: estado inicial do projeto com spec, plano e Laravel Boost`
 
 ### Tarefa T0.2: Idioma, fuso e mensagens de validação em pt-BR
 
-**Estado:** pendente
+**Estado:** testada — ConfiguracaoTest 2/2; suíte verde
 
 **Arquivos:**
 - Modificar: `.env` (linhas `APP_NAME`, `APP_LOCALE`, `APP_FAKER_LOCALE`), `.env.example` (mesmas linhas), `config/app.php:68`
