@@ -121,6 +121,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - T2.3: cliente com CPF/CNPJ único **por usuário** (`unique(user_id, documento)` + regra
   `Rule::unique(...)->where('user_id')`); modelo do recibo no cliente, aviso na tela ao trocar.
 
+- T3.1: valor digitado vira centavos por `Dinheiro::paraCentavos` ("1.234,56", "260,6", "R$ 260",
+  "260.60"); ambíguo ou negativo → `null` e a regra `ValorEmReais` recusa. Formatação sem float
+  (`intdiv`).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

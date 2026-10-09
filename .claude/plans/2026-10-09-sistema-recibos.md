@@ -33,7 +33,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
 | 2 | T2.3 Clientes | testada (migração `clientes` aplicada no banco de desenvolvimento em 2026-10-09, autorizada) |
-| 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
+| 3 | T3.1 Dinheiro e regra de valor em reais | testada |
 | 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
 | 3 | T3.3 Contratos | pendente |
 | 3 | T3.4 Tabelas e models de cobranças e recibos | pendente |
@@ -3600,7 +3600,7 @@ git commit -m "feat: cadastro de clientes com modelo de recibo por cliente`n`nCo
 
 ### Tarefa T3.1: Dinheiro e regra de valor em reais
 
-**Estado:** pendente
+**Estado:** testada — DinheiroTest 17 casos + ValorEmReaisTest 2 (inclui texto da mensagem); suíte verde
 
 **Arquivos:**
 - Criar: `app/Support/Dinheiro.php`, `app/Rules/ValorEmReais.php`
