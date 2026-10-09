@@ -28,7 +28,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.2 Cadastro com aprovação pendente | testada |
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
 | 1 | T1.4 Administração de usuários | testada |
-| 1 | T1.5 Comando `app:criar-admin` | pendente |
+| 1 | T1.5 Comando `app:criar-admin` | testada |
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | pendente |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | pendente |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | pendente |
@@ -2237,7 +2237,7 @@ git commit -m "feat: tela de administração para liberar e bloquear contas`n`nC
 
 ### Tarefa T1.5: Comando `app:criar-admin`
 
-**Estado:** pendente
+**Estado:** testada — CriarAdminTest 3/3 (`secret` casa com `expectsQuestion`); suíte verde
 
 **Arquivos:**
 - Modificar: `routes/console.php`

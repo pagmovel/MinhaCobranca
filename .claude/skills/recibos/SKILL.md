@@ -81,6 +81,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `orderByRaw("case when status = 'pendente' ...")` (SQL padrão, portátil). Padrões numéricos de
   rota (`Route::pattern`) para `cliente`, `contrato`, `cobranca`, `recibo`, `usuario`, `nota`.
 
+- T1.5: `app:criar-admin {email} {--nome=}` pede a senha com `secret` — o shell do agente não
+  responde prompt, então **o usuário roda o comando no terminal dele**. Nos testes,
+  `expectsQuestion('Senha', ...)` funciona com `secret`.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
