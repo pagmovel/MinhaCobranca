@@ -24,7 +24,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | testada (rotação e posição do carimbo aguardam conferência visual do usuário) |
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | concluída |
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | concluída (nada a gravar: migrações padrão já aplicadas no lote 1) |
-| 1 | T1.1 Usuário: status, admin, dados do prestador | pendente |
+| 1 | T1.1 Usuário: status, admin, dados do prestador | testada |
 | 1 | T1.2 Cadastro com aprovação pendente | pendente |
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | pendente |
 | 1 | T1.4 Administração de usuários | pendente |
@@ -993,7 +993,7 @@ git commit -m "docs: skill do projeto, memória e inventário de ferramentas`n`n
 
 ### Tarefa T1.1: Usuário com status, admin e dados do prestador
 
-**Estado:** pendente
+**Estado:** testada — UsuarioModeloTest 4/4; suíte verde
 
 **Arquivos:**
 - Criar: `app/Enums/StatusUsuario.php`, `app/Enums/FamiliaModelo.php`, `app/Enums/ModeloRecibo.php`, `database/migrations/2026_10_09_100000_add_conta_e_prestador_to_users_table.php`
