@@ -44,7 +44,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 4 | T4.1 Valor por extenso | testada |
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | testada (carimbo: conferência visual na T4.4) |
 | 4 | T4.3 Modelo `danfse-v1` | testada (conferência visual na T4.4) |
-| 4 | T4.4 Comparação visual com as notas originais | pendente |
+| 4 | T4.4 Comparação visual com as notas originais | concluída (amostras geradas e medidas; falta a conferência visual do usuário) |
 | 5 | T5.1 Painel completo (três blocos, enviar, baixa) | pendente |
 | 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | pendente |
 | 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | pendente |
@@ -6880,7 +6880,7 @@ git commit -m "feat: recibo em PDF no modelo nacional (DANFSe)`n`nCo-Authored-By
 
 ### Tarefa T4.4: Comparação visual com as notas originais
 
-**Estado:** pendente
+**Estado:** concluída — amostras em `storage/app/private/verificacao/` (1 página cada, inclusive com 25 linhas; ~30 KB). Aguardando conferência visual do usuário (passo 3) para virar validada.
 
 **Arquivos:**
 - Criar: `tests/Feature/Recibos/AmostrasVisuaisTest.php` (grupo `visual`)

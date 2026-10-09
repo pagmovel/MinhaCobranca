@@ -195,6 +195,23 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   recibo (`recibos.modelo`), então trocar o modelo do cliente não muda PDF já emitido. View ausente
   não derruba a página: o controller registra o erro e volta com `flash.erro`.
 
+- T4.4 (pegadinhas do dompdf, medidas com `pypdf` nas amostras):
+  - `table-layout: fixed` com largura só em parte das colunas deixou a coluna livre estreita
+    (~170pt): nome e endereço do cabeçalho quebraram em 7 linhas. **Dar largura (%) a todas as colunas.**
+  - `line-height` (sem unidade ou em pt) **não vale** para linhas quebradas por `<br>` (`nl2br`): saíram
+    com 10,7pt em fonte de 7pt. Descrição do WebISS renderiza **uma `div` por linha com `height` fixa**.
+  - Rodapé `position: fixed; bottom: 0` fica dentro da área do conteúdo e se sobrepõe a ele: usar margem
+    inferior no `@page` (34pt) e `bottom` negativo (-24pt).
+  - Carimbo absoluto foi para a página 2 quando o conteúdo transbordou; cabendo em 1 página, fica no lugar.
+  - laravel-dompdf traz `enable_font_subsetting => false`: o WebISS (DejaVu) saía com 860 KB.
+    `setOption('isFontSubsettingEnabled', true)` no renderizador → ~30 KB, acentos intactos.
+  - Coordenada y com `pypdf` em texto girado: `tm[4]*cm[1] + tm[5]*cm[3] + cm[5]` (sem o termo de
+    rotação a posição do carimbo sai errada em ~180pt).
+  - Teste `AmostrasVisuaisTest` (grupo `visual`) prova 1 página com 25 linhas de descrição nos dois
+    modelos e PDF < 200 KB; grava as amostras em `storage/app/private/verificacao/`.
+- **A partir da aprovação visual do usuário, mudança em `webiss-v1`/`danfse-v1` só vale antes de existir
+  recibo emitido em produção; depois, criar `-v2`.**
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

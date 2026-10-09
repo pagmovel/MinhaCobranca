@@ -58,7 +58,9 @@ final class RenderizadorDeRecibo
 
     public function pdf(Recibo $recibo, CarbonImmutable $agora)
     {
-        return Pdf::loadView($recibo->modelo->view(), $this->dados($recibo, $agora))->setPaper('a4', 'portrait');
+        return Pdf::loadView($recibo->modelo->view(), $this->dados($recibo, $agora))->setPaper('a4', 'portrait')
+            // O laravel-dompdf desliga por padrão; sem isso a DejaVu inteira vai no arquivo (~860 KB).
+            ->setOption('isFontSubsettingEnabled', true);
     }
 
     private function carimbo(Cobranca $cobranca, CarbonImmutable $agora): array

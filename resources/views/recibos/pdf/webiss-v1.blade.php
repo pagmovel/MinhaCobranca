@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Recibo {{ $numero }}</title>
 <style>
-    @page { margin: 16pt 18pt; }
+    @page { margin: 16pt 18pt 34pt; }
     body { margin: 0; font-family: 'DejaVu Sans', sans-serif; font-size: 7pt; color: #000; }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     td { vertical-align: top; padding: 1.5pt 4pt; overflow: hidden; }
@@ -23,7 +23,7 @@
     .carimbo-a_vencer { color: #2F3C9E; border-color: #2F3C9E; }
     .carimbo-vencida { color: #B3261E; border-color: #B3261E; }
     .carimbo-cancelada { color: #6B7280; border-color: #6B7280; }
-    .rodape { position: fixed; bottom: 0; left: 0; right: 0; font-size: 6pt; }
+    .rodape { position: fixed; bottom: -24pt; left: 0; right: 0; font-size: 6pt; }
 </style>
 </head>
 <body>
@@ -31,14 +31,14 @@
     {{-- Cabeçalho: no original, brasão e prefeitura. Aqui, o prestador. --}}
     <table>
         <tr>
-            <td style="width: 72pt; height: 84pt;">
+            <td style="width: 13%; height: 76pt;">
                 @if ($logo)
                     <img src="{{ $logo }}" alt="" style="max-width: 64pt; max-height: 76pt;">
                 @else
                     <div class="monograma">{{ $prestador['iniciais'] }}</div>
                 @endif
             </td>
-            <td>
+            <td style="width: 66%;">
                 <div style="font-size: 12pt; font-weight: bold;">{{ $prestador['nome'] }}</div>
                 <div style="margin-top: 3pt; font-size: 10pt;">{{ $prestador['nome_fantasia'] }}</div>
                 <div style="margin-top: 5pt; font-size: 7.5pt; line-height: 1.35;">
@@ -46,7 +46,7 @@
                     Tel.: {{ $prestador['telefone'] }} - E-mail: {{ $prestador['email'] }} - CPF/CNPJ: {{ $prestador['documento'] }}
                 </div>
             </td>
-            <td style="width: 112pt; padding: 4pt;">
+            <td style="width: 21%; padding: 4pt;">
                 <div class="centro" style="border: 0.75pt solid #000; padding: 6pt;">
                     <span class="rot">Recibo nº</span>
                     <span style="display: block; font-size: 13pt; font-weight: bold;">{{ $numero }}</span>
@@ -61,14 +61,14 @@
 
     <table class="divisa">
         <tr>
-            <td style="width: 15%;"><span class="rot">Emissão (Horário de Brasília)</span><span class="val-p">{{ $emitido_em }}</span></td>
-            <td style="width: 34%;"><span class="rot">Período de Competência</span><span class="val">{{ $competencia }}</span></td>
+            <td style="width: 19%;"><span class="rot">Emissão (Horário de Brasília)</span><span class="val-p">{{ $emitido_em }}</span></td>
+            <td style="width: 30%;"><span class="rot">Período de Competência</span><span class="val">{{ $competencia }}</span></td>
             <td><span class="rot">Município de Prestação do Serviço</span><span class="val">{{ $prestador['cidade_uf'] }}</span></td>
         </tr>
     </table>
     <table>
         <tr>
-            <td style="width: 15%;"><span class="rot">Vencimento</span><span class="val">{{ $vencimento }}</span></td>
+            <td style="width: 19%;"><span class="rot">Vencimento</span><span class="val">{{ $vencimento }}</span></td>
             <td><span class="rot">Situação</span><span class="val">{{ $situacao }}</span></td>
         </tr>
     </table>
@@ -113,8 +113,11 @@
     <table>
         <tr>
             <td style="height: 170pt;">
-                <div style="font-size: 7.5pt; line-height: 1.4;">{!! nl2br(e($servico['descricao'])) !!}</div>
-                <div style="margin-top: 8pt; font-size: 7.5pt;">{{ $servico['obs_periodo'] }}</div>
+                {{-- Uma div por linha: o dompdf ignora line-height nas linhas quebradas por <br>. --}}
+                @foreach (preg_split('/\R/', $servico['descricao']) as $linhaDescricao)
+                    <div style="height: 8.4pt; font-size: 7pt;">{{ $linhaDescricao }}</div>
+                @endforeach
+                <div style="margin-top: 4pt; font-size: 7.5pt;">{{ $servico['obs_periodo'] }}</div>
             </td>
         </tr>
     </table>
@@ -150,7 +153,7 @@
     <div class="divisa secao">OUTRAS INFORMAÇÕES</div>
     <table>
         <tr>
-            <td style="height: 40pt;">
+            <td style="height: 20pt;">
                 @foreach ($informacoes as $linha)
                     <div style="font-size: 6.5pt;">{{ $linha }}</div>
                 @endforeach
