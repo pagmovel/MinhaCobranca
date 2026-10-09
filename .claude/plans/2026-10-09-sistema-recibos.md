@@ -23,7 +23,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | testada |
 | 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | testada (rotação e posição do carimbo aguardam conferência visual do usuário) |
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | concluída |
-| 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | pendente |
+| 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | concluída (nada a gravar: migrações padrão já aplicadas no lote 1) |
 | 1 | T1.1 Usuário: status, admin, dados do prestador | pendente |
 | 1 | T1.2 Cadastro com aprovação pendente | pendente |
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | pendente |
@@ -81,7 +81,7 @@ Vale para `migrate`, `app:criar-admin`, smoke test que cria dados ou sessões, e
 
 1. Mostrar a conexão: `php artisan db:show` → informar ao usuário driver, caminho/host, porta, banco e usuário, e dizer explicitamente se é produção (o `.env` atual usa `DB_CONNECTION=sqlite`, arquivo local — confirmar na saída, não presumir).
 2. Contar o alvo: `php artisan db:show --counts` (linhas por tabela) e `php artisan migrate:status`.
-3. Mostrar o efeito literal: para migração, `php artisan migrate --pretend` (SQL que seria executado); para outros comandos, o comando exato e as tabelas/linhas que vai criar ou alterar.
+3. Mostrar o efeito literal: para migração, `php artisan migrate --pretend` (SQL que seria executado) — **só se a tabela `migrations` já existir**: verificado em `MigrateCommand.php:140-146` que, sem ela, o `--pretend` cria a tabela antes de simular (é escrita). Sem a tabela, mostrar o conteúdo das migrações pendentes em vez do `--pretend`. Para outros comandos, o comando exato e as tabelas/linhas que vai criar ou alterar.
 4. Perguntar ao usuário e **esperar o "sim" para aquele comando**. Autorização não é transitiva: um "sim" para `migrate` não autoriza `app:criar-admin` nem o smoke test.
 5. Executar e mostrar o resultado (`migrate:status` ou contagem depois).
 
@@ -978,7 +978,7 @@ git commit -m "docs: skill do projeto, memória e inventário de ferramentas`n`n
 
 ### Tarefa T0.6: PORTÃO-BANCO — migrações padrão no SQLite de desenvolvimento
 
-**Estado:** pendente
+**Estado:** concluída — `db:show`: SQLite local `database/database.sqlite` (não é produção); `migrate:status`: as 3 migrações padrão já constavam como Ran (lote 1); `users` com 0 linhas. Nenhuma escrita feita.
 
 **Arquivos:** nenhum de código. Altera `database/database.sqlite`.
 

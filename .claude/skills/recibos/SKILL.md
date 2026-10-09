@@ -52,6 +52,12 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - laravel-dompdf: `stream()` responde `Content-Type: application/pdf` e
   `Content-Disposition: inline`; `setPaper` vem por `__call`.
 
+- `php artisan migrate --pretend` **não é só leitura**: sem a tabela `migrations`, ele a cria antes
+  de simular (`MigrateCommand.php:140-146`). Leitura segura: `db:show`, `db:show --counts`,
+  `migrate:status` (este só avisa "Migration table not found").
+- O banco de desenvolvimento já veio com as 3 migrações padrão aplicadas (lote 1) da instalação
+  básica do usuário.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
