@@ -35,7 +35,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 2 | T2.3 Clientes | testada (migração `clientes` aplicada no banco de desenvolvimento em 2026-10-09, autorizada) |
 | 3 | T3.1 Dinheiro e regra de valor em reais | testada |
 | 3 | T3.2 Periodicidade e calculadora de períodos | testada |
-| 3 | T3.3 Contratos | pendente |
+| 3 | T3.3 Contratos | testada (migração `contratos` aplicada só na T3.8) |
 | 3 | T3.4 Tabelas e models de cobranças e recibos | pendente |
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | pendente |
 | 3 | T3.6 Gerador de cobranças recorrentes | pendente |
@@ -4038,7 +4038,7 @@ git commit -m "feat: cálculo de períodos e vencimentos dos contratos`n`nCo-Aut
 
 ### Tarefa T3.3: Contratos
 
-**Estado:** pendente
+**Estado:** testada — ContratosTest 6/6 (inclui textos das mensagens); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100200_create_contratos_table.php`, `app/Models/Contrato.php`, `database/factories/ContratoFactory.php`, `app/Rules/LinhasMaximas.php`, `app/Http/Requests/ContratoRequest.php`, `app/Http/Controllers/ContratoController.php`, `resources/js/Pages/Contratos/Index.vue`, `resources/js/Pages/Contratos/Form.vue`

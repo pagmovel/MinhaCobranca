@@ -130,6 +130,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   limitado ao último dia; devido quando `hoje >= vencimento − antecedência`. Calculadora é pura
   (recebe `hoje`), testável sem banco nem relógio.
 
+- T3.3: contrato não tem exclusão — encerra desmarcando "ativo". Descrição limitada a 2000
+  caracteres e 25 linhas (`LinhasMaximas`) para caber na caixa do recibo A4.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
