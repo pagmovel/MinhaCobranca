@@ -38,7 +38,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.3 Contratos | testada (migração `contratos` aplicada só na T3.8) |
 | 3 | T3.4 Tabelas e models de cobranças e recibos | testada |
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
-| 3 | T3.6 Gerador de cobranças recorrentes | pendente |
+| 3 | T3.6 Gerador de cobranças recorrentes | testada |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | pendente |
 | 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | pendente |
 | 4 | T4.1 Valor por extenso | pendente |
@@ -5331,7 +5331,7 @@ git commit -m "feat: emissão de recibo com numeração anual e snapshot congela
 
 ### Tarefa T3.6: Gerador de cobranças recorrentes
 
-**Estado:** pendente
+**Estado:** testada — GeradorDeCobrancasTest 7/7 (relógio congelado no `hoje` de cada geração); suíte verde
 
 **Arquivos:**
 - Criar: `app/Services/GeradorDeCobrancas.php`

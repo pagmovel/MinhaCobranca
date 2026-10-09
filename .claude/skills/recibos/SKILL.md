@@ -142,6 +142,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `(user_id, ano, numero)` + até 3 tentativas em `UniqueConstraintViolationException`. Snapshot
   lido do banco (`user()->firstOrFail()`), não da relação em cache — senão `refazer` usaria dado velho.
 
+- T3.6: gerador junta os períodos devidos de todos os contratos ativos, ordena por vencimento
+  (depois id do contrato) e cria cobrança + recibo um a um em transação; corrida entre abas cai no
+  índice único e é ignorada. Perfil incompleto = não gera nada. Nos testes, congelar o relógio no
+  mesmo `hoje` passado ao gerador (o emissor usa `now()` para o ano do recibo).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
