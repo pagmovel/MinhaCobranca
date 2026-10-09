@@ -76,6 +76,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `template.transformAssetUrls: { base: null, includeAbsolute: false }`. Os testes PHP não pegam
   isso: **rodar `npm run build` e parar se falhar antes de commitar**.
 
+- Teste que só afirma `assertSessionHasNoErrors()` passa com 404 (rota inexistente não deixa erro
+  na sessão). Sempre afirmar também o redirecionamento ou o estado gravado.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
@@ -114,6 +117,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - T2.2: logo no disco `local` (privado) em `logos/{user_id}/<hash>`, servido por `/perfil/logo`;
   arquivos antigos não são apagados (recibos emitidos apontam para eles). Perfil usa `POST` (upload
   multipart com `PUT` não funciona no PHP).
+
+- T2.3: cliente com CPF/CNPJ único **por usuário** (`unique(user_id, documento)` + regra
+  `Rule::unique(...)->where('user_id')`); modelo do recibo no cliente, aviso na tela ao trocar.
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.

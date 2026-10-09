@@ -32,7 +32,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | concluída (migrate e admin feitos; smoke test adiado para a T5.3, decisão do usuário em 2026-10-09) |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
-| 2 | T2.3 Clientes | pendente |
+| 2 | T2.3 Clientes | testada (migração `clientes` ainda não aplicada no banco de desenvolvimento) |
 | 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
 | 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
 | 3 | T3.3 Contratos | pendente |
@@ -3028,7 +3028,7 @@ git commit -m "feat: perfil do prestador com logo e preferências de recibo`n`nC
 
 ### Tarefa T2.3: Clientes
 
-**Estado:** pendente
+**Estado:** testada — ClientesTest 9/9; suíte verde; build ok. Teste do CNPJ alfanumérico reforçado (passava vazio com 404). Avisos sem faixa lateral (borda inteira)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100100_create_clientes_table.php`, `app/Models/Cliente.php`, `database/factories/ClienteFactory.php`, `app/Http/Requests/ClienteRequest.php`, `app/Http/Controllers/ClienteController.php`, `resources/js/Pages/Clientes/Index.vue`, `resources/js/Pages/Clientes/Form.vue`

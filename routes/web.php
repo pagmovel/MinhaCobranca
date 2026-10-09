@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/perfil', [PerfilController::class, 'edit']);
     Route::post('/perfil', [PerfilController::class, 'update']);
     Route::get('/perfil/logo', [PerfilController::class, 'logo']);
+
+    Route::resource('clientes', ClienteController::class)->except('show');
 
     // Fases seguintes acrescentam rotas aqui, acima do grupo admin.
 
