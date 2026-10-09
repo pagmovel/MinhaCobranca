@@ -37,7 +37,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.2 Periodicidade e calculadora de períodos | testada |
 | 3 | T3.3 Contratos | testada (migração `contratos` aplicada só na T3.8) |
 | 3 | T3.4 Tabelas e models de cobranças e recibos | testada |
-| 3 | T3.5 Numeração e emissão de recibos (snapshot) | pendente |
+| 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
 | 3 | T3.6 Gerador de cobranças recorrentes | pendente |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | pendente |
 | 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | pendente |
@@ -5071,7 +5071,7 @@ git commit -m "feat: tabelas de cobranças e recibos e proteções de exclusão 
 
 ### Tarefa T3.5: Numeração e emissão de recibos (snapshot)
 
-**Estado:** pendente
+**Estado:** testada — EmissaoReciboTest 6/6; suíte verde
 
 **Arquivos:**
 - Criar: `app/Services/NumeradorDeRecibos.php`, `app/Services/EmissorDeRecibos.php`

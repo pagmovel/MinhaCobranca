@@ -138,6 +138,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   (geraria períodos sobrepostos); valor e descrição podem mudar. Cliente com contrato/cobrança não
   é excluído (controller + `restrictOnDelete`).
 
+- T3.5: número = `max(numero)` do usuário no ano + 1, dentro da transação; índice único
+  `(user_id, ano, numero)` + até 3 tentativas em `UniqueConstraintViolationException`. Snapshot
+  lido do banco (`user()->firstOrFail()`), não da relação em cache — senão `refazer` usaria dado velho.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
