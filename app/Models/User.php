@@ -23,6 +23,14 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /** Mesmos defaults da migração: o objeto recém-criado precisa deles antes de ser relido do banco. */
+    protected $attributes = [
+        'is_admin' => false,
+        'status' => 'pendente',
+        'modelo_padrao' => 'webiss',
+        'dias_antecedencia' => 10,
+    ];
+
     /** Campos sem os quais o recibo sairia com o prestador em branco. */
     public const CAMPOS_DO_PRESTADOR = [
         'name', 'documento', 'telefone', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep',

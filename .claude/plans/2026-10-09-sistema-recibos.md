@@ -31,7 +31,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.5 Comando `app:criar-admin` | testada |
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | concluída (migrate e admin feitos; smoke test adiado para a T5.3, decisão do usuário em 2026-10-09) |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
-| 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | pendente |
+| 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
 | 2 | T2.3 Clientes | pendente |
 | 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
 | 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
@@ -2634,7 +2634,7 @@ git commit -m "feat: validação de CPF e CNPJ, inclusive alfanumérico`n`nCo-Au
 
 ### Tarefa T2.2: Meu perfil
 
-**Estado:** pendente
+**Estado:** testada — PerfilTest 6/6; suíte verde; build ok. Desvios: `User::$attributes` repete os defaults da migração (objeto recém-criado vinha com `modelo_padrao` nulo → 500); teste de arquivo não-imagem usa arquivo real (o fake informa o tipo pela extensão)
 
 **Arquivos:**
 - Criar: `app/Http/Requests/PerfilRequest.php`, `app/Http/Controllers/PerfilController.php`, `resources/js/Components/CamposEndereco.vue`, `resources/js/Pages/Perfil/Editar.vue`

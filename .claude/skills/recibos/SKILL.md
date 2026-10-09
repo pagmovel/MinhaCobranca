@@ -64,6 +64,13 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Administrador do sistema = `users.is_admin` (único nível; o usuário chama de "superadmin").
   Conta do usuário: id 1, `marcos.ronaldo@gmail.com`, promovida em 2026-10-09.
 
+- Default de coluna só existe depois do INSERT + releitura: `User` criado pela factory e usado no
+  `actingAs` vinha com `modelo_padrao` nulo (500 no `/perfil`). Solução: `User::$attributes` com os
+  mesmos defaults da migração — manter os dois sincronizados.
+- `UploadedFile::fake()->createWithContent('x.png', 'texto')` passa na regra `image`: o fake informa
+  o tipo pela extensão do nome (`Http/Testing/File.php:134`). Para testar conteúdo, usar
+  `new UploadedFile($caminhoReal, 'x.png', null, null, true)`.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
@@ -98,6 +105,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   documento guardado normalizado (só `[0-9A-Z]`, maiúsculas, 14 caracteres no máximo).
 - Menu mostra itens de fases futuras; até a tarefa deles ficar pronta, dão 404 — o usuário
   estranhou na Fase 1. Avisar ao entregar fases parciais.
+
+- T2.2: logo no disco `local` (privado) em `logos/{user_id}/<hash>`, servido por `/perfil/logo`;
+  arquivos antigos não são apagados (recibos emitidos apontam para eles). Perfil usa `POST` (upload
+  multipart com `PUT` não funciona no PHP).
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
