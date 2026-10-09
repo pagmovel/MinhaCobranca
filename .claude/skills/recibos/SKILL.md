@@ -154,6 +154,13 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   snapshot com o mesmo número; cobrança de contrato não muda cliente nem período. Baixa só com data
   até hoje. `marcarEnviada` é chamado pelo front depois do compartilhamento/download.
 
+- Seed do perfil inicial (`PerfilInicialSeeder`, pedido do usuário em 2026-10-09): código no git,
+  dados em `database/seeders/dados/perfil-inicial.json` **fora do git** (CPF, endereço, hash da
+  senha); formato em `perfil-inicial.exemplo.json`. Copia o hash (cast `hashed` mantém hash válido,
+  `HasAttributes.php:1509-1518`), então a senha atual continua valendo. Idempotente pelo e-mail.
+  `DatabaseSeeder` só chama essa seed — o "Test User" padrão nasceria aprovado com senha `password`.
+  Rodar a seed é escrita no banco: PORTÃO-BANCO.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

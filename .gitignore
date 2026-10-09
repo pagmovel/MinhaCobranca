@@ -28,3 +28,7 @@ Thumbs.db
 
 # Notas fiscais reais do usuário (dados pessoais) — decisão do usuário em 2026-10-09: não versionar
 /MATERIAIS/
+
+# Dados pessoais da seed do perfil inicial (CPF, endereço, hash de senha) — não versionar
+/database/seeders/dados/*.json
+!/database/seeders/dados/perfil-inicial.exemplo.json
