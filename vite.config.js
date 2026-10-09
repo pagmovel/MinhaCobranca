@@ -15,7 +15,12 @@ export default defineConfig({
                 bunny('Archivo Narrow', { weights: [500, 600] }),
             ],
         }),
-        vue(),
+        vue({
+            template: {
+                // Caminho absoluto (ex.: src="/perfil/logo") é rota do Laravel, não arquivo para importar.
+                transformAssetUrls: { base: null, includeAbsolute: false },
+            },
+        }),
         tailwindcss(),
     ],
     server: {

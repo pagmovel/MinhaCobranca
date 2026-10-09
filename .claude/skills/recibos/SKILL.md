@@ -71,6 +71,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   o tipo pela extensão do nome (`Http/Testing/File.php:134`). Para testar conteúdo, usar
   `new UploadedFile($caminhoReal, 'x.png', null, null, true)`.
 
+- `@vitejs/plugin-vue` transforma `src="/caminho"` estático em `import` e quebra o build
+  (`UNRESOLVED_IMPORT '/perfil/logo'`). Corrigido em `vite.config.js` com
+  `template.transformAssetUrls: { base: null, includeAbsolute: false }`. Os testes PHP não pegam
+  isso: **rodar `npm run build` e parar se falhar antes de commitar**.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
