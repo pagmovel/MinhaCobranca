@@ -29,8 +29,8 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
 | 1 | T1.4 Administração de usuários | testada |
 | 1 | T1.5 Comando `app:criar-admin` | testada |
-| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | em andamento (migrate e admin feitos; smoke test pendente) |
-| 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | pendente |
+| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | concluída (migrate e admin feitos; smoke test adiado para a T5.3, decisão do usuário em 2026-10-09) |
+| 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | pendente |
 | 2 | T2.3 Clientes | pendente |
 | 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
@@ -2394,7 +2394,7 @@ Roteiro, com print de cada tela:
 
 ### Tarefa T2.1: CPF/CNPJ (inclusive CNPJ alfanumérico)
 
-**Estado:** pendente
+**Estado:** testada — DocumentoTest 16/16 (inclui exemplo oficial da Receita `12.ABC.345/01DE-35`); suíte verde
 
 **Arquivos:**
 - Criar: `app/Support/Documento.php`, `app/Support/Ufs.php`, `app/Rules/DocumentoValido.php`

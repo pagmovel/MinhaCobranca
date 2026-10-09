@@ -94,6 +94,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Hook de design (impeccable) acusa borda lateral grossa (`border-l-4`) como clichê de UI gerada:
   item ativo do menu usa fundo `bg-papel` + texto `text-carbono`, sem faixa lateral.
 
+- T2.1: `Documento` valida CPF e CNPJ (numérico e alfanumérico) com o mesmo cálculo `ASCII − 48`;
+  documento guardado normalizado (só `[0-9A-Z]`, maiúsculas, 14 caracteres no máximo).
+- Menu mostra itens de fases futuras; até a tarefa deles ficar pronta, dão 404 — o usuário
+  estranhou na Fase 1. Avisar ao entregar fases parciais.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
