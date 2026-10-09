@@ -82,6 +82,18 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Teste de isolamento (404 para recurso alheio) passa à toa se a rota ainda não existe. Antes do
   `assertNotFound`, chamar a mesma rota com recurso próprio e afirmar sucesso.
 
+- **Banco migrado para PostgreSQL em 2026-10-09** (pedido do usuário, antes do previsto na Fase 7):
+  servidor de desenvolvimento `207.180.205.211`, **porta 1** (a 5432 recusa), PostgreSQL 18.6,
+  banco `recibos`, dono e usuário da aplicação `recibos_app` (senha gerada, só no `.env`);
+  `REVOKE CONNECT ... FROM PUBLIC`. O mesmo servidor tem o banco `meus_projetos` (dev, de outro
+  projeto) — não tocar. O SQLite `database/database.sqlite` ficou como histórico.
+- **Segurança do servidor PostgreSQL (pendente, fora do repositório):** conexão **sem SSL** pela
+  internet (`pg_stat_ssl.ssl = false`), superusuário `postgres` exposto em IP público. A aplicação
+  não usa o superusuário.
+- `DB_HOST=meus_projetos_postgres_dev` (nome de container) não resolve fora da rede Docker.
+- Sem a tabela `migrations`, **não** rodar `migrate --pretend` (ele cria a tabela). No portão,
+  listar os arquivos de migração pendentes.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).

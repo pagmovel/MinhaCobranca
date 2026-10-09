@@ -40,7 +40,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
 | 3 | T3.6 Gerador de cobranças recorrentes | testada |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
-| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | pendente |
+| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | em andamento (alvo mudou para PostgreSQL: banco `recibos` criado; migrate e seed aguardam autorização) |
 | 4 | T4.1 Valor por extenso | pendente |
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
 | 4 | T4.3 Modelo `danfse-v1` | pendente |
@@ -53,7 +53,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 6 | T6.2 Leitores nacional e municipal (detalhar após T6.0) | pendente |
 | 6 | T6.3 Conciliação, vínculo, citação no recibo, criar cliente | pendente |
 | 6 | T6.4 PORTÃO-BANCO: migração da fase 6 | pendente |
-| 7 | T7.1 Suíte contra PostgreSQL de teste declarado pelo usuário | pendente |
+| 7 | T7.1 Suíte contra PostgreSQL de teste declarado pelo usuário | pendente (banco da aplicação já está no PostgreSQL desde a Fase 3; falta a suíte contra uma base de teste) |
 
 ---
 
