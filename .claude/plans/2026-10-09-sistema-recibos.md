@@ -26,7 +26,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | concluída (nada a gravar: migrações padrão já aplicadas no lote 1) |
 | 1 | T1.1 Usuário: status, admin, dados do prestador | testada |
 | 1 | T1.2 Cadastro com aprovação pendente | testada |
-| 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | pendente |
+| 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
 | 1 | T1.4 Administração de usuários | pendente |
 | 1 | T1.5 Comando `app:criar-admin` | pendente |
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | pendente |
@@ -1583,7 +1583,7 @@ git commit -m "feat: cadastro aberto com conta pendente de liberação`n`nCo-Aut
 
 ### Tarefa T1.3: Entrar, sair, bloqueio por status e painel inicial
 
-**Estado:** pendente
+**Estado:** testada — LoginTest 9/9 (inclui limite de tentativas: RateLimiter `login`, 5/min por e-mail+IP); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Middleware/GarantirContaAprovada.php`, `app/Http/Controllers/PainelController.php`, `resources/js/Layouts/CamadaApp.vue`, `resources/js/Pages/Painel.vue`
