@@ -1,0 +1,2 @@
+- [Regras de banco do projeto](memory/regras-banco-recibos.md) — portão antes de qualquer escrita no SQLite real
+- [Documentação por tarefa](memory/documentacao-por-tarefa.md) — plano e skill atualizados no commit de cada tarefa

@@ -22,7 +22,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.2 Idioma, fuso e mensagens em pt-BR | testada |
 | 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | testada |
 | 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | testada (rotação e posição do carimbo aguardam conferência visual do usuário) |
-| 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | pendente |
+| 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | concluída |
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | pendente |
 | 1 | T1.1 Usuário: status, admin, dados do prestador | pendente |
 | 1 | T1.2 Cadastro com aprovação pendente | pendente |
@@ -831,7 +831,7 @@ git commit -m "chore: dompdf e prova de conceito de fontes, rotação e imagem`n
 
 ### Tarefa T0.5: `.claude/` do projeto + inventário de ferramentas
 
-**Estado:** pendente
+**Estado:** concluída — skill, memória (2 arquivos), inventário no CLAUDE.md, AGENTS.md e README; plugins conferidos: todos instalados
 
 **Arquivos:**
 - Criar: `.claude/skills/recibos/SKILL.md`, `.claude/MEMORY.md`, `.claude/memory/` (com o primeiro arquivo de memória)
