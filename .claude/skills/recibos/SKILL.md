@@ -178,6 +178,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `DatabaseSeeder` só chama essa seed — o "Test User" padrão nasceria aprovado com senha `password`.
   Rodar a seed é escrita no banco: PORTÃO-BANCO.
 
+- T4.1: valor por extenso só com inteiros (`intdiv`); "e" antes do último grupo quando ele é menor
+  que cem ou centena exata ("mil e dez", "mil e duzentos", mas "mil duzentos e trinta"); milhão exato
+  leva "de reais". Casos fixados em `tests/Unit/ValorPorExtensoTest.php` (inclui o valor da nota de
+  referência, R$ 260,60).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

@@ -41,7 +41,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.6 Gerador de cobranças recorrentes | testada |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
 | 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | concluída (no PostgreSQL: 8 migrações, 13 tabelas; seed do perfil inicial → admin id 1) |
-| 4 | T4.1 Valor por extenso | pendente |
+| 4 | T4.1 Valor por extenso | testada |
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
 | 4 | T4.3 Modelo `danfse-v1` | pendente |
 | 4 | T4.4 Comparação visual com as notas originais | pendente |
@@ -5933,7 +5933,7 @@ git commit -m "feat: cobrança avulsa, edição, cancelamento, baixa e registro 
 
 ### Tarefa T4.1: Valor por extenso
 
-**Estado:** pendente
+**Estado:** testada (18 casos; suíte 138/138)
 
 **Arquivos:**
 - Criar: `app/Services/ValorPorExtenso.php`
