@@ -133,6 +133,11 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - T3.3: contrato não tem exclusão — encerra desmarcando "ativo". Descrição limitada a 2000
   caracteres e 25 linhas (`LinhasMaximas`) para caber na caixa do recibo A4.
 
+- T3.4: idempotência da geração garantida pelo banco (`unique(contrato_id, periodo_inicio)`;
+  avulsas com contrato nulo não colidem). Contrato com cobranças não muda início nem periodicidade
+  (geraria períodos sobrepostos); valor e descrição podem mudar. Cliente com contrato/cobrança não
+  é excluído (controller + `restrictOnDelete`).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

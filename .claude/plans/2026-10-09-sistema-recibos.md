@@ -36,7 +36,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 3 | T3.1 Dinheiro e regra de valor em reais | testada |
 | 3 | T3.2 Periodicidade e calculadora de períodos | testada |
 | 3 | T3.3 Contratos | testada (migração `contratos` aplicada só na T3.8) |
-| 3 | T3.4 Tabelas e models de cobranças e recibos | pendente |
+| 3 | T3.4 Tabelas e models de cobranças e recibos | testada |
 | 3 | T3.5 Numeração e emissão de recibos (snapshot) | pendente |
 | 3 | T3.6 Gerador de cobranças recorrentes | pendente |
 | 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | pendente |
@@ -4609,7 +4609,7 @@ git commit -m "feat: contratos recorrentes com validação de datas e descriçã
 
 ### Tarefa T3.4: Tabelas e models de cobranças e recibos + proteções
 
-**Estado:** pendente
+**Estado:** testada — SituacaoCobrancaTest 3/3, ProtecoesTest 2/2; suíte verde
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100300_create_cobrancas_table.php`, `database/migrations/2026_10_09_100400_create_recibos_table.php`, `app/Enums/StatusCobranca.php`, `app/Models/Cobranca.php`, `app/Models/Recibo.php`, `database/factories/CobrancaFactory.php`

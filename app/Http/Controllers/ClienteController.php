@@ -54,7 +54,13 @@ class ClienteController extends Controller
 
     public function destroy(Request $request, int $cliente): RedirectResponse
     {
-        $request->user()->clientes()->findOrFail($cliente)->delete();
+        $registro = $request->user()->clientes()->findOrFail($cliente);
+
+        if ($registro->contratos()->exists() || $registro->cobrancas()->exists()) {
+            return back()->with('erro', 'Este cliente tem contratos ou cobranças e não pode ser excluído.');
+        }
+
+        $registro->delete();
 
         return redirect('/clientes')->with('sucesso', 'Cliente excluído.');
     }

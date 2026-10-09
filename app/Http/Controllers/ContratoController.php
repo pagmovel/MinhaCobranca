@@ -6,6 +6,7 @@ use App\Enums\Periodicidade;
 use App\Http\Requests\ContratoRequest;
 use App\Models\Contrato;
 use App\Support\Dinheiro;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -49,7 +50,20 @@ class ContratoController extends Controller
 
     public function update(ContratoRequest $request, int $contrato): RedirectResponse
     {
-        $request->user()->contratos()->findOrFail($contrato)->update($request->dadosContrato());
+        $registro = $request->user()->contratos()->findOrFail($contrato);
+        $dados = $request->dadosContrato();
+
+        $mudaPeriodos = $registro->periodicidade->value !== $dados['periodicidade']
+            || $registro->data_inicio->toDateString() !== CarbonImmutable::parse($dados['data_inicio'])->toDateString();
+
+        // Mudar a âncora dos períodos geraria períodos novos sobrepostos aos já cobrados.
+        if ($mudaPeriodos && $registro->cobrancas()->exists()) {
+            return back()->withErrors([
+                'data_inicio' => 'Este contrato já tem cobranças. Para mudar o início ou a periodicidade, encerre-o e crie outro.',
+            ]);
+        }
+
+        $registro->update($dados);
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As mudanças valem para as próximas cobranças.');
     }
