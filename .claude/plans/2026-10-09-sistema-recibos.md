@@ -21,7 +21,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.1 Git + Laravel Boost | concluída (sem teste automatizado: tarefa de instalação) |
 | 0 | T0.2 Idioma, fuso e mensagens em pt-BR | testada |
 | 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | testada |
-| 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | pendente |
+| 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | testada (rotação e posição do carimbo aguardam conferência visual do usuário) |
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | pendente |
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | pendente |
 | 1 | T1.1 Usuário: status, admin, dados do prestador | pendente |
@@ -718,7 +718,7 @@ git commit -m "feat: Inertia v3 com Vue 3, tokens visuais e página de entrada`n
 
 ### Tarefa T0.4: dompdf + prova de conceito
 
-**Estado:** pendente
+**Estado:** testada — PDF gerado; extração de texto confirma acentos em DejaVu Sans e Helvetica (WinAnsiEncoding), imagem data URI embutida, 1 página. Rotação, absoluto dentro da caixa e rodapé fixo: [A VERIFICAR] pelo usuário
 
 **Arquivos:**
 - Modificar: `composer.json` (via composer)
