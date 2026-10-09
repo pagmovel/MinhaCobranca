@@ -25,7 +25,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | concluída |
 | 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | concluída (nada a gravar: migrações padrão já aplicadas no lote 1) |
 | 1 | T1.1 Usuário: status, admin, dados do prestador | testada |
-| 1 | T1.2 Cadastro com aprovação pendente | pendente |
+| 1 | T1.2 Cadastro com aprovação pendente | testada |
 | 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | pendente |
 | 1 | T1.4 Administração de usuários | pendente |
 | 1 | T1.5 Comando `app:criar-admin` | pendente |
@@ -1391,7 +1391,7 @@ git commit -m "feat: status de conta, admin e dados do prestador no usuário`n`n
 
 ### Tarefa T1.2: Cadastro com aprovação pendente
 
-**Estado:** pendente
+**Estado:** testada — CadastroTest 4/4 (inclui texto das mensagens); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Controllers/Auth/CadastroController.php`, `resources/js/Pages/Auth/Cadastro.vue`

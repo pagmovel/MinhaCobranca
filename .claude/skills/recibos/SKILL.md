@@ -69,6 +69,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `admin()`, `semPerfil()`.
 - Testes: `LazilyRefreshDatabase` e `$this->travelTo()` (skill testing-best-practices do Boost).
 
+- T1.2: Inertia v3 cuida do CSRF sozinho (lê o cookie `XSRF-TOKEN` e envia `X-XSRF-TOKEN`); não
+  pôr meta `csrf-token` no layout. Nos testes o CSRF é desligado, então erro de token só aparece
+  no navegador (419) — conferir no smoke test.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
