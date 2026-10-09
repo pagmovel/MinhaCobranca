@@ -47,8 +47,8 @@ const sair = () => router.post('/sair');
                 <li v-for="item in itens" :key="item.href">
                     <Link
                         :href="item.href"
-                        class="flex items-center justify-between border-l-4 px-5 py-2 text-sm hover:bg-papel"
-                        :class="ativo(item.href) ? 'border-carbono font-semibold text-carbono' : 'border-transparent'"
+                        class="flex items-center justify-between px-5 py-2 text-sm hover:bg-papel"
+                        :class="ativo(item.href) ? 'bg-papel font-semibold text-carbono' : ''"
                         :aria-current="ativo(item.href) ? 'page' : undefined"
                         @click="menuAberto = false"
                     >
@@ -61,7 +61,7 @@ const sair = () => router.post('/sair');
                     </Link>
                 </li>
                 <li>
-                    <button type="button" class="w-full border-l-4 border-transparent px-5 py-2 text-left text-sm hover:bg-papel" @click="sair">
+                    <button type="button" class="w-full px-5 py-2 text-left text-sm hover:bg-papel" @click="sair">
                         Sair
                     </button>
                 </li>

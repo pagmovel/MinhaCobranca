@@ -91,6 +91,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   responde prompt, então **o usuário roda o comando no terminal dele**. Nos testes,
   `expectsQuestion('Senha', ...)` funciona com `secret`.
 
+- Hook de design (impeccable) acusa borda lateral grossa (`border-l-4`) como clichê de UI gerada:
+  item ativo do menu usa fundo `bg-papel` + texto `text-carbono`, sem faixa lateral.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
