@@ -32,7 +32,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | concluída (migrate e admin feitos; smoke test adiado para a T5.3, decisão do usuário em 2026-10-09) |
 | 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
 | 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
-| 2 | T2.3 Clientes | testada (migração `clientes` ainda não aplicada no banco de desenvolvimento) |
+| 2 | T2.3 Clientes | testada (migração `clientes` aplicada no banco de desenvolvimento em 2026-10-09, autorizada) |
 | 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
 | 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
 | 3 | T3.3 Contratos | pendente |
@@ -5923,7 +5923,7 @@ git commit -m "feat: cobrança avulsa, edição, cancelamento, baixa e registro 
 
 **Estado:** pendente
 
-- [ ] **Passo 1:** PORTÃO-BANCO para `php artisan migrate` (tabelas `clientes`, `contratos`, `cobrancas`, `recibos`). Mostrar o `--pretend`. Esperar "sim".
+- [ ] **Passo 1:** PORTÃO-BANCO para `php artisan migrate` (tabelas `contratos`, `cobrancas`, `recibos` — `clientes` já foi aplicada ao fim da Fase 2, a pedido do usuário). Mostrar o `--pretend`. Esperar "sim".
 - [ ] **Passo 2:** executar e mostrar `php artisan migrate:status`.
 - [ ] **Passo 3:** registrar na skill os acertos e pegadinhas da fase 3; atualizar a tabela de acompanhamento.
 
