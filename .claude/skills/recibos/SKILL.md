@@ -298,6 +298,10 @@ completo com ambos, parcial com um só.
 - Pegadinha repetida na T9.1: extrair código do plano buscando o nome do arquivo pega a lista "Arquivos" da tarefa.
   **Sempre ancorar em `\n`caminho`:`** (cabeçalho do bloco).
 
+- T9.2: `contratos.modalidade` (`prepago`/`pospago`, default `prepago` na migração **e** em `Contrato::$attributes`);
+  obrigatória no request (sem default silencioso); não muda se o contrato já tem cobranças; o gerador passa a
+  modalidade à calculadora. Formulário explica o vencimento de cada modalidade.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

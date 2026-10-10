@@ -36,7 +36,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 8 | T8.3 Busca de cliente por autosugestão | testada (teclado/leitor de tela na T11.4) |
 | 8 | T8.4 Fechamento da fase 8 (merge + push) | concluída |
 | 9 | T9.1 Calculadora: pós-pago | testada |
-| 9 | T9.2 Modalidade no contrato | pendente |
+| 9 | T9.2 Modalidade no contrato | testada |
 | 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | pendente |
 | 10 | T10.1 Chaves PIX no perfil | pendente |
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | pendente |
@@ -911,7 +911,7 @@ git commit -m "feat: vencimento pós-pago na calculadora de períodos`n`nCo-Auth
 
 ### Tarefa T9.2: Modalidade no contrato
 
-**Estado:** pendente
+**Estado:** testada (suíte 171/171; build ok)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_10_100000_add_modalidade_to_contratos_table.php`

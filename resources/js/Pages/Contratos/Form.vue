@@ -9,6 +9,7 @@ const props = defineProps({
     temClientes: { type: Boolean, required: true },
     clienteAtual: { type: Object, default: null },
     periodicidades: { type: Array, required: true },
+    modalidades: { type: Array, required: true },
 });
 
 const form = useForm(props.contrato ?? {
@@ -19,6 +20,7 @@ const form = useForm(props.contrato ?? {
     codigo_tributacao_nacional: '',
     valor: '',
     periodicidade: 'mensal',
+    modalidade: 'prepago',
     dia_vencimento: 10,
     data_inicio: new Date().toLocaleDateString('sv-SE'),
     data_fim: '',
@@ -61,6 +63,20 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
                     <option v-for="p in periodicidades" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>
                 </select>
             </Campo>
+            <fieldset class="sm:col-span-6">
+                <legend class="mb-2 font-estreita text-xs font-medium text-grafite/75">Modalidade</legend>
+                <div class="flex flex-wrap gap-4">
+                    <label v-for="modalidade in modalidades" :key="modalidade.valor" class="flex items-center gap-2 text-sm">
+                        <input v-model="form.modalidade" type="radio" name="modalidade" :value="modalidade.valor"> {{ modalidade.rotulo }}
+                    </label>
+                </div>
+                <p class="mt-1 text-xs text-grafite/70">
+                    {{ form.modalidade === 'pospago'
+                        ? 'Vence no dia escolhido depois que o período termina (serviço de outubro vence em novembro).'
+                        : 'Vence no dia escolhido do mês em que o período começa.' }}
+                </p>
+                <p v-if="form.errors.modalidade" class="text-xs text-tinta-vermelha">{{ form.errors.modalidade }}</p>
+            </fieldset>
             <Campo id="dia_vencimento" rotulo="Dia do vencimento" :erro="form.errors.dia_vencimento" class="sm:col-span-2">
                 <input id="dia_vencimento" v-model="form.dia_vencimento" type="number" min="1" max="31" class="entrada" required>
             </Campo>

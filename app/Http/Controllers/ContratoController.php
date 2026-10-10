@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Http\Requests\ContratoRequest;
 use App\Models\Contrato;
@@ -63,6 +64,12 @@ class ContratoController extends Controller
             ]);
         }
 
+        if ($registro->modalidade->value !== $dados['modalidade'] && $registro->cobrancas()->exists()) {
+            return back()->withErrors([
+                'modalidade' => 'Este contrato já tem cobranças. Para mudar a modalidade, encerre-o e crie outro.',
+            ]);
+        }
+
         $registro->update($dados);
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As mudanças valem para as próximas cobranças.');
@@ -80,6 +87,7 @@ class ContratoController extends Controller
                 'codigo_tributacao_nacional' => $contrato->codigo_tributacao_nacional ?? '',
                 'valor' => Dinheiro::formatar($contrato->valor_centavos),
                 'periodicidade' => $contrato->periodicidade->value,
+                'modalidade' => $contrato->modalidade->value,
                 'dia_vencimento' => $contrato->dia_vencimento,
                 'data_inicio' => $contrato->data_inicio->toDateString(),
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
@@ -88,6 +96,7 @@ class ContratoController extends Controller
             'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $contrato?->cliente()->first(['id', 'nome']),
             'periodicidades' => Periodicidade::opcoes(),
+            'modalidades' => Modalidade::opcoes(),
         ]);
     }
 }

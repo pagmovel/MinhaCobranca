@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Rules\LinhasMaximas;
 use App\Rules\ValorEmReais;
@@ -27,6 +28,7 @@ class ContratoRequest extends FormRequest
             'codigo_tributacao_nacional' => ['nullable', 'string', 'max:20'],
             'valor' => ['required', new ValorEmReais],
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
+            'modalidade' => ['required', Rule::enum(Modalidade::class)],
             'dia_vencimento' => ['required', 'integer', 'between:1,31'],
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],

@@ -35,6 +35,7 @@ final class GeradorDeCobrancas
                 $contrato->dia_vencimento,
                 $usuario->dias_antecedencia,
                 $hoje,
+                $contrato->modalidade,
             );
 
             foreach ($devidos as $periodo) {
