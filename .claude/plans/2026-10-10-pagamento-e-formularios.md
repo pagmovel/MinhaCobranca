@@ -43,7 +43,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | testada |
-| 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
+| 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | testada |
 | 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
 | 11 | T11.4 Smoke test, revisão final e fechamento | pendente |
 
@@ -2462,7 +2462,7 @@ git commit -m "feat: PIX copia e cola (BR Code) com valor e identificação do r
 
 ### Tarefa T11.2: QR Code em PNG (`chillerlan/php-qrcode`)
 
-**Estado:** pendente
+**Estado:** testada (QrCodePixTest 1/1; QR decodificado pelo OpenCV igual ao copia e cola). Instalada a **v6.0.1**: API `outputInterface => QRGdImagePNG::class` (não a da v5 do plano).
 
 **Arquivos:**
 - Modificar: `composer.json`, `composer.lock`
@@ -2512,7 +2512,7 @@ class QrCodePixTest extends TestCase
 
 namespace App\Support;
 
-use chillerlan\QRCode\Output\QROutputInterface;
+use chillerlan\QRCode\Output\QRGdImagePNG;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 
@@ -2522,7 +2522,7 @@ final class QrCodePix
     public static function dataUri(string $payload): string
     {
         $opcoes = new QROptions([
-            'outputType' => QROutputInterface::GDIMAGE_PNG,
+            'outputInterface' => QRGdImagePNG::class,
             'outputBase64' => true,
             'scale' => 5,
             'quietzoneSize' => 2,

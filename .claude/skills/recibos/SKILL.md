@@ -336,6 +336,12 @@ o relatório mostra a parte que existe.
   (obrigatórios), 54 valor `123.99`. Nome e cidade saem em maiúsculas ASCII (o exemplo do manual usa
   "NOME DO RECEBEDOR"). O teste do CRC usa o exemplo oficial; o txid do recibo é `REC` + ano + número (6 dígitos).
 
+- T11.2: `chillerlan/php-qrcode` **v6.0.1** (dependência aprovada pelo usuário; requer `ext-mbstring` e GD). Na v6 a
+  saída é `'outputInterface' => QRGdImagePNG::class` (as constantes `outputType`/`GDIMAGE_PNG` da v5 não existem);
+  `outputBase64` já vem `true` e devolve data URI. `QrCodePix::dataUri()` gera PNG 265×265 (scale 5, margem 2).
+  **Verificação forte:** o QR gerado foi decodificado com OpenCV (`cv2.QRCodeDetector`, instalado na máquina) e é
+  idêntico ao copia e cola — usar o mesmo método se mudar algo no QR.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
