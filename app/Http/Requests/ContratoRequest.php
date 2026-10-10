@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
+use App\Http\Requests\Concerns\RegrasDePagamento;
 use App\Rules\LinhasMaximas;
 use App\Rules\ValorEmReais;
 use App\Support\Dinheiro;
@@ -13,9 +14,16 @@ use Illuminate\Validation\Rule;
 
 class ContratoRequest extends FormRequest
 {
+    use RegrasDePagamento;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepararPagamento();
     }
 
     public function rules(): array
@@ -33,6 +41,7 @@ class ContratoRequest extends FormRequest
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
             'ativo' => ['boolean'],
+            ...$this->regrasDePagamento(false),
         ];
     }
 
@@ -40,9 +49,9 @@ class ContratoRequest extends FormRequest
     {
         $dados = $this->validated();
 
-        return Arr::except($dados, ['valor']) + [
+        return Arr::except($dados, ['valor', 'forma_pagamento', 'chave_pix_id']) + [
             'valor_centavos' => Dinheiro::paraCentavos($dados['valor']),
             'ativo' => $this->boolean('ativo', true),
-        ];
+        ] + $this->dadosDePagamento($dados);
     }
 }

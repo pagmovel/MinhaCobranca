@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FormaPagamento;
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use Database\Factories\ContratoFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'cliente_id', 'descricao', 'codigo_servico', 'codigo_nbs', 'codigo_tributacao_nacional',
-    'valor_centavos', 'periodicidade', 'modalidade', 'dia_vencimento', 'data_inicio', 'data_fim', 'ativo',
+    'valor_centavos', 'periodicidade', 'modalidade', 'dia_vencimento', 'data_inicio', 'data_fim', 'ativo', 'forma_pagamento', 'chave_pix_id',
 ])]
 class Contrato extends Model
 {
@@ -21,7 +22,7 @@ class Contrato extends Model
     use HasFactory;
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['modalidade' => 'prepago'];
+    protected $attributes = ['modalidade' => 'prepago', 'forma_pagamento' => 'nenhuma'];
 
     protected function casts(): array
     {
@@ -33,6 +34,7 @@ class Contrato extends Model
             'data_inicio' => 'immutable_date',
             'data_fim' => 'immutable_date',
             'ativo' => 'boolean',
+            'forma_pagamento' => FormaPagamento::class,
         ];
     }
 
@@ -44,6 +46,11 @@ class Contrato extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
+    }
+
+    public function chavePix(): BelongsTo
+    {
+        return $this->belongsTo(ChavePix::class);
     }
 
     public function cobrancas(): HasMany

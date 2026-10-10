@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\CobrancaRequest;
 use App\Models\Cobranca;
@@ -86,9 +87,14 @@ class CobrancaController extends Controller
                 'periodo_inicio' => $cobranca->periodo_inicio->toDateString(),
                 'periodo_fim' => $cobranca->periodo_fim->toDateString(),
                 'vencimento' => $cobranca->vencimento->toDateString(),
+                'forma_pagamento' => $cobranca->forma_pagamento->value,
+                'chave_pix_id' => $cobranca->chave_pix_id ?? '',
+                'linha_digitavel' => $cobranca->linha_digitavel ?? '',
             ] : null,
             'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
+            'chavesPix' => $request->user()->opcoesDeChavePix(),
+            'formasPagamento' => FormaPagamento::opcoes(),
         ]);
     }
 

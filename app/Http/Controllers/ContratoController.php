@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FormaPagamento;
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Http\Requests\ContratoRequest;
@@ -92,11 +93,15 @@ class ContratoController extends Controller
                 'data_inicio' => $contrato->data_inicio->toDateString(),
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
                 'ativo' => $contrato->ativo,
+                'forma_pagamento' => $contrato->forma_pagamento->value,
+                'chave_pix_id' => $contrato->chave_pix_id ?? '',
             ] : null,
             'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $contrato?->cliente()->first(['id', 'nome']),
             'periodicidades' => Periodicidade::opcoes(),
             'modalidades' => Modalidade::opcoes(),
+            'chavesPix' => $request->user()->opcoesDeChavePix(),
+            'formasPagamento' => FormaPagamento::opcoes(),
         ]);
     }
 }

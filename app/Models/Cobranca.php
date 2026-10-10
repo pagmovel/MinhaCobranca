@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Support\Dinheiro;
 use Carbon\CarbonImmutable;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'cliente_id', 'contrato_id', 'periodo_inicio', 'periodo_fim', 'vencimento', 'valor_centavos',
     'descricao', 'codigo_servico', 'codigo_nbs', 'codigo_tributacao_nacional',
+    'forma_pagamento', 'chave_pix_id', 'linha_digitavel',
 ])]
 class Cobranca extends Model
 {
@@ -22,7 +24,7 @@ class Cobranca extends Model
     use HasFactory;
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['status' => 'pendente'];
+    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma'];
 
     protected function casts(): array
     {
@@ -34,6 +36,7 @@ class Cobranca extends Model
             'enviado_em' => 'immutable_datetime',
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
+            'forma_pagamento' => FormaPagamento::class,
         ];
     }
 
@@ -50,6 +53,11 @@ class Cobranca extends Model
     public function contrato(): BelongsTo
     {
         return $this->belongsTo(Contrato::class);
+    }
+
+    public function chavePix(): BelongsTo
+    {
+        return $this->belongsTo(ChavePix::class);
     }
 
     public function recibo(): HasOne

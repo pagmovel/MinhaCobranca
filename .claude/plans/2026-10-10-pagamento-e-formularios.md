@@ -39,7 +39,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 9 | T9.2 Modalidade no contrato | testada |
 | 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | concluída (migrate autorizado: lote 2; merge e push) |
 | 10 | T10.1 Chaves PIX no perfil | testada (tela no smoke da T11.4) |
-| 10 | T10.2 Forma de pagamento no contrato e na cobrança | pendente |
+| 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | pendente |
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | pendente |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
@@ -1648,7 +1648,7 @@ git commit -m "feat: chaves PIX no perfil do prestador`n`nCo-Authored-By: Claude
 
 ### Tarefa T10.2: Forma de pagamento no contrato e na cobrança
 
-**Estado:** pendente
+**Estado:** testada (suíte 183/183; build ok)
 
 **Arquivos:**
 - Criar: `app/Enums/FormaPagamento.php`, `app/Http/Requests/Concerns/RegrasDePagamento.php`,

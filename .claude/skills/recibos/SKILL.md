@@ -312,6 +312,12 @@ o relatório mostra a parte que existe.
   recurso alheio, o erro de unicidade respondia 302 e revelava que o recurso existe. `ChavePixRequest::authorize()`
   dá 404 se o id da rota não for do usuário. Usar o mesmo padrão em requests novos com id na rota.
 
+- T10.2: forma de pagamento (`pix`/`boleto`/`nenhuma`) no contrato (copiada para a cobrança na geração) e na
+  cobrança, com `chave_pix_id` (FK `restrictOnDelete`) e `linha_digitavel` (só dígitos, 47 ou 48). Trait
+  `RegrasDePagamento` compartilhada: `mergeIfMissing` deixa `nenhuma` como padrão (formulários e testes antigos
+  continuam válidos), chave só com PIX, linha só com boleto, chave validada com `exists` limitado ao usuário. Chave em
+  uso não é excluída (controller + FK). Mensagens próprias em `lang/pt_BR/validation.php` → `custom`.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
