@@ -41,7 +41,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 10 | T10.1 Chaves PIX no perfil | testada (tela no smoke da T11.4) |
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
-| 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | pendente |
+| 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
 | 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
@@ -2300,7 +2300,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 
 ### Tarefa T10.4: PORTÃO-BANCO + fechamento da fase 10
 
-**Estado:** pendente
+**Estado:** concluída — `migrate` autorizado em 2026-10-10 (contratos 3, cobranças 6 antes e depois; chaves_pix criada vazia; lote 3); merge no main e push.
 
 - [ ] `db:show --counts` e `migrate:status` (leitura); mostrar a conexão (PostgreSQL de desenvolvimento), as
   contagens de `contratos` e `cobrancas` e as migrações pendentes `2026_10_10_100100_create_chaves_pix_table` e
