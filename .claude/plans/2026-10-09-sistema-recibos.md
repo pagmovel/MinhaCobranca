@@ -55,6 +55,20 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 6 | T6.4 PORTÃO-BANCO: migração da fase 6 | pendente |
 | 7 | T7.1 Suíte contra PostgreSQL de teste declarado pelo usuário | pendente (banco da aplicação já está no PostgreSQL desde a Fase 3; falta a suíte contra uma base de teste) |
 
+
+### Pendências para o final (conferências visuais)
+
+Decisão do usuário em 2026-10-10: ele não pode fazer conferência visual agora; a execução segue e
+estas conferências ficam para o fim, antes da revisão final do branch. Enquanto não forem feitas, as
+tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
+
+- [ ] **V1 — Amostras dos recibos lado a lado com as notas** (T4.2, T4.3, T4.4 passo 3): abrir
+  `storage/app/private/verificacao/amostra-webiss.pdf` e `amostra-danfse.pdf` (e as versões
+  `-25-linhas`) ao lado das NFS-e em `MATERIAIS/`; apontar diferenças de posição, tamanho, fonte e
+  espaçamento. Gerar de novo com `php artisan test --group=visual`. — pendente
+- [ ] **V2 — Carimbo e rodapé** (T0.4, absorvida pela V1): carimbo girado dentro da moldura (WebISS no
+  centro, DANFSe no lugar do QR) e rodapé no pé da página. — pendente
+
 ---
 
 ## Restrições globais

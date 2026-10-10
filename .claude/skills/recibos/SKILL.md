@@ -212,6 +212,9 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - **A partir da aprovação visual do usuário, mudança em `webiss-v1`/`danfse-v1` só vale antes de existir
   recibo emitido em produção; depois, criar `-v2`.**
 
+- Conferências visuais (amostras x notas, carimbo, rodapé) ficaram **para o final** por decisão do
+  usuário (2026-10-10): lista "Pendências para o final" no plano. Não bloquear tarefas por elas.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
