@@ -227,6 +227,26 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   `cliente_id`, sempre pela relação do usuário; abrir a lista também roda a geração preguiçosa. Editar
   cobrança já enviada redireciona para a lista com `flash.erro` (cancelar + avulsa nova).
 
+- T5.3 (smoke test, 2026-10-10, usuário `smoke@recibos.test` id 2): login (sem 419), perfil + logo,
+  clientes WebISS/DANFSe, contratos, painel gerando 4 cobranças, Enviar (download + "Aguardando"),
+  baixa (PAGO no PDF), filtros, avulsa, edição (número mantido), cancelamento (CANCELADO no PDF),
+  teclado com foco visível, 390 px sem rolagem horizontal. Prints em `storage/app/private/verificacao/smoke/`.
+- **`php artisan serve` no Windows perdia o upload do logo sem erro**: o `ServeCommand` só repassa ao
+  `php -S` as variáveis de `$passthroughVariables` (`ServeCommand.php:82-97`), sem `TEMP`/`TMP`; o PHP
+  responde "unable to create a temporary file" (HTML com 200) e o POST chega vazio. Correção no
+  `AppServiceProvider` (acrescenta `TEMP` e `TMP`), testada em `ConfiguracaoTest`. Vale também para
+  `composer run dev`.
+- Shell do agente (git-bash) tem `TEMP=/tmp`: servidor PHP iniciado dali precisa de `TEMP` no formato
+  Windows (`C:\Users\...\Temp`).
+- Latência do PostgreSQL remoto: páginas levam de 5 a 40 s no `artisan serve` (sessão e cache no banco
+  somam idas e voltas). No `browser-use`, `goto_url` estoura o tempo do canal: navegar com
+  `js("location.href=...")` e esperar pelo texto.
+- `browser-use` (browser-harness) usa `BU_CDP_URL=http://127.0.0.1:9333`: subir um Chrome dedicado
+  (`--headless=new --remote-debugging-port=9333 --user-data-dir=<scratchpad>`), nunca o do usuário.
+  Campos Vue: setter nativo de `value` + eventos `input`/`change`. Downloads: `Browser.setDownloadBehavior`.
+- Web Share: no Chrome desktop `navigator.canShare` existe, mas não aceita arquivo → cai no download
+  (esperado). Celular com HTTPS: **[INCONCLUSIVO]** até haver ambiente HTTPS.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

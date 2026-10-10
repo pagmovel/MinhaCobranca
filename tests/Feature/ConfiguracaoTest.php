@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Console\ServeCommand;
 use Tests\TestCase;
 
 class ConfiguracaoTest extends TestCase
@@ -22,5 +23,12 @@ class ConfiguracaoTest extends TestCase
 
         $this->assertSame('Informe um e-mail válido.', $validador->errors()->first('email'));
         $this->assertSame('Preencha o campo nome.', $validador->errors()->first('name'));
+    }
+
+    /** Sem TEMP/TMP o `php -S` do Windows não cria o temporário do upload e o logo some sem erro. */
+    public function test_artisan_serve_repassa_a_pasta_temporaria(): void
+    {
+        $this->assertContains('TEMP', ServeCommand::$passthroughVariables);
+        $this->assertContains('TMP', ServeCommand::$passthroughVariables);
     }
 }

@@ -47,7 +47,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 4 | T4.4 Comparação visual com as notas originais | concluída (amostras geradas e medidas; falta a conferência visual do usuário) |
 | 5 | T5.1 Painel completo (três blocos, enviar, baixa) | testada (smoke test no navegador na T5.3) |
 | 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | testada (smoke test no navegador na T5.3) |
-| 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | pendente |
+| 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | testada (smoke funcional ok; Web Share [INCONCLUSIVO]; prints, decisão D1 e limpeza L1 nas pendências finais) |
 | 6 | T6.0 Entrada: XMLs de exemplo em `MATERIAIS/` (BLOQUEADA) | pendente |
 | 6 | T6.1 Tabela de notas fiscais + leitura segura de XML | pendente |
 | 6 | T6.2 Leitores nacional e municipal (detalhar após T6.0) | pendente |
@@ -68,6 +68,15 @@ tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
   espaçamento. Gerar de novo com `php artisan test --group=visual`. — pendente
 - [ ] **V2 — Carimbo e rodapé** (T0.4, absorvida pela V1): carimbo girado dentro da moldura (WebISS no
   centro, DANFSe no lugar do QR) e rodapé no pé da página. — pendente
+- [ ] **V3 — Prints do smoke test (T5.3 passos 5–6)**: `storage/app/private/verificacao/smoke/*.png`
+  (1280 px e 390 px) e os PDFs reais `recibo-*.pdf`. Validar a direção visual e as fases 2–5. — pendente
+- [ ] **D1 — Decisão: o que conta como "recebido" no topo do painel.** Hoje (regra do plano, T5.1):
+  parte paga das cobranças que **vencem** no mês. No smoke, um pagamento de setembro feito em outubro
+  apareceu em "Recebidas no mês" mas não somou no "R$ … recebidos". Alternativa: somar o que foi **pago
+  no mês** (coerente com a lista, mas pode passar do previsto). — pendente (decisão do usuário)
+- [ ] **L1 — Limpeza dos dados SMOKE** (T5.3 passo 7): usuário `smoke@recibos.test` (id 2) e tudo dele
+  (2 clientes, 2 contratos, 5 cobranças e recibos, logos em `storage/app/private/logos/2/`). Pedir
+  PORTÃO-BANCO com o comando literal. — pendente
 
 ---
 
@@ -7826,7 +7835,7 @@ git commit -m "feat: lista de cobranças com filtros e formulários de avulsa e 
 
 ### Tarefa T5.3: PORTÃO-BANCO + smoke test + revisão visual
 
-**Estado:** pendente
+**Estado:** testada em 2026-10-10 com o usuário SMOKE (id 2) no PostgreSQL de dev (autorizado): passos 1–4, 7 (funcional) e 8 ok; Web Share [INCONCLUSIVO] (sem HTTPS); passos 5–6 (revisão visual e validação) e 7 (limpeza) nas pendências V3, D1 e L1.
 
 **Arquivos:** ajustes de estilo que a revisão apontar (Vue/CSS); `.claude/skills/recibos/SKILL.md`.
 
