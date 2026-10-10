@@ -3,6 +3,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import BuscaCliente from '../../Components/BuscaCliente.vue';
+import CamposPagamento from '../../Components/CamposPagamento.vue';
 
 const props = defineProps({
     contrato: { type: Object, default: null },
@@ -10,6 +11,8 @@ const props = defineProps({
     clienteAtual: { type: Object, default: null },
     periodicidades: { type: Array, required: true },
     modalidades: { type: Array, required: true },
+    chavesPix: { type: Array, required: true },
+    formasPagamento: { type: Array, required: true },
 });
 
 const form = useForm(props.contrato ?? {
@@ -25,6 +28,8 @@ const form = useForm(props.contrato ?? {
     data_inicio: new Date().toLocaleDateString('sv-SE'),
     data_fim: '',
     ativo: true,
+    forma_pagamento: 'nenhuma',
+    chave_pix_id: '',
 });
 
 const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}`) : form.post('/contratos'));
@@ -86,6 +91,7 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
             <Campo id="data_fim" rotulo="Fim do contrato (opcional)" :erro="form.errors.data_fim" class="sm:col-span-3">
                 <input id="data_fim" v-model="form.data_fim" type="date" class="entrada">
             </Campo>
+            <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
             <label class="flex items-center gap-2 text-sm sm:col-span-6">
                 <input v-model="form.ativo" type="checkbox"> Contrato ativo (desmarque para encerrar)
             </label>

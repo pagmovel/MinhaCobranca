@@ -64,6 +64,8 @@ final class GeradorDeCobrancas
                         'codigo_servico' => $contrato->codigo_servico,
                         'codigo_nbs' => $contrato->codigo_nbs,
                         'codigo_tributacao_nacional' => $contrato->codigo_tributacao_nacional,
+                        'forma_pagamento' => $contrato->forma_pagamento,
+                        'chave_pix_id' => $contrato->chave_pix_id,
                     ]);
 
                     $this->emissor->emitir($cobranca);

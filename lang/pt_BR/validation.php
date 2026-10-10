@@ -33,6 +33,11 @@ return [
     'unique' => 'Este :attribute já está cadastrado.',
     'uploaded' => 'Não foi possível enviar o arquivo :attribute.',
 
+    'custom' => [
+        'chave_pix_id' => ['required_if' => 'Escolha a chave PIX.'],
+        'linha_digitavel' => ['regex' => 'A linha digitável tem 47 ou 48 números.'],
+    ],
+
     'attributes' => [
         'name' => 'nome',
         'email' => 'e-mail',
@@ -67,5 +72,11 @@ return [
         'pago_em' => 'data do pagamento',
         'mes' => 'mês',
         'arquivos' => 'arquivos',
+        'tipo' => 'tipo',
+        'chave' => 'chave',
+        'apelido' => 'apelido',
+        'forma_pagamento' => 'forma de pagamento',
+        'chave_pix_id' => 'chave PIX',
+        'linha_digitavel' => 'linha digitável',
     ],
 ];

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\CobrancaRequest;
+use App\Http\Requests\PagamentoRequest;
 use App\Models\Cobranca;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
@@ -51,6 +53,8 @@ class CobrancaController extends Controller
                 'status' => $filtros['status'] ?? '',
                 'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
             ],
+            'chavesPix' => $usuario->opcoesDeChavePix(),
+            'formasPagamento' => FormaPagamento::opcoes(),
             'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
         ]);
     }
@@ -86,9 +90,14 @@ class CobrancaController extends Controller
                 'periodo_inicio' => $cobranca->periodo_inicio->toDateString(),
                 'periodo_fim' => $cobranca->periodo_fim->toDateString(),
                 'vencimento' => $cobranca->vencimento->toDateString(),
+                'forma_pagamento' => $cobranca->forma_pagamento->value,
+                'chave_pix_id' => $cobranca->chave_pix_id ?? '',
+                'linha_digitavel' => $cobranca->linha_digitavel ?? '',
             ] : null,
             'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
+            'chavesPix' => $request->user()->opcoesDeChavePix(),
+            'formasPagamento' => FormaPagamento::opcoes(),
         ]);
     }
 
@@ -127,6 +136,20 @@ class CobrancaController extends Controller
         });
 
         return redirect('/cobrancas')->with('sucesso', 'Cobrança atualizada. O recibo manteve o número.');
+    }
+
+    /** Forma de pagamento é dado vivo: muda até a baixa, mesmo com a cobrança enviada. */
+    public function pagamento(PagamentoRequest $request, int $cobranca): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+
+        if ($registro->status !== StatusCobranca::Pendente) {
+            return back()->with('erro', 'Só cobranças pendentes mudam a forma de pagamento.');
+        }
+
+        $registro->update($request->dados());
+
+        return back()->with('sucesso', 'Forma de pagamento atualizada.');
     }
 
     public function cancelar(Request $request, int $cobranca): RedirectResponse

@@ -38,10 +38,10 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 9 | T9.1 Calculadora: pós-pago | testada |
 | 9 | T9.2 Modalidade no contrato | testada |
 | 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | concluída (migrate autorizado: lote 2; merge e push) |
-| 10 | T10.1 Chaves PIX no perfil | pendente |
-| 10 | T10.2 Forma de pagamento no contrato e na cobrança | pendente |
-| 10 | T10.3 Trocar a forma de pagamento depois de enviada | pendente |
-| 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | pendente |
+| 10 | T10.1 Chaves PIX no perfil | testada (tela no smoke da T11.4) |
+| 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
+| 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
+| 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
 | 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
@@ -1073,7 +1073,7 @@ git commit -m "feat: contrato pré-pago ou pós-pago`n`nCo-Authored-By: Claude O
 
 ### Tarefa T10.1: Chaves PIX no perfil
 
-**Estado:** pendente
+**Estado:** testada (suíte 178/178; build ok). Ajustes: regras do DICT 8.5; `authorize()` do request devolve 404 para chave alheia.
 
 **Arquivos:**
 - Criar: `app/Enums/TipoChavePix.php`, `app/Models/ChavePix.php`, `database/factories/ChavePixFactory.php`,
@@ -1090,7 +1090,9 @@ git commit -m "feat: contrato pré-pago ou pós-pago`n`nCo-Authored-By: Claude O
   ("apelido ou tipo — chave formatada"). `User::chavesPix(): HasMany`, `User::opcoesDeChavePix(): list<array{id, rotulo}>`.
 - Rotas `POST /perfil/chaves-pix`, `PUT|DELETE /perfil/chaves-pix/{chave}`.
 
-- [ ] **Passo 1: verificar o CNPJ alfanumérico no DICT** — procurar na documentação do Banco Central (ctx_fetch_and_index
+- [x] **Passo 1: verificar o CNPJ alfanumérico no DICT** — **feito em 2026-10-10:** Manual Operacional do DICT v8.5
+  (29/07/2026), seção 1: CNPJ alfanumérico (14 caracteres, sem pontos/traços) e telefone **só celular** (E.164). Código
+  e testes abaixo já ajustados. — procurar na documentação do Banco Central (ctx_fetch_and_index
   na página do Pix em bcb.gov.br / regulamento do DICT) se chave do tipo CNPJ aceita o formato alfanumérico.
   - Confirmado que aceita → em `TipoChavePix::normalizar`, o caso CNPJ usa `Documento::normalizar` (aceita letras)
     e o teste que espera `null` para `12.ABC.345/01DE-35` passa a esperar `'12ABC34501DE35'`.
@@ -1117,7 +1119,6 @@ class TipoChavePixTest extends TestCase
         $this->assertSame('fulano@exemplo.com', TipoChavePix::Email->normalizar(' Fulano@Exemplo.com '));
         $this->assertSame('+5579999990000', TipoChavePix::Telefone->normalizar('(79) 99999-0000'));
         $this->assertSame('+5579999990000', TipoChavePix::Telefone->normalizar('+55 79 99999-0000'));
-        $this->assertSame('+557932220000', TipoChavePix::Telefone->normalizar('(79) 3222-0000'));
         $this->assertSame('123e4567-e12b-12d1-a456-426655440000', TipoChavePix::Aleatoria->normalizar('123E4567-E12B-12D1-A456-426655440000'));
     }
 
@@ -1125,7 +1126,9 @@ class TipoChavePixTest extends TestCase
     {
         $this->assertNull(TipoChavePix::Cpf->normalizar('111.111.111-11'));
         $this->assertNull(TipoChavePix::Cpf->normalizar('11.222.333/0001-81'));
-        $this->assertNull(TipoChavePix::Cnpj->normalizar('12.ABC.345/01DE-35'), 'alfanumérico só depois de confirmado no DICT');
+        $this->assertSame('12ABC34501DE35', TipoChavePix::Cnpj->normalizar('12.abc.345/01de-35'), 'CNPJ alfanumérico (Manual do DICT 8.5)');
+        $this->assertNull(TipoChavePix::Cnpj->normalizar('12.ABC.345/01DE-36'), 'dígito verificador errado');
+        $this->assertNull(TipoChavePix::Telefone->normalizar('(79) 3222-0000'), 'só celular (E.164 no DICT)');
         $this->assertNull(TipoChavePix::Email->normalizar('sem-arroba'));
         $this->assertNull(TipoChavePix::Telefone->normalizar('9999-0000'));
         $this->assertNull(TipoChavePix::Aleatoria->normalizar('nao-e-uuid'));
@@ -1135,7 +1138,6 @@ class TipoChavePixTest extends TestCase
     {
         $this->assertSame('529.982.247-25', TipoChavePix::Cpf->formatar('52998224725'));
         $this->assertSame('+55 (79) 99999-0000', TipoChavePix::Telefone->formatar('+5579999990000'));
-        $this->assertSame('+55 (79) 3222-0000', TipoChavePix::Telefone->formatar('+557932220000'));
         $this->assertSame('fulano@exemplo.com', TipoChavePix::Email->formatar('fulano@exemplo.com'));
     }
 }
@@ -1253,7 +1255,7 @@ enum TipoChavePix: string
 
         return match ($this) {
             self::Cpf => self::documento($valor, 11),
-            // Só numérico até confirmar no DICT o CNPJ alfanumérico (T10.1, passo 1).
+            // Manual Operacional do DICT 8.5, seção 1: CNPJ alfanumérico, 14 caracteres, sem pontos ou traços.
             self::Cnpj => self::documento($valor, 14),
             self::Email => filter_var($valor, FILTER_VALIDATE_EMAIL) !== false && mb_strlen($valor) <= 77 ? mb_strtolower($valor) : null,
             self::Telefone => self::telefone($valor),
@@ -1265,7 +1267,7 @@ enum TipoChavePix: string
     {
         return match ($this) {
             self::Cpf, self::Cnpj => Documento::formatar($chave),
-            self::Telefone => (string) preg_replace('/^\+55(\d{2})(\d{4,5})(\d{4})$/', '+55 ($1) $2-$3', $chave),
+            self::Telefone => (string) preg_replace('/^\+55(\d{2})(\d{5})(\d{4})$/', '+55 ($1) $2-$3', $chave),
             default => $chave,
         };
     }
@@ -1278,9 +1280,9 @@ enum TipoChavePix: string
 
     private static function documento(string $valor, int $tamanho): ?string
     {
-        $digitos = (string) preg_replace('/\D/', '', $valor);
+        $documento = Documento::normalizar($valor);
 
-        return strlen($digitos) === $tamanho && Documento::valido($digitos) ? $digitos : null;
+        return strlen($documento) === $tamanho && Documento::valido($documento) ? $documento : null;
     }
 
     private static function telefone(string $valor): ?string
@@ -1291,7 +1293,8 @@ enum TipoChavePix: string
             $digitos = substr($digitos, 2);
         }
 
-        return in_array(strlen($digitos), [10, 11], true) ? '+55'.$digitos : null;
+        // DICT: só telefone celular, padrão E.164 (+55 + DDD + 9 dígitos começando com 9).
+        return strlen($digitos) === 11 && $digitos[2] === '9' ? '+55'.$digitos : null;
     }
 }
 ```
@@ -1428,8 +1431,13 @@ use Illuminate\Validation\Rule;
 
 class ChavePixRequest extends FormRequest
 {
+    /** Chave de outro usuário vira 404 antes da validação (senão o erro de unicidade revelaria que ela existe). */
     public function authorize(): bool
     {
+        $chave = $this->route('chave');
+
+        abort_if($chave !== null && ! $this->user()->chavesPix()->whereKey($chave)->exists(), 404);
+
         return true;
     }
 
@@ -1640,7 +1648,7 @@ git commit -m "feat: chaves PIX no perfil do prestador`n`nCo-Authored-By: Claude
 
 ### Tarefa T10.2: Forma de pagamento no contrato e na cobrança
 
-**Estado:** pendente
+**Estado:** testada (suíte 183/183; build ok)
 
 **Arquivos:**
 - Criar: `app/Enums/FormaPagamento.php`, `app/Http/Requests/Concerns/RegrasDePagamento.php`,
@@ -2084,7 +2092,7 @@ git commit -m "feat: forma de pagamento (PIX ou boleto) no contrato e na cobran�
 
 ### Tarefa T10.3: Trocar a forma de pagamento depois de enviada
 
-**Estado:** pendente
+**Estado:** testada (suíte 185/185; build ok). Ajuste: `PagamentoRequest::authorize()` dá 404 para cobrança alheia antes da validação.
 
 **Arquivos:**
 - Criar: `app/Http/Requests/PagamentoRequest.php`, `resources/js/Components/PagamentoInline.vue`
@@ -2292,7 +2300,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 
 ### Tarefa T10.4: PORTÃO-BANCO + fechamento da fase 10
 
-**Estado:** pendente
+**Estado:** concluída — `migrate` autorizado em 2026-10-10 (contratos 3, cobranças 6 antes e depois; chaves_pix criada vazia; lote 3); merge no main e push.
 
 - [ ] `db:show --counts` e `migrate:status` (leitura); mostrar a conexão (PostgreSQL de desenvolvimento), as
   contagens de `contratos` e `cobrancas` e as migrações pendentes `2026_10_10_100100_create_chaves_pix_table` e

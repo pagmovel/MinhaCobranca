@@ -67,6 +67,19 @@ class User extends Authenticatable
         return true;
     }
 
+    public function chavesPix(): HasMany
+    {
+        return $this->hasMany(ChavePix::class);
+    }
+
+    /** @return list<array{id: int, rotulo: string}> */
+    public function opcoesDeChavePix(): array
+    {
+        return $this->chavesPix()->orderBy('id')->get()
+            ->map(fn (ChavePix $chave) => ['id' => $chave->id, 'rotulo' => $chave->rotulo()])
+            ->all();
+    }
+
     public function clientes(): HasMany
     {
         return $this->hasMany(Cliente::class);

@@ -3,11 +3,14 @@ import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import BuscaCliente from '../../Components/BuscaCliente.vue';
+import CamposPagamento from '../../Components/CamposPagamento.vue';
 
 const props = defineProps({
     cobranca: { type: Object, default: null },
     temClientes: { type: Boolean, required: true },
     clienteAtual: { type: Object, default: null },
+    chavesPix: { type: Array, required: true },
+    formasPagamento: { type: Array, required: true },
 });
 
 const hoje = new Date().toLocaleDateString('sv-SE');
@@ -22,6 +25,9 @@ const form = useForm(props.cobranca ?? {
     periodo_inicio: hoje,
     periodo_fim: hoje,
     vencimento: hoje,
+    forma_pagamento: 'nenhuma',
+    chave_pix_id: '',
+    linha_digitavel: '',
 });
 
 const travado = Boolean(props.cobranca?.de_contrato);
@@ -70,6 +76,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
             <Campo id="periodo_fim" rotulo="Fim do período" :erro="form.errors.periodo_fim" class="sm:col-span-3">
                 <input id="periodo_fim" v-model="form.periodo_fim" type="date" class="entrada" :disabled="travado" required>
             </Campo>
+            <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" com-linha-digitavel />
             <div class="sm:col-span-6">
                 <button class="botao" :disabled="form.processing">{{ cobranca ? 'Salvar cobrança' : 'Criar cobrança e recibo' }}</button>
             </div>

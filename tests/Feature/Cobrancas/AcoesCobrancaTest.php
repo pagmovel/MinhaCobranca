@@ -3,6 +3,7 @@
 namespace Tests\Feature\Cobrancas;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\FormaPagamento;
 use App\Enums\ModeloRecibo;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
@@ -184,5 +185,42 @@ class AcoesCobrancaTest extends TestCase
         $this->post("/cobrancas/{$alheia->id}/cancelar")->assertNotFound();
         $this->post("/cobrancas/{$alheia->id}/pagar", ['pago_em' => '2026-10-09'])->assertNotFound();
         $this->post("/cobrancas/{$alheia->id}/enviada")->assertNotFound();
+    }
+
+    public function test_troca_a_forma_de_pagamento_de_cobranca_ja_enviada_sem_mexer_no_resto(): void
+    {
+        [$usuario, $cliente] = $this->prestadorComCliente();
+        $cobranca = $this->cobrancaComRecibo($usuario, $cliente);
+        $cobranca->enviado_em = now();
+        $cobranca->save();
+
+        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}/pagamento", [
+            'forma_pagamento' => 'boleto',
+            'linha_digitavel' => '23793.38128 60000.000003 00000.000400 1 84340000026060',
+            'valor' => '999,99',
+        ])->assertSessionHas('sucesso', 'Forma de pagamento atualizada.');
+
+        $cobranca->refresh();
+        $this->assertSame(FormaPagamento::Boleto, $cobranca->forma_pagamento);
+        $this->assertSame('23793381286000000000300000000400184340000026060', $cobranca->linha_digitavel);
+        $this->assertSame(26060, $cobranca->valor_centavos);
+    }
+
+    public function test_paga_ou_cancelada_nao_troca_forma_e_alheia_da_404(): void
+    {
+        [$usuario, $cliente] = $this->prestadorComCliente();
+        $cobranca = $this->cobrancaComRecibo($usuario, $cliente);
+        $cobranca->status = StatusCobranca::Paga;
+        $cobranca->pago_em = '2026-10-09';
+        $cobranca->save();
+        $this->actingAs($usuario);
+
+        $this->put("/cobrancas/{$cobranca->id}/pagamento", ['forma_pagamento' => 'boleto'])
+            ->assertSessionHas('erro', 'Só cobranças pendentes mudam a forma de pagamento.');
+        $this->assertSame(FormaPagamento::Nenhuma, $cobranca->fresh()->forma_pagamento);
+
+        $alheia = Cobranca::factory()->create();
+        $this->put("/cobrancas/{$alheia->id}/pagamento", ['forma_pagamento' => 'boleto'])->assertNotFound();
+        $this->put("/cobrancas/{$alheia->id}/pagamento", ['forma_pagamento' => 'cheque'])->assertNotFound();
     }
 }

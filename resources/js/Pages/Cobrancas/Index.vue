@@ -8,11 +8,14 @@ import LinhaCobranca from '../../Components/LinhaCobranca.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
 import CancelarInline from '../../Components/CancelarInline.vue';
+import PagamentoInline from '../../Components/PagamentoInline.vue';
 
 const props = defineProps({
     cobrancas: { type: Array, required: true },
     filtros: { type: Object, required: true },
     clienteFiltro: { type: Object, default: null },
+    chavesPix: { type: Array, required: true },
+    formasPagamento: { type: Array, required: true },
 });
 
 const filtro = reactive({ ...props.filtros });
@@ -64,6 +67,13 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
                     :nome-arquivo="cobranca.recibo.pdf_nome"
                 />
                 <BaixaInline v-if="aberta(cobranca)" :cobranca-id="cobranca.id" />
+                <PagamentoInline
+                    v-if="aberta(cobranca)"
+                    :cobranca-id="cobranca.id"
+                    :pagamento="cobranca.pagamento"
+                    :chaves-pix="chavesPix"
+                    :formas-pagamento="formasPagamento"
+                />
                 <Link v-if="cobranca.editavel" :href="`/cobrancas/${cobranca.id}/edit`" class="botao-secundario">Editar</Link>
                 <CancelarInline v-if="aberta(cobranca)" :cobranca-id="cobranca.id" />
             </LinhaCobranca>

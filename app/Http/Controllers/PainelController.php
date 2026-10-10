@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Services\GeradorDeCobrancas;
@@ -36,6 +37,8 @@ class PainelController extends Controller
             'mes' => Str::ucfirst($hoje->locale('pt_BR')->translatedFormat('F \d\e Y')),
             'perfilCompleto' => $usuario->perfilCompleto(),
             'diasAntecedencia' => $usuario->dias_antecedencia,
+            'chavesPix' => $usuario->opcoesDeChavePix(),
+            'formasPagamento' => FormaPagamento::opcoes(),
             'resumo' => [
                 'previsto' => Dinheiro::formatar((int) $doMes()->sum('valor_centavos')),
                 'recebido' => Dinheiro::formatar((int) $doMes()->where('status', StatusCobranca::Paga)->sum('valor_centavos')),

@@ -304,6 +304,30 @@ o relatório mostra a parte que existe.
   obrigatória no request (sem default silencioso); não muda se o contrato já tem cobranças; o gerador passa a
   modalidade à calculadora. Formulário explica o vencimento de cada modalidade.
 
+- T10.1: chaves PIX por usuário (`chaves_pix`, único por usuário+chave), normalizadas no enum `TipoChavePix` antes da
+  validação de unicidade. **Fonte: Manual Operacional do DICT v8.5 (bcb.gov.br, 29/07/2026), seção 1:** CPF 11 dígitos;
+  **CNPJ alfanumérico** com 14 caracteres (mudança de 01/07/2026, v8.4); e-mail até 77 caracteres; **telefone só
+  celular**, padrão E.164 (`+55` + DDD + 9 dígitos); aleatória = UUID. Telefone fixo é recusado (o DICT não aceita).
+- **Pegadinha (isolamento):** com FormRequest, a validação roda **antes** do `findOrFail` do controller. No PUT de
+  recurso alheio, o erro de unicidade respondia 302 e revelava que o recurso existe. `ChavePixRequest::authorize()`
+  dá 404 se o id da rota não for do usuário. Usar o mesmo padrão em requests novos com id na rota.
+
+- T10.2: forma de pagamento (`pix`/`boleto`/`nenhuma`) no contrato (copiada para a cobrança na geração) e na
+  cobrança, com `chave_pix_id` (FK `restrictOnDelete`) e `linha_digitavel` (só dígitos, 47 ou 48). Trait
+  `RegrasDePagamento` compartilhada: `mergeIfMissing` deixa `nenhuma` como padrão (formulários e testes antigos
+  continuam válidos), chave só com PIX, linha só com boleto, chave validada com `exists` limitado ao usuário. Chave em
+  uso não é excluída (controller + FK). Mensagens próprias em `lang/pt_BR/validation.php` → `custom`.
+
+- T10.3: `PUT /cobrancas/{id}/pagamento` troca só forma/chave/linha de cobrança **pendente**, mesmo já enviada (o PDF
+  lê a forma na hora). `PagamentoRequest::authorize()` dá 404 para cobrança alheia antes da validação. Ação
+  "Forma de pagamento" (`PagamentoInline`) na lista de cobranças abertas e no bloco "Aguardando pagamento" do painel.
+- **Decisão do usuário (2026-10-10) — cadastro de clientes:** preencher automaticamente **só com dados públicos**
+  (CNPJ pela base pública da Receita; endereço pelo CEP). **Rejeitado** reaproveitar o cadastro de cliente feito por
+  outro usuário: conflita com a LGPD (Lei 13.709/2018, conferida no planalto.gov.br): o usuário é controlador e o
+  sistema operador (art. 5º, VI e VII); o operador só trata conforme instruções do controlador (art. 39); finalidade,
+  adequação e necessidade (art. 6º, I–III); base legal (art. 7º); proteção contra acesso/comunicação indevida (art. 46).
+  Também revelaria a carteira de clientes de outro assinante. Preenchimento por CNPJ/CEP entra na spec do módulo Cobrança.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
