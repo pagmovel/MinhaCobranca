@@ -260,6 +260,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
     (`refazer($recibo, trocouCliente: true)`); trocar o modelo do mesmo cliente continua sem mexer em
     recibo emitido.
 
+- T8.1: situação `vence_hoje` (vencimento = hoje) com carimbo laranja `#C2410C` (contraste 5,18:1 sobre
+  branco, fórmula de luminância da WCAG); fonte do carimbo menor para caber "VENCENDO HOJE" (22pt no WebISS,
+  10pt no DANFSe). A lista de cobranças trata `vence_hoje` como aberta (baixa e cancelar continuam).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

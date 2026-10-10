@@ -62,7 +62,11 @@ class Cobranca extends Model
         return match ($this->status) {
             StatusCobranca::Paga => 'paga',
             StatusCobranca::Cancelada => 'cancelada',
-            StatusCobranca::Pendente => $this->vencimento->lt($hoje->startOfDay()) ? 'vencida' : 'a_vencer',
+            StatusCobranca::Pendente => match (true) {
+                $this->vencimento->lt($hoje->startOfDay()) => 'vencida',
+                $this->vencimento->isSameDay($hoje) => 'vence_hoje',
+                default => 'a_vencer',
+            },
         };
     }
 

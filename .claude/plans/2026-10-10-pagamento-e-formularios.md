@@ -31,7 +31,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 
 | Fase | Tarefa | Estado |
 |---|---|---|
-| 8 | T8.1 Situação "vence hoje" (carimbo laranja) | pendente |
+| 8 | T8.1 Situação "vence hoje" (carimbo laranja) | testada |
 | 8 | T8.2 Máscaras nos campos | pendente |
 | 8 | T8.3 Busca de cliente por autosugestão | pendente |
 | 8 | T8.4 Fechamento da fase 8 (merge + push) | pendente |
@@ -92,7 +92,7 @@ context-mode, PowerShell com `;`, documentação por tarefa, nunca supor):
 
 ### Tarefa T8.1: Situação "vence hoje" (carimbo laranja)
 
-**Estado:** pendente
+**Estado:** testada (suíte 164/164; build ok)
 
 **Arquivos:**
 - Modificar: `app/Models/Cobranca.php` (`situacao`), `app/Services/RenderizadorDeRecibo.php` (`carimbo`),

@@ -17,7 +17,8 @@ class SituacaoCobrancaTest extends TestCase
         $hoje = CarbonImmutable::parse('2026-10-10');
         $cobranca = Cobranca::factory()->create(['vencimento' => '2026-10-10']);
 
-        $this->assertSame('a_vencer', $cobranca->situacao($hoje), 'vence hoje ainda não está vencida');
+        $this->assertSame('a_vencer', $cobranca->situacao($hoje->subDay()));
+        $this->assertSame('vence_hoje', $cobranca->situacao($hoje), 'no dia do vencimento');
         $this->assertSame('vencida', $cobranca->situacao($hoje->addDay()));
 
         $cobranca->status = StatusCobranca::Paga;

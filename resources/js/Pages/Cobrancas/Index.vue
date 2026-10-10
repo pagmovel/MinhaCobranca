@@ -17,7 +17,7 @@ const props = defineProps({
 const filtro = reactive({ ...props.filtros });
 
 const filtrar = () => router.get('/cobrancas', filtro, { preserveState: true, replace: true });
-const aberta = (cobranca) => cobranca.situacao === 'a_vencer' || cobranca.situacao === 'vencida';
+const aberta = (cobranca) => ['a_vencer', 'vence_hoje', 'vencida'].includes(cobranca.situacao);
 const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo pago' : cobranca.enviado ? 'Reenviar' : 'Enviar');
 </script>
 

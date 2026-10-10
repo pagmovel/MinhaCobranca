@@ -5,6 +5,7 @@ const props = defineProps({ situacao: { type: String, required: true } });
 
 const estilos = {
     a_vencer: ['A vencer', 'border-carbono text-carbono'],
+    vence_hoje: ['Vencendo hoje', 'border-tinta-laranja text-tinta-laranja'],
     vencida: ['Vencido', 'border-tinta-vermelha text-tinta-vermelha'],
     paga: ['Pago', 'border-tinta-verde text-tinta-verde'],
     cancelada: ['Cancelado', 'border-grafite/50 text-grafite/60'],

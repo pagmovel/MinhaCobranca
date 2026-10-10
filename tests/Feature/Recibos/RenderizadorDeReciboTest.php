@@ -84,6 +84,16 @@ class RenderizadorDeReciboTest extends TestCase
         }
     }
 
+    public function test_carimbo_vencendo_hoje(): void
+    {
+        $recibo = $this->recibo([], ['vencimento' => '2026-10-09']);
+
+        $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+
+        $this->assertSame(['texto' => 'VENCENDO HOJE', 'detalhe' => '09/10/2026', 'classe' => 'vence_hoje'], $dados['carimbo']);
+        $this->assertSame('Vence hoje', $dados['situacao']);
+    }
+
     public function test_carimbo_acompanha_a_situacao_atual(): void
     {
         $recibo = $this->recibo();
