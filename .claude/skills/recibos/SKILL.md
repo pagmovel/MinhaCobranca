@@ -19,10 +19,12 @@ degradam com elegância. Liberação de módulos por plano ainda **não existe**
 | Notas fiscais | tabelas que espelham a NFS-e, importação de XML (ABRASF 2.02 e nacional) | planejado |
 | Integração com emissores | sincronizar notas emitidas e emitir NFS-e (opcional) | planejado |
 
-**Cadastros compartilhados** (existem se qualquer módulo que os usa estiver contratado): clientes; produtos e
-serviços (na Cobrança: o que é vendido, com códigos fiscais e preço; no Contas a Pagar: vinculados a fornecedores,
-com custo). **Rentabilidade** (receita − custo mensal, decisão do usuário) é relatório que cruza os dois módulos:
-completo com ambos, parcial com um só.
+**Cadastros compartilhados:** produtos e serviços (na Cobrança: o que é vendido, com códigos fiscais e preço; no
+Contas a Pagar: vinculados a fornecedores, com custo). **Clientes são do módulo Cobrança**: quem compra só Contas a
+Pagar não cadastra clientes (confirmado pelo usuário em 2026-10-10). Com os dois módulos, a despesa do Contas a Pagar
+pode ser **atribuída a um cliente** (campo só aparece se Cobrança estiver contratado).
+**Rentabilidade** (receita − custo mensal): com os dois módulos, sai **por cliente e por produto/serviço**; com um só,
+o relatório mostra a parte que existe.
 **Base comum** (fora dos módulos): contas e aprovação pelo admin, perfil do prestador, chaves PIX.
 
 ## Regras de domínio
