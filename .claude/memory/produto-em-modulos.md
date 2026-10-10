@@ -6,8 +6,10 @@ metadata:
 ---
 
 Decisão do usuário em 2026-10-10: o "Gerenciador de Cobranças" vai ser comercializado por **planos de
-assinatura**, e o trabalho é descrito em **módulos**: Clientes e Cobrança (em construção), Fornecedores
-(próximo), Contas a pagar, Serviços/rentabilidade, Notas fiscais e Integração com emissores (planejados).
+assinatura**, e o trabalho é descrito em **módulos**: **Cobrança** (clientes, contratos, cobranças, produtos e
+serviços, dashboards, relatórios — em construção) e **Contas a Pagar** (fornecedores, clientes, produtos e serviços
+vinculados a fornecedores, dashboards, relatórios — a desenhar); depois Notas fiscais e Integração com emissores.
+Clientes e produtos/serviços são cadastros compartilhados entre os módulos (tabela na skill `recibos`).
 Os módulos entram aos poucos e **cada um deve poder ser comercializado de forma independente**.
 
 **Why:** cada plano de assinatura poderá liberar um conjunto de módulos; a documentação precisa mostrar

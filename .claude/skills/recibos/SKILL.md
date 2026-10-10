@@ -8,20 +8,22 @@ description: Use ao trabalhar no sistema de cobranças e recibos (Laravel 13 + I
 Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 
-## Módulos do produto (SaaS por planos de assinatura — decisão do usuário em 2026-10-10)
-| Módulo | Escopo | Situação |
+## Módulos do produto (SaaS por planos de assinatura — definição do usuário em 2026-10-10)
+Cada módulo é **vendável sozinho**: não depende de outro para funcionar; integrações entre módulos são opcionais e
+degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
+
+| Módulo | Escopo (palavras do usuário) | Situação |
 |---|---|---|
-| Clientes | cadastro de tomadores, modelo de recibo por cliente, busca | em construção |
-| Cobrança | contratos (pré/pós-pago), cobranças, recibos em PDF, envio, baixa, forma de pagamento (PIX/boleto) | em construção |
-| Fornecedores | cadastro de fornecedores (a desenhar) | próximo |
-| Contas a pagar | despesas e pagamentos a fornecedores (a desenhar) | planejado |
-| Serviços | catálogo com códigos fiscais, preço e custo; rentabilidade (receita − custo mensal) | em desenho |
+| **Cobrança** | cadastro de clientes, contratos, emissão e controle de cobranças (recibos, envio, baixa, PIX/boleto), produtos e serviços, dashboards, relatórios | em construção (clientes, contratos, cobranças e recibos prontos; produtos/serviços, dashboards e relatórios a desenhar) |
+| **Contas a Pagar** | cadastro de fornecedores, clientes, produtos e serviços vinculados aos fornecedores, dashboards, relatórios | a desenhar |
 | Notas fiscais | tabelas que espelham a NFS-e, importação de XML (ABRASF 2.02 e nacional) | planejado |
 | Integração com emissores | sincronizar notas emitidas e emitir NFS-e (opcional) | planejado |
 
-Base comum (fora dos módulos vendáveis): contas, aprovação pelo admin, perfil do prestador, chaves PIX.
-Cada módulo deve ser **vendável sozinho**: não depender de outro para funcionar; integrações entre módulos são
-opcionais e degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
+**Cadastros compartilhados** (existem se qualquer módulo que os usa estiver contratado): clientes; produtos e
+serviços (na Cobrança: o que é vendido, com códigos fiscais e preço; no Contas a Pagar: vinculados a fornecedores,
+com custo). **Rentabilidade** (receita − custo mensal, decisão do usuário) é relatório que cruza os dois módulos:
+completo com ambos, parcial com um só.
+**Base comum** (fora dos módulos): contas e aprovação pelo admin, perfil do prestador, chaves PIX.
 
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
