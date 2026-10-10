@@ -13,9 +13,9 @@ const cancelar = () => router.post(`/cobrancas/${props.cobrancaId}/cancelar`, {}
 </script>
 
 <template>
-    <button v-if="!confirmando" type="button" class="botao-secundario" @click="confirmando = true">Cancelar cobrança</button>
+    <button v-if="!confirmando" type="button" class="botao-perigo" @click="confirmando = true">Cancelar cobrança</button>
     <span v-else class="inline-flex flex-wrap gap-2">
-        <button type="button" class="botao-secundario border-tinta-vermelha text-tinta-vermelha" @click="cancelar">Confirmar cancelamento</button>
+        <button type="button" class="botao-perigo-confirmar" @click="cancelar">Confirmar cancelamento</button>
         <button type="button" class="botao-secundario" @click="confirmando = false">Manter cobrança</button>
     </span>
 </template>

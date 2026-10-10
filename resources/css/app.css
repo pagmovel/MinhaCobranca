@@ -34,6 +34,16 @@
     .botao-secundario {
         @apply inline-flex items-center justify-center rounded-sm border border-linha bg-white px-4 py-2 text-sm font-semibold text-grafite hover:bg-papel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
     }
+
+    /* Ação destrutiva (excluir, cancelar): nunca com a mesma cara de "Editar". */
+    .botao-perigo {
+        @apply inline-flex items-center justify-center rounded-sm border border-tinta-vermelha bg-white px-4 py-2 text-sm font-semibold text-tinta-vermelha hover:bg-tinta-vermelha/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
+    }
+
+    /* Segundo clique, o que de fato apaga: vermelho cheio. */
+    .botao-perigo-confirmar {
+        @apply inline-flex items-center justify-center rounded-sm border border-tinta-vermelha bg-tinta-vermelha px-4 py-2 text-sm font-semibold text-white hover:bg-tinta-vermelha/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -378,6 +378,10 @@ o relatório mostra a parte que existe.
   rolagem para o campo "Chave"; a chave nova entra como linha extra no fim da lista (`linhas` computada), então o
   formulário existe num lugar só do template. Esc ou "Cancelar" fecha. Usar o mesmo padrão (edição na própria linha)
   em listas novas com edição rápida. Conferência visual: pendência V5.
+- **Ação destrutiva tem cara própria (relato do usuário, 2026-10-10):** "Editar" e "Excluir" eram iguais
+  (`botao-secundario`). Classes em `resources/css/app.css`: `botao-perigo` (contorno e texto vermelhos, primeiro clique de
+  excluir/cancelar) e `botao-perigo-confirmar` (vermelho cheio, o clique que apaga). Aplicadas em chaves PIX, cliente e
+  cancelamento de cobrança. **Toda exclusão ou cancelamento novo usa essas classes**, nunca `botao-secundario`.
 
 - **Decisões do módulo Cobrança (2026-10-10, spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`):** itens
   do catálogo somam o valor do contrato (descrição do recibo continua livre); cobranças copiam os itens; códigos fiscais

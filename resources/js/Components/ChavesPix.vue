@@ -83,9 +83,9 @@ const excluir = (id) => router.delete(`/perfil/chaves-pix/${id}`, {
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" class="botao-secundario" @click="abrir(chave)">Editar</button>
-                        <button v-if="confirmando !== chave.id" type="button" class="botao-secundario" @click="confirmando = chave.id">Excluir</button>
+                        <button v-if="confirmando !== chave.id" type="button" class="botao-perigo" @click="confirmando = chave.id">Excluir</button>
                         <template v-else>
-                            <button type="button" class="botao-secundario border-tinta-vermelha text-tinta-vermelha" @click="excluir(chave.id)">Confirmar exclusão</button>
+                            <button type="button" class="botao-perigo-confirmar" @click="excluir(chave.id)">Confirmar exclusão</button>
                             <button type="button" class="botao-secundario" @click="confirmando = null">Manter chave</button>
                         </template>
                     </div>

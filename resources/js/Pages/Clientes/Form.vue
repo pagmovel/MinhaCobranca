@@ -71,9 +71,9 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
             <div class="flex flex-wrap gap-3">
                 <button class="botao" :disabled="form.processing">Salvar cliente</button>
                 <template v-if="cliente">
-                    <button v-if="!confirmandoExclusao" type="button" class="botao-secundario" @click="confirmandoExclusao = true">Excluir cliente</button>
+                    <button v-if="!confirmandoExclusao" type="button" class="botao-perigo" @click="confirmandoExclusao = true">Excluir cliente</button>
                     <template v-else>
-                        <button type="button" class="botao-secundario border-tinta-vermelha text-tinta-vermelha" @click="excluir">Confirmar exclusão</button>
+                        <button type="button" class="botao-perigo-confirmar" @click="excluir">Confirmar exclusão</button>
                         <button type="button" class="botao-secundario" @click="confirmandoExclusao = false">Manter cliente</button>
                     </template>
                 </template>
