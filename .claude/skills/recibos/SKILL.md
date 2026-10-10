@@ -8,6 +8,19 @@ description: Use ao trabalhar no sistema de cobranças e recibos (Laravel 13 + I
 Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 
+## Módulos do produto (SaaS por planos de assinatura — decisão do usuário em 2026-10-10)
+| Módulo | Escopo | Situação |
+|---|---|---|
+| Clientes | cadastro de tomadores, modelo de recibo por cliente, busca | em construção |
+| Cobrança | contratos (pré/pós-pago), cobranças, recibos em PDF, envio, baixa, forma de pagamento (PIX/boleto) | em construção |
+| Fornecedores | a desenhar | próximo |
+| Serviços | catálogo com códigos fiscais, preço e custo; rentabilidade (receita − custo mensal) | em desenho |
+| Notas fiscais | tabelas que espelham a NFS-e, importação de XML (ABRASF 2.02 e nacional) | planejado |
+| Integração com emissores | sincronizar notas emitidas e emitir NFS-e (opcional) | planejado |
+
+Base comum (fora dos módulos vendáveis): contas, aprovação pelo admin, perfil do prestador, chaves PIX.
+Liberação de módulos por plano ainda **não existe** (não construir sem pedido); só evitar acoplamento.
+
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
 - Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).

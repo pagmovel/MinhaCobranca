@@ -267,7 +267,7 @@ test('cpf, cnpj, cep e telefone', () => {
 
 test('linha digitável de boleto (47) e de arrecadação (48, começa com 8)', () => {
     assert.equal(
-        f.linhaDigitavel('23793381286000000000300000004001843400000260600'),
+        f.linhaDigitavel('23793381286000000000300000000400184340000026060'),
         '23793.38128 60000.000003 00000.000400 1 84340000026060',
     );
     assert.equal(
@@ -1683,7 +1683,7 @@ class FormaPagamentoTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    private const LINHA = '23793381286000000000300000004001843400000260600';
+    private const LINHA = '23793381286000000000300000000400184340000026060';
 
     /** @return array{0: User, 1: Cliente, 2: ChavePix} */
     private function cenario(): array
@@ -2113,7 +2113,7 @@ git commit -m "feat: forma de pagamento (PIX ou boleto) no contrato e na cobran�
 
         $cobranca->refresh();
         $this->assertSame(FormaPagamento::Boleto, $cobranca->forma_pagamento);
-        $this->assertSame('23793381286000000000300000004001843400000260600', $cobranca->linha_digitavel);
+        $this->assertSame('23793381286000000000300000000400184340000026060', $cobranca->linha_digitavel);
         $this->assertSame(26060, $cobranca->valor_centavos);
     }
 
@@ -2583,7 +2583,7 @@ git commit -m "feat: QR Code do PIX em PNG com chillerlan/php-qrcode`n`nCo-Autho
 
     public function test_pagamento_boleto_e_sem_forma(): void
     {
-        $boleto = $this->recibo([], ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000004001843400000260600']);
+        $boleto = $this->recibo([], ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000000400184340000026060']);
         $this->assertSame(
             ['forma' => 'boleto', 'linha_digitavel' => '23793.38128 60000.000003 00000.000400 1 84340000026060'],
             $this->renderizador->dados($boleto, CarbonImmutable::now())['pagamento'],
@@ -2603,7 +2603,7 @@ da cobrança; e `test_descricao_no_limite_cabe_em_uma_pagina` passa a percorrer 
         $formas = [
             'nenhuma' => [],
             'pix' => ['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $this->chave->id],
-            'boleto' => ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000004001843400000260600'],
+            'boleto' => ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000000400184340000026060'],
         ];
 
         foreach (['webiss' => $curtas, 'danfse' => $curtas, 'webiss-paragrafo' => $mista] as $amostra => $descricao) {
