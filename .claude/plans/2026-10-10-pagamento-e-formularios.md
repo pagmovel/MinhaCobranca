@@ -45,11 +45,11 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | testada |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | testada |
 | 11 | T11.3 Bloco de pagamento nos PDFs | testada (conferência visual V4) |
-| 11 | T11.4 Smoke test, revisão final e fechamento | pendente |
+| 11 | T11.4 Smoke test, revisão final e fechamento | concluída (smoke ok; revisão final com 4 correções; merge e push) |
 
 ### Pendências para o final
-- [ ] **V4** — conferência visual: carimbo VENCENDO HOJE (tela e PDFs), bloco de pagamento nos dois
-  modelos, QR **escaneado num celular** abrindo o valor e o nome certos. — pendente
+- [ ] **V4** — conferência visual: carimbo VENCENDO HOJE (tela e PDFs) e bloco de pagamento nos dois
+  modelos. — pendente. **QR escaneado no celular: validado pelo usuário em 2026-10-10 ("batendo certinho").**
 - (continuam valendo as pendências V1–V3, D1, L1, M1, M2 do plano `2026-10-09-sistema-recibos.md`)
 - Menores da revisão final (adiados, decisão do executor — ver ledger):
   - [ ] **M3** — `BuscaCliente`: escolher antes dos 250 ms ou resposta atrasada reabre a lista (cancelar timer/fetch em `escolher` e no `blur`). — pendente
@@ -2767,7 +2767,12 @@ git commit -m "feat: bloco de pagamento (QR PIX ou boleto) nos recibos WebISS e 
 
 ### Tarefa T11.4: Smoke test, revisão final e fechamento
 
-**Estado:** pendente
+**Estado:** concluída em 2026-10-10. Smoke (usuário SMOKE id 2, autorizado; recontagem mudou uma vez — `chaves_pix` 0→4 do usuário — e foi pedido novo "sim"):
+chave celular digitada com `+55` gravada certa e intacta após editar o apelido; e-mail colado em minúsculas; autosugestão pelo
+teclado; valor colado "1.500" → 1.500,00; contrato pós-pago com PIX gerou cobrança que vence hoje → VENCENDO HOJE na tela e no PDF;
+QR extraído do PDF decodificado igual ao copia e cola impresso; avulsa com boleto (linha colada e formatada); troca para PIX depois de
+enviada; baixa → recibo PAGO sem QR nem copia e cola. **QR escaneado pelo usuário no celular: "batendo certinho" (validado).**
+Revisão final: 1 crítico + 3 importantes + 1 menor regraduado corrigidos com teste; menores M3–M7 adiados.
 
 - [ ] **PORTÃO-BANCO para o smoke test** com o usuário SMOKE (id 2, já existente): mostrar contagens de
   `chaves_pix`, `contratos`, `cobrancas`, `recibos`; dizer o que será criado (1–2 chaves PIX, 1 contrato pós-pago

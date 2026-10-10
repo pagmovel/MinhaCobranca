@@ -15,7 +15,8 @@ final class QrCodePix
             'outputInterface' => QRGdImagePNG::class,
             'outputBase64' => true,
             'scale' => 5,
-            'quietzoneSize' => 2,
+            // Margem branca de 4 módulos: o padrão do QR Code e da biblioteca.
+            'quietzoneSize' => 4,
         ]);
 
         return (new QRCode($opcoes))->render($payload);

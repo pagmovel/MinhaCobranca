@@ -363,6 +363,16 @@ o relatório mostra a parte que existe.
     `min(5,5; 540/(n×0,62))` no DANFSe em largura total). Quebrar no espaço do nome/cidade perdia o espaço na cópia e
     invalidava o código. Conferido com pypdf: 158 e 223 caracteres (chave mais longa) em 1 linha, inteiros, 1 página.
 
+- T11.4 (smoke, 2026-10-10): fluxo de pagamento conferido de ponta a ponta (ver estado da T11.4 no plano). **QR validado
+  pelo usuário no celular.** PDFs e QR extraído em `storage/app/private/verificacao/smoke-pagamento/`.
+- Pegadinhas do smoke: (1) o `cv2.QRCodeDetector` padrão falha em QR PIX válido (denso); `cv2.QRCodeDetectorAruco` lê —
+  usar o Aruco para conferir. Para tirar o QR do PDF: `pypdf` → `page.images` (a imagem de 265×265). (2) Cookie de sessão
+  velho no perfil do Chrome de teste faz a página cair em `/entrar` no meio do roteiro: conferir a URL e entrar de novo.
+  (3) `capture_screenshot(full=True)` estourou o tempo do canal do browser-use; usar print só da área visível.
+  (4) O usuário mexe no banco em paralelo (cadastrou 4 chaves PIX durante o pedido de autorização): a recontagem do
+  portão pegou — parar e pedir de novo.
+- QR com margem branca de 4 módulos (padrão do QR Code e da biblioteca; o plano tinha 2). Não muda o conteúdo do código.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
