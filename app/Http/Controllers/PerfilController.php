@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\TipoChavePix;
 use App\Http\Requests\PerfilRequest;
+use App\Models\ChavePix;
 use App\Support\Ufs;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +32,14 @@ class PerfilController extends Controller
                 'tem_logo' => filled($usuario->logo),
             ],
             'modelos' => FamiliaModelo::opcoes(),
+            'chavesPix' => $usuario->chavesPix()->orderBy('id')->get()->map(fn (ChavePix $chave) => [
+                'id' => $chave->id,
+                'tipo' => $chave->tipo->value,
+                'tipo_rotulo' => $chave->tipo->rotulo(),
+                'chave' => $chave->tipo->formatar($chave->chave),
+                'apelido' => $chave->apelido ?? '',
+            ]),
+            'tiposChavePix' => TipoChavePix::opcoes(),
             'ufs' => Ufs::TODAS,
         ]);
     }

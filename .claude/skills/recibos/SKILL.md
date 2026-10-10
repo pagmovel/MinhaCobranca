@@ -304,6 +304,14 @@ o relatório mostra a parte que existe.
   obrigatória no request (sem default silencioso); não muda se o contrato já tem cobranças; o gerador passa a
   modalidade à calculadora. Formulário explica o vencimento de cada modalidade.
 
+- T10.1: chaves PIX por usuário (`chaves_pix`, único por usuário+chave), normalizadas no enum `TipoChavePix` antes da
+  validação de unicidade. **Fonte: Manual Operacional do DICT v8.5 (bcb.gov.br, 29/07/2026), seção 1:** CPF 11 dígitos;
+  **CNPJ alfanumérico** com 14 caracteres (mudança de 01/07/2026, v8.4); e-mail até 77 caracteres; **telefone só
+  celular**, padrão E.164 (`+55` + DDD + 9 dígitos); aleatória = UUID. Telefone fixo é recusado (o DICT não aceita).
+- **Pegadinha (isolamento):** com FormRequest, a validação roda **antes** do `findOrFail` do controller. No PUT de
+  recurso alheio, o erro de unicidade respondia 302 e revelava que o recurso existe. `ChavePixRequest::authorize()`
+  dá 404 se o id da rota não for do usuário. Usar o mesmo padrão em requests novos com id na rota.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\ContratoController;
@@ -27,6 +28,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/perfil', [PerfilController::class, 'edit']);
     Route::post('/perfil', [PerfilController::class, 'update']);
     Route::get('/perfil/logo', [PerfilController::class, 'logo']);
+    Route::post('/perfil/chaves-pix', [ChavePixController::class, 'store']);
+    Route::put('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'update']);
+    Route::delete('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'destroy']);
 
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::resource('clientes', ClienteController::class)->except('show');

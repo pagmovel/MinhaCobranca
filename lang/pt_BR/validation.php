@@ -67,5 +67,8 @@ return [
         'pago_em' => 'data do pagamento',
         'mes' => 'mês',
         'arquivos' => 'arquivos',
+        'tipo' => 'tipo',
+        'chave' => 'chave',
+        'apelido' => 'apelido',
     ],
 ];

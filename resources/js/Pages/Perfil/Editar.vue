@@ -3,11 +3,14 @@ import { useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CamposEndereco from '../../Components/CamposEndereco.vue';
+import ChavesPix from '../../Components/ChavesPix.vue';
 
 const props = defineProps({
     perfil: { type: Object, required: true },
     modelos: { type: Array, required: true },
     ufs: { type: Array, required: true },
+    chavesPix: { type: Array, required: true },
+    tiposChavePix: { type: Array, required: true },
 });
 
 const form = useForm({ ...props.perfil, logo: null });
@@ -66,5 +69,7 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
                 <button class="botao" :disabled="form.processing">Salvar perfil</button>
             </div>
         </form>
+
+        <ChavesPix class="mt-10" :chaves="chavesPix" :tipos="tiposChavePix" />
     </CamadaApp>
 </template>
