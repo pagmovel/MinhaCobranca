@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Models\Cliente;
+use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\User;
+use App\Services\GeradorDeCobrancas;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -24,6 +28,7 @@ class ContratosTest extends TestCase
             'codigo_tributacao_nacional' => '01.02.01',
             'valor' => '260,60',
             'periodicidade' => 'mensal',
+            'modalidade' => 'prepago',
             'dia_vencimento' => 21,
             'data_inicio' => '2026-09-21',
             'data_fim' => null,
@@ -113,5 +118,38 @@ class ContratosTest extends TestCase
 
         $this->get("/contratos/{$alheio->id}/edit")->assertNotFound();
         $this->put("/contratos/{$alheio->id}", $this->dados($cliente))->assertNotFound();
+    }
+
+    public function test_contrato_pos_pago_gera_cobranca_que_vence_depois_do_periodo(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-02 09:00:00'));
+        [$usuario, $cliente] = $this->usuarioComCliente();
+        $usuario->update(['dias_antecedencia' => 10]);
+
+        $this->actingAs($usuario)->post('/contratos', $this->dados($cliente, [
+            'modalidade' => 'pospago', 'data_inicio' => '2026-10-01', 'dia_vencimento' => 10,
+        ]))->assertRedirect('/contratos');
+
+        app(GeradorDeCobrancas::class)->gerarPara($usuario->fresh(), CarbonImmutable::today());
+
+        $cobranca = $usuario->cobrancas()->sole();
+        $this->assertSame(
+            ['2026-10-01', '2026-10-31', '2026-11-10'],
+            [$cobranca->periodo_inicio->toDateString(), $cobranca->periodo_fim->toDateString(), $cobranca->vencimento->toDateString()],
+        );
+    }
+
+    public function test_modalidade_invalida_e_recusada_e_nao_muda_com_cobrancas(): void
+    {
+        [$usuario, $cliente] = $this->usuarioComCliente();
+        $this->actingAs($usuario);
+        $this->post('/contratos', $this->dados($cliente, ['modalidade' => 'quinzenal']))->assertSessionHasErrors('modalidade');
+
+        $contrato = Contrato::factory()->for($usuario)->for($cliente)->create();
+        Cobranca::factory()->for($usuario)->for($cliente)->create(['contrato_id' => $contrato->id]);
+
+        $this->put("/contratos/{$contrato->id}", $this->dados($cliente, ['modalidade' => 'pospago']))
+            ->assertSessionHasErrors(['modalidade' => 'Este contrato já tem cobranças. Para mudar a modalidade, encerre-o e crie outro.']);
+        $this->assertSame(Modalidade::Prepago, $contrato->fresh()->modalidade);
     }
 }

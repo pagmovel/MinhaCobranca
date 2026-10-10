@@ -57,6 +57,7 @@ return [
         'descricao' => 'descrição',
         'valor' => 'valor',
         'periodicidade' => 'periodicidade',
+        'modalidade' => 'modalidade',
         'dia_vencimento' => 'dia do vencimento',
         'data_inicio' => 'início',
         'data_fim' => 'fim',

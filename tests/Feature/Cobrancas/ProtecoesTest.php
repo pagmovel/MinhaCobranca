@@ -40,7 +40,7 @@ class ProtecoesTest extends TestCase
         ]);
         $dados = [
             'cliente_id' => $contrato->cliente_id, 'descricao' => 'Hospedagem', 'valor' => '300,00',
-            'periodicidade' => 'mensal', 'dia_vencimento' => 21, 'data_inicio' => '2026-09-21', 'ativo' => true,
+            'periodicidade' => 'mensal', 'modalidade' => 'prepago', 'dia_vencimento' => 21, 'data_inicio' => '2026-09-21', 'ativo' => true,
         ];
 
         $this->actingAs($usuario);

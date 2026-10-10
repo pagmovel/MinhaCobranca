@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Models\Cliente;
 use App\Models\Contrato;
@@ -24,6 +25,7 @@ class ContratoFactory extends Factory
             'codigo_tributacao_nacional' => '01.02.01',
             'valor_centavos' => 26060,
             'periodicidade' => Periodicidade::Mensal,
+            'modalidade' => Modalidade::Prepago,
             'dia_vencimento' => 21,
             'data_inicio' => '2026-09-21',
             'data_fim' => null,

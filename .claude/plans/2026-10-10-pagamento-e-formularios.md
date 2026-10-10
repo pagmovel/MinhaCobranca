@@ -35,9 +35,9 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 8 | T8.2 Máscaras nos campos | testada (navegador na T11.4) |
 | 8 | T8.3 Busca de cliente por autosugestão | testada (teclado/leitor de tela na T11.4) |
 | 8 | T8.4 Fechamento da fase 8 (merge + push) | concluída |
-| 9 | T9.1 Calculadora: pós-pago | pendente |
-| 9 | T9.2 Modalidade no contrato | pendente |
-| 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | pendente |
+| 9 | T9.1 Calculadora: pós-pago | testada |
+| 9 | T9.2 Modalidade no contrato | testada |
+| 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | concluída (migrate autorizado: lote 2; merge e push) |
 | 10 | T10.1 Chaves PIX no perfil | pendente |
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | pendente |
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | pendente |
@@ -775,7 +775,7 @@ git checkout main; git merge --no-ff feat/pagamento-e-formularios -m "merge: fas
 
 ### Tarefa T9.1: Calculadora — pós-pago
 
-**Estado:** pendente
+**Estado:** testada (CalculadoraDePeriodosTest + GeradorDeCobrancasTest 16/16; suíte verde)
 
 **Arquivos:**
 - Criar: `app/Enums/Modalidade.php`
@@ -911,7 +911,7 @@ git commit -m "feat: vencimento pós-pago na calculadora de períodos`n`nCo-Auth
 
 ### Tarefa T9.2: Modalidade no contrato
 
-**Estado:** pendente
+**Estado:** testada (suíte 171/171; build ok)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_10_100000_add_modalidade_to_contratos_table.php`
@@ -1056,7 +1056,7 @@ git commit -m "feat: contrato pré-pago ou pós-pago`n`nCo-Authored-By: Claude O
 
 ### Tarefa T9.3: PORTÃO-BANCO + fechamento da fase 9
 
-**Estado:** pendente
+**Estado:** concluída — `migrate` autorizado pelo usuário em 2026-10-10 (contratos = 3 antes e depois; lote 2); merge no main e push.
 
 - [ ] `php artisan db:show --counts` e `php artisan migrate:status` (leitura); mostrar ao usuário: conexão
   (PostgreSQL de **desenvolvimento**), contagem de `contratos`, a migração pendente
