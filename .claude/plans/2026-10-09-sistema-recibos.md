@@ -46,7 +46,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 4 | T4.3 Modelo `danfse-v1` | testada (conferência visual na T4.4) |
 | 4 | T4.4 Comparação visual com as notas originais | concluída (amostras geradas e medidas; falta a conferência visual do usuário) |
 | 5 | T5.1 Painel completo (três blocos, enviar, baixa) | testada (smoke test no navegador na T5.3) |
-| 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | pendente |
+| 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | testada (smoke test no navegador na T5.3) |
 | 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | pendente |
 | 6 | T6.0 Entrada: XMLs de exemplo em `MATERIAIS/` (BLOQUEADA) | pendente |
 | 6 | T6.1 Tabela de notas fiscais + leitura segura de XML | pendente |
@@ -7439,7 +7439,7 @@ git commit -m "feat: painel do mês com envio pelo celular e baixa de pagamento`
 
 ### Tarefa T5.2: Telas de cobranças (lista com filtros, avulsa, edição)
 
-**Estado:** pendente
+**Estado:** testada (TelasCobrancaTest 4/4; suíte 155/155; build ok).
 
 **Arquivos:**
 - Criar: `resources/js/Pages/Cobrancas/Index.vue`, `resources/js/Pages/Cobrancas/Form.vue`

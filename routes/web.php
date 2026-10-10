@@ -31,6 +31,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
 
+    Route::get('/cobrancas', [CobrancaController::class, 'index']);
+    Route::get('/cobrancas/create', [CobrancaController::class, 'create']);
+    Route::get('/cobrancas/{cobranca}/edit', [CobrancaController::class, 'edit']);
     Route::post('/cobrancas', [CobrancaController::class, 'store']);
     Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);
     Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);

@@ -223,6 +223,10 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   marca. `NotAllowedError` (o navegador perdeu o "toque" durante o `fetch`) cai no download.
 - Aviso de perfil incompleto no painel usa borda inteira (`border`), não `border-l-4` (hook de design).
 
+- T5.2: `/cobrancas` filtra por `mes=AAAA-MM` (padrão: mês atual, pelo **vencimento**), `status` e
+  `cliente_id`, sempre pela relação do usuário; abrir a lista também roda a geração preguiçosa. Editar
+  cobrança já enviada redireciona para a lista com `flash.erro` (cancelar + avulsa nova).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
