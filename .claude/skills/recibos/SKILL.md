@@ -373,6 +373,12 @@ o relatório mostra a parte que existe.
   portão pegou — parar e pedir de novo.
 - QR com margem branca de 4 módulos (padrão do QR Code e da biblioteca; o plano tinha 2). Não muda o conteúdo do código.
 
+- **Usabilidade das chaves PIX (relato do usuário, 2026-10-10):** "Editar" abria o formulário depois do fim da lista e
+  quem não tem prática não o via. Agora o formulário abre **dentro da linha clicada** (fundo `bg-papel`), com foco e
+  rolagem para o campo "Chave"; a chave nova entra como linha extra no fim da lista (`linhas` computada), então o
+  formulário existe num lugar só do template. Esc ou "Cancelar" fecha. Usar o mesmo padrão (edição na própria linha)
+  em listas novas com edição rápida. Conferência visual: pendência V5.
+
 - **Decisões do módulo Cobrança (2026-10-10, spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`):** itens
   do catálogo somam o valor do contrato (descrição do recibo continua livre); cobranças copiam os itens; códigos fiscais
   do item principal; contrato guarda o próprio preço (reajuste por ação explícita); custo fica no Contas a Pagar;
