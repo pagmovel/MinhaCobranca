@@ -13,13 +13,15 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 |---|---|---|
 | Clientes | cadastro de tomadores, modelo de recibo por cliente, busca | em construção |
 | Cobrança | contratos (pré/pós-pago), cobranças, recibos em PDF, envio, baixa, forma de pagamento (PIX/boleto) | em construção |
-| Fornecedores | a desenhar | próximo |
+| Fornecedores | cadastro de fornecedores (a desenhar) | próximo |
+| Contas a pagar | despesas e pagamentos a fornecedores (a desenhar) | planejado |
 | Serviços | catálogo com códigos fiscais, preço e custo; rentabilidade (receita − custo mensal) | em desenho |
 | Notas fiscais | tabelas que espelham a NFS-e, importação de XML (ABRASF 2.02 e nacional) | planejado |
 | Integração com emissores | sincronizar notas emitidas e emitir NFS-e (opcional) | planejado |
 
 Base comum (fora dos módulos vendáveis): contas, aprovação pelo admin, perfil do prestador, chaves PIX.
-Liberação de módulos por plano ainda **não existe** (não construir sem pedido); só evitar acoplamento.
+Cada módulo deve ser **vendável sozinho**: não depender de outro para funcionar; integrações entre módulos são
+opcionais e degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
 
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
