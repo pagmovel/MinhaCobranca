@@ -28,6 +28,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/perfil', [PerfilController::class, 'update']);
     Route::get('/perfil/logo', [PerfilController::class, 'logo']);
 
+    Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
 

@@ -33,7 +33,7 @@ defineProps({
             </select>
         </Campo>
         <Campo id="cep" rotulo="CEP" :erro="form.errors.cep" class="sm:col-span-2">
-            <input id="cep" v-model="form.cep" inputmode="numeric" autocomplete="postal-code" class="entrada" :required="obrigatorio">
+            <input id="cep" v-mascara="'cep'" v-model="form.cep" inputmode="numeric" autocomplete="postal-code" class="entrada" :required="obrigatorio">
         </Campo>
     </fieldset>
 </template>

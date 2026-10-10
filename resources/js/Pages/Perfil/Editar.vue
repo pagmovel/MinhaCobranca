@@ -27,13 +27,13 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
                     <input id="name" v-model="form.name" class="entrada" required>
                 </Campo>
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
-                    <input id="documento" v-model="form.documento" class="entrada" required>
+                    <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
                 </Campo>
                 <Campo id="nome_fantasia" rotulo="Nome fantasia" :erro="form.errors.nome_fantasia" class="sm:col-span-3">
                     <input id="nome_fantasia" v-model="form.nome_fantasia" class="entrada">
                 </Campo>
                 <Campo id="telefone" rotulo="Telefone" :erro="form.errors.telefone" class="sm:col-span-3">
-                    <input id="telefone" v-model="form.telefone" type="tel" autocomplete="tel" class="entrada" required>
+                    <input id="telefone" v-mascara="'telefone'" v-model="form.telefone" type="tel" autocomplete="tel" class="entrada" required>
                 </Campo>
                 <Campo id="inscricao_municipal" rotulo="Inscrição municipal" :erro="form.errors.inscricao_municipal" class="sm:col-span-3">
                     <input id="inscricao_municipal" v-model="form.inscricao_municipal" class="entrada">

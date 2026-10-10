@@ -7,6 +7,7 @@ use App\Http\Requests\ClienteRequest;
 use App\Models\Cliente;
 use App\Support\Documento;
 use App\Support\Ufs;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,6 +27,35 @@ class ClienteController extends Controller
             ]);
 
         return Inertia::render('Clientes/Index', ['clientes' => $clientes]);
+    }
+
+    /** Autosugestão: nome (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */
+    public function busca(Request $request): JsonResponse
+    {
+        $termo = trim((string) $request->query('q', ''));
+
+        if (mb_strlen($termo) < 2) {
+            return response()->json([]);
+        }
+
+        // % e _ digitados são texto, não curinga.
+        $literal = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($termo));
+        $documento = Documento::normalizar($termo);
+
+        $clientes = $request->user()->clientes()
+            ->where(function ($consulta) use ($literal, $documento) {
+                $consulta->whereRaw("lower(nome) like ? escape '\\'", ["%{$literal}%"]);
+                if ($documento !== '') {
+                    $consulta->orWhere('documento', 'like', "{$documento}%");
+                }
+            })
+            ->orderBy('nome')->limit(10)->get(['id', 'nome', 'documento']);
+
+        return response()->json($clientes->map(fn (Cliente $cliente) => [
+            'id' => $cliente->id,
+            'nome' => $cliente->nome,
+            'documento' => Documento::formatar($cliente->documento),
+        ]));
     }
 
     public function create(Request $request): Response

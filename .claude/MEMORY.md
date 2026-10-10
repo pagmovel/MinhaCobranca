@@ -1,2 +1,4 @@
-- [Regras de banco do projeto](memory/regras-banco-recibos.md) — portão antes de qualquer escrita no SQLite real
+- [Regras de banco do projeto](memory/regras-banco-recibos.md) — portão antes de qualquer escrita no banco real (PostgreSQL de dev)
 - [Documentação por tarefa](memory/documentacao-por-tarefa.md) — plano e skill atualizados no commit de cada tarefa
+- [Merge e push por fase](memory/merge-e-push-por-fase.md) — fase concluída vai para a main e para o origin sem pedir de novo
+- [Produto em módulos](memory/produto-em-modulos.md) — SaaS por planos de assinatura; documentação por módulo

@@ -51,7 +51,7 @@ class CobrancaController extends Controller
                 'status' => $filtros['status'] ?? '',
                 'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
             ],
-            'clientes' => $usuario->clientes()->orderBy('nome')->get(['id', 'nome']),
+            'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
         ]);
     }
 
@@ -87,7 +87,8 @@ class CobrancaController extends Controller
                 'periodo_fim' => $cobranca->periodo_fim->toDateString(),
                 'vencimento' => $cobranca->vencimento->toDateString(),
             ] : null,
-            'clientes' => $request->user()->clientes()->orderBy('nome')->get(['id', 'nome']),
+            'temClientes' => $request->user()->clientes()->exists(),
+            'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
         ]);
     }
 

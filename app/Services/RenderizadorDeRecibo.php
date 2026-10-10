@@ -73,6 +73,7 @@ final class RenderizadorDeRecibo
             'paga' => ['texto' => 'PAGO', 'detalhe' => 'em '.$cobranca->pago_em->format('d/m/Y'), 'classe' => 'pago', 'situacao' => 'Pago em '.$cobranca->pago_em->format('d/m/Y')],
             'cancelada' => ['texto' => 'CANCELADO', 'detalhe' => null, 'classe' => 'cancelada', 'situacao' => 'Cancelado'],
             'vencida' => ['texto' => 'VENCIDO', 'detalhe' => $vencimento, 'classe' => 'vencida', 'situacao' => 'Vencido'],
+            'vence_hoje' => ['texto' => 'VENCENDO HOJE', 'detalhe' => $vencimento, 'classe' => 'vence_hoje', 'situacao' => 'Vence hoje'],
             'a_vencer' => ['texto' => 'A VENCER', 'detalhe' => $vencimento, 'classe' => 'a_vencer', 'situacao' => 'A vencer'],
         };
     }

@@ -19,6 +19,7 @@
     .carimbo-pago { color: #2E7D4F; border-color: #2E7D4F; }
     .carimbo-a_vencer { color: #2F3C9E; border-color: #2F3C9E; }
     .carimbo-vencida { color: #B3261E; border-color: #B3261E; }
+    .carimbo-vence_hoje { color: #C2410C; border-color: #C2410C; }
     .carimbo-cancelada { color: #6B7280; border-color: #6B7280; }
     .rodape { position: fixed; bottom: 0; left: 0; right: 0; }
     .rodape td { height: 30pt; border: 0.75pt solid #000; }
@@ -64,7 +65,7 @@
     </tr></table>
 
     {{-- No original, o QR code da NFS-e ocupa este canto. --}}
-    @include('recibos.pdf._carimbo', ['estilo' => 'top: 52pt; right: 14pt; width: 110pt; font-size: 14pt; transform: rotate(-8deg);'])
+    @include('recibos.pdf._carimbo', ['estilo' => 'top: 52pt; right: 14pt; width: 110pt; font-size: '.($carimbo['classe'] === 'vence_hoje' ? '10' : '14').'pt; transform: rotate(-8deg);'])
 </div>
 
 @foreach (['PRESTADOR / FORNECEDOR' => $prestador, 'TOMADOR / ADQUIRENTE' => $tomador] as $titulo => $parte)

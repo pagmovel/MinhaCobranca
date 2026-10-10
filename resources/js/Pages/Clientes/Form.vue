@@ -39,7 +39,7 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                     <input id="nome" v-model="form.nome" class="entrada" required>
                 </Campo>
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
-                    <input id="documento" v-model="form.documento" class="entrada" required>
+                    <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
                 </Campo>
                 <Campo id="inscricao_municipal" rotulo="Inscrição municipal" :erro="form.errors.inscricao_municipal" class="sm:col-span-2">
                     <input id="inscricao_municipal" v-model="form.inscricao_municipal" class="entrada">
@@ -48,7 +48,7 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                     <input id="inscricao_estadual" v-model="form.inscricao_estadual" class="entrada">
                 </Campo>
                 <Campo id="telefone" rotulo="Telefone" :erro="form.errors.telefone" class="sm:col-span-2">
-                    <input id="telefone" v-model="form.telefone" type="tel" class="entrada">
+                    <input id="telefone" v-mascara="'telefone'" inputmode="tel" v-model="form.telefone" type="tel" class="entrada">
                 </Campo>
                 <Campo id="email" rotulo="E-mail" :erro="form.errors.email" class="sm:col-span-6">
                     <input id="email" v-model="form.email" type="email" class="entrada">

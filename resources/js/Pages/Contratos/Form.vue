@@ -2,15 +2,17 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
+import BuscaCliente from '../../Components/BuscaCliente.vue';
 
 const props = defineProps({
     contrato: { type: Object, default: null },
-    clientes: { type: Array, required: true },
+    temClientes: { type: Boolean, required: true },
+    clienteAtual: { type: Object, default: null },
     periodicidades: { type: Array, required: true },
 });
 
 const form = useForm(props.contrato ?? {
-    cliente_id: props.clientes[0]?.id ?? '',
+    cliente_id: '',
     descricao: '',
     codigo_servico: '',
     codigo_nbs: '',
@@ -31,15 +33,13 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
         <Link href="/contratos" class="font-estreita text-sm text-carbono underline">Voltar para contratos</Link>
         <h1 class="mt-2 mb-6 text-2xl font-semibold">{{ contrato ? 'Editar contrato' : 'Novo contrato' }}</h1>
 
-        <p v-if="!clientes.length" class="border border-linha bg-white px-4 py-3 text-sm">
+        <p v-if="!temClientes" class="border border-linha bg-white px-4 py-3 text-sm">
             Cadastre um cliente antes. <Link href="/clientes/create" class="font-semibold text-carbono underline">Novo cliente</Link>
         </p>
 
         <form v-else class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <select id="cliente_id" v-model="form.cliente_id" class="entrada" required>
-                    <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">{{ cliente.nome }}</option>
-                </select>
+                <BuscaCliente id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" obrigatorio />
             </Campo>
             <Campo id="descricao" rotulo="Descrição dos serviços (como sai no recibo, até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
                 <textarea id="descricao" v-model="form.descricao" rows="6" class="entrada" required />
@@ -54,7 +54,7 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
                 <input id="codigo_tributacao_nacional" v-model="form.codigo_tributacao_nacional" class="entrada">
             </Campo>
             <Campo id="valor" rotulo="Valor (R$)" :erro="form.errors.valor" class="sm:col-span-2">
-                <input id="valor" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
+                <input id="valor" v-mascara="'valor'" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
             </Campo>
             <Campo id="periodicidade" rotulo="Periodicidade" :erro="form.errors.periodicidade" class="sm:col-span-2">
                 <select id="periodicidade" v-model="form.periodicidade" class="entrada">

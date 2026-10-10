@@ -8,6 +8,21 @@ description: Use ao trabalhar no sistema de cobranças e recibos (Laravel 13 + I
 Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 
+## Módulos do produto (SaaS por planos de assinatura — decisão do usuário em 2026-10-10)
+| Módulo | Escopo | Situação |
+|---|---|---|
+| Clientes | cadastro de tomadores, modelo de recibo por cliente, busca | em construção |
+| Cobrança | contratos (pré/pós-pago), cobranças, recibos em PDF, envio, baixa, forma de pagamento (PIX/boleto) | em construção |
+| Fornecedores | cadastro de fornecedores (a desenhar) | próximo |
+| Contas a pagar | despesas e pagamentos a fornecedores (a desenhar) | planejado |
+| Serviços | catálogo com códigos fiscais, preço e custo; rentabilidade (receita − custo mensal) | em desenho |
+| Notas fiscais | tabelas que espelham a NFS-e, importação de XML (ABRASF 2.02 e nacional) | planejado |
+| Integração com emissores | sincronizar notas emitidas e emitir NFS-e (opcional) | planejado |
+
+Base comum (fora dos módulos vendáveis): contas, aprovação pelo admin, perfil do prestador, chaves PIX.
+Cada módulo deve ser **vendável sozinho**: não depender de outro para funcionar; integrações entre módulos são
+opcionais e degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
+
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
 - Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).
@@ -259,6 +274,22 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
   - Editar avulsa **trocando o cliente** refaz o recibo com o modelo do novo cliente
     (`refazer($recibo, trocouCliente: true)`); trocar o modelo do mesmo cliente continua sem mexer em
     recibo emitido.
+
+- T8.1: situação `vence_hoje` (vencimento = hoje) com carimbo laranja `#C2410C` (contraste 5,18:1 sobre
+  branco, fórmula de luminância da WCAG); fonte do carimbo menor para caber "VENCENDO HOJE" (22pt no WebISS,
+  10pt no DANFSe). A lista de cobranças trata `vence_hoje` como aberta (baixa e cancelar continuam).
+
+- T8.2: máscaras = funções puras em `resources/js/mascaras.js` (testes: `node --test resources/js/mascaras.test.js`,
+  runner embutido do Node 22, sem dependência; o Vite não empacota o teste) + diretiva global `v-mascara="'nome'"`
+  (`resources/js/diretivas/mascara.js`), que dispara `input` para o `v-model` guardar o valor formatado. O `v-model`
+  registra o ouvinte no `created` e a diretiva no `mounted`: a ordem dos atributos no template não importa.
+  Valor entra pelos centavos (digitar 260 dá 2,60). O servidor continua normalizando e validando.
+
+- T8.3: `GET /clientes/busca?q=` (2+ caracteres, até 10, `lower(nome) like ? escape '\'` portátil SQLite/PostgreSQL,
+  `%` e `_` digitados escapados, prefixo do documento normalizado). `BuscaCliente.vue` = combobox ARIA (setas,
+  Enter, Esc; `mousedown.prevent` na opção para o `blur` não fechar a lista antes do clique; digitar limpa a
+  escolha). Formulários de contrato/cobrança recebem `temClientes` + `clienteAtual`; a lista recebe `clienteFiltro`.
+  `lower()` do SQLite só converte ASCII (acentos contam na busca — limitação aceita).
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.

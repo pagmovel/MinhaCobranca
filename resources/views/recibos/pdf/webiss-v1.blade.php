@@ -22,6 +22,7 @@
     .carimbo-pago { color: #2E7D4F; border-color: #2E7D4F; }
     .carimbo-a_vencer { color: #2F3C9E; border-color: #2F3C9E; }
     .carimbo-vencida { color: #B3261E; border-color: #B3261E; }
+    .carimbo-vence_hoje { color: #C2410C; border-color: #C2410C; }
     .carimbo-cancelada { color: #6B7280; border-color: #6B7280; }
     .rodape { position: fixed; bottom: -24pt; left: 0; right: 0; font-size: 6pt; }
 </style>
@@ -162,7 +163,7 @@
     </table>
 
     {{-- No original, a marca d'água "RASCUNHO" ocupa este lugar. --}}
-    @include('recibos.pdf._carimbo', ['estilo' => 'top: 330pt; left: 150pt; width: 230pt; font-size: 30pt; transform: rotate(-35deg);'])
+    @include('recibos.pdf._carimbo', ['estilo' => 'top: 330pt; left: 150pt; width: 230pt; font-size: '.($carimbo['classe'] === 'vence_hoje' ? '22' : '30').'pt; transform: rotate(-35deg);'])
 </div>
 
 <div class="rodape">
