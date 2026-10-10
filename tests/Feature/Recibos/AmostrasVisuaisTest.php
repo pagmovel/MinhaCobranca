@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Recibos;
 
+use App\Enums\FormaPagamento;
+use App\Enums\TipoChavePix;
+use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\User;
@@ -21,6 +24,8 @@ class AmostrasVisuaisTest extends TestCase
 
     private User $usuario;
 
+    private ChavePix $chave;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -37,9 +42,10 @@ class AmostrasVisuaisTest extends TestCase
             'uf' => 'SE',
             'cep' => '49160000',
         ]);
+        $this->chave = ChavePix::factory()->for($this->usuario)->create(['tipo' => TipoChavePix::Email, 'chave' => 'financeiro.exemplo@exemplo.com.br']);
     }
 
-    private function pdf(string $modelo, string $descricao)
+    private function pdf(string $modelo, string $descricao, array $pagamento = [])
     {
         $cliente = Cliente::factory()->for($this->usuario)->create([
             'nome' => 'Sindicato Exemplo dos Trabalhadores em Educação do Estado',
@@ -55,7 +61,7 @@ class AmostrasVisuaisTest extends TestCase
             'periodo_inicio' => '2026-09-21',
             'periodo_fim' => '2026-10-20',
             'vencimento' => '2026-09-21',
-        ]);
+        ] + $pagamento);
 
         return app(RenderizadorDeRecibo::class)->pdf(app(EmissorDeRecibos::class)->emitir($cobranca), CarbonImmutable::now());
     }
@@ -69,6 +75,10 @@ class AmostrasVisuaisTest extends TestCase
             // Vai por WhatsApp: fonte embutida só com os caracteres usados.
             $this->assertLessThan(200_000, strlen($pdf), "modelo {$modelo}");
             Storage::disk('local')->put("verificacao/amostra-{$modelo}.pdf", $pdf);
+
+            // Amostra com PIX para a conferência visual (V4) e para escanear o QR no celular.
+            $comPix = $this->pdf($modelo, "- Hospedagem do domínio exemplo.com.br\n- Servidor de Arquivos", ['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $this->chave->id])->output();
+            Storage::disk('local')->put("verificacao/amostra-{$modelo}-pix.pdf", $comPix);
         }
     }
 
@@ -81,12 +91,20 @@ class AmostrasVisuaisTest extends TestCase
         $mista = $paragrafo."\n".implode("\n", array_fill(0, 25 - count(LinhasDoRecibo::quebrar($paragrafo)), '- Linha curta'));
         $this->assertCount(25, LinhasDoRecibo::quebrar($mista));
 
-        foreach (['webiss' => $curtas, 'danfse' => $curtas, 'webiss-paragrafo' => $mista] as $amostra => $descricao) {
-            $modelo = strtok($amostra, '-');
-            $pdf = $this->pdf($modelo, $descricao);
-            Storage::disk('local')->put("verificacao/amostra-{$amostra}-25-linhas.pdf", $pdf->output());
+        $formas = [
+            'nenhuma' => [],
+            'pix' => ['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $this->chave->id],
+            'boleto' => ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000000400184340000026060'],
+        ];
 
-            $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$amostra}");
+        foreach (['webiss' => $curtas, 'danfse' => $curtas, 'webiss-paragrafo' => $mista] as $amostra => $descricao) {
+            foreach ($formas as $forma => $pagamento) {
+                $modelo = strtok($amostra, '-');
+                $pdf = $this->pdf($modelo, $descricao, $pagamento);
+                Storage::disk('local')->put("verificacao/amostra-{$amostra}-{$forma}-25-linhas.pdf", $pdf->output());
+
+                $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$amostra} com {$forma}");
+            }
         }
     }
 }

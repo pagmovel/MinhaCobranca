@@ -342,6 +342,15 @@ o relatório mostra a parte que existe.
   **Verificação forte:** o QR gerado foi decodificado com OpenCV (`cv2.QRCodeDetector`, instalado na máquina) e é
   idêntico ao copia e cola — usar o mesmo método se mudar algo no QR.
 
+- T11.3: `RenderizadorDeRecibo::dados()['pagamento']` (dado vivo da cobrança; valor, nome e cidade vêm do snapshot;
+  txid `REC`+ano+número). WebISS: QR ao lado de TRIBUTOS/VALORES (tabela 78% + coluna 22%) e copia e cola em
+  OUTRAS INFORMAÇÕES; DANFSe: bloco PAGAMENTO antes de INFORMAÇÕES COMPLEMENTARES.
+- **Pegadinha (T11.3):** com o QR ao lado, as tabelas de valores ficam a 78% da largura, os rótulos das 8 colunas
+  quebram e o bloco cresce ~8pt; com o copia e cola em 2 linhas, o WebISS de 25 linhas foi para 2 páginas (e o
+  carimbo absoluto junto). Acertos medidos com pypdf: QR 56pt; copia e cola em **uma linha a 4,5pt** (154 caracteres
+  ≈ 430pt); OUTRAS INFORMAÇÕES com 14pt mínimos quando há PIX; `@page` com margem inferior 30pt e rodapé a −21pt.
+  `AmostrasVisuaisTest` prova 1 página nas 9 combinações (WebISS lista/parágrafo e DANFSe × PIX/boleto/nenhuma).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

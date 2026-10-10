@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Recibo {{ $numero }}</title>
 <style>
-    @page { margin: 16pt 18pt 34pt; }
+    @page { margin: 16pt 18pt 30pt; }
     body { margin: 0; font-family: 'DejaVu Sans', sans-serif; font-size: 7pt; color: #000; }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     td { vertical-align: top; padding: 1.5pt 4pt; overflow: hidden; }
@@ -24,7 +24,7 @@
     .carimbo-vencida { color: #B3261E; border-color: #B3261E; }
     .carimbo-vence_hoje { color: #C2410C; border-color: #C2410C; }
     .carimbo-cancelada { color: #6B7280; border-color: #6B7280; }
-    .rodape { position: fixed; bottom: -24pt; left: 0; right: 0; font-size: 6pt; }
+    .rodape { position: fixed; bottom: -21pt; left: 0; right: 0; font-size: 6pt; }
 </style>
 </head>
 <body>
@@ -123,6 +123,10 @@
         </tr>
     </table>
 
+    @php($comQr = $pagamento['forma'] === 'pix')
+    @if ($comQr)
+        <table><tr><td style="width: 78%; padding: 0;">
+    @endif
     <div class="divisa secao">TRIBUTOS FEDERAIS</div>
     <table>
         <tr>
@@ -150,14 +154,27 @@
             <td class="num"><span class="rot">Valor Total (R$)</span><span style="display: block; font-size: 12pt; font-weight: bold;">{{ $valor }}</span></td>
         </tr>
     </table>
+    @if ($comQr)
+        </td><td style="width: 22%; padding: 4pt; text-align: center; border-top: 0.75pt solid #000; border-left: 0.75pt solid #000;">
+            <img src="{{ $pagamento['qr'] }}" alt="" style="width: 56pt; height: 56pt;">
+            <span class="rot" style="margin-top: 2pt;">PIX — {{ $pagamento['tipo'] }}</span>
+            <span style="display: block; font-size: 5.5pt; font-weight: bold;">{{ $pagamento['chave'] }}</span>
+        </td></tr></table>
+    @endif
 
     <div class="divisa secao">OUTRAS INFORMAÇÕES</div>
     <table>
         <tr>
-            <td style="height: 20pt;">
+            <td style="height: {{ $pagamento['forma'] === 'pix' ? 14 : 20 }}pt;">
                 @foreach ($informacoes as $linha)
                     <div style="font-size: 6.5pt;">{{ $linha }}</div>
                 @endforeach
+                @if ($pagamento['forma'] === 'pix')
+                    {{-- Uma linha só (154 caracteres a 4,5pt ≈ 430pt): duas linhas empurravam o recibo para a 2ª página. --}}
+                    <div style="font-size: 4.5pt;">PIX copia e cola: {{ implode('', $pagamento['copia_e_cola_linhas']) }}</div>
+                @elseif ($pagamento['forma'] === 'boleto')
+                    <div style="font-size: 6.5pt;">Pagamento por boleto bancário{{ $pagamento['linha_digitavel'] ? ' — linha digitável: '.$pagamento['linha_digitavel'] : '' }}</div>
+                @endif
             </td>
         </tr>
     </table>

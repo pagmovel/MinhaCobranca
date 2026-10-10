@@ -44,7 +44,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | testada |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | testada |
-| 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
+| 11 | T11.3 Bloco de pagamento nos PDFs | testada (conferência visual V4) |
 | 11 | T11.4 Smoke test, revisão final e fechamento | pendente |
 
 ### Pendências para o final
@@ -2551,7 +2551,7 @@ git commit -m "feat: QR Code do PIX em PNG com chillerlan/php-qrcode`n`nCo-Autho
 
 ### Tarefa T11.3: Bloco de pagamento nos PDFs
 
-**Estado:** pendente
+**Estado:** testada (suíte verde; 9 combinações modelo × forma em 1 página). Ajustes de layout no WebISS com PIX: QR 56pt, copia e cola em uma linha a 4,5pt, "Outras informações" com 14pt mínimos, margem inferior 30pt.
 
 **Arquivos:**
 - Modificar: `app/Services/RenderizadorDeRecibo.php`, `resources/views/recibos/pdf/webiss-v1.blade.php`,
