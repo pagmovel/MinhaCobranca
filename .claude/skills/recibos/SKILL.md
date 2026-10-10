@@ -285,6 +285,12 @@ opcionais e degradam com elegância. Liberação de módulos por plano ainda **n
   registra o ouvinte no `created` e a diretiva no `mounted`: a ordem dos atributos no template não importa.
   Valor entra pelos centavos (digitar 260 dá 2,60). O servidor continua normalizando e validando.
 
+- T8.3: `GET /clientes/busca?q=` (2+ caracteres, até 10, `lower(nome) like ? escape '\'` portátil SQLite/PostgreSQL,
+  `%` e `_` digitados escapados, prefixo do documento normalizado). `BuscaCliente.vue` = combobox ARIA (setas,
+  Enter, Esc; `mousedown.prevent` na opção para o `blur` não fechar a lista antes do clique; digitar limpa a
+  escolha). Formulários de contrato/cobrança recebem `temClientes` + `clienteAtual`; a lista recebe `clienteFiltro`.
+  `lower()` do SQLite só converte ASCII (acentos contam na busca — limitação aceita).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

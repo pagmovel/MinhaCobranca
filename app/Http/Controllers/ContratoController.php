@@ -85,7 +85,8 @@ class ContratoController extends Controller
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
                 'ativo' => $contrato->ativo,
             ] : null,
-            'clientes' => $request->user()->clientes()->orderBy('nome')->get(['id', 'nome']),
+            'temClientes' => $request->user()->clientes()->exists(),
+            'clienteAtual' => $contrato?->cliente()->first(['id', 'nome']),
             'periodicidades' => Periodicidade::opcoes(),
         ]);
     }

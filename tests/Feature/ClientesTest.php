@@ -127,4 +127,34 @@ class ClientesTest extends TestCase
     {
         $this->get('/clientes')->assertRedirect('/entrar');
     }
+
+    public function test_busca_por_nome_ou_documento_so_entre_os_clientes_do_usuario(): void
+    {
+        $usuario = User::factory()->create();
+        $ana = Cliente::factory()->for($usuario)->create(['nome' => 'Ana Martins Comércio', 'documento' => '11222333000181']);
+        Cliente::factory()->for($usuario)->create(['nome' => 'Bruno Lima']);
+        Cliente::factory()->create(['nome' => 'Ana de Outro Usuário']);
+        $this->actingAs($usuario);
+
+        $this->getJson('/clientes/busca?q=ANA')->assertOk()->assertExactJson([
+            ['id' => $ana->id, 'nome' => 'Ana Martins Comércio', 'documento' => '11.222.333/0001-81'],
+        ]);
+        $this->getJson('/clientes/busca?q=11.222')->assertJsonCount(1)->assertJsonPath('0.id', $ana->id);
+        $this->getJson('/clientes/busca?q=a')->assertExactJson([]);
+    }
+
+    public function test_busca_devolve_no_maximo_dez_e_trata_curinga_como_texto(): void
+    {
+        $usuario = User::factory()->create();
+        Cliente::factory()->for($usuario)->count(12)->sequence(fn ($sequencia) => ['nome' => "Cliente {$sequencia->index}"])->create();
+        $this->actingAs($usuario);
+
+        $this->getJson('/clientes/busca?q=cliente')->assertJsonCount(10);
+        $this->getJson('/clientes/busca?q='.urlencode('%%'))->assertExactJson([]);
+    }
+
+    public function test_busca_exige_login(): void
+    {
+        $this->getJson('/clientes/busca?q=ana')->assertUnauthorized();
+    }
 }

@@ -33,8 +33,8 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 |---|---|---|
 | 8 | T8.1 Situação "vence hoje" (carimbo laranja) | testada |
 | 8 | T8.2 Máscaras nos campos | testada (navegador na T11.4) |
-| 8 | T8.3 Busca de cliente por autosugestão | pendente |
-| 8 | T8.4 Fechamento da fase 8 (merge + push) | pendente |
+| 8 | T8.3 Busca de cliente por autosugestão | testada (teclado/leitor de tela na T11.4) |
+| 8 | T8.4 Fechamento da fase 8 (merge + push) | concluída |
 | 9 | T9.1 Calculadora: pós-pago | pendente |
 | 9 | T9.2 Modalidade no contrato | pendente |
 | 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | pendente |
@@ -447,7 +447,7 @@ git commit -m "feat: máscaras de valor, CPF/CNPJ, CEP e telefone nos formulári
 
 ### Tarefa T8.3: Busca de cliente por autosugestão
 
-**Estado:** pendente
+**Estado:** testada (suíte 167/167; build ok). Combobox no navegador: smoke da T11.4.
 
 **Arquivos:**
 - Criar: `resources/js/Components/BuscaCliente.vue`
@@ -758,7 +758,7 @@ git commit -m "feat: busca de cliente por autosugestão nos contratos e cobranç
 
 ### Tarefa T8.4: Fechamento da fase 8
 
-**Estado:** pendente
+**Estado:** concluída (merge no main e push)
 
 - [ ] Conferir: T8.1–T8.3 `testada`; `php artisan test --compact`, `node --test resources/js/mascaras.test.js` e `npm run build` verdes.
 - [ ] Merge e push (autorização permanente):

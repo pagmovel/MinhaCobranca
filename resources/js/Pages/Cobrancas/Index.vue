@@ -3,6 +3,7 @@ import { reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
+import BuscaCliente from '../../Components/BuscaCliente.vue';
 import LinhaCobranca from '../../Components/LinhaCobranca.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
@@ -11,7 +12,7 @@ import CancelarInline from '../../Components/CancelarInline.vue';
 const props = defineProps({
     cobrancas: { type: Array, required: true },
     filtros: { type: Object, required: true },
-    clientes: { type: Array, required: true },
+    clienteFiltro: { type: Object, default: null },
 });
 
 const filtro = reactive({ ...props.filtros });
@@ -41,10 +42,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
                 </select>
             </Campo>
             <Campo id="cliente_id" rotulo="Cliente">
-                <select id="cliente_id" v-model="filtro.cliente_id" class="entrada">
-                    <option value="">Todos</option>
-                    <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">{{ cliente.nome }}</option>
-                </select>
+                <BuscaCliente id="cliente_id" v-model="filtro.cliente_id" :inicial="clienteFiltro" vazio="Todos os clientes" />
             </Campo>
             <div class="flex items-end">
                 <button class="botao-secundario w-full">Filtrar</button>
