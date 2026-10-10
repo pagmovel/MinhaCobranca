@@ -45,7 +45,7 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | testada (carimbo: conferência visual na T4.4) |
 | 4 | T4.3 Modelo `danfse-v1` | testada (conferência visual na T4.4) |
 | 4 | T4.4 Comparação visual com as notas originais | concluída (amostras geradas e medidas; falta a conferência visual do usuário) |
-| 5 | T5.1 Painel completo (três blocos, enviar, baixa) | pendente |
+| 5 | T5.1 Painel completo (três blocos, enviar, baixa) | testada (smoke test no navegador na T5.3) |
 | 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | pendente |
 | 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | pendente |
 | 6 | T6.0 Entrada: XMLs de exemplo em `MATERIAIS/` (BLOQUEADA) | pendente |
@@ -6995,7 +6995,7 @@ git commit -m "test: amostras visuais dos modelos de recibo aprovadas`n`nCo-Auth
 
 ### Tarefa T5.1: Painel completo
 
-**Estado:** pendente
+**Estado:** testada (PainelTest 3/3; suíte 151/151; build ok). Envio pelo celular (Web Share) só se confere no navegador: T5.3.
 
 **Arquivos:**
 - Criar: `resources/js/Components/Carimbo.vue`, `resources/js/Components/BotaoEnviar.vue`, `resources/js/Components/BaixaInline.vue`, `resources/js/Components/CancelarInline.vue`, `resources/js/Components/LinhaCobranca.vue`
