@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Services\CalculadoraDePeriodos;
 use Carbon\CarbonImmutable;
@@ -82,5 +83,29 @@ class CalculadoraDePeriodosTest extends TestCase
         $p = (new CalculadoraDePeriodos)->periodo($this->data('2026-09-21'), Periodicidade::Mensal, 10, 0);
 
         $this->assertSame('2026-09-10', $p->vencimento->toDateString());
+    }
+
+    public function test_pos_pago_vence_no_primeiro_dia_escolhido_depois_do_periodo(): void
+    {
+        $calc = new CalculadoraDePeriodos;
+        $vence = fn (string $inicio, int $dia, Periodicidade $periodicidade = Periodicidade::Mensal) => $calc
+            ->periodo($this->data($inicio), $periodicidade, $dia, 0, Modalidade::Pospago)->vencimento->toDateString();
+
+        $this->assertSame('2026-11-10', $vence('2026-10-01', 10), 'serviço de outubro vence em novembro');
+        $this->assertSame('2026-10-20', $vence('2026-09-15', 20), 'primeiro dia 20 depois de 14/10');
+        $this->assertSame('2026-11-10', $vence('2026-09-15', 10), 'dia 10/10 é antes do fim do período');
+        $this->assertSame('2026-11-15', $vence('2026-09-16', 15), 'o próprio dia do fim não vale: estritamente depois');
+        $this->assertSame('2026-02-28', $vence('2026-01-01', 31), 'dia 31 em fevereiro vira o último dia');
+        $this->assertSame('2027-01-10', $vence('2026-10-01', 10, Periodicidade::Trimestral), 'trimestre out–dez vence em janeiro');
+    }
+
+    public function test_pos_pago_so_e_devido_perto_do_vencimento(): void
+    {
+        $devidos = (new CalculadoraDePeriodos)->devidos(
+            $this->data('2026-09-01'), null, Periodicidade::Mensal, 10, 10, $this->data('2026-10-09'), Modalidade::Pospago,
+        );
+
+        // Setembro vence 10/10 (devido desde 30/09); outubro vence 10/11 (ainda não).
+        $this->assertSame(['2026-10-10'], array_map(fn ($periodo) => $periodo->vencimento->toDateString(), $devidos));
     }
 }

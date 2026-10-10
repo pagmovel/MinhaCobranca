@@ -293,6 +293,11 @@ completo com ambos, parcial com um só.
   escolha). Formulários de contrato/cobrança recebem `temClientes` + `clienteAtual`; a lista recebe `clienteFiltro`.
   `lower()` do SQLite só converte ASCII (acentos contam na busca — limitação aceita).
 
+- T9.1: pós-pago = primeira data com o dia escolhido **estritamente** depois do fim do período (limitada ao último
+  dia do mês); pré-pago inalterado (padrão do parâmetro `Modalidade`, então chamadores antigos não mudam).
+- Pegadinha repetida na T9.1: extrair código do plano buscando o nome do arquivo pega a lista "Arquivos" da tarefa.
+  **Sempre ancorar em `\n`caminho`:`** (cabeçalho do bloco).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
