@@ -32,7 +32,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | Fase | Tarefa | Estado |
 |---|---|---|
 | 8 | T8.1 Situação "vence hoje" (carimbo laranja) | testada |
-| 8 | T8.2 Máscaras nos campos | pendente |
+| 8 | T8.2 Máscaras nos campos | testada (navegador na T11.4) |
 | 8 | T8.3 Busca de cliente por autosugestão | pendente |
 | 8 | T8.4 Fechamento da fase 8 (merge + push) | pendente |
 | 9 | T9.1 Calculadora: pós-pago | pendente |
@@ -216,7 +216,7 @@ git commit -m "feat: carimbo VENCENDO HOJE em laranja no dia do vencimento`n`nCo
 
 ### Tarefa T8.2: Máscaras nos campos
 
-**Estado:** pendente
+**Estado:** testada (node --test 5/5; suíte PHP verde; build ok). Comportamento no navegador: smoke da T11.4.
 
 **Arquivos:**
 - Criar: `resources/js/mascaras.js`, `resources/js/mascaras.test.js`, `resources/js/diretivas/mascara.js`

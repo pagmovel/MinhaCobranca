@@ -277,6 +277,12 @@ Liberação de módulos por plano ainda **não existe** (não construir sem pedi
   branco, fórmula de luminância da WCAG); fonte do carimbo menor para caber "VENCENDO HOJE" (22pt no WebISS,
   10pt no DANFSe). A lista de cobranças trata `vence_hoje` como aberta (baixa e cancelar continuam).
 
+- T8.2: máscaras = funções puras em `resources/js/mascaras.js` (testes: `node --test resources/js/mascaras.test.js`,
+  runner embutido do Node 22, sem dependência; o Vite não empacota o teste) + diretiva global `v-mascara="'nome'"`
+  (`resources/js/diretivas/mascara.js`), que dispara `input` para o `v-model` guardar o valor formatado. O `v-model`
+  registra o ouvinte no `created` e a diretiva no `mounted`: a ordem dos atributos no template não importa.
+  Valor entra pelos centavos (digitar 260 dá 2,60). O servidor continua normalizando e validando.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

@@ -55,7 +55,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
                 <input id="codigo_tributacao_nacional" v-model="form.codigo_tributacao_nacional" class="entrada">
             </Campo>
             <Campo id="valor" rotulo="Valor (R$)" :erro="form.errors.valor" class="sm:col-span-2">
-                <input id="valor" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
+                <input id="valor" v-mascara="'valor'" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
             </Campo>
             <Campo id="vencimento" rotulo="Vencimento" :erro="form.errors.vencimento" class="sm:col-span-4">
                 <input id="vencimento" v-model="form.vencimento" type="date" class="entrada" required>
