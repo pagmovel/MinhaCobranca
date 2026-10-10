@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\FormaPagamento;
+use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\Recibo;
 use App\Support\Dinheiro;
 use App\Support\Documento;
 use App\Support\LinhasDoRecibo;
+use App\Support\PixCopiaECola;
+use App\Support\QrCodePix;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
@@ -55,6 +59,7 @@ final class RenderizadorDeRecibo
             'gerado_em' => $agora->format('d/m/Y H:i'),
             'logo' => $this->logo($snapshot['prestador']['logo'] ?? null),
             'aplicativo' => config('app.name'),
+            'pagamento' => $this->pagamento($recibo, $snapshot),
         ];
     }
 
@@ -63,6 +68,54 @@ final class RenderizadorDeRecibo
         return Pdf::loadView($recibo->modelo->view(), $this->dados($recibo, $agora))->setPaper('a4', 'portrait')
             // O laravel-dompdf desliga por padrão; sem isso a DejaVu inteira vai no arquivo (~860 KB).
             ->setOption('isFontSubsettingEnabled', true);
+    }
+
+    /** Forma de pagamento é viva (lida da cobrança); valor e prestador vêm do snapshot, como o resto do recibo. */
+    private function pagamento(Recibo $recibo, array $snapshot): array
+    {
+        $cobranca = $recibo->cobranca;
+
+        // Paga ou cancelada: o recibo não pode mais dizer como pagar (o comprovante não pode ter um QR pagável).
+        if ($cobranca->status !== StatusCobranca::Pendente) {
+            return ['forma' => null];
+        }
+
+        if ($cobranca->forma_pagamento === FormaPagamento::Boleto) {
+            return [
+                'forma' => 'boleto',
+                'linha_digitavel' => filled($cobranca->linha_digitavel) ? $this->linhaDigitavel($cobranca->linha_digitavel) : null,
+            ];
+        }
+
+        $chave = $cobranca->forma_pagamento === FormaPagamento::Pix ? $cobranca->chavePix : null;
+
+        if ($chave === null) {
+            return ['forma' => null];
+        }
+
+        $payload = PixCopiaECola::gerar(
+            $chave->chave,
+            (string) $snapshot['prestador']['nome'],
+            (string) ($snapshot['prestador']['cidade'] ?? ''),
+            $snapshot['servico']['valor_centavos'],
+            sprintf('REC%d%06d', $recibo->ano, $recibo->numero),
+        );
+
+        return [
+            'forma' => 'pix',
+            'chave' => $chave->tipo->formatar($chave->chave),
+            'tipo' => $chave->tipo->rotulo(),
+            'favorecido' => $this->traco($snapshot['prestador']['nome'] ?? null),
+            'copia_e_cola' => $payload,
+            'qr' => QrCodePix::dataUri($payload),
+        ];
+    }
+
+    private function linhaDigitavel(string $linha): string
+    {
+        return strlen($linha) === 48
+            ? (string) preg_replace('/^(\d{11})(\d)(\d{11})(\d)(\d{11})(\d)(\d{11})(\d)$/', '$1-$2 $3-$4 $5-$6 $7-$8', $linha)
+            : (string) preg_replace('/^(\d{5})(\d{5})(\d{5})(\d{6})(\d{5})(\d{6})(\d)(\d{14})$/', '$1.$2 $3.$4 $5.$6 $7 $8', $linha);
     }
 
     private function carimbo(Cobranca $cobranca, CarbonImmutable $agora): array

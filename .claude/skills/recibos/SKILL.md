@@ -328,6 +328,51 @@ o relatório mostra a parte que existe.
   adequação e necessidade (art. 6º, I–III); base legal (art. 7º); proteção contra acesso/comunicação indevida (art. 46).
   Também revelaria a carteira de clientes de outro assinante. Preenchimento por CNPJ/CEP entra na spec do módulo Cobrança.
 
+- T11.1: `App\Support\PixCopiaECola` monta o BR Code estático com valor. **Fontes (conferidas em 2026-10-10):**
+  Manual de Padrões para Iniciação do Pix v2.10.0 (bcb.gov.br, 19/08/2026) — exemplo oficial
+  `…62070503***63041D3D`, CRC16 polinômio `0x1021` e valor inicial `0xFFFF` calculado **incluindo `6304`**, txid
+  (62-05) até 25 caracteres `[A-Za-z0-9]` e `***` quando não há, campo 01 opcional; Manual do BR Code
+  (bcb.gov.br/content/estabilidadefinanceira/spb_docs/ManualBRCode.pdf) — 59 nome 01..25 e 60 cidade 01..15
+  (obrigatórios), 54 valor `123.99`. Nome e cidade saem em maiúsculas ASCII (o exemplo do manual usa
+  "NOME DO RECEBEDOR"). O teste do CRC usa o exemplo oficial; o txid do recibo é `REC` + ano + número (6 dígitos).
+
+- T11.2: `chillerlan/php-qrcode` **v6.0.1** (dependência aprovada pelo usuário; requer `ext-mbstring` e GD). Na v6 a
+  saída é `'outputInterface' => QRGdImagePNG::class` (as constantes `outputType`/`GDIMAGE_PNG` da v5 não existem);
+  `outputBase64` já vem `true` e devolve data URI. `QrCodePix::dataUri()` gera PNG 265×265 (scale 5, margem 2).
+  **Verificação forte:** o QR gerado foi decodificado com OpenCV (`cv2.QRCodeDetector`, instalado na máquina) e é
+  idêntico ao copia e cola — usar o mesmo método se mudar algo no QR.
+
+- T11.3: `RenderizadorDeRecibo::dados()['pagamento']` (dado vivo da cobrança; valor, nome e cidade vêm do snapshot;
+  txid `REC`+ano+número). WebISS: QR ao lado de TRIBUTOS/VALORES (tabela 78% + coluna 22%) e copia e cola em
+  OUTRAS INFORMAÇÕES; DANFSe: bloco PAGAMENTO antes de INFORMAÇÕES COMPLEMENTARES.
+- **Pegadinha (T11.3):** com o QR ao lado, as tabelas de valores ficam a 78% da largura, os rótulos das 8 colunas
+  quebram e o bloco cresce ~8pt; com o copia e cola em 2 linhas, o WebISS de 25 linhas foi para 2 páginas (e o
+  carimbo absoluto junto). Acertos medidos com pypdf: QR 56pt; copia e cola em **uma linha a 4,5pt** (154 caracteres
+  ≈ 430pt); OUTRAS INFORMAÇÕES com 14pt mínimos quando há PIX; `@page` com margem inferior 30pt e rodapé a −21pt.
+  `AmostrasVisuaisTest` prova 1 página nas 9 combinações (WebISS lista/parágrafo e DANFSe × PIX/boleto/nenhuma).
+
+- Revisão final das fases 8–11 (2026-10-10) — correções:
+  - **Máscara de telefone com DDI corrompia a chave PIX**: `+55 (91) 98765-4321` virava `(55) 91987-6543`, e o servidor
+    gravava **outra chave** (até ao só editar o apelido). `formatadores.telefone` agora descarta um `55` inicial quando
+    há mais de 11 dígitos — corrige também telefones antigos com `+55` no perfil e no cliente.
+  - Colar valor ("1.500", "260,6") era lido pelos centavos (15,00 / 26,06): a diretiva usa `valorColado` (mesma regra de
+    `Dinheiro::paraCentavos`) quando `inputType === 'insertFromPaste'`.
+  - Recibo **pago ou cancelado não mostra como pagar** (`pagamento.forma = null`): o comprovante enviado ao cliente não
+    pode ter um QR pagável de novo.
+  - Copia e cola em **uma linha só** (`white-space: nowrap`, fonte pelo comprimento: `min(4,5; 520/(n×0,62))` no WebISS,
+    `min(5,5; 540/(n×0,62))` no DANFSe em largura total). Quebrar no espaço do nome/cidade perdia o espaço na cópia e
+    invalidava o código. Conferido com pypdf: 158 e 223 caracteres (chave mais longa) em 1 linha, inteiros, 1 página.
+
+- T11.4 (smoke, 2026-10-10): fluxo de pagamento conferido de ponta a ponta (ver estado da T11.4 no plano). **QR validado
+  pelo usuário no celular.** PDFs e QR extraído em `storage/app/private/verificacao/smoke-pagamento/`.
+- Pegadinhas do smoke: (1) o `cv2.QRCodeDetector` padrão falha em QR PIX válido (denso); `cv2.QRCodeDetectorAruco` lê —
+  usar o Aruco para conferir. Para tirar o QR do PDF: `pypdf` → `page.images` (a imagem de 265×265). (2) Cookie de sessão
+  velho no perfil do Chrome de teste faz a página cair em `/entrar` no meio do roteiro: conferir a URL e entrar de novo.
+  (3) `capture_screenshot(full=True)` estourou o tempo do canal do browser-use; usar print só da área visível.
+  (4) O usuário mexe no banco em paralelo (cadastrou 4 chaves PIX durante o pedido de autorização): a recontagem do
+  portão pegou — parar e pedir de novo.
+- QR com margem branca de 4 módulos (padrão do QR Code e da biblioteca; o plano tinha 2). Não muda o conteúdo do código.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

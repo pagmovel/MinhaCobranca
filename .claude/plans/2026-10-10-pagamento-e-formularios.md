@@ -42,15 +42,21 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
-| 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
-| 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
-| 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
-| 11 | T11.4 Smoke test, revisão final e fechamento | pendente |
+| 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | testada |
+| 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | testada |
+| 11 | T11.3 Bloco de pagamento nos PDFs | testada (conferência visual V4) |
+| 11 | T11.4 Smoke test, revisão final e fechamento | concluída (smoke ok; revisão final com 4 correções; merge e push) |
 
 ### Pendências para o final
-- [ ] **V4** — conferência visual: carimbo VENCENDO HOJE (tela e PDFs), bloco de pagamento nos dois
-  modelos, QR **escaneado num celular** abrindo o valor e o nome certos. — pendente
+- [ ] **V4** — conferência visual: carimbo VENCENDO HOJE (tela e PDFs) e bloco de pagamento nos dois
+  modelos. — pendente. **QR escaneado no celular: validado pelo usuário em 2026-10-10 ("batendo certinho").**
 - (continuam valendo as pendências V1–V3, D1, L1, M1, M2 do plano `2026-10-09-sistema-recibos.md`)
+- Menores da revisão final (adiados, decisão do executor — ver ledger):
+  - [ ] **M3** — `BuscaCliente`: escolher antes dos 250 ms ou resposta atrasada reabre a lista (cancelar timer/fetch em `escolher` e no `blur`). — pendente
+  - [ ] **M4** — acessibilidade do `BuscaCliente` ("nenhum cliente" sem `role="option"`, sem região viva) e ids repetidos com vários `PagamentoInline` abertos. — pendente
+  - [ ] **M5** — chave usada em cobrança paga nunca pode ser excluída (mensagem manda trocar a forma, que só vale para pendentes). — pendente
+  - [ ] **M6** — WebISS sem o "favorecido" pedido na spec 5.1 (cortado por espaço; o nome do prestador já aparece no recibo). — pendente
+  - [ ] **M7** — trocar o tipo da chave depois de colar o texto reaplica a máscara do novo tipo (tipo padrão CPF reduz e-mail colado a dígitos). — pendente
 
 ---
 
@@ -2315,7 +2321,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 
 ### Tarefa T11.1: PIX "copia e cola" (BR Code) conferido com o Banco Central
 
-**Estado:** pendente
+**Estado:** testada (PixCopiaEColaTest 3/3 — CRC do exemplo oficial confere; suíte verde). Fontes conferidas no passo 1.
 
 **Arquivos:**
 - Criar: `app/Support/PixCopiaECola.php`
@@ -2324,7 +2330,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 **Interfaces:** `PixCopiaECola::gerar(string $chave, string $nome, string $cidade, int $valorCentavos, string $txid): string`;
 `PixCopiaECola::crc16(string $dados): string` (4 hexadecimais maiúsculos).
 
-- [ ] **Passo 1: conferir o padrão** — abrir o "Manual de Padrões para Iniciação do Pix" do Banco Central
+- [x] **Passo 1: conferir o padrão** — feito em 2026-10-10 (Manual de Padrões para Iniciação do Pix v2.10.0 e Manual do BR Code; ver skill) — abrir o "Manual de Padrões para Iniciação do Pix" do Banco Central
   (ctx_fetch_and_index / busca em bcb.gov.br) e confirmar, registrando a fonte na skill:
   1. IDs e ordem dos campos (`00`, `26` com `00`=`br.gov.bcb.pix` e `01`=chave, `52`, `53`=`986`, `54`, `58`=`BR`, `59`, `60`, `62`/`05`, `63`);
   2. limites: nome 25, cidade 15, txid até 25 alfanuméricos (`***` quando não há);
@@ -2462,7 +2468,7 @@ git commit -m "feat: PIX copia e cola (BR Code) com valor e identificação do r
 
 ### Tarefa T11.2: QR Code em PNG (`chillerlan/php-qrcode`)
 
-**Estado:** pendente
+**Estado:** testada (QrCodePixTest 1/1; QR decodificado pelo OpenCV igual ao copia e cola). Instalada a **v6.0.1**: API `outputInterface => QRGdImagePNG::class` (não a da v5 do plano).
 
 **Arquivos:**
 - Modificar: `composer.json`, `composer.lock`
@@ -2512,7 +2518,7 @@ class QrCodePixTest extends TestCase
 
 namespace App\Support;
 
-use chillerlan\QRCode\Output\QROutputInterface;
+use chillerlan\QRCode\Output\QRGdImagePNG;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 
@@ -2522,7 +2528,7 @@ final class QrCodePix
     public static function dataUri(string $payload): string
     {
         $opcoes = new QROptions([
-            'outputType' => QROutputInterface::GDIMAGE_PNG,
+            'outputInterface' => QRGdImagePNG::class,
             'outputBase64' => true,
             'scale' => 5,
             'quietzoneSize' => 2,
@@ -2551,7 +2557,7 @@ git commit -m "feat: QR Code do PIX em PNG com chillerlan/php-qrcode`n`nCo-Autho
 
 ### Tarefa T11.3: Bloco de pagamento nos PDFs
 
-**Estado:** pendente
+**Estado:** testada (suíte verde; 9 combinações modelo × forma em 1 página). Ajustes de layout no WebISS com PIX: QR 56pt, copia e cola em uma linha a 4,5pt, "Outras informações" com 14pt mínimos, margem inferior 30pt.
 
 **Arquivos:**
 - Modificar: `app/Services/RenderizadorDeRecibo.php`, `resources/views/recibos/pdf/webiss-v1.blade.php`,
@@ -2761,7 +2767,12 @@ git commit -m "feat: bloco de pagamento (QR PIX ou boleto) nos recibos WebISS e 
 
 ### Tarefa T11.4: Smoke test, revisão final e fechamento
 
-**Estado:** pendente
+**Estado:** concluída em 2026-10-10. Smoke (usuário SMOKE id 2, autorizado; recontagem mudou uma vez — `chaves_pix` 0→4 do usuário — e foi pedido novo "sim"):
+chave celular digitada com `+55` gravada certa e intacta após editar o apelido; e-mail colado em minúsculas; autosugestão pelo
+teclado; valor colado "1.500" → 1.500,00; contrato pós-pago com PIX gerou cobrança que vence hoje → VENCENDO HOJE na tela e no PDF;
+QR extraído do PDF decodificado igual ao copia e cola impresso; avulsa com boleto (linha colada e formatada); troca para PIX depois de
+enviada; baixa → recibo PAGO sem QR nem copia e cola. **QR escaneado pelo usuário no celular: "batendo certinho" (validado).**
+Revisão final: 1 crítico + 3 importantes + 1 menor regraduado corrigidos com teste; menores M3–M7 adiados.
 
 - [ ] **PORTÃO-BANCO para o smoke test** com o usuário SMOKE (id 2, já existente): mostrar contagens de
   `chaves_pix`, `contratos`, `cobrancas`, `recibos`; dizer o que será criado (1–2 chaves PIX, 1 contrato pós-pago

@@ -1,7 +1,9 @@
 import { formatadores } from '../mascaras.js';
 
-function formatar(el) {
-    const formatador = formatadores[el.dataset.mascara];
+function formatar(el, colou = false) {
+    // Colar um valor pronto ("1.500") não pode ser lido pelos centavos (daria 15,00).
+    const nome = colou && el.dataset.mascara === 'valor' ? 'valorColado' : el.dataset.mascara;
+    const formatador = formatadores[nome];
     if (!formatador) {
         return;
     }
@@ -17,7 +19,7 @@ function formatar(el) {
 export default {
     mounted(el, { value }) {
         el.dataset.mascara = value;
-        el.addEventListener('input', () => formatar(el));
+        el.addEventListener('input', (evento) => formatar(el, evento.inputType === 'insertFromPaste'));
         formatar(el);
     },
     updated(el, { value }) {

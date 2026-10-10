@@ -42,6 +42,22 @@ export const formatadores = {
         return limpo.length <= 11 && /^\d*$/.test(limpo) ? aplicar(limpo, '000.000.000-00') : cnpj(limpo);
     },
 
+    /** Valor colado ("1.500", "260,6", "1234.5") lido como o servidor lê (`Dinheiro::paraCentavos`). */
+    valorColado(texto) {
+        let limpo = String(texto ?? '').replace(/R\$|\s/g, '');
+        if (limpo.includes(',')) {
+            limpo = limpo.replace(/\./g, '').replace(',', '.');
+        } else if (/^\d{1,3}(\.\d{3})+$/.test(limpo)) {
+            limpo = limpo.replace(/\./g, '');
+        }
+        const partes = limpo.match(/^(\d+)(?:\.(\d{1,2}))?$/);
+        if (!partes) {
+            return formatadores.valor(texto);
+        }
+
+        return formatadores.valor(partes[1] + (partes[2] ?? '').padEnd(2, '0'));
+    },
+
     cpf: (texto) => aplicar(digitos(texto).slice(0, 11), '000.000.000-00'),
 
     cnpj,
@@ -49,7 +65,12 @@ export const formatadores = {
     cep: (texto) => aplicar(digitos(texto).slice(0, 8), '00000-000'),
 
     telefone(texto) {
-        const numeros = digitos(texto).slice(0, 11);
+        let numeros = digitos(texto);
+        // "+55 (91) 98765-4321": o DDI entraria como DDD e trocaria o número (chave PIX gravada errada).
+        if (numeros.length > 11 && numeros.startsWith('55')) {
+            numeros = numeros.slice(2);
+        }
+        numeros = numeros.slice(0, 11);
 
         return aplicar(numeros, numeros.length <= 10 ? '(00) 0000-0000' : '(00) 00000-0000');
     },

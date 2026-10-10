@@ -143,6 +143,31 @@
     <td class="c1"><span class="rot">VALOR LÍQUIDO + IBS/CBS</span><span class="val">R$ {{ $valor }}</span></td>
 </tr></table>
 
+@if ($pagamento['forma'] === 'pix')
+    <table class="bloco"><tr><td class="c4 titulo">PAGAMENTO</td></tr></table>
+    <table><tr>
+        <td class="c1" style="text-align: center;"><img src="{{ $pagamento['qr'] }}" alt="" style="width: 70pt; height: 70pt;"></td>
+        <td class="c3">
+            <span class="rot">Forma de Pagamento</span><span class="val">PIX — {{ $pagamento['tipo'] }}</span>
+            <span class="rot">Chave</span><span class="val">{{ $pagamento['chave'] }}</span>
+            <span class="rot">Favorecido</span><span class="val">{{ $pagamento['favorecido'] }}</span>
+        </td>
+    </tr></table>
+    {{-- Largura total e uma linha só (quebra de linha estraga a cópia do código no celular). --}}
+    <table><tr><td class="c4">
+        <span class="rot">PIX Copia e Cola</span>
+        <span class="val" style="white-space: nowrap; font-size: {{ min(5.5, round(540 / (strlen($pagamento['copia_e_cola']) * 0.62), 2)) }}pt;">{{ $pagamento['copia_e_cola'] }}</span>
+    </td></tr></table>
+@elseif ($pagamento['forma'] === 'boleto')
+    <table class="bloco"><tr><td class="c4 titulo">PAGAMENTO</td></tr></table>
+    <table><tr><td class="c4">
+        <span class="rot">Forma de Pagamento</span><span class="val">Boleto bancário</span>
+        @if ($pagamento['linha_digitavel'])
+            <span class="rot">Linha Digitável</span><span class="val">{{ $pagamento['linha_digitavel'] }}</span>
+        @endif
+    </td></tr></table>
+@endif
+
 <table class="bloco"><tr><td class="c4 titulo">INFORMAÇÕES COMPLEMENTARES</td></tr></table>
 <table><tr><td class="c4" style="height: 60pt;">
     @foreach ($informacoes as $linha)
