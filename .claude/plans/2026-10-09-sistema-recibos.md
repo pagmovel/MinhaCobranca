@@ -19,41 +19,72 @@ Estados (regra global): `pendente` → `concluída` (código pronto) → `testad
 | Fase | Tarefa | Estado |
 |---|---|---|
 | 0 | T0.1 Git + Laravel Boost | concluída (sem teste automatizado: tarefa de instalação) |
-| 0 | T0.2 Idioma, fuso e mensagens em pt-BR | pendente |
-| 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | pendente |
-| 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | pendente |
-| 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | pendente |
-| 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | pendente |
-| 1 | T1.1 Usuário: status, admin, dados do prestador | pendente |
-| 1 | T1.2 Cadastro com aprovação pendente | pendente |
-| 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | pendente |
-| 1 | T1.4 Administração de usuários | pendente |
-| 1 | T1.5 Comando `app:criar-admin` | pendente |
-| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | pendente |
-| 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | pendente |
-| 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | pendente |
-| 2 | T2.3 Clientes | pendente |
-| 3 | T3.1 Dinheiro e regra de valor em reais | pendente |
-| 3 | T3.2 Periodicidade e calculadora de períodos | pendente |
-| 3 | T3.3 Contratos | pendente |
-| 3 | T3.4 Tabelas e models de cobranças e recibos | pendente |
-| 3 | T3.5 Numeração e emissão de recibos (snapshot) | pendente |
-| 3 | T3.6 Gerador de cobranças recorrentes | pendente |
-| 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | pendente |
-| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | pendente |
-| 4 | T4.1 Valor por extenso | pendente |
-| 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | pendente |
-| 4 | T4.3 Modelo `danfse-v1` | pendente |
-| 4 | T4.4 Comparação visual com as notas originais | pendente |
-| 5 | T5.1 Painel completo (três blocos, enviar, baixa) | pendente |
-| 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | pendente |
-| 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | pendente |
+| 0 | T0.2 Idioma, fuso e mensagens em pt-BR | testada |
+| 0 | T0.3 Inertia + Vue + tokens visuais + página Entrar | testada |
+| 0 | T0.4 dompdf + prova de conceito (acentos, rotação, imagem) | testada (rotação e posição do carimbo aguardam conferência visual do usuário) |
+| 0 | T0.5 `.claude/` (skill, memória) + inventário no CLAUDE.md/README | concluída |
+| 0 | T0.6 PORTÃO-BANCO: migrações padrão no SQLite de desenvolvimento | concluída (nada a gravar: migrações padrão já aplicadas no lote 1) |
+| 1 | T1.1 Usuário: status, admin, dados do prestador | testada |
+| 1 | T1.2 Cadastro com aprovação pendente | testada |
+| 1 | T1.3 Entrar, sair, bloqueio por status, painel inicial | testada |
+| 1 | T1.4 Administração de usuários | testada |
+| 1 | T1.5 Comando `app:criar-admin` | testada |
+| 1 | T1.6 PORTÃO-BANCO + criar admin + smoke test de contas | concluída (migrate e admin feitos; smoke test adiado para a T5.3, decisão do usuário em 2026-10-09) |
+| 2 | T2.1 CPF/CNPJ (inclusive CNPJ alfanumérico) | testada |
+| 2 | T2.2 Meu perfil (prestador, logo, modelo padrão, antecedência) | testada |
+| 2 | T2.3 Clientes | testada (migração `clientes` aplicada no banco de desenvolvimento em 2026-10-09, autorizada) |
+| 3 | T3.1 Dinheiro e regra de valor em reais | testada |
+| 3 | T3.2 Periodicidade e calculadora de períodos | testada |
+| 3 | T3.3 Contratos | testada (migração `contratos` aplicada só na T3.8) |
+| 3 | T3.4 Tabelas e models de cobranças e recibos | testada |
+| 3 | T3.5 Numeração e emissão de recibos (snapshot) | testada |
+| 3 | T3.6 Gerador de cobranças recorrentes | testada |
+| 3 | T3.7 Ações de cobrança (avulsa, editar, cancelar, baixa, enviada) | testada |
+| 3 | T3.8 PORTÃO-BANCO: migrações da fase 3 | concluída (no PostgreSQL: 8 migrações, 13 tabelas; seed do perfil inicial → admin id 1) |
+| 4 | T4.1 Valor por extenso | testada |
+| 4 | T4.2 Renderizador + rota do PDF + modelo `webiss-v1` | testada (carimbo: conferência visual na T4.4) |
+| 4 | T4.3 Modelo `danfse-v1` | testada (conferência visual na T4.4) |
+| 4 | T4.4 Comparação visual com as notas originais | concluída (amostras geradas e medidas; falta a conferência visual do usuário) |
+| 5 | T5.1 Painel completo (três blocos, enviar, baixa) | testada (smoke test no navegador na T5.3) |
+| 5 | T5.2 Telas de cobranças (lista com filtros, avulsa, edição) | testada (smoke test no navegador na T5.3) |
+| 5 | T5.3 PORTÃO-BANCO + smoke test + revisão visual (frontend-design) | testada (smoke funcional ok; Web Share [INCONCLUSIVO]; prints, decisão D1 e limpeza L1 nas pendências finais) |
 | 6 | T6.0 Entrada: XMLs de exemplo em `MATERIAIS/` (BLOQUEADA) | pendente |
 | 6 | T6.1 Tabela de notas fiscais + leitura segura de XML | pendente |
 | 6 | T6.2 Leitores nacional e municipal (detalhar após T6.0) | pendente |
 | 6 | T6.3 Conciliação, vínculo, citação no recibo, criar cliente | pendente |
 | 6 | T6.4 PORTÃO-BANCO: migração da fase 6 | pendente |
-| 7 | T7.1 Suíte contra PostgreSQL de teste declarado pelo usuário | pendente |
+| 7 | T7.1 Suíte contra PostgreSQL de teste declarado pelo usuário | pendente (banco da aplicação já está no PostgreSQL desde a Fase 3; falta a suíte contra uma base de teste) |
+
+
+### Pendências para o final (conferências visuais)
+
+Decisão do usuário em 2026-10-10: ele não pode fazer conferência visual agora; a execução segue e
+estas conferências ficam para o fim, antes da revisão final do branch. Enquanto não forem feitas, as
+tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
+
+- [ ] **V1 — Amostras dos recibos lado a lado com as notas** (T4.2, T4.3, T4.4 passo 3): abrir
+  `storage/app/private/verificacao/amostra-webiss.pdf` e `amostra-danfse.pdf` (e as versões
+  `-25-linhas`) ao lado das NFS-e em `MATERIAIS/`; apontar diferenças de posição, tamanho, fonte e
+  espaçamento. Gerar de novo com `php artisan test --group=visual`. — pendente
+- [ ] **V2 — Carimbo e rodapé** (T0.4, absorvida pela V1): carimbo girado dentro da moldura (WebISS no
+  centro, DANFSe no lugar do QR) e rodapé no pé da página. — pendente
+- [ ] **V3 — Prints do smoke test (T5.3 passos 5–6)**: `storage/app/private/verificacao/smoke/*.png`
+  (1280 px e 390 px) e os PDFs reais `recibo-*.pdf`. Validar a direção visual e as fases 2–5. — pendente
+- [ ] **D1 — Decisão: o que conta como "recebido" no topo do painel.** Hoje (regra do plano, T5.1):
+  parte paga das cobranças que **vencem** no mês. No smoke, um pagamento de setembro feito em outubro
+  apareceu em "Recebidas no mês" mas não somou no "R$ … recebidos". Alternativa: somar o que foi **pago
+  no mês** (coerente com a lista, mas pode passar do previsto). — pendente (decisão do usuário)
+- [ ] **L1 — Limpeza dos dados SMOKE** (T5.3 passo 7): usuário `smoke@recibos.test` (id 2) e tudo dele
+  (2 clientes, 2 contratos, 5 cobranças e recibos, logos em `storage/app/private/logos/2/`). Pedir
+  PORTÃO-BANCO com o comando literal. — pendente
+
+### Revisão final das Fases 0–5 (2026-10-10)
+
+Revisor independente (contexto novo) sobre `e67bd19..e846939`: nenhum Critical. Corrigidos com teste
+que falhou antes: sobreposição de texto no WebISS com linha longa (`LinhasDoRecibo`), e-mail com
+maiúsculas no cadastro/login, troca de cliente da avulsa mantendo o layout antigo. Adiados (Minor):
+- [ ] **M1** — valor com 20+ dígitos dá erro 500 em vez da mensagem (`Dinheiro::paraCentavos`). — pendente
+- [ ] **M2** — `POST /cobrancas/{id}/enviada` aceita cobrança cancelada (só por requisição manual). — pendente
 
 ---
 
@@ -81,9 +112,10 @@ Vale para `migrate`, `app:criar-admin`, smoke test que cria dados ou sessões, e
 
 1. Mostrar a conexão: `php artisan db:show` → informar ao usuário driver, caminho/host, porta, banco e usuário, e dizer explicitamente se é produção (o `.env` atual usa `DB_CONNECTION=sqlite`, arquivo local — confirmar na saída, não presumir).
 2. Contar o alvo: `php artisan db:show --counts` (linhas por tabela) e `php artisan migrate:status`.
-3. Mostrar o efeito literal: para migração, `php artisan migrate --pretend` (SQL que seria executado); para outros comandos, o comando exato e as tabelas/linhas que vai criar ou alterar.
+3. Mostrar o efeito literal: para migração, `php artisan migrate --pretend` (SQL que seria executado) — **só se a tabela `migrations` já existir**: verificado em `MigrateCommand.php:140-146` que, sem ela, o `--pretend` cria a tabela antes de simular (é escrita). Sem a tabela, mostrar o conteúdo das migrações pendentes em vez do `--pretend`. Para outros comandos, o comando exato e as tabelas/linhas que vai criar ou alterar.
 4. Perguntar ao usuário e **esperar o "sim" para aquele comando**. Autorização não é transitiva: um "sim" para `migrate` não autoriza `app:criar-admin` nem o smoke test.
-5. Executar e mostrar o resultado (`migrate:status` ou contagem depois).
+5. Logo antes de executar, **recontar em comando separado**; se a contagem mudou desde a autorização, parar e perguntar de novo (em 2026-10-09 a tabela `users` passou de 0 para 1 entre a autorização e o `migrate` — o usuário se cadastrou em paralelo).
+6. Executar e mostrar o resultado (`migrate:status` ou contagem depois).
 
 Se o usuário inserir dados de teste pelo smoke test, marcá-los com identificador próprio (ex.: e-mail `smoke-AAAAMMDD@teste.local`, cliente "SMOKE …") para limpeza **por esse identificador**, também só com autorização.
 
@@ -197,7 +229,7 @@ git commit -m "chore: estado inicial do projeto com spec, plano e Laravel Boost`
 
 ### Tarefa T0.2: Idioma, fuso e mensagens de validação em pt-BR
 
-**Estado:** pendente
+**Estado:** testada — ConfiguracaoTest 2/2; suíte verde
 
 **Arquivos:**
 - Modificar: `.env` (linhas `APP_NAME`, `APP_LOCALE`, `APP_FAKER_LOCALE`), `.env.example` (mesmas linhas), `config/app.php:68`
@@ -351,7 +383,7 @@ git commit -m "feat: idioma pt-BR, fuso de Brasília e mensagens de validação`
 
 ### Tarefa T0.3: Inertia v3 + Vue 3 + tokens visuais + página Entrar
 
-**Estado:** pendente
+**Estado:** testada — PaginaEntrarTest 1/1; npm run build ok; inertia-laravel v3.5.1
 
 **Arquivos:**
 - Modificar: `composer.json`, `package.json` (via instaladores), `vite.config.js`, `resources/css/app.css`, `resources/js/app.js`, `bootstrap/app.php`, `routes/web.php`, `tests/TestCase.php`
@@ -718,7 +750,7 @@ git commit -m "feat: Inertia v3 com Vue 3, tokens visuais e página de entrada`n
 
 ### Tarefa T0.4: dompdf + prova de conceito
 
-**Estado:** pendente
+**Estado:** testada — PDF gerado; extração de texto confirma acentos em DejaVu Sans e Helvetica (WinAnsiEncoding), imagem data URI embutida, 1 página. Rotação, absoluto dentro da caixa e rodapé fixo: [A VERIFICAR] pelo usuário
 
 **Arquivos:**
 - Modificar: `composer.json` (via composer)
@@ -831,7 +863,7 @@ git commit -m "chore: dompdf e prova de conceito de fontes, rotação e imagem`n
 
 ### Tarefa T0.5: `.claude/` do projeto + inventário de ferramentas
 
-**Estado:** pendente
+**Estado:** concluída — skill, memória (2 arquivos), inventário no CLAUDE.md, AGENTS.md e README; plugins conferidos: todos instalados
 
 **Arquivos:**
 - Criar: `.claude/skills/recibos/SKILL.md`, `.claude/MEMORY.md`, `.claude/memory/` (com o primeiro arquivo de memória)
@@ -978,7 +1010,7 @@ git commit -m "docs: skill do projeto, memória e inventário de ferramentas`n`n
 
 ### Tarefa T0.6: PORTÃO-BANCO — migrações padrão no SQLite de desenvolvimento
 
-**Estado:** pendente
+**Estado:** concluída — `db:show`: SQLite local `database/database.sqlite` (não é produção); `migrate:status`: as 3 migrações padrão já constavam como Ran (lote 1); `users` com 0 linhas. Nenhuma escrita feita.
 
 **Arquivos:** nenhum de código. Altera `database/database.sqlite`.
 
@@ -993,7 +1025,7 @@ git commit -m "docs: skill do projeto, memória e inventário de ferramentas`n`n
 
 ### Tarefa T1.1: Usuário com status, admin e dados do prestador
 
-**Estado:** pendente
+**Estado:** testada — UsuarioModeloTest 4/4; suíte verde
 
 **Arquivos:**
 - Criar: `app/Enums/StatusUsuario.php`, `app/Enums/FamiliaModelo.php`, `app/Enums/ModeloRecibo.php`, `database/migrations/2026_10_09_100000_add_conta_e_prestador_to_users_table.php`
@@ -1391,7 +1423,7 @@ git commit -m "feat: status de conta, admin e dados do prestador no usuário`n`n
 
 ### Tarefa T1.2: Cadastro com aprovação pendente
 
-**Estado:** pendente
+**Estado:** testada — CadastroTest 4/4 (inclui texto das mensagens); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Controllers/Auth/CadastroController.php`, `resources/js/Pages/Auth/Cadastro.vue`
@@ -1583,7 +1615,7 @@ git commit -m "feat: cadastro aberto com conta pendente de liberação`n`nCo-Aut
 
 ### Tarefa T1.3: Entrar, sair, bloqueio por status e painel inicial
 
-**Estado:** pendente
+**Estado:** testada — LoginTest 9/9 (inclui limite de tentativas: RateLimiter `login`, 5/min por e-mail+IP); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Middleware/GarantirContaAprovada.php`, `app/Http/Controllers/PainelController.php`, `resources/js/Layouts/CamadaApp.vue`, `resources/js/Pages/Painel.vue`
@@ -1999,7 +2031,7 @@ git commit -m "feat: entrar e sair com bloqueio por status da conta`n`nCo-Author
 
 ### Tarefa T1.4: Administração de usuários
 
-**Estado:** pendente
+**Estado:** testada — AdminUsuariosTest 4/4; suíte verde; build ok
 
 **Arquivos:**
 - Criar: `app/Http/Controllers/Admin/UsuarioController.php`, `resources/js/Pages/Admin/Usuarios.vue`
@@ -2237,7 +2269,7 @@ git commit -m "feat: tela de administração para liberar e bloquear contas`n`nC
 
 ### Tarefa T1.5: Comando `app:criar-admin`
 
-**Estado:** pendente
+**Estado:** testada — CriarAdminTest 3/3 (`secret` casa com `expectsQuestion`); suíte verde
 
 **Arquivos:**
 - Modificar: `routes/console.php`
@@ -2357,7 +2389,7 @@ git commit -m "feat: comando para criar ou promover administrador`n`nCo-Authored
 
 ### Tarefa T1.6: PORTÃO-BANCO + criar admin + smoke test de contas
 
-**Estado:** pendente
+**Estado:** em andamento — passo 1: `migrate` autorizado e executado (lote 2); a conta do usuário (id 1, cadastrada em paralelo) ficou pendente. Passo 2: autorizado e executado `app:criar-admin marcos.ronaldo@gmail.com` → aprovado + admin. Passos 3–7 (smoke test) aguardam autorização
 
 **Arquivos:** nenhum de código. Altera `database/database.sqlite`.
 
@@ -2393,7 +2425,7 @@ Roteiro, com print de cada tela:
 
 ### Tarefa T2.1: CPF/CNPJ (inclusive CNPJ alfanumérico)
 
-**Estado:** pendente
+**Estado:** testada — DocumentoTest 16/16 (inclui exemplo oficial da Receita `12.ABC.345/01DE-35`); suíte verde
 
 **Arquivos:**
 - Criar: `app/Support/Documento.php`, `app/Support/Ufs.php`, `app/Rules/DocumentoValido.php`
@@ -2633,7 +2665,7 @@ git commit -m "feat: validação de CPF e CNPJ, inclusive alfanumérico`n`nCo-Au
 
 ### Tarefa T2.2: Meu perfil
 
-**Estado:** pendente
+**Estado:** testada — PerfilTest 6/6; suíte verde; build ok. Desvios: `User::$attributes` repete os defaults da migração (objeto recém-criado vinha com `modelo_padrao` nulo → 500); teste de arquivo não-imagem usa arquivo real (o fake informa o tipo pela extensão)
 
 **Arquivos:**
 - Criar: `app/Http/Requests/PerfilRequest.php`, `app/Http/Controllers/PerfilController.php`, `resources/js/Components/CamposEndereco.vue`, `resources/js/Pages/Perfil/Editar.vue`
@@ -3027,7 +3059,7 @@ git commit -m "feat: perfil do prestador com logo e preferências de recibo`n`nC
 
 ### Tarefa T2.3: Clientes
 
-**Estado:** pendente
+**Estado:** testada — ClientesTest 9/9; suíte verde; build ok. Teste do CNPJ alfanumérico reforçado (passava vazio com 404). Avisos sem faixa lateral (borda inteira)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100100_create_clientes_table.php`, `app/Models/Cliente.php`, `database/factories/ClienteFactory.php`, `app/Http/Requests/ClienteRequest.php`, `app/Http/Controllers/ClienteController.php`, `resources/js/Pages/Clientes/Index.vue`, `resources/js/Pages/Clientes/Form.vue`
@@ -3599,7 +3631,7 @@ git commit -m "feat: cadastro de clientes com modelo de recibo por cliente`n`nCo
 
 ### Tarefa T3.1: Dinheiro e regra de valor em reais
 
-**Estado:** pendente
+**Estado:** testada — DinheiroTest 17 casos + ValorEmReaisTest 2 (inclui texto da mensagem); suíte verde
 
 **Arquivos:**
 - Criar: `app/Support/Dinheiro.php`, `app/Rules/ValorEmReais.php`
@@ -3790,7 +3822,7 @@ git commit -m "feat: conversão e formatação de valores em reais`n`nCo-Authore
 
 ### Tarefa T3.2: Periodicidade e calculadora de períodos
 
-**Estado:** pendente
+**Estado:** testada — CalculadoraDePeriodosTest 7/7; suíte verde
 
 **Arquivos:**
 - Criar: `app/Enums/Periodicidade.php`, `app/Support/Periodo.php`, `app/Services/CalculadoraDePeriodos.php`
@@ -4037,7 +4069,7 @@ git commit -m "feat: cálculo de períodos e vencimentos dos contratos`n`nCo-Aut
 
 ### Tarefa T3.3: Contratos
 
-**Estado:** pendente
+**Estado:** testada — ContratosTest 6/6 (inclui textos das mensagens); suíte verde; build ok
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100200_create_contratos_table.php`, `app/Models/Contrato.php`, `database/factories/ContratoFactory.php`, `app/Rules/LinhasMaximas.php`, `app/Http/Requests/ContratoRequest.php`, `app/Http/Controllers/ContratoController.php`, `resources/js/Pages/Contratos/Index.vue`, `resources/js/Pages/Contratos/Form.vue`
@@ -4608,7 +4640,7 @@ git commit -m "feat: contratos recorrentes com validação de datas e descriçã
 
 ### Tarefa T3.4: Tabelas e models de cobranças e recibos + proteções
 
-**Estado:** pendente
+**Estado:** testada — SituacaoCobrancaTest 3/3, ProtecoesTest 2/2; suíte verde
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_09_100300_create_cobrancas_table.php`, `database/migrations/2026_10_09_100400_create_recibos_table.php`, `app/Enums/StatusCobranca.php`, `app/Models/Cobranca.php`, `app/Models/Recibo.php`, `database/factories/CobrancaFactory.php`
@@ -5070,7 +5102,7 @@ git commit -m "feat: tabelas de cobranças e recibos e proteções de exclusão 
 
 ### Tarefa T3.5: Numeração e emissão de recibos (snapshot)
 
-**Estado:** pendente
+**Estado:** testada — EmissaoReciboTest 6/6; suíte verde
 
 **Arquivos:**
 - Criar: `app/Services/NumeradorDeRecibos.php`, `app/Services/EmissorDeRecibos.php`
@@ -5330,7 +5362,7 @@ git commit -m "feat: emissão de recibo com numeração anual e snapshot congela
 
 ### Tarefa T3.6: Gerador de cobranças recorrentes
 
-**Estado:** pendente
+**Estado:** testada — GeradorDeCobrancasTest 7/7 (relógio congelado no `hoje` de cada geração); suíte verde
 
 **Arquivos:**
 - Criar: `app/Services/GeradorDeCobrancas.php`
@@ -5560,7 +5592,7 @@ git commit -m "feat: geração idempotente de cobranças recorrentes com recibo`
 
 ### Tarefa T3.7: Ações de cobrança (avulsa, editar, cancelar, baixa, enviada)
 
-**Estado:** pendente
+**Estado:** testada — AcoesCobrancaTest 9/9 (teste de isolamento reforçado: passava com rota ausente); suíte verde
 
 **Arquivos:**
 - Criar: `app/Http/Requests/CobrancaRequest.php`, `app/Http/Controllers/CobrancaController.php`
@@ -5920,9 +5952,9 @@ git commit -m "feat: cobrança avulsa, edição, cancelamento, baixa e registro 
 
 ### Tarefa T3.8: PORTÃO-BANCO — migrações da fase 3
 
-**Estado:** pendente
+**Estado:** concluída — alvo trocado para PostgreSQL a pedido do usuário. Autorizados e executados, um a um: `CREATE ROLE recibos_app`, `CREATE DATABASE recibos`, `REVOKE CONNECT ... FROM PUBLIC`, `php artisan migrate` (8 migrações, 13 tabelas) e `php artisan db:seed` (admin id 1 com perfil completo)
 
-- [ ] **Passo 1:** PORTÃO-BANCO para `php artisan migrate` (tabelas `clientes`, `contratos`, `cobrancas`, `recibos`). Mostrar o `--pretend`. Esperar "sim".
+- [ ] **Passo 1:** PORTÃO-BANCO para `php artisan migrate` (tabelas `contratos`, `cobrancas`, `recibos` — `clientes` já foi aplicada ao fim da Fase 2, a pedido do usuário). Mostrar o `--pretend`. Esperar "sim".
 - [ ] **Passo 2:** executar e mostrar `php artisan migrate:status`.
 - [ ] **Passo 3:** registrar na skill os acertos e pegadinhas da fase 3; atualizar a tabela de acompanhamento.
 
@@ -5932,7 +5964,7 @@ git commit -m "feat: cobrança avulsa, edição, cancelamento, baixa e registro 
 
 ### Tarefa T4.1: Valor por extenso
 
-**Estado:** pendente
+**Estado:** testada (18 casos; suíte 138/138)
 
 **Arquivos:**
 - Criar: `app/Services/ValorPorExtenso.php`
@@ -6126,7 +6158,7 @@ git commit -m "feat: valor por extenso em reais`n`nCo-Authored-By: Claude Opus 5
 
 ### Tarefa T4.2: Renderizador + rota do PDF + modelo `webiss-v1`
 
-**Estado:** pendente
+**Estado:** testada (7 testes; suíte 145/145). Conferência visual do carimbo adiada para a T4.4.
 
 **Arquivos:**
 - Criar: `app/Services/RenderizadorDeRecibo.php`, `app/Http/Controllers/ReciboPdfController.php`, `resources/views/recibos/pdf/_carimbo.blade.php`, `resources/views/recibos/pdf/webiss-v1.blade.php`
@@ -6664,7 +6696,7 @@ git commit -m "feat: recibo em PDF no modelo WebISS com carimbo de situação`n`
 
 ### Tarefa T4.3: Modelo `danfse-v1`
 
-**Estado:** pendente
+**Estado:** testada (PdfReciboTest 3/3; suíte 146/146). Conferência visual na T4.4.
 
 **Arquivos:**
 - Criar: `resources/views/recibos/pdf/danfse-v1.blade.php`
@@ -6879,7 +6911,7 @@ git commit -m "feat: recibo em PDF no modelo nacional (DANFSe)`n`nCo-Authored-By
 
 ### Tarefa T4.4: Comparação visual com as notas originais
 
-**Estado:** pendente
+**Estado:** concluída — amostras em `storage/app/private/verificacao/` (1 página cada, inclusive com 25 linhas; ~30 KB). Aguardando conferência visual do usuário (passo 3) para virar validada.
 
 **Arquivos:**
 - Criar: `tests/Feature/Recibos/AmostrasVisuaisTest.php` (grupo `visual`)
@@ -6980,7 +7012,7 @@ git commit -m "test: amostras visuais dos modelos de recibo aprovadas`n`nCo-Auth
 
 ### Tarefa T5.1: Painel completo
 
-**Estado:** pendente
+**Estado:** testada (PainelTest 3/3; suíte 151/151; build ok). Envio pelo celular (Web Share) só se confere no navegador: T5.3.
 
 **Arquivos:**
 - Criar: `resources/js/Components/Carimbo.vue`, `resources/js/Components/BotaoEnviar.vue`, `resources/js/Components/BaixaInline.vue`, `resources/js/Components/CancelarInline.vue`, `resources/js/Components/LinhaCobranca.vue`
@@ -7424,7 +7456,7 @@ git commit -m "feat: painel do mês com envio pelo celular e baixa de pagamento`
 
 ### Tarefa T5.2: Telas de cobranças (lista com filtros, avulsa, edição)
 
-**Estado:** pendente
+**Estado:** testada (TelasCobrancaTest 4/4; suíte 155/155; build ok).
 
 **Arquivos:**
 - Criar: `resources/js/Pages/Cobrancas/Index.vue`, `resources/js/Pages/Cobrancas/Form.vue`
@@ -7811,7 +7843,7 @@ git commit -m "feat: lista de cobranças com filtros e formulários de avulsa e 
 
 ### Tarefa T5.3: PORTÃO-BANCO + smoke test + revisão visual
 
-**Estado:** pendente
+**Estado:** testada em 2026-10-10 com o usuário SMOKE (id 2) no PostgreSQL de dev (autorizado): passos 1–4, 7 (funcional) e 8 ok; Web Share [INCONCLUSIVO] (sem HTTPS); passos 5–6 (revisão visual e validação) e 7 (limpeza) nas pendências V3, D1 e L1.
 
 **Arquivos:** ajustes de estilo que a revisão apontar (Vue/CSS); `.claude/skills/recibos/SKILL.md`.
 

@@ -1,0 +1,19 @@
+{
+    "name": "Nome do Prestador",
+    "email": "prestador@exemplo.com",
+    "password_hash": "$2y$12$gere.com.php.artisan.tinker.Hash::make.e.cole.aqui...........",
+    "documento": "52998224725",
+    "nome_fantasia": "Nome Fantasia",
+    "inscricao_municipal": null,
+    "inscricao_estadual": null,
+    "telefone": "(79) 99999-0000",
+    "logradouro": "Rua Exemplo",
+    "numero": "100",
+    "complemento": null,
+    "bairro": "Centro",
+    "cidade": "Aracaju",
+    "uf": "SE",
+    "cep": "49000000",
+    "modelo_padrao": "webiss",
+    "dias_antecedencia": 10
+}

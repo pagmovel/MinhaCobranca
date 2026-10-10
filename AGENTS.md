@@ -146,3 +146,16 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
+
+## Projeto: Gerenciador de Cobranças
+
+- Skill do domínio: `.claude/skills/recibos/SKILL.md` (ler inteira antes de mexer).
+- Plano: `.claude/plans/2026-10-09-sistema-recibos.md` · Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
+- Memória do projeto: `.claude/MEMORY.md`.
+
+### Ferramentas do Claude Code usadas neste projeto
+- **superpowers** (plugin): brainstorming, writing-plans, executing-plans, test-driven-development.
+- **frontend-design** (plugin): direção visual das telas.
+- **context-mode** (plugin/MCP): leitura e execução de comandos com economia de contexto.
+- **laravel-boost** (pacote dev + MCP, `.mcp.json`): guidelines, skills e ferramentas do Laravel.
+- **browser-use** (plugin/MCP, "browser-agent"): smoke tests no navegador.
