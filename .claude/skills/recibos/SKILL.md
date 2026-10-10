@@ -373,6 +373,14 @@ o relatório mostra a parte que existe.
   portão pegou — parar e pedir de novo.
 - QR com margem branca de 4 módulos (padrão do QR Code e da biblioteca; o plano tinha 2). Não muda o conteúdo do código.
 
+- **Decisões do módulo Cobrança (2026-10-10, spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`):** itens
+  do catálogo somam o valor do contrato (descrição do recibo continua livre); cobranças copiam os itens; códigos fiscais
+  do item principal; contrato guarda o próprio preço (reajuste por ação explícita); custo fica no Contas a Pagar;
+  tributos só no módulo de Notas (pesquisa oficial primeiro); **"recebido" = pago no mês (caixa)**, inclusive no painel.
+- **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
+  massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
+  CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

@@ -73,7 +73,7 @@ tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
 - [ ] **D1 — Decisão: o que conta como "recebido" no topo do painel.** Hoje (regra do plano, T5.1):
   parte paga das cobranças que **vencem** no mês. No smoke, um pagamento de setembro feito em outubro
   apareceu em "Recebidas no mês" mas não somou no "R$ … recebidos". Alternativa: somar o que foi **pago
-  no mês** (coerente com a lista, mas pode passar do previsto). — pendente (decisão do usuário)
+  no mês** (coerente com a lista, mas pode passar do previsto). — **decidida em 2026-10-10: regime de caixa (pago no mês)**; implementação na Fase 15 (spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`)
 - [ ] **L1 — Limpeza dos dados SMOKE** (T5.3 passo 7): usuário `smoke@recibos.test` (id 2) e tudo dele
   (2 clientes, 2 contratos, 5 cobranças e recibos, logos em `storage/app/private/logos/2/`). Pedir
   PORTÃO-BANCO com o comando literal. — pendente
