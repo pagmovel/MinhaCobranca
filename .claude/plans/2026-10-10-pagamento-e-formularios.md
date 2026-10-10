@@ -40,7 +40,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 9 | T9.3 PORTÃO-BANCO + fechamento da fase 9 | concluída (migrate autorizado: lote 2; merge e push) |
 | 10 | T10.1 Chaves PIX no perfil | testada (tela no smoke da T11.4) |
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
-| 10 | T10.3 Trocar a forma de pagamento depois de enviada | pendente |
+| 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | pendente |
 | 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
@@ -2092,7 +2092,7 @@ git commit -m "feat: forma de pagamento (PIX ou boleto) no contrato e na cobran�
 
 ### Tarefa T10.3: Trocar a forma de pagamento depois de enviada
 
-**Estado:** pendente
+**Estado:** testada (suíte 185/185; build ok). Ajuste: `PagamentoRequest::authorize()` dá 404 para cobrança alheia antes da validação.
 
 **Arquivos:**
 - Criar: `app/Http/Requests/PagamentoRequest.php`, `resources/js/Components/PagamentoInline.vue`

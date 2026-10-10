@@ -44,6 +44,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
+    Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);
 
     Route::get('/recibos/{recibo}/pdf', ReciboPdfController::class);
 

@@ -96,6 +96,11 @@ class Cobranca extends Model
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,
             'editavel' => $this->editavel(),
+            'pagamento' => [
+                'forma_pagamento' => $this->forma_pagamento->value,
+                'chave_pix_id' => $this->chave_pix_id ?? '',
+                'linha_digitavel' => $this->linha_digitavel ?? '',
+            ],
             'recibo' => $this->recibo ? [
                 'numero' => $this->recibo->numeroFormatado(),
                 'pdf_url' => "/recibos/{$this->recibo->id}/pdf",

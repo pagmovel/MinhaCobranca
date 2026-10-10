@@ -4,6 +4,7 @@ import CamadaApp from '../Layouts/CamadaApp.vue';
 import LinhaCobranca from '../Components/LinhaCobranca.vue';
 import BotaoEnviar from '../Components/BotaoEnviar.vue';
 import BaixaInline from '../Components/BaixaInline.vue';
+import PagamentoInline from '../Components/PagamentoInline.vue';
 
 defineProps({
     mes: { type: String, required: true },
@@ -13,6 +14,8 @@ defineProps({
     paraEnviar: { type: Array, required: true },
     aguardando: { type: Array, required: true },
     recebidas: { type: Array, required: true },
+    chavesPix: { type: Array, required: true },
+    formasPagamento: { type: Array, required: true },
 });
 </script>
 
@@ -44,6 +47,7 @@ defineProps({
             <ul v-else class="divide-y divide-linha border border-linha bg-white">
                 <LinhaCobranca v-for="cobranca in aguardando" :key="cobranca.id" :cobranca="cobranca">
                     <BaixaInline :cobranca-id="cobranca.id" />
+                    <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
                     <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
                 </LinhaCobranca>
             </ul>

@@ -318,6 +318,16 @@ o relatório mostra a parte que existe.
   continuam válidos), chave só com PIX, linha só com boleto, chave validada com `exists` limitado ao usuário. Chave em
   uso não é excluída (controller + FK). Mensagens próprias em `lang/pt_BR/validation.php` → `custom`.
 
+- T10.3: `PUT /cobrancas/{id}/pagamento` troca só forma/chave/linha de cobrança **pendente**, mesmo já enviada (o PDF
+  lê a forma na hora). `PagamentoRequest::authorize()` dá 404 para cobrança alheia antes da validação. Ação
+  "Forma de pagamento" (`PagamentoInline`) na lista de cobranças abertas e no bloco "Aguardando pagamento" do painel.
+- **Decisão do usuário (2026-10-10) — cadastro de clientes:** preencher automaticamente **só com dados públicos**
+  (CNPJ pela base pública da Receita; endereço pelo CEP). **Rejeitado** reaproveitar o cadastro de cliente feito por
+  outro usuário: conflita com a LGPD (Lei 13.709/2018, conferida no planalto.gov.br): o usuário é controlador e o
+  sistema operador (art. 5º, VI e VII); o operador só trata conforme instruções do controlador (art. 39); finalidade,
+  adequação e necessidade (art. 6º, I–III); base legal (art. 7º); proteção contra acesso/comunicação indevida (art. 46).
+  Também revelaria a carteira de clientes de outro assinante. Preenchimento por CNPJ/CEP entra na spec do módulo Cobrança.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
