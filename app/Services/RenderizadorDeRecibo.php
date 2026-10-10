@@ -6,6 +6,7 @@ use App\Models\Cobranca;
 use App\Models\Recibo;
 use App\Support\Dinheiro;
 use App\Support\Documento;
+use App\Support\LinhasDoRecibo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
@@ -43,6 +44,7 @@ final class RenderizadorDeRecibo
                     filled($servico['codigo_nbs'] ?? null) ? 'NBS: '.$servico['codigo_nbs'] : null,
                 ], '. ')),
                 'descricao' => $servico['descricao'],
+                'linhas' => LinhasDoRecibo::quebrar($servico['descricao']),
                 'descricao_em_linha' => (string) preg_replace('/\s*\R\s*/', ' ', trim($servico['descricao'])),
                 'periodo' => $periodo,
                 'obs_periodo' => 'Obs.: Período de '.$periodo,

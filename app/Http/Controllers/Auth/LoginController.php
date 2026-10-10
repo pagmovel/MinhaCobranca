@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,6 +21,9 @@ class LoginController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // E-mail sem diferença de maiúsculas: "Fulano@..." e "fulano@..." são a mesma conta.
+        $request->merge(['email' => Str::lower(trim($request->string('email')))]);
+
         $credenciais = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],

@@ -113,8 +113,8 @@
     <table>
         <tr>
             <td style="height: 170pt;">
-                {{-- Uma div por linha: o dompdf ignora line-height nas linhas quebradas por <br>. --}}
-                @foreach (preg_split('/\R/', $servico['descricao']) as $linhaDescricao)
+                {{-- Uma div por linha já quebrada (LinhasDoRecibo): o dompdf ignora line-height nas linhas que ele quebra. --}}
+                @foreach ($servico['linhas'] as $linhaDescricao)
                     <div style="height: 8.4pt; font-size: 7pt;">{{ $linhaDescricao }}</div>
                 @endforeach
                 <div style="margin-top: 4pt; font-size: 7.5pt;">{{ $servico['obs_periodo'] }}</div>

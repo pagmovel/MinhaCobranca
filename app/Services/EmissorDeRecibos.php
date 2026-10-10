@@ -43,10 +43,20 @@ final class EmissorDeRecibos
         }
     }
 
-    /** Cobrança ainda não enviada foi editada: mesmo número, mesmo layout, dados novos. */
-    public function refazer(Recibo $recibo): void
+    /**
+     * Cobrança ainda não enviada foi editada: mesmo número, dados novos. O layout só muda se o cliente
+     * mudou (o modelo é do cliente); trocar o modelo do mesmo cliente não altera recibo já emitido.
+     */
+    public function refazer(Recibo $recibo, bool $trocouCliente = false): void
     {
-        $recibo->update(['snapshot' => $this->snapshot($recibo->cobranca()->firstOrFail())]);
+        $cobranca = $recibo->cobranca()->firstOrFail();
+        $dados = ['snapshot' => $this->snapshot($cobranca)];
+
+        if ($trocouCliente) {
+            $dados['modelo'] = $cobranca->cliente()->firstOrFail()->modelo->versaoAtual();
+        }
+
+        $recibo->update($dados);
     }
 
     public function snapshot(Cobranca $cobranca): array

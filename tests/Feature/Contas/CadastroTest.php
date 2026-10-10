@@ -47,6 +47,16 @@ class CadastroTest extends TestCase
             ->assertSessionHasErrors(['email' => 'Este e-mail já está cadastrado.']);
     }
 
+    public function test_email_e_guardado_em_minusculas_e_nao_duplica_por_maiusculas(): void
+    {
+        $this->post('/cadastro', $this->dados(['email' => ' Bruno@Exemplo.COM ']))->assertRedirect('/entrar');
+        $this->assertSame('bruno@exemplo.com', User::firstOrFail()->email);
+
+        $this->post('/cadastro', $this->dados(['email' => 'BRUNO@exemplo.com']))
+            ->assertSessionHasErrors(['email' => 'Este e-mail já está cadastrado.']);
+        $this->assertSame(1, User::count());
+    }
+
     public function test_senha_curta_ou_sem_confirmacao_e_recusada(): void
     {
         $this->post('/cadastro', $this->dados(['password' => '123', 'password_confirmation' => '123']))

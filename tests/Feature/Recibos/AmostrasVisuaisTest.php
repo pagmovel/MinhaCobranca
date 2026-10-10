@@ -7,6 +7,7 @@ use App\Models\Cobranca;
 use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use App\Services\RenderizadorDeRecibo;
+use App\Support\LinhasDoRecibo;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -74,13 +75,18 @@ class AmostrasVisuaisTest extends TestCase
     /** Limite da descrição (25 linhas, `LinhasMaximas`) não pode empurrar o recibo para a segunda página. */
     public function test_descricao_no_limite_cabe_em_uma_pagina(): void
     {
-        $descricao = implode("\n", array_map(fn (int $linha) => "- Item {$linha} do serviço prestado no período", range(1, 25)));
+        $curtas = implode("\n", array_map(fn (int $linha) => "- Item {$linha} do serviço prestado no período", range(1, 25)));
+        // Parágrafo sem Enter: o dompdf quebraria sozinho e sobreporia as linhas seguintes (revisão final).
+        $paragrafo = mb_substr(str_repeat('Manutenção mensal do servidor e suporte técnico remoto ', 40), 0, 1900);
+        $mista = $paragrafo."\n".implode("\n", array_fill(0, 25 - count(LinhasDoRecibo::quebrar($paragrafo)), '- Linha curta'));
+        $this->assertCount(25, LinhasDoRecibo::quebrar($mista));
 
-        foreach (['webiss', 'danfse'] as $modelo) {
+        foreach (['webiss' => $curtas, 'danfse' => $curtas, 'webiss-paragrafo' => $mista] as $amostra => $descricao) {
+            $modelo = strtok($amostra, '-');
             $pdf = $this->pdf($modelo, $descricao);
-            Storage::disk('local')->put("verificacao/amostra-{$modelo}-25-linhas.pdf", $pdf->output());
+            Storage::disk('local')->put("verificacao/amostra-{$amostra}-25-linhas.pdf", $pdf->output());
 
-            $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "modelo {$modelo}");
+            $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$amostra}");
         }
     }
 }

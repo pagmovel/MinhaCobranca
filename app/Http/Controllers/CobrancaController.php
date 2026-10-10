@@ -122,7 +122,7 @@ class CobrancaController extends Controller
 
         DB::transaction(function () use ($registro, $dados, $emissor) {
             $registro->update($dados);
-            $emissor->refazer($registro->recibo);
+            $emissor->refazer($registro->recibo, $registro->wasChanged('cliente_id'));
         });
 
         return redirect('/cobrancas')->with('sucesso', 'Cobrança atualizada. O recibo manteve o número.');

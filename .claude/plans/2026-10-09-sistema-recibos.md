@@ -78,6 +78,14 @@ tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
   (2 clientes, 2 contratos, 5 cobranças e recibos, logos em `storage/app/private/logos/2/`). Pedir
   PORTÃO-BANCO com o comando literal. — pendente
 
+### Revisão final das Fases 0–5 (2026-10-10)
+
+Revisor independente (contexto novo) sobre `e67bd19..e846939`: nenhum Critical. Corrigidos com teste
+que falhou antes: sobreposição de texto no WebISS com linha longa (`LinhasDoRecibo`), e-mail com
+maiúsculas no cadastro/login, troca de cliente da avulsa mantendo o layout antigo. Adiados (Minor):
+- [ ] **M1** — valor com 20+ dígitos dá erro 500 em vez da mensagem (`Dinheiro::paraCentavos`). — pendente
+- [ ] **M2** — `POST /cobrancas/{id}/enviada` aceita cobrança cancelada (só por requisição manual). — pendente
+
 ---
 
 ## Restrições globais

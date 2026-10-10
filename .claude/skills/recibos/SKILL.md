@@ -247,6 +247,19 @@ Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 - Web Share: no Chrome desktop `navigator.canShare` existe, mas não aceita arquivo → cai no download
   (esperado). Celular com HTTPS: **[INCONCLUSIVO]** até haver ambiente HTTPS.
 
+- Revisão final (2026-10-10) — correções:
+  - **Linha longa sobrepunha texto no WebISS**: o dompdf quebra sozinho com ~10,7pt e ignora `line-height`,
+    mas a `div` seguinte começava 8,4pt abaixo. `App\Support\LinhasDoRecibo::quebrar()` quebra a
+    descrição em linhas de até 110 caracteres (medidos 137–146 na caixa; folga para maiúsculas), por
+    palavra, cortando palavra gigante sem estragar acento (`mb_str_split`). O template desenha uma `div`
+    de altura fixa por linha, e `LinhasMaximas` conta **as mesmas** linhas — o que passa na validação
+    cabe na caixa. Trocar `height` por `min-height` não serve: todas as linhas passam a 10,7pt e 25
+    linhas estouram a página. Pior caso coberto em `AmostrasVisuaisTest`.
+  - E-mail em minúsculas (e sem espaços) no cadastro e no login.
+  - Editar avulsa **trocando o cliente** refaz o recibo com o modelo do novo cliente
+    (`refazer($recibo, trocouCliente: true)`); trocar o modelo do mesmo cliente continua sem mexer em
+    recibo emitido.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

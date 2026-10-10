@@ -81,6 +81,9 @@ class ContratosTest extends TestCase
 
         $this->post('/contratos', $this->dados($cliente, ['descricao' => str_repeat("linha\n", 26)]))
             ->assertSessionHasErrors(['descricao' => 'Use no máximo 25 linhas.']);
+        // Linha comprida ocupa várias linhas na caixa do recibo: conta pelo que aparece no PDF.
+        $this->post('/contratos', $this->dados($cliente, ['descricao' => str_repeat('palavra ', 60)."\n".str_repeat("linha\n", 21)]))
+            ->assertSessionHasErrors(['descricao' => 'Use no máximo 25 linhas.']);
         $this->post('/contratos', $this->dados($cliente, ['descricao' => str_repeat('a', 2001)]))
             ->assertSessionHasErrors(['descricao' => 'O campo descrição deve ter no máximo 2000 caracteres.']);
     }

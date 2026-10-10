@@ -71,6 +71,19 @@ class RenderizadorDeReciboTest extends TestCase
         $this->assertContains('Valor por extenso: duzentos e sessenta reais e sessenta centavos.', $dados['informacoes']);
     }
 
+    public function test_descricao_sai_em_linhas_que_cabem_na_caixa(): void
+    {
+        $recibo = $this->recibo([], ['descricao' => str_repeat('Suporte técnico remoto ', 20)."\nSEGUNDA LINHA"]);
+
+        $linhas = $this->renderizador->dados($recibo, CarbonImmutable::now())['servico']['linhas'];
+
+        $this->assertSame('SEGUNDA LINHA', end($linhas));
+        $this->assertGreaterThan(2, count($linhas));
+        foreach ($linhas as $linha) {
+            $this->assertLessThanOrEqual(110, mb_strlen($linha));
+        }
+    }
+
     public function test_carimbo_acompanha_a_situacao_atual(): void
     {
         $recibo = $this->recibo();

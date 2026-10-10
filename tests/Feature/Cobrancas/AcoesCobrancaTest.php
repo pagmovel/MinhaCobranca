@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Cobrancas;
 
+use App\Enums\FamiliaModelo;
+use App\Enums\ModeloRecibo;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
@@ -84,6 +86,21 @@ class AcoesCobrancaTest extends TestCase
         $this->assertSame(30000, $cobranca->valor_centavos);
         $this->assertSame(1, $cobranca->recibo->numero);
         $this->assertSame(30000, $cobranca->recibo->snapshot['servico']['valor_centavos']);
+    }
+
+    public function test_trocar_o_cliente_da_avulsa_usa_o_modelo_do_novo_cliente(): void
+    {
+        [$usuario, $cliente] = $this->prestadorComCliente();
+        $nacional = Cliente::factory()->for($usuario)->create(['modelo' => FamiliaModelo::Danfse]);
+        $cobranca = $this->cobrancaComRecibo($usuario, $cliente);
+        $this->assertSame(ModeloRecibo::WebissV1, $cobranca->recibo->modelo);
+
+        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($nacional))->assertRedirect('/cobrancas');
+
+        $recibo = $cobranca->recibo->fresh();
+        $this->assertSame(ModeloRecibo::DanfseV1, $recibo->modelo);
+        $this->assertSame(1, $recibo->numero);
+        $this->assertSame($nacional->nome, $recibo->snapshot['tomador']['nome']);
     }
 
     public function test_cobranca_enviada_nao_e_editada(): void

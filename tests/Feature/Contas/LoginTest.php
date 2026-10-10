@@ -21,6 +21,16 @@ class LoginTest extends TestCase
         $this->assertAuthenticatedAs($usuario);
     }
 
+    public function test_entra_com_o_email_escrito_em_maiusculas(): void
+    {
+        $usuario = User::factory()->create(['email' => 'ana@exemplo.com', 'password' => 'segredo123']);
+
+        $this->post('/entrar', ['email' => 'Ana@Exemplo.com', 'password' => 'segredo123'])
+            ->assertRedirect('/painel');
+
+        $this->assertAuthenticatedAs($usuario);
+    }
+
     public function test_senha_errada_mostra_mensagem_clara(): void
     {
         $usuario = User::factory()->create(['password' => 'segredo123']);
