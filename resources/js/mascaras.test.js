@@ -43,3 +43,20 @@ test('linha digitável de boleto (47) e de arrecadação (48, começa com 8)', (
 test('minúsculas sem espaços nas pontas', () => {
     assert.equal(f.minusculas(' Fulano@Exemplo.COM '), 'fulano@exemplo.com');
 });
+
+test('telefone descarta o +55 inicial (chave PIX e telefones já gravados com DDI)', () => {
+    assert.equal(f.telefone('+55 (91) 98765-4321'), '(91) 98765-4321');
+    assert.equal(f.telefone('+5591987654321'), '(91) 98765-4321');
+    assert.equal(f.telefone('+55 79 99999-0000'), '(79) 99999-0000');
+    assert.equal(f.telefone('55 79 3222-0000'), '(79) 3222-0000');
+    assert.equal(f.telefone('(55) 99999-0000'), '(55) 99999-0000', 'DDD 55 com 11 dígitos continua');
+});
+
+test('valor colado é lido como o servidor lê (não pelos centavos)', () => {
+    assert.equal(f.valorColado('1.500'), '1.500,00');
+    assert.equal(f.valorColado('260,6'), '260,60');
+    assert.equal(f.valorColado('1234.5'), '1.234,50');
+    assert.equal(f.valorColado('R$ 1.234,56'), '1.234,56');
+    assert.equal(f.valorColado('260'), '260,00');
+    assert.equal(f.valorColado('12.34.5'), '123,45', 'formato estranho cai na regra de digitação');
+});

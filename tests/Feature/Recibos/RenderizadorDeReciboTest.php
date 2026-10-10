@@ -135,7 +135,8 @@ class RenderizadorDeReciboTest extends TestCase
         $this->assertSame('+55 (79) 99999-0000', $pagamento['chave']);
         $this->assertSame('Telefone', $pagamento['tipo']);
         $this->assertStringStartsWith('data:image/png;base64,', $pagamento['qr']);
-        $copiaECola = implode('', $pagamento['copia_e_cola_linhas']);
+        $copiaECola = $pagamento['copia_e_cola'];
+        $this->assertStringStartsWith('000201', $copiaECola);
         $this->assertStringContainsString('5406260.60', $copiaECola);
         $this->assertStringContainsString('0513REC2026000001', $copiaECola);
         $this->assertStringContainsString('5916MARCOS PRESTADOR6007ARACAJU', $copiaECola);
@@ -150,5 +151,25 @@ class RenderizadorDeReciboTest extends TestCase
         );
 
         $this->assertSame(['forma' => null], $this->renderizador->dados($this->recibo(), CarbonImmutable::now())['pagamento']);
+    }
+
+    public function test_recibo_pago_ou_cancelado_nao_mostra_como_pagar(): void
+    {
+        $usuario = User::factory()->create();
+        $chave = ChavePix::factory()->for($usuario)->create();
+        $cobranca = Cobranca::factory()->for($usuario)->for(Cliente::factory()->for($usuario))
+            ->create(['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $chave->id]);
+        $recibo = app(EmissorDeRecibos::class)->emitir($cobranca);
+
+        $cobranca->status = StatusCobranca::Paga;
+        $cobranca->pago_em = '2026-10-09';
+        $cobranca->save();
+        // O comprovante de pagamento não pode trazer um QR pagável de novo.
+        $this->assertSame(['forma' => null], $this->renderizador->dados($recibo->fresh(), CarbonImmutable::now())['pagamento']);
+
+        $cobranca->status = StatusCobranca::Cancelada;
+        $cobranca->pago_em = null;
+        $cobranca->save();
+        $this->assertSame(['forma' => null], $this->renderizador->dados($recibo->fresh(), CarbonImmutable::now())['pagamento']);
     }
 }

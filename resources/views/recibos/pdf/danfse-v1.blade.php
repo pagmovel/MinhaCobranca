@@ -151,12 +151,13 @@
             <span class="rot">Forma de Pagamento</span><span class="val">PIX — {{ $pagamento['tipo'] }}</span>
             <span class="rot">Chave</span><span class="val">{{ $pagamento['chave'] }}</span>
             <span class="rot">Favorecido</span><span class="val">{{ $pagamento['favorecido'] }}</span>
-            <span class="rot">PIX Copia e Cola</span>
-            @foreach ($pagamento['copia_e_cola_linhas'] as $linhaPix)
-                <span class="val" style="font-size: 5.5pt;">{{ $linhaPix }}</span>
-            @endforeach
         </td>
     </tr></table>
+    {{-- Largura total e uma linha só (quebra de linha estraga a cópia do código no celular). --}}
+    <table><tr><td class="c4">
+        <span class="rot">PIX Copia e Cola</span>
+        <span class="val" style="white-space: nowrap; font-size: {{ min(5.5, round(540 / (strlen($pagamento['copia_e_cola']) * 0.62), 2)) }}pt;">{{ $pagamento['copia_e_cola'] }}</span>
+    </td></tr></table>
 @elseif ($pagamento['forma'] === 'boleto')
     <table class="bloco"><tr><td class="c4 titulo">PAGAMENTO</td></tr></table>
     <table><tr><td class="c4">

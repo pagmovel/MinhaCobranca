@@ -351,6 +351,18 @@ o relatório mostra a parte que existe.
   ≈ 430pt); OUTRAS INFORMAÇÕES com 14pt mínimos quando há PIX; `@page` com margem inferior 30pt e rodapé a −21pt.
   `AmostrasVisuaisTest` prova 1 página nas 9 combinações (WebISS lista/parágrafo e DANFSe × PIX/boleto/nenhuma).
 
+- Revisão final das fases 8–11 (2026-10-10) — correções:
+  - **Máscara de telefone com DDI corrompia a chave PIX**: `+55 (91) 98765-4321` virava `(55) 91987-6543`, e o servidor
+    gravava **outra chave** (até ao só editar o apelido). `formatadores.telefone` agora descarta um `55` inicial quando
+    há mais de 11 dígitos — corrige também telefones antigos com `+55` no perfil e no cliente.
+  - Colar valor ("1.500", "260,6") era lido pelos centavos (15,00 / 26,06): a diretiva usa `valorColado` (mesma regra de
+    `Dinheiro::paraCentavos`) quando `inputType === 'insertFromPaste'`.
+  - Recibo **pago ou cancelado não mostra como pagar** (`pagamento.forma = null`): o comprovante enviado ao cliente não
+    pode ter um QR pagável de novo.
+  - Copia e cola em **uma linha só** (`white-space: nowrap`, fonte pelo comprimento: `min(4,5; 520/(n×0,62))` no WebISS,
+    `min(5,5; 540/(n×0,62))` no DANFSe em largura total). Quebrar no espaço do nome/cidade perdia o espaço na cópia e
+    invalidava o código. Conferido com pypdf: 158 e 223 caracteres (chave mais longa) em 1 linha, inteiros, 1 página.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

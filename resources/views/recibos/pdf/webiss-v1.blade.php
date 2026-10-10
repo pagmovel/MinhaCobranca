@@ -170,8 +170,10 @@
                     <div style="font-size: 6.5pt;">{{ $linha }}</div>
                 @endforeach
                 @if ($pagamento['forma'] === 'pix')
-                    {{-- Uma linha só (154 caracteres a 4,5pt ≈ 430pt): duas linhas empurravam o recibo para a 2ª página. --}}
-                    <div style="font-size: 4.5pt;">PIX copia e cola: {{ implode('', $pagamento['copia_e_cola_linhas']) }}</div>
+                    {{-- Uma linha só, sem quebra: quebrar no espaço do nome/cidade perde o espaço na cópia e invalida o código.
+                         Fonte pelo comprimento (~0,6em por caractere em 520pt), no máximo 4,5pt. --}}
+                    @php($linhaPix = 'PIX copia e cola: '.$pagamento['copia_e_cola'])
+                    <div style="white-space: nowrap; font-size: {{ min(4.5, round(520 / (strlen($linhaPix) * 0.62), 2)) }}pt;">{{ $linhaPix }}</div>
                 @elseif ($pagamento['forma'] === 'boleto')
                     <div style="font-size: 6.5pt;">Pagamento por boleto bancário{{ $pagamento['linha_digitavel'] ? ' — linha digitável: '.$pagamento['linha_digitavel'] : '' }}</div>
                 @endif

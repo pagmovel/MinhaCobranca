@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\FormaPagamento;
+use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\Recibo;
 use App\Support\Dinheiro;
@@ -74,6 +75,11 @@ final class RenderizadorDeRecibo
     {
         $cobranca = $recibo->cobranca;
 
+        // Paga ou cancelada: o recibo não pode mais dizer como pagar (o comprovante não pode ter um QR pagável).
+        if ($cobranca->status !== StatusCobranca::Pendente) {
+            return ['forma' => null];
+        }
+
         if ($cobranca->forma_pagamento === FormaPagamento::Boleto) {
             return [
                 'forma' => 'boleto',
@@ -100,7 +106,7 @@ final class RenderizadorDeRecibo
             'chave' => $chave->tipo->formatar($chave->chave),
             'tipo' => $chave->tipo->rotulo(),
             'favorecido' => $this->traco($snapshot['prestador']['nome'] ?? null),
-            'copia_e_cola_linhas' => str_split($payload, 90),
+            'copia_e_cola' => $payload,
             'qr' => QrCodePix::dataUri($payload),
         ];
     }

@@ -51,6 +51,12 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 - [ ] **V4** — conferência visual: carimbo VENCENDO HOJE (tela e PDFs), bloco de pagamento nos dois
   modelos, QR **escaneado num celular** abrindo o valor e o nome certos. — pendente
 - (continuam valendo as pendências V1–V3, D1, L1, M1, M2 do plano `2026-10-09-sistema-recibos.md`)
+- Menores da revisão final (adiados, decisão do executor — ver ledger):
+  - [ ] **M3** — `BuscaCliente`: escolher antes dos 250 ms ou resposta atrasada reabre a lista (cancelar timer/fetch em `escolher` e no `blur`). — pendente
+  - [ ] **M4** — acessibilidade do `BuscaCliente` ("nenhum cliente" sem `role="option"`, sem região viva) e ids repetidos com vários `PagamentoInline` abertos. — pendente
+  - [ ] **M5** — chave usada em cobrança paga nunca pode ser excluída (mensagem manda trocar a forma, que só vale para pendentes). — pendente
+  - [ ] **M6** — WebISS sem o "favorecido" pedido na spec 5.1 (cortado por espaço; o nome do prestador já aparece no recibo). — pendente
+  - [ ] **M7** — trocar o tipo da chave depois de colar o texto reaplica a máscara do novo tipo (tipo padrão CPF reduz e-mail colado a dígitos). — pendente
 
 ---
 
