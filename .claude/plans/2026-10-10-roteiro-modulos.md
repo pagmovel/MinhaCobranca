@@ -1,0 +1,81 @@
+# Roteiro do produto — onde estamos e o que vem (handoff entre sessões)
+
+**Atualizado:** 2026-10-10 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
+memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
+sem depender do histórico.
+
+## 1. Estado agora
+
+- **`main` no GitHub** (`git@github.com:pagmovel/MinhaCobranca.git`): Fases 0–5 (sistema base) e 8–11 (pagamento e
+  formulários) mergeadas. Último merge: `d557f25`. 192 testes PHP + 7 testes de máscara (`node --test`).
+- **Branch atual:** `feat/modulo-cobranca-catalogo` (saído do `main`), com a spec nova commitada (`7887219`).
+- **Banco (PostgreSQL de desenvolvimento `207.180.205.211:1`, banco `recibos`):** migrações até o lote 3 aplicadas.
+  Usuário real = id 1 (admin, `marcos.ronaldo@gmail.com`); usuário de teste = id 2 (`smoke@recibos.test`, senha só no
+  scratchpad da sessão — não versionada).
+
+## 2. Próximo passo imediato
+
+1. **Usuário revisa a spec** `docs/superpowers/specs/2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`
+   (aguardando o ok dele).
+2. Com o ok: skill `superpowers:writing-plans` → plano das **Fases 12–15** em
+   `.claude/plans/2026-10-10-modulo-cobranca-catalogo.md` (mesmo formato dos planos anteriores: fases, tarefas, estado,
+   código completo, PORTÃO-BANCO nas migrações, fechamento de fase = merge no `main` + push).
+3. Execução: o usuário tem escolhido **nativa** (executing-plans), com revisão final por subagente opus.
+
+## 3. Pendências em aberto (de planos anteriores)
+
+| Item | Onde está | Estado |
+|---|---|---|
+| V1–V3 conferências visuais (amostras x notas, carimbo/rodapé, prints do smoke) | plano `2026-10-09-sistema-recibos.md` | pendente (usuário) |
+| V4 visual de VENCENDO HOJE e bloco de pagamento | plano `2026-10-10-pagamento-e-formularios.md` | pendente; **QR já validado pelo usuário no celular** |
+| D1 "recebido" | — | **decidida: pago no mês (caixa)** → implementar na Fase 15 |
+| L1 limpeza dos dados SMOKE (user id 2 e tudo dele, inclusive chaves PIX 5 e 6, contrato 4, cobranças 7 e 8) | plano `2026-10-09-…` | pendente — pedir PORTÃO-BANCO com comando literal |
+| M1–M2 (valor com 20+ dígitos → 500; enviada aceita cancelada) | plano `2026-10-09-…` | adiados |
+| M3–M7 (corrida/acessibilidade do BuscaCliente, chave de cobrança paga, favorecido no WebISS, máscara ao trocar tipo) | plano `2026-10-10-pagamento-…` | adiados |
+| Fase 6 (XML) e T7.1 (suíte em PostgreSQL de teste) | plano `2026-10-09-…` | substituídas pelo módulo Notas Fiscais (abaixo) / aguardam base de teste do usuário |
+
+## 4. Módulos (produto SaaS; cada módulo vendável sozinho)
+
+### 4.1 Cobrança — em construção
+Pronto: clientes, contratos (pré/pós-pago), cobranças, recibos WebISS/DANFSe, envio, baixa, PIX/boleto, máscaras,
+autosugestão. **Próximo:** spec do item 2 acima (catálogo, itens, filtros, CNPJ/CEP, relatórios).
+
+### 4.2 Contas a Pagar — a desenhar (depois do Cobrança)
+O que o usuário já definiu (2026-10-10):
+- Escopo: **cadastro de fornecedores**, **produtos e serviços vinculados aos fornecedores** (é aqui que mora o
+  **custo**), **dashboards** e **relatórios**.
+- **Quem compra só Contas a Pagar não cadastra clientes.** Com os dois módulos, uma despesa pode ser **atribuída a um
+  cliente** (o campo só aparece se Cobrança estiver contratado).
+- **Rentabilidade** (receita − custo mensal): com os dois módulos, sai **por cliente e por produto/serviço**; com um
+  só, o relatório mostra a parte que existe.
+- Pergunta ainda aberta (feita e não respondida antes de reformular): o custo mensal é **fixo do serviço** (dividido
+  entre clientes), **por cliente**, ou **os dois**? — retomar no brainstorming do módulo.
+
+### 4.3 Notas Fiscais — planejado
+- Objetivo do usuário: **gerar a NF (opcional)**, **registrar localmente os dados da NF** e **sincronizar as notas já
+  emitidas manualmente**. Tabelas devem **espelhar a nota** (base comum = Declaração de Prestação de Serviço), com o XML
+  original guardado.
+- **Primeira tarefa obrigatória:** pesquisar em **fontes oficiais** as regras fiscais (LC 116/2003 lista de serviços,
+  alíquotas de ISS municipais, IBS/CBS da reforma, leiaute da NFS-e nacional) — o cálculo de tributos é **opcional** e
+  só vale quando o cliente emite NF.
+- XMLs de exemplo em `MATERIAIS/` (fora do git; dados pessoais): `NFSe_2026000000015_EC5K-BUEZ.xml` e
+  `NFSe_2026000000016_AINQ-DWPJ.xml`. **Achados (só estrutura, 2026-10-10):** padrão **ABRASF versão 2.02**
+  (`CompNfse`, namespace `http://www.abrasf.org.br/nfse.xsd`), assinatura digital; têm **ChaveAcesso de 50 dígitos**
+  (a nota 16 tem a mesma chave do PDF DANFSe → o WebISS de Socorro parece repassar ao ambiente nacional —
+  **[A VERIFICAR]**); grupos: InfNfse (Numero, CodigoVerificacao, DataEmissao, OutrasInformacoes), ValoresNfse,
+  PrestadorServico, OrgaoGerador, DeclaracaoPrestacaoServico (Competencia, Servico com ItemListaServico,
+  CodigoTributacaoMunicipio, Discriminacao, CodigoMunicipio, ExigibilidadeISS, MunicipioIncidencia; Prestador; Tomador
+  com endereço/contato; OptanteSimplesNacional; IncentivoFiscal). O XML **16** traz também **CodigoNbs** e o grupo
+  **IBSCBS** (finNFSe, cIndOp, indDest, valores/trib/gIBSCBS com CST e cClassTrib); o 15 não.
+- Pedido feito ao usuário (ainda sem resposta): baixar também o XML de uma nota no **padrão nacional** (Emissor
+  Nacional) para mapear os dois formatos com base real.
+
+### 4.4 Integração com emissores — planejado (depois de Notas)
+Sincronizar notas emitidas e emitir NFS-e. Provavelmente exige **certificado digital A1** e credenciais por emissor —
+**[A VERIFICAR]** quando chegar a vez.
+
+## 5. Ideias do usuário já decididas (não reabrir)
+- Reaproveitar cadastro de cliente de outro usuário: **rejeitado** (LGPD — artigos na skill). Só dados públicos
+  (CNPJ/CEP).
+- Telas de Contratos e Clientes com **filtros** (entra na Fase 13).
+- Contrato composto por **itens** do catálogo (Fase 12); cliente pode ter **vários contratos ativos** (já suportado).
