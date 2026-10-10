@@ -328,6 +328,14 @@ o relatório mostra a parte que existe.
   adequação e necessidade (art. 6º, I–III); base legal (art. 7º); proteção contra acesso/comunicação indevida (art. 46).
   Também revelaria a carteira de clientes de outro assinante. Preenchimento por CNPJ/CEP entra na spec do módulo Cobrança.
 
+- T11.1: `App\Support\PixCopiaECola` monta o BR Code estático com valor. **Fontes (conferidas em 2026-10-10):**
+  Manual de Padrões para Iniciação do Pix v2.10.0 (bcb.gov.br, 19/08/2026) — exemplo oficial
+  `…62070503***63041D3D`, CRC16 polinômio `0x1021` e valor inicial `0xFFFF` calculado **incluindo `6304`**, txid
+  (62-05) até 25 caracteres `[A-Za-z0-9]` e `***` quando não há, campo 01 opcional; Manual do BR Code
+  (bcb.gov.br/content/estabilidadefinanceira/spb_docs/ManualBRCode.pdf) — 59 nome 01..25 e 60 cidade 01..15
+  (obrigatórios), 54 valor `123.99`. Nome e cidade saem em maiúsculas ASCII (o exemplo do manual usa
+  "NOME DO RECEBEDOR"). O teste do CRC usa o exemplo oficial; o txid do recibo é `REC` + ano + número (6 dígitos).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

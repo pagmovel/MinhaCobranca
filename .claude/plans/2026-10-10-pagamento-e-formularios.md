@@ -42,7 +42,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 10 | T10.2 Forma de pagamento no contrato e na cobrança | testada (tela no smoke da T11.4) |
 | 10 | T10.3 Trocar a forma de pagamento depois de enviada | testada (tela no smoke da T11.4) |
 | 10 | T10.4 PORTÃO-BANCO + fechamento da fase 10 | concluída (migrate autorizado: lote 3; merge e push) |
-| 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | pendente |
+| 11 | T11.1 PIX "copia e cola" (BR Code) conferido com o Banco Central | testada |
 | 11 | T11.2 QR Code em PNG (`chillerlan/php-qrcode`) | pendente |
 | 11 | T11.3 Bloco de pagamento nos PDFs | pendente |
 | 11 | T11.4 Smoke test, revisão final e fechamento | pendente |
@@ -2315,7 +2315,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 
 ### Tarefa T11.1: PIX "copia e cola" (BR Code) conferido com o Banco Central
 
-**Estado:** pendente
+**Estado:** testada (PixCopiaEColaTest 3/3 — CRC do exemplo oficial confere; suíte verde). Fontes conferidas no passo 1.
 
 **Arquivos:**
 - Criar: `app/Support/PixCopiaECola.php`
@@ -2324,7 +2324,7 @@ git commit -m "feat: trocar a forma de pagamento de cobrança pendente, mesmo j�
 **Interfaces:** `PixCopiaECola::gerar(string $chave, string $nome, string $cidade, int $valorCentavos, string $txid): string`;
 `PixCopiaECola::crc16(string $dados): string` (4 hexadecimais maiúsculos).
 
-- [ ] **Passo 1: conferir o padrão** — abrir o "Manual de Padrões para Iniciação do Pix" do Banco Central
+- [x] **Passo 1: conferir o padrão** — feito em 2026-10-10 (Manual de Padrões para Iniciação do Pix v2.10.0 e Manual do BR Code; ver skill) — abrir o "Manual de Padrões para Iniciação do Pix" do Banco Central
   (ctx_fetch_and_index / busca em bcb.gov.br) e confirmar, registrando a fonte na skill:
   1. IDs e ordem dos campos (`00`, `26` com `00`=`br.gov.bcb.pix` e `01`=chave, `52`, `53`=`986`, `54`, `58`=`BR`, `59`, `60`, `62`/`05`, `63`);
   2. limites: nome 25, cidade 15, txid até 25 alfanuméricos (`***` quando não há);
