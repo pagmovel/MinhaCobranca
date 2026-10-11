@@ -65,7 +65,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 ### Fase B — Feriados locais e cobranças já geradas
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T23.3 | Cadastro de feriados locais (rotas, request, controller, props do perfil) | pendente |
+| T23.3 | Cadastro de feriados locais (rotas, request, controller, props do perfil) | **testada**: `FeriadosTest` (3) RED → GREEN; com `PerfilTest`, 9/9 |
 | T23.4 | Ajuste em lote com prévia (`AjusteDeVencimentos`) | pendente |
 | T23.5 | `GET /dias-uteis/proximo` (aviso da avulsa) | pendente |
 

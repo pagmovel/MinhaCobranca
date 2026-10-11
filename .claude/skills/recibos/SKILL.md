@@ -816,6 +816,11 @@ o relatório mostra a parte que existe.
     `feriados`, `User::feriados()` em ordem de id). `ContratoController::retroativos` não precisa (usa só início e fim).
     Custo: uma consulta a mais por geração/previsão/encerramento. Contrato que nasce de agora em diante já sai com o
     vencimento ajustado; cobranças antigas só mudam pelo ajuste com prévia (T23.4).
+  - **Cadastro de feriados locais** (`FeriadoController` + `FeriadoRequest`, rotas `/perfil/feriados`, padrão numérico
+    `{feriado}`): `prepareForValidation` zera os campos que não são do tipo escolhido (trocar de tipo não deixa resto);
+    `after()` confere o dia no mês com 2024 como ano de referência (29/02 aceito, 31/02 recusado); data única com
+    `date_format:Y-m-d`; feriado alheio dá 404 no `authorize()`. O perfil recebe `feriados` (com `quando` pronto para a
+    tela) e `feriadosNacionais` do ano corrente (só leitura).
   - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
     10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
     de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.

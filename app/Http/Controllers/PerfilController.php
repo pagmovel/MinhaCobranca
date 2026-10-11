@@ -6,7 +6,10 @@ use App\Enums\FamiliaModelo;
 use App\Enums\TipoChavePix;
 use App\Http\Requests\PerfilRequest;
 use App\Models\ChavePix;
+use App\Models\Feriado;
+use App\Support\DiasUteis;
 use App\Support\Ufs;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +28,7 @@ class PerfilController extends Controller
     public function edit(Request $request): Response
     {
         $usuario = $request->user();
+        $ano = CarbonImmutable::today()->year;
 
         return Inertia::render('Perfil/Editar', [
             'perfil' => array_map(fn ($valor) => $valor ?? '', $usuario->only(self::CAMPOS)) + [
@@ -40,6 +44,18 @@ class PerfilController extends Controller
                 'apelido' => $chave->apelido ?? '',
             ]),
             'tiposChavePix' => TipoChavePix::opcoes(),
+            'feriados' => $usuario->feriados()->get()->map(fn (Feriado $feriado) => [
+                'id' => $feriado->id,
+                'descricao' => $feriado->descricao,
+                'tipo' => $feriado->tipo,
+                'dia' => $feriado->dia ?? '',
+                'mes' => $feriado->mes ?? '',
+                'data' => $feriado->data?->toDateString() ?? '',
+                'quando' => $feriado->quando($ano),
+            ]),
+            'feriadosNacionais' => collect((new DiasUteis)->nacionais($ano))
+                ->map(fn (string $nome, string $data) => ['data' => CarbonImmutable::parse($data)->format('d/m'), 'descricao' => $nome])
+                ->values(),
             'ufs' => Ufs::TODAS,
         ]);
     }
