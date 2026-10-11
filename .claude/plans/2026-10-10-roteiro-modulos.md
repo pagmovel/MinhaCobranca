@@ -8,8 +8,8 @@ sem depender do histórico.
 
 ### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
 - **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido"). Nada em andamento; árvore limpa.
-- **Próximo:** o usuário escolhe no backlog da seção 0.2. Sugestão: (1) revisão final da branch + merge na `main`;
-  (2) desenho da T17.11 (renovar/prorrogar contrato).
+- **Próximo:** item 0 do backlog (seção 0.2): vencimento em dia útil, pedido do usuário em 2026-10-11, em
+  brainstorming. Depois: revisão final da branch + merge na `main`; desenho da T17.11.
 
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, no remoto, árvore limpa. Último commit: `bf1a814` (iniciais do WebISS).
@@ -30,6 +30,16 @@ sem depender do histórico.
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
+0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
+   cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
+   cobrança para o primeiro dia útil seguinte". **Em brainstorming** (ainda sem spec nem código).
+   - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
+     encerramento e retroativos); ajustar ali mantém o teste-guarda `test_previsao_bate_com_o_que_o_gerador_cria`.
+     Não há nada de feriado no código.
+   - Perguntas abertas: quais feriados contam (nacionais? Carnaval/bancários? estaduais/municipais de quem?); fonte
+     dos feriados (calculados no código — fixos + móveis pela Páscoa — sem serviço externo pago); vale para avulsa
+     (data digitada) ou só para cobrança de contrato; cobranças já geradas não mudam [a confirmar]; datas das leis de
+     feriado nacional **[A VERIFICAR]** em fonte oficial antes da spec.
 1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
 2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
    fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
