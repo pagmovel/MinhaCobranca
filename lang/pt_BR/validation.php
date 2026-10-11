@@ -78,5 +78,8 @@ return [
         'forma_pagamento' => 'forma de pagamento',
         'chave_pix_id' => 'chave PIX',
         'linha_digitavel' => 'linha digitável',
+        'preco' => 'preço',
+        'unidade' => 'unidade',
+        'situacao' => 'situação',
     ],
 ];

@@ -12,6 +12,7 @@ const itens = computed(() => [
     { href: '/cobrancas', rotulo: 'Cobranças' },
     { href: '/contratos', rotulo: 'Contratos' },
     { href: '/clientes', rotulo: 'Clientes' },
+    { href: '/produtos-servicos', rotulo: 'Produtos e serviços' },
     { href: '/perfil', rotulo: 'Meu perfil' },
     ...(usuario.value?.is_admin
         ? [{ href: '/admin/usuarios', rotulo: 'Usuários', contador: page.props.pendentes }]

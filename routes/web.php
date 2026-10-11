@@ -9,6 +9,7 @@ use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
+use App\Http\Controllers\ProdutoServicoController;
 use App\Http\Controllers\ReciboPdfController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
+    Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
+    Route::resource('produtos-servicos', ProdutoServicoController::class)
+        ->except('show')->parameters(['produtos-servicos' => 'produto']);
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);

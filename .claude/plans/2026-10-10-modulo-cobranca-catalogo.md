@@ -34,7 +34,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 
 | Fase | Tarefa | Estado |
 |---|---|---|
-| 12 | T12.1 Catálogo de produtos e serviços | pendente |
+| 12 | T12.1 Catálogo de produtos e serviços | testada (suíte 200/200; build ok) |
 | 12 | T12.2 Itens no contrato | pendente |
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | pendente |
 | 12 | T12.4 Reajustar contratos | pendente |
@@ -110,7 +110,7 @@ relação + `findOrFail`, models com `#[Fillable]`, Inertia v3, context-mode, Po
 
 ### Tarefa T12.1: Catálogo de produtos e serviços
 
-**Estado:** pendente
+**Estado:** testada (suíte 200/200; build ok)
 
 **Arquivos:**
 - Criar: `app/Enums/TipoItem.php`, `app/Models/ProdutoServico.php`, `database/factories/ProdutoServicoFactory.php`,

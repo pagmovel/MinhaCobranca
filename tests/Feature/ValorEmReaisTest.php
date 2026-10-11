@@ -24,4 +24,10 @@ class ValorEmReaisTest extends TestCase
 
         $this->assertSame('Informe um valor válido, como 260,60.', $validador->errors()->first('valor'));
     }
+
+    public function test_zero_so_quando_aceito(): void
+    {
+        $this->assertFalse(validator(['valor' => '0,00'], ['valor' => [new ValorEmReais]])->passes());
+        $this->assertTrue(validator(['valor' => '0,00'], ['valor' => [new ValorEmReais(aceitaZero: true)]])->passes());
+    }
 }

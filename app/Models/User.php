@@ -99,4 +99,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Recibo::class);
     }
+
+    public function produtosServicos(): HasMany
+    {
+        return $this->hasMany(ProdutoServico::class);
+    }
 }

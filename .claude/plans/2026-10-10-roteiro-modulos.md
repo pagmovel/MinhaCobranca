@@ -17,8 +17,14 @@ sem depender do histórico.
 
 1. ~~Usuário revisa a spec~~ — **aprovada em 2026-10-10** ("por enquanto não modifico nada").
 2. ~~Plano das Fases 12–15~~ — **escrito** em `.claude/plans/2026-10-10-modulo-cobranca-catalogo.md` (16 tarefas,
-   código completo, PORTÃO-BANCO só na T12.5). Aguarda a revisão do usuário e a escolha do modo de execução.
-3. Execução: o usuário tem escolhido **nativa** (executing-plans), com revisão final por subagente opus.
+   código completo, PORTÃO-BANCO só na T12.5). **Aprovado pelo usuário em 2026-10-10** ("por enquanto estou satisfeito").
+3. **EM EXECUÇÃO (nativa, executing-plans).** Para retomar depois de compactar:
+   - ledger em `.superpowers/sdd/2026-10-10-modulo-cobranca-catalogo/progress.md` (fora do git) + `git log`; a tabela
+     "Acompanhamento" do plano mostra o estado de cada tarefa (T12.1 = testada).
+   - Copiar código do plano com o extrator do scratchpad (`extrair.py <tarefa> <caminhos>`); se o scratchpad sumir,
+     recriar: aceita só o bloco cujo cabeçalho é "`caminho`…:" no início da linha **ou** depois de "— ", dentro da
+     seção da tarefa; grava com `\n` (Python 3.9: `write_bytes`, não `write_text(newline=)`).
+   - Revisão final do branch por subagente opus no fim (T15.5).
 4. Correções de usabilidade pedidas no meio do caminho (já no branch): formulário de chave PIX abre na linha clicada
    (`50ae99c`); botões de excluir/cancelar com classes `botao-perigo` (`273b572`).
 5. Pergunta aberta do usuário (2026-10-10): testes rodam em SQLite em memória porque não há PostgreSQL de teste (T7.1).
@@ -70,7 +76,11 @@ O que o usuário já definiu (2026-10-10):
   `Contato/Email` (só no 16). **Não há nome da cidade** (só código IBGE): preencher pela consulta de CEP da Fase 14
   (ViaCEP devolve `localidade` e `ibge` — conferir o código); falhando, cidade em branco. Sem telefone nem inscrição
   municipal no XML. Modelo do recibo do cliente novo = `modelo_padrao` do usuário.
-- Proposta feita (aguardando resposta): importação como **Fase 16 do módulo Cobrança** (depois dos relatórios, porque
+- **Decidido pelo usuário (2026-10-10):** importação = **Fase 16 do módulo Cobrança**, depois dos relatórios; começa
+  pelo formato do **WebISS (ABRASF 2.02)** — é o único XML que ele tem; se eu achar na web um **exemplo oficial de XML
+  do padrão nacional** (gov.br / documentação da NFS-e nacional), posso usá-lo nos testes (autorizado). Brainstorming →
+  spec → plano da Fase 16 depois da T15.5.
+- Proposta aceita: importação como **Fase 16 do módulo Cobrança** (depois dos relatórios, porque
   usa a consulta de CEP da Fase 14) — importar XML guardando o original, cadastrar cliente se faltar, sugerir a cobrança
   correspondente para vincular, mostrar a NFS-e no recibo/lista. Emissão, sincronização e tributos ficam no módulo Notas.
 - XMLs de exemplo em `MATERIAIS/` (fora do git; dados pessoais): `NFSe_2026000000015_EC5K-BUEZ.xml` e

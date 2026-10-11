@@ -387,6 +387,10 @@ o relatório mostra a parte que existe.
   do catálogo somam o valor do contrato (descrição do recibo continua livre); cobranças copiam os itens; códigos fiscais
   do item principal; contrato guarda o próprio preço (reajuste por ação explícita); custo fica no Contas a Pagar;
   tributos só no módulo de Notas (pesquisa oficial primeiro); **"recebido" = pago no mês (caixa)**, inclusive no painel.
+- T12.1: catálogo `produtos_servicos` (único por usuário+nome); preço sugerido pode ser 0
+  (`new ValorEmReais(aceitaZero: true)`; `ValorEmReais::MAXIMO_CENTAVOS` público); busca de autosugestão só traz ativos;
+  `App\Support\Busca::contem()` (padrão `like` com `%`/`_` escapados) e `App\Support\Paginacao::dados()` + `Paginacao.vue`
+  compartilhados pelas listas. Rota com `{produto}` numérico (`Route::pattern`). Resource com `->parameters(['produtos-servicos' => 'produto'])`.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
