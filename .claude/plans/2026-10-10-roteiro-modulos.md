@@ -16,9 +16,9 @@ sem depender do histórico.
   pulava cobrança/desfazia escolha de retroativos; 419 em DELETE/PUT/PATCH caía em 405; "Fim do contrato" reagendava
   encerramento já agendado sem passar pelo plano; "Recomeçar" cobrava de novo período já pago; suíte saía com código 1.
   1 Minor ficou deferido (N+1 em `GeradorDeCobrancas::gerarPara`, ~580 ms/contrato — otimização, não bug).
-- **Falta:** validação final do usuário confirmando que a integração ficou certa (pedido dele: "integrar primeiro e
-  depois validar"). Depois disso, próximo item do backlog é a **T17.11** (item 2 abaixo) ou a Fase 24 (WhatsApp, spec
-  aguardando revisão do usuário).
+- **Validação final do usuário: "validado" (2026-10-11).** Fase 23 encerrada — integração confirmada pelo usuário.
+  Próximo item do backlog é a **T17.11** (item 2 da lista abaixo) ou a Fase 24 (WhatsApp, spec aguardando revisão do
+  usuário) — escolha do usuário quando ele indicar.
 
 ### 0.2 Estado da branch
 **Branch de trabalho `feat/modulo-cobranca-catalogo`:** mergeada na `main` (`da2d53f`), segue existindo no remoto (não
@@ -37,7 +37,7 @@ apagada — decisão de não apagar branches sem pedido explícito).
 | 20 | Todas as listas por ajax e em tabela (T17.18) | `2026-10-11-listas-por-ajax.md` | **validada** (2026-10-11); Minor 2–7 e o "Enviar" do Painel a 390 px adiados (motivos no plano) |
 | 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
-| 23 | Vencimento em dia útil: calendário de feriados, ajuste em lote, aviso na avulsa e no Painel, spinner global | `2026-10-11-vencimento-em-dia-util.md` | **testada e mergeada** (2026-10-11, merge `da2d53f`); aguarda validação final do usuário pós-merge |
+| 23 | Vencimento em dia útil: calendário de feriados, ajuste em lote, aviso na avulsa e no Painel, spinner global | `2026-10-11-vencimento-em-dia-util.md` | **validada** (2026-10-11, merge `da2d53f`) |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
 0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:

@@ -1634,3 +1634,16 @@ exatos de cada um.
 - Duas revisões externas (opus) já rodaram nesta fase: a primeira em `0bca21d..2148a0f` (Important corrigido — teste de
   isolamento), a segunda em `2148a0f..ae3acf5` (Important corrigido — `AnoValido` com array). A revisão do Passo B é uma
   terceira, de escopo maior (toda a branch desde `main`).
+
+## FASE 23 ENCERRADA (2026-10-11)
+
+- Passo A (T23.12, 6 Minor): concluído — 5 corrigidos com TDD, 1 ruling documentado na skill.
+- Passo B (revisão final de branch inteira, `fabe501..e93665f`, 93 commits, Fases 17–23): concluído — 1 Critical + 4
+  Important corrigidos com TDD (commits `9f1c9de`, `a79f78a`, `f716528`, `aeee09a`, `a681ea5`); 1 Minor deferido
+  (N+1 em `GeradorDeCobrancas::gerarPara`, decisão do usuário quando quiser).
+- Passo C (merge + push): concluído — merge `da2d53f` na `main`, push para `origin/main`; workspace do plano
+  (`.superpowers/sdd/2026-10-11-vencimento-em-dia-util/`) apagado.
+- Passo D (validação do usuário): **"validado"** (2026-10-11).
+
+Suíte final: PHP 440/440 (saída limpa), JS 60/60, build ok. Próximo item do backlog: ver
+`.claude/plans/2026-10-10-roteiro-modulos.md` seção 0.
