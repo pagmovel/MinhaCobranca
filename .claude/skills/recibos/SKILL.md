@@ -43,6 +43,14 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
     a paleta azul, fotos externas ou ícones do Google): colunas alinhadas, valor à direita em `tabular-nums`, **uma
     ação principal por linha conforme a situação** e as demais num menu "⋯", formulário da ação numa faixa abaixo da
     linha, abas de situação com contagem e soma, ordenação pelo cabeçalho; em 390 px a tabela vira cartões.
+    **Lista longa carrega por ajax, com paginação e totais** (Fase 19, aprovado em 2026-10-11):
+    - endpoint JSON só de leitura que devolve um **bloco de 4 páginas** e os totais do resultado inteiro;
+    - o navegador guarda as páginas por filtro e desenha só a atual;
+    - paginador acima e abaixo da tabela;
+    - rodapé de totais;
+    - esqueleto de linhas na primeira carga.
+
+    Ver "Fase 19" nos Acertos.
 
 Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
 
@@ -661,6 +669,43 @@ o relatório mostra a parte que existe.
     embaixo do "Até", campo que a pessoa não tinha mexido. E um campo apagado ficava em branco, porque o
     `preserveState` não ressincroniza o `filtro` com o `props.filtros`. Regra de filtro com casos de borda vai para um
     módulo `.js` com teste, como o `acoesCobranca.js`.
+- **Fase 19 — cobranças paginadas por ajax (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-paginacao-cobrancas-design.md`, plano `.claude/plans/2026-10-11-paginacao-cobrancas.md`;
+  carregamento validado pelo usuário: "Aprovo o carregamento da lista de cobranças")**
+  - **Rotas.**
+    - `GET /cobrancas` (Inertia) só abre a tela e roda a geração preguiçosa.
+    - `GET /cobrancas/dados` (JSON, **nunca grava**) monta a resposta em `App\Services\ListaDeCobrancas::montar`:
+      1. lista leve: só `id`, `vencimento`, `status` e `valor_centavos`, mais as previstas;
+      2. totais por situação nesta ordem: vencida, vence_hoje, a_vencer, prevista, paga, cancelada;
+      3. `total_geral` sem as canceladas;
+      4. fatia de `PAGINAS_POR_BLOCO = 4` páginas;
+      5. só as linhas do bloco carregam cliente, recibo e histórico.
+    - Página além da última → devolve a última (`pagina.inicio` diz qual).
+    - "Até antes do mês" e "36 meses" voltam como 422 no JSON. A página não recusa o período: link ruim abre a tela
+      com o erro embaixo do campo.
+  - **Navegador** (`Cobrancas/Index.vue`).
+    - Cache por `chaveDoFiltro` (os filtros mais o "por página"); `fatiarBloco` reparte o bloco em páginas;
+      `paginasVisiveis` monta o paginador (`resources/js/paginacao.js`, com teste).
+    - Contador de pedidos: resposta atrasada é descartada.
+    - `router.replace({ url, props })` põe filtros e página na URL sem pedir nada ao servidor.
+    - `buscarJson` em `http.js` (mesmo retorno de `enviarJson`).
+  - **Recarga depois de uma ação.** `post`, `put` e `delete` do Inertia preservam o estado, então a página **não
+    remonta**. A lista é buscada de novo no evento global `router.on('success')` quando
+    `page.component === 'Cobrancas/Index'` e não está carregando. Confirmado no `@inertiajs/core` 3.9.0: o `success`
+    só sai de resposta do servidor (`dist/index.js:2715`), nunca de `router.replace`.
+  - **Componentes.** `Paginador.vue`: "Mostrando X–Y de N", Anterior/números/Próxima, "Por página" (25/50/100),
+    `aria-current="page"`. Trocar de página leva o foco ao paginador de cima.
+  - **Telas de espera.**
+    - Primeira carga: texto com o indicador girando e 6 linhas-esqueleto (`motion-safe:animate-pulse`), pedido do
+      usuário "como no YouTube".
+    - Carga seguinte: a tabela fica esmaecida.
+    - Falha: mensagem e "Tentar de novo".
+  - **Pegadinhas.**
+    1. Os testes que liam a prop `cobrancas` passaram a abrir a página (que gera) e ler o JSON.
+    2. Ao colar trechos do plano por script, `'<tfoot' in bloco` pegou o bloco errado: escolher pelo começo do bloco e
+       contar as ocorrências.
+- **Pedido do usuário (2026-10-11):** levar este padrão a **todas as telas com lista de dados**. Fase própria depois da
+  19, junto com a T17.18.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

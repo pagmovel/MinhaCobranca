@@ -56,7 +56,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T19.1 | `GET /cobrancas/dados` + serviço `ListaDeCobrancas` (lista leve, totais, bloco) + `valor_centavos` em `paraLista` | testada (RED 8× 404 → GREEN; Cobrancas 65/65; JSON sem sessão = 401) |
 | T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | testada (RED: as 2 asserções da página falharam como esperado → GREEN; suíte inteira 340/340) |
 | T19.3 | JS puro: `paginacao.js` (páginas visíveis, chave do cache, fatiar bloco) e `buscarJson` em `http.js` | testada (RED: módulo e export inexistentes → GREEN; JS 32/32) |
-| T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | concluída (build ok; JS 32/32; PHP 340/340); conferência no navegador na T19.5 |
+| T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | **validada** pelo usuário em 2026-10-11 ("Aprovo o carregamento da lista de cobranças"); build ok, JS 32/32, PHP 342/342 |
 | T19.5 | Skill, revisão final, conferência no navegador (com autorização), validação do usuário | pendente |
 
 ## Registro de execução (decisões tomadas durante a execução)
