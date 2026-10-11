@@ -30,11 +30,19 @@ sem depender do histórico.
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
+0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:
+   "Adicione também uma forma de compartilhar mensagens via whatsapp avisando sobre vencimento. Um campo para que possamos
+   digitar modelos de mensagens a serem utilizadas por whatsapp que contenham os serviços ou produtos que estão vencendo
+   nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." **Em brainstorming.**
+   - Fatos: o cliente tem `telefone`; o envio de PDF hoje é `BotaoEnviar` (Web Share/download). Envio automático pela API
+     do WhatsApp é pago → fora (regra: serviço externo só se gratuito); caminho gratuito: link `https://wa.me/<número>?text=`
+     que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial.
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
    cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
    cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**
-   `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md` — **aguarda revisão do usuário** (decisões D1–D3:
-   Sexta-feira da Paixão automática?, avulsas fora do ajuste em lote?, boleto). Depois: plano (writing-plans) e execução.
+   `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md` — **aprovada pelo usuário** (D1–D3 "CONCORDO": Sexta-feira
+   da Paixão automática; avulsas fora do ajuste em lote; boleto ajustado com aviso). **Próximo: plano (Fase 23)** e execução.
+   Migração `feriados`: "SIM" antecipado do usuário; no portão, mostrar conexão/contagem/comando e confirmar.
    Fontes legais conferidas no planalto.gov.br (Leis 662/1949, 6.802/1980, 9.093/1995, 14.759/2023).
    - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
      encerramento e retroativos); ajustar ali mantém o teste-guarda `test_previsao_bate_com_o_que_o_gerador_cria`.

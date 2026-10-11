@@ -23,7 +23,7 @@ em aberto e não enviadas**.
 | Nossa Senhora Aparecida | 12/10 | Lei 6.802/1980, art. 1º |
 | Dia Nacional de Zumbi e da Consciência Negra | 20/11 | Lei 14.759/2023, art. 1º (publicada em 22/12/2023: vale a partir de 2024) |
 | Carnaval (segunda e terça) | Páscoa − 48 e − 47 dias | **Não é feriado por lei** (ponto facultativo); entra por decisão do usuário (bancos fechados) |
-| Sexta-feira da Paixão | Páscoa − 2 dias | **Feriado municipal** (Lei 9.093/1995, art. 2º: religiosos "declarados em lei municipal ... neste incluída a Sexta-Feira da Paixão") — ver decisão D1 |
+| Sexta-feira da Paixão | Páscoa − 2 dias | **Feriado municipal** por lei (Lei 9.093/1995, art. 2º: religiosos "declarados em lei municipal ... neste incluída a Sexta-Feira da Paixão"); entra **automática** por decisão do usuário (D1: bancos fechados) |
 | Corpus Christi | Páscoa + 60 dias | Feriado municipal onde a lei local declarar → opção da lista local |
 
 - Páscoa calculada no código (algoritmo de Meeus/Jones/Butcher, calendário gregoriano). Sem serviço externo.
@@ -54,13 +54,13 @@ em aberto e não enviadas**.
   **"Usar <próximo dia útil>"** (ex.: "Cai num sábado. Próximo dia útil: segunda, 13/10"). O cálculo vem do servidor
   (`GET /dias-uteis/proximo?data=`, só leitura, mesma regra), para não duplicar o calendário no JS.
 
-## 6. Decisões para o usuário revisar nesta especificação
+## 6. Decisões (aprovadas pelo usuário em 2026-10-11: "D1, D2 e D3 - CONCORDO")
 - **D1 — Sexta-feira da Paixão:** por lei é municipal, mas os bancos fecham no país todo (o mesmo motivo do Carnaval).
-  Proposta: **automática**, como o Carnaval. Alternativa: opção da lista local (como Corpus Christi).
-- **D2 — Avulsas já emitidas no ajuste em lote:** proposta: **ficam fora** (a data foi digitada pela pessoa; o aviso do
+  **Decidido: automática**, como o Carnaval.
+- **D2 — Avulsas já emitidas no ajuste em lote:** **decidido: ficam fora** (a data foi digitada pela pessoa; o aviso do
   item 5 vale ao editar). Só cobranças de contrato entram na prévia.
 - **D3 — Boleto:** cobrança com linha digitável traz o vencimento do banco dentro do código. Mudar a data no recibo não
-  muda o boleto (o banco já aceita pagamento no próximo dia útil). Proposta: ajustar mesmo assim e mostrar, na prévia,
+  muda o boleto (o banco já aceita pagamento no próximo dia útil). **Decidido:** ajustar mesmo assim e mostrar, na prévia,
   "tem boleto: confira a data no banco" nessas linhas.
 
 ## 7. Fora do escopo
@@ -77,3 +77,6 @@ em aberto e não enviadas**.
 - Ajuste em lote: só pendentes não enviadas de contrato; mesmo número de recibo; enviadas/pagas/canceladas intactas;
   prévia com contagem certa.
 - Avulsa: endpoint do próximo dia útil (só leitura, exige sessão).
+
+**Especificação aprovada pelo usuário em 2026-10-11** ("CONCORDO"). Migração da tabela `feriados`: o usuário respondeu
+"SIM" antes de ela existir; no PORTÃO-BANCO, mostrar conexão, contagem e comando literal e confirmar antes de rodar.
