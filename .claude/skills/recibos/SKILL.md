@@ -430,6 +430,10 @@ o relatório mostra a parte que existe.
   `= + - @` ganha apóstrofo (injeção de CSV); período padrão 12 meses, máximo 36; "em atraso no fim do mês" é saldo
   (sem total). **Pegadinhas:** PHP 8.4 deprecia `fputcsv` sem o argumento `escape`; `fputcsv` põe aspas em campo com
   espaço (`"Em atraso no fim do mês"`).
+- T15.3: receita por produto soma `cobranca_itens.total_centavos` (a cópia) — bate com o valor das cobranças porque
+  valor = soma dos itens; cobranças anteriores ao catálogo entram na linha "Sem item"; "contratos ativos" não soma
+  (um contrato com dois itens contaria duas vezes); receita por cliente agrupa no SQL (`selectRaw` + `groupBy`) e
+  calcula dias de atraso em PHP (`diffInDays` do Carbon 3 tem sinal).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
