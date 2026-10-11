@@ -40,6 +40,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/clientes/dados', [ClienteController::class, 'dados']);
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::get('/contratos/retroativos', [ContratoController::class, 'retroativos']);
+    Route::get('/contratos/dados', [ContratoController::class, 'dados']);
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
     Route::get('/contratos/{contrato}/encerramento', [ContratoController::class, 'encerramento']);
     Route::post('/contratos/{contrato}/encerrar', [ContratoController::class, 'encerrar']);

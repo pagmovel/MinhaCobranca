@@ -11,12 +11,14 @@ use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\ContratoItem;
+use App\Models\User;
 use App\Services\CalculadoraDePeriodos;
 use App\Services\EncerradorDeContratos;
+use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
-use App\Support\Paginacao;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,55 +33,116 @@ class ContratoController extends Controller
     public function index(Request $request): Response
     {
         $usuario = $request->user();
-        $filtros = $request->validate([
+        $filtros = $this->filtros($request);
+
+        // A lista vem por ajax de /contratos/dados; a página só abre a tela com os filtros.
+        return Inertia::render('Contratos/Index', [
+            'filtros' => $filtros,
+            'clienteFiltro' => $filtros['cliente_id'] === '' ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            // Em qualquer situação: o "Ver contratos" de um item inativo também mostra o nome no filtro.
+            'produtoFiltro' => $filtros['produto_servico_id'] === '' ? null : $usuario->produtosServicos()->find($filtros['produto_servico_id'], ['id', 'nome']),
+            'modalidades' => Modalidade::opcoes(),
+            'formasPagamento' => FormaPagamento::opcoes(),
+        ]);
+    }
+
+    /** Dados da lista (JSON, só leitura): um bloco de páginas e os totais dos ativos por periodicidade. */
+    public function dados(Request $request): JsonResponse
+    {
+        $filtros = $this->filtros($request);
+        $filtrada = fn () => $this->filtrada($request->user(), $filtros);
+
+        $bloco = BlocoDePaginas::de(
+            $filtrada()->with('cliente:id,nome')->orderByDesc('ativo')->orderBy('data_inicio')->orderBy('id'),
+            $filtros['pagina'],
+            $filtros['por_pagina'],
+        );
+        // Sem ORDER BY (o PostgreSQL recusaria) e sem somar periodicidades diferentes (o número não faria sentido).
+        $porPeriodicidade = $filtrada()->where('ativo', true)->toBase()
+            ->selectRaw('periodicidade, count(*) as quantidade, sum(valor_centavos) as soma')
+            ->groupBy('periodicidade')->get()->keyBy('periodicidade');
+
+        return response()->json([
+            'linhas' => $bloco['itens']->map(fn (Contrato $contrato) => [
+                'id' => $contrato->id,
+                'cliente_id' => $contrato->cliente_id,
+                'cliente' => $contrato->cliente->nome,
+                'resumo' => (string) strtok($contrato->descricao, "\n"),
+                'periodicidade' => $contrato->periodicidade->rotulo(),
+                'modalidade' => $contrato->modalidade->rotulo(),
+                'dia_vencimento' => $contrato->dia_vencimento,
+                'inicio' => $contrato->data_inicio->format('d/m/Y'),
+                'fim' => $contrato->data_fim?->format('d/m/Y'),
+                'valor' => Dinheiro::formatar($contrato->valor_centavos),
+                // Ativo com fim marcado = encerramento agendado (T17.9).
+                'situacao' => match (true) {
+                    ! $contrato->ativo => 'encerrado',
+                    $contrato->data_fim !== null => 'encerra',
+                    default => 'ativo',
+                },
+            ])->all(),
+            'totais' => [
+                'ativos' => collect(Periodicidade::cases())
+                    ->filter(fn (Periodicidade $periodicidade) => $porPeriodicidade->has($periodicidade->value))
+                    ->map(fn (Periodicidade $periodicidade) => [
+                        'periodicidade' => $periodicidade->value,
+                        'quantidade' => (int) $porPeriodicidade[$periodicidade->value]->quantidade,
+                        'soma_centavos' => (int) $porPeriodicidade[$periodicidade->value]->soma,
+                    ])
+                    ->values()
+                    ->all(),
+                'encerrados' => $filtrada()->where('ativo', false)->count(),
+            ],
+            'pagina' => $bloco['pagina'],
+            'filtros' => $filtros,
+        ]);
+    }
+
+    /** Contratos do usuário com os filtros da lista, sem ordem (a lista ordena; as somas não podem ter ORDER BY). */
+    private function filtrada(User $usuario, array $filtros): HasMany
+    {
+        $consulta = $usuario->contratos();
+
+        foreach (['cliente_id', 'modalidade', 'forma_pagamento'] as $campo) {
+            if ($filtros[$campo] !== '') {
+                $consulta->where($campo, $filtros[$campo]);
+            }
+        }
+        if ($filtros['situacao'] !== '') {
+            $consulta->where('ativo', $filtros['situacao'] === 'ativos');
+        }
+        if ($filtros['produto_servico_id'] !== '') {
+            $consulta->whereHas('itens', fn ($itens) => $itens->where('produto_servico_id', $filtros['produto_servico_id']));
+        }
+
+        return $consulta;
+    }
+
+    /**
+     * Filtros da lista, já no formato da tela ('' = sem filtro).
+     *
+     * @return array{cliente_id: int|string, situacao: string, modalidade: string, forma_pagamento: string, produto_servico_id: int|string, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request): array
+    {
+        $validados = $request->validate([
             'cliente_id' => ['nullable', 'integer'],
             'situacao' => ['nullable', Rule::in(['ativos', 'encerrados'])],
             'modalidade' => ['nullable', Rule::enum(Modalidade::class)],
             'forma_pagamento' => ['nullable', Rule::enum(FormaPagamento::class)],
             'produto_servico_id' => ['nullable', 'integer'],
+            ...BlocoDePaginas::regras(),
         ]);
 
-        $consulta = $usuario->contratos()->with('cliente:id,nome')
-            ->orderByDesc('ativo')->orderBy('data_inicio')->orderBy('id');
-
-        foreach (['cliente_id', 'modalidade', 'forma_pagamento'] as $campo) {
-            if (filled($filtros[$campo] ?? null)) {
-                $consulta->where($campo, $filtros[$campo]);
-            }
-        }
-        if (filled($filtros['situacao'] ?? null)) {
-            $consulta->where('ativo', $filtros['situacao'] === 'ativos');
-        }
-        if (filled($filtros['produto_servico_id'] ?? null)) {
-            $consulta->whereHas('itens', fn ($itens) => $itens->where('produto_servico_id', $filtros['produto_servico_id']));
-        }
-
-        $pagina = $consulta->paginate(25)->withQueryString();
-
-        return Inertia::render('Contratos/Index', [
-            'contratos' => collect($pagina->items())->map(fn (Contrato $contrato) => [
-                'id' => $contrato->id,
-                'cliente' => $contrato->cliente->nome,
-                'resumo' => strtok($contrato->descricao, "\n"),
-                'valor' => Dinheiro::formatar($contrato->valor_centavos),
-                'periodicidade' => $contrato->periodicidade->rotulo(),
-                'modalidade' => $contrato->modalidade->rotulo(),
-                'dia_vencimento' => $contrato->dia_vencimento,
-                'ativo' => $contrato->ativo,
-            ]),
-            'paginacao' => Paginacao::dados($pagina),
-            'filtros' => [
-                'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
-                'situacao' => $filtros['situacao'] ?? '',
-                'modalidade' => $filtros['modalidade'] ?? '',
-                'forma_pagamento' => $filtros['forma_pagamento'] ?? '',
-                'produto_servico_id' => isset($filtros['produto_servico_id']) ? (int) $filtros['produto_servico_id'] : '',
-            ],
-            'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
-            'modalidades' => Modalidade::opcoes(),
-            'formasPagamento' => FormaPagamento::opcoes(),
-            'produtos' => $usuario->produtosServicos()->orderBy('nome')->get(['id', 'nome']),
-        ]);
+        return [
+            'cliente_id' => empty($validados['cliente_id']) ? '' : (int) $validados['cliente_id'],
+            'situacao' => $validados['situacao'] ?? '',
+            'modalidade' => $validados['modalidade'] ?? '',
+            'forma_pagamento' => $validados['forma_pagamento'] ?? '',
+            'produto_servico_id' => empty($validados['produto_servico_id']) ? '' : (int) $validados['produto_servico_id'],
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
     }
 
     public function create(Request $request): Response

@@ -61,11 +61,11 @@ class ContratosTest extends TestCase
         Contrato::factory()->for($usuario)->for($cliente)->create(['valor_centavos' => 26060]);
 
         $this->actingAs($usuario)->get('/contratos')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Contratos/Index')
-                ->has('contratos', 1)
-                ->where('contratos.0.cliente', $cliente->nome)
-                ->where('contratos.0.valor', '260,60'));
+            ->assertInertia(fn (Assert $page) => $page->component('Contratos/Index'));
+        $this->getJson('/contratos/dados')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.cliente', $cliente->nome)
+            ->assertJsonPath('linhas.0.valor', '260,60');
     }
 
     public function test_cliente_de_outro_usuario_e_recusado(): void

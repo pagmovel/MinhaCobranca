@@ -63,7 +63,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T20.2 | Navegador: `chaveDoFiltro` genérica, `adiar`, `filtrosAlterados`, `periodoAoRedor`, `usarListaPaginada`, `EstadoDaLista`, `Etiqueta`, `Paginador` com opções; cobranças migradas | testada (RED: 3 exports inexistentes, chave genérica, prop `padroes` → GREEN; JS 43/43, Cobrancas 67/67, build ok) |
 | T20.3 | Clientes em tabela por ajax | testada (RED: 7 falhas, 404 e prop antiga → GREEN; suíte 351/351, build ok) |
 | T20.4 | Produtos e serviços em tabela por ajax | testada (RED: 3 falhas → GREEN; suíte 353/353, build ok) |
-| T20.5 | Contratos em tabela por ajax, totais por periodicidade, produto por autosugestão | pendente |
+| T20.5 | Contratos em tabela por ajax, totais por periodicidade, produto por autosugestão | testada (RED: 6 falhas → GREEN; suíte 356/356, build ok) |
 | T20.6 | Auditoria por ajax | pendente |
 | T20.7 | Usuários (admin) em tabela por ajax, filtros, ação principal pela situação | pendente |
 | T20.8 | Painel: três listas por ajax | pendente |
