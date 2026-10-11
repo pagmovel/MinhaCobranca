@@ -46,7 +46,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | testada (JS 13/13; build ok; suíte 239/239; navegador na T15.5) |
 | 14 | T14.3 Fechamento da fase 14 | concluída (sem banco; merge na main) |
 | 15 | T15.1 Painel: recebido = pago no mês | testada (suíte 240/240) |
-| 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | pendente |
+| 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | testada (suíte 245/245; build ok) |
 | 15 | T15.3 Relatórios: receita por cliente e por produto/serviço | pendente |
 | 15 | T15.4 Relatório: contas a receber | pendente |
 | 15 | T15.5 Smoke test, revisão final e fechamento | pendente |
@@ -4356,7 +4356,7 @@ git commit -m "feat: painel mostra como recebido o que foi pago no mês (regime 
 
 ### Tarefa T15.2: Relatórios: estrutura, faturamento por período e CSV
 
-**Estado:** pendente
+**Estado:** testada (suíte 245/245; build ok)
 
 **Arquivos:**
 - Criar: `app/Services/Relatorios.php`, `app/Http/Controllers/RelatorioController.php`,

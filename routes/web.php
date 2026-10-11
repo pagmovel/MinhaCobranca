@@ -12,6 +12,7 @@ use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\ProdutoServicoController;
 use App\Http\Controllers\ReciboPdfController;
+use App\Http\Controllers\RelatorioController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/painel');
@@ -46,6 +47,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
         Route::get('/consultas/cnpj/{cnpj}', [ConsultaController::class, 'cnpj'])->where('cnpj', '[0-9A-Za-z]{1,20}');
         Route::get('/consultas/cep/{cep}', [ConsultaController::class, 'cep'])->where('cep', '[0-9\-]{1,10}');
     });
+    Route::get('/relatorios', [RelatorioController::class, 'index']);
+    Route::get('/relatorios/{tipo}', [RelatorioController::class, 'show'])->whereIn('tipo', RelatorioController::TIPOS);
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);

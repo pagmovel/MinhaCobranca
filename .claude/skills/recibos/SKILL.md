@@ -425,6 +425,11 @@ o relatório mostra a parte que existe.
   usa `campo-nome="name"`. `consultar()` nunca lança: falha vira mensagem e o formulário segue manual.
 - T15.1: o "recebido" do painel soma as pagas com `pago_em` no mês (regime de caixa, D1), qualquer que seja o
   vencimento; o "previsto" continua pelo vencimento — a frase pode mostrar recebido maior que previsto (esperado).
+- T15.2: relatório = tabela genérica (`App\Services\Relatorios`: colunas com tipo e `soma`, linhas em centavos,
+  totais) usada pela tela e pelo CSV; CSV com `;`, BOM UTF-8 e `fputcsv(..., ';', '"', '')`; célula que começa com
+  `= + - @` ganha apóstrofo (injeção de CSV); período padrão 12 meses, máximo 36; "em atraso no fim do mês" é saldo
+  (sem total). **Pegadinhas:** PHP 8.4 deprecia `fputcsv` sem o argumento `escape`; `fputcsv` põe aspas em campo com
+  espaço (`"Em atraso no fim do mês"`).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
