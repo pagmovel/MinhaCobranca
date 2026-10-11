@@ -15,12 +15,14 @@ sem depender do histórico.
 
 ## 2. Próximo passo imediato
 
-1. **Usuário revisa a spec** `docs/superpowers/specs/2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`
-   (aguardando o ok dele).
-2. Com o ok: skill `superpowers:writing-plans` → plano das **Fases 12–15** em
-   `.claude/plans/2026-10-10-modulo-cobranca-catalogo.md` (mesmo formato dos planos anteriores: fases, tarefas, estado,
-   código completo, PORTÃO-BANCO nas migrações, fechamento de fase = merge no `main` + push).
+1. ~~Usuário revisa a spec~~ — **aprovada em 2026-10-10** ("por enquanto não modifico nada").
+2. ~~Plano das Fases 12–15~~ — **escrito** em `.claude/plans/2026-10-10-modulo-cobranca-catalogo.md` (16 tarefas,
+   código completo, PORTÃO-BANCO só na T12.5). Aguarda a revisão do usuário e a escolha do modo de execução.
 3. Execução: o usuário tem escolhido **nativa** (executing-plans), com revisão final por subagente opus.
+4. Correções de usabilidade pedidas no meio do caminho (já no branch): formulário de chave PIX abre na linha clicada
+   (`50ae99c`); botões de excluir/cancelar com classes `botao-perigo` (`273b572`).
+5. Pergunta aberta do usuário (2026-10-10): testes rodam em SQLite em memória porque não há PostgreSQL de teste (T7.1).
+   Oferecido criar `recibos_teste` no mesmo servidor (escrita → PORTÃO-BANCO); aguardando resposta.
 
 ## 3. Pendências em aberto (de planos anteriores)
 
