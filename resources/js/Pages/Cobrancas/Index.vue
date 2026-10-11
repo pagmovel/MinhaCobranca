@@ -206,9 +206,21 @@ async function fecharFaixa() {
             </p>
         </Transition>
 
-        <p v-if="!carregou && !falha" class="border border-linha bg-white px-4 py-3 text-sm text-grafite/75" role="status">
-            Carregando cobranças…
-        </p>
+        <!-- Primeira carga: esqueleto no formato das linhas (como o YouTube), sem a tela "pular" quando os dados chegam. -->
+        <div v-if="!carregou && !falha" class="border border-linha bg-white" aria-busy="true">
+            <p class="flex items-center gap-2 px-4 py-3 text-sm text-grafite/75" role="status">
+                Carregando cobranças…
+                <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-carbono/25 border-t-carbono" aria-hidden="true" />
+            </p>
+            <div v-for="linha in 6" :key="linha" class="flex items-center gap-4 border-t border-linha px-4 py-4 motion-safe:animate-pulse" aria-hidden="true">
+                <span class="h-3 w-1/4 rounded-sm bg-linha" />
+                <span class="hidden h-3 w-40 rounded-sm bg-linha xl:block" />
+                <span class="hidden h-3 w-20 rounded-sm bg-linha xl:block" />
+                <span class="ml-auto h-3 w-20 rounded-sm bg-linha" />
+                <span class="h-5 w-28 rounded-sm bg-linha" />
+                <span class="hidden h-8 w-28 rounded-sm bg-linha sm:block" />
+            </div>
+        </div>
         <div v-else-if="falha" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
             <span>{{ falha }}</span>
             <button type="button" class="botao-secundario" @click="recarregar">Tentar de novo</button>
