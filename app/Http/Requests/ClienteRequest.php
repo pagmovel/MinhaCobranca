@@ -20,8 +20,11 @@ class ClienteRequest extends FormRequest
     {
         $cep = preg_replace('/\D/', '', (string) $this->input('cep'));
         $uf = mb_strtoupper((string) $this->input('uf'));
+        $apelido = $this->input('apelido');
 
         $this->merge([
+            // Sem apelido = '' (a coluna não aceita nulo: é parte do índice único com o documento).
+            'apelido' => is_string($apelido) ? trim($apelido) : ($apelido ?? ''),
             'documento' => Documento::normalizar($this->input('documento')),
             'cep' => $cep === '' ? null : $cep,
             'uf' => $uf === '' ? null : $uf,
@@ -32,11 +35,14 @@ class ClienteRequest extends FormRequest
     {
         return [
             'nome' => ['required', 'string', 'max:255'],
+            'apelido' => ['string', 'max:60'],
+            // O mesmo CPF/CNPJ pode repetir com outro apelido (cada regional é um cliente).
             'documento' => [
                 'required',
                 new DocumentoValido,
                 Rule::unique('clientes', 'documento')
                     ->where('user_id', $this->user()->id)
+                    ->where('apelido', is_string($this->input('apelido')) ? $this->input('apelido') : '')
                     ->ignore($this->route('cliente')),
             ],
             'inscricao_municipal' => ['nullable', 'string', 'max:30'],
@@ -52,5 +58,12 @@ class ClienteRequest extends FormRequest
             'cep' => ['nullable', 'digits:8'],
             'modelo' => ['required', Rule::enum(FamiliaModelo::class)],
         ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        // O erro já diz a saída: outra unidade do mesmo CNPJ entra com outro apelido.
+        return ['documento.unique' => 'Este CPF/CNPJ já está cadastrado. Para outra unidade do mesmo cliente, preencha um apelido diferente.'];
     }
 }

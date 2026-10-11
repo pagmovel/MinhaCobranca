@@ -32,7 +32,7 @@ class ClienteController extends Controller
     public function dados(Request $request): JsonResponse
     {
         $filtros = $this->filtros($request);
-        $consulta = $request->user()->clientes()->orderBy('nome')->orderBy('id')
+        $consulta = $request->user()->clientes()->ordemDeExibicao()->orderBy('id')
             ->withCount(['contratos as contratos_ativos' => fn ($contratos) => $contratos->where('ativo', true)]);
 
         if ($filtros['q'] !== '') {
@@ -61,9 +61,7 @@ class ClienteController extends Controller
 
         return response()->json([
             'linhas' => $bloco['itens']->map(fn (Cliente $cliente) => [
-                'id' => $cliente->id,
-                'nome' => $cliente->nome,
-                'documento' => Documento::formatar($cliente->documento),
+                ...$cliente->paraBusca(),
                 'cidade' => collect([$cliente->cidade, $cliente->uf])->filter()->implode(' / '),
                 'modelo' => $cliente->modelo->rotulo(),
                 'contratos_ativos' => $cliente->contratos_ativos,
@@ -100,7 +98,7 @@ class ClienteController extends Controller
         ];
     }
 
-    /** Autosugestão: nome (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */
+    /** Autosugestão: nome ou apelido (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */
     public function busca(Request $request): JsonResponse
     {
         $termo = trim((string) $request->query('q', ''));
@@ -112,15 +110,9 @@ class ClienteController extends Controller
 
         $clientes = $request->user()->clientes()
             ->when($termo !== '', fn ($consulta) => $consulta->comTermo($termo))
-            ->orderBy('nome')->limit(10)->get(['id', 'nome', 'documento']);
+            ->ordemDeExibicao()->limit(10)->get(['id', 'nome', 'apelido', 'documento']);
 
-        return response()->json($clientes->map(fn (Cliente $cliente) => $this->paraBusca($cliente)));
-    }
-
-    /** @return array{id: int, nome: string, documento: string} */
-    private function paraBusca(Cliente $cliente): array
-    {
-        return ['id' => $cliente->id, 'nome' => $cliente->nome, 'documento' => Documento::formatar($cliente->documento)];
+        return response()->json($clientes->map(fn (Cliente $cliente) => $cliente->paraBusca()));
     }
 
     public function create(Request $request): Response
@@ -134,7 +126,7 @@ class ClienteController extends Controller
 
         // Cadastro rápido (modal no contrato/cobrança): devolve o cliente pronto para ser escolhido.
         if ($request->expectsJson()) {
-            return response()->json($this->paraBusca($cliente), 201);
+            return response()->json($cliente->paraBusca(), 201);
         }
 
         return redirect('/clientes')->with('sucesso', 'Cliente salvo.');

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'nome', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+    'nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
     'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'modelo',
 ])]
 class Cliente extends Model
@@ -24,9 +24,12 @@ class Cliente extends Model
 
     /** Dados do tomador que vão para o snapshot do recibo e para o formulário. */
     public const CAMPOS = [
-        'nome', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+        'nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
         'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
     ];
+
+    /** Mesmo padrão da migração: o model recém-criado já tem o apelido vazio, sem reler do banco. */
+    protected $attributes = ['apelido' => ''];
 
     protected function casts(): array
     {
@@ -48,13 +51,41 @@ class Cliente extends Model
         return $this->hasMany(Cobranca::class);
     }
 
-    /** Nome contém o termo (sem diferença de maiúsculas) ou o documento começa com ele. Lista e autosugestão. */
+    /** Como o cliente aparece nas telas: o apelido (nome curto), ou o nome se não houver. */
+    public function exibicao(): string
+    {
+        return $this->apelido ?: $this->nome;
+    }
+
+    /**
+     * Formato da autosugestão e dos filtros: o nome oficial vai embaixo, menor, só quando há apelido.
+     *
+     * @return array{id: int, nome: string, nome_oficial: ?string, documento: string}
+     */
+    public function paraBusca(): array
+    {
+        return [
+            'id' => $this->id,
+            'nome' => $this->exibicao(),
+            'nome_oficial' => $this->apelido ? $this->nome : null,
+            'documento' => Documento::formatar($this->documento),
+        ];
+    }
+
+    /** Ordem de lista pelo que aparece na tela (apelido ou nome). SQL padrão: vale no PostgreSQL e no SQLite. */
+    public function scopeOrdemDeExibicao(Builder $consulta): void
+    {
+        $consulta->orderByRaw("coalesce(nullif(apelido, ''), nome)");
+    }
+
+    /** Nome ou apelido contém o termo (sem diferença de maiúsculas) ou o documento começa com ele. Lista e autosugestão. */
     public function scopeComTermo(Builder $consulta, string $termo): void
     {
         $documento = Documento::normalizar($termo);
 
         $consulta->where(function (Builder $consulta) use ($termo, $documento) {
-            $consulta->whereRaw("lower(nome) like ? escape '\\'", [Busca::contem($termo)]);
+            $consulta->whereRaw("lower(nome) like ? escape '\\'", [Busca::contem($termo)])
+                ->orWhereRaw("lower(apelido) like ? escape '\\'", [Busca::contem($termo)]);
 
             if ($documento !== '') {
                 $consulta->orWhere('documento', 'like', "{$documento}%");
