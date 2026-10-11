@@ -17,13 +17,16 @@ sem depender do histórico.
   encerramento já agendado sem passar pelo plano; "Recomeçar" cobrava de novo período já pago; suíte saía com código 1.
   1 Minor ficou deferido (N+1 em `GeradorDeCobrancas::gerarPara`, ~580 ms/contrato — otimização, não bug).
 - **Validação final do usuário: "validado" (2026-10-11).** Fase 23 encerrada — integração confirmada pelo usuário.
-- **Fase 24 (aviso de vencimento pelo WhatsApp) implementada, revisada e pronta para merge** (branch
-  `feat/aviso-whatsapp`, ainda não mergeada na `main`). T24.1–T24.9 completas e testadas. Revisão final por
-  subagente opus (branch inteira): nenhum Critical, 7 Important corrigidos com TDD, 12 Minor deferidos. Smoke test
-  no navegador (browser-use) confirmou os 3 fixes sem cobertura automatizada (.vue) funcionando de ponta a ponta.
-  Suíte na branch: PHP 467/467, JS 74/74. Falta: merge na `main` + push + validação final do usuário. Detalhe
-  completo no plano `.claude/plans/2026-10-11-aviso-whatsapp.md` (seção "RETOMAR AQUI").
-  Próximo item do backlog depois do merge: **T17.11** (item 2 da lista abaixo) ou outro que o usuário escolher.
+- **Validação final do usuário: "validado" (2026-10-11).** Fase 24 (aviso de vencimento pelo WhatsApp) encerrada —
+  merge `e59745e` + 4 rodadas de extensão pós-merge, direto na `main`, todas com TDD e push próprio:
+  - `{item}`/`{chave_pix}` + prévia reativa no formulário de modelo (commit `7d3d48e`).
+  - Campo "pessoa de contato" no cliente + `{contato}` (commit `72f909a`).
+  - Cascata `{a|b|c}` nas variáveis + `{saudacao}`/`{apelido}`/`{razao_social}` (commit `742f11e`).
+  - `modelos_mensagem.tipo_situacao` (a_vencer/vence_hoje/vencida) pré-seleciona o modelo certo na janela de aviso,
+    sozinho ou em lote (usa a situação mais urgente do grupo) — commit `8f5a441`.
+  Suíte final: PHP 488/488, JS 91/91. Detalhe completo de cada decisão na skill (seção Acertos/Pegadinhas da Fase 24)
+  e no plano `.claude/plans/2026-10-11-aviso-whatsapp.md`.
+  Próximo item do backlog: **T17.11** (item 2 da lista abaixo) ou outro que o usuário escolher.
 
 ### 0.2 Estado da branch
 **Branch de trabalho `feat/modulo-cobranca-catalogo`:** mergeada na `main` (`da2d53f`), segue existindo no remoto (não
@@ -43,7 +46,7 @@ apagada — decisão de não apagar branches sem pedido explícito).
 | 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
 | 23 | Vencimento em dia útil: calendário de feriados, ajuste em lote, aviso na avulsa e no Painel, spinner global | `2026-10-11-vencimento-em-dia-util.md` | **validada** (2026-10-11, merge `da2d53f`) |
-| 24 | Aviso de vencimento pelo WhatsApp: modelos de mensagem, bloco "Vencendo" no Painel, ação no menu de cobranças, link wa.me | `2026-10-11-aviso-whatsapp.md` · spec `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` | **revisada, pronta para merge** (branch `feat/aviso-whatsapp`, ainda não mergeada; falta push + validação do usuário) |
+| 24 | Aviso de vencimento pelo WhatsApp: modelos de mensagem, bloco "Vencendo" no Painel, ação no menu de cobranças, link wa.me, variáveis `{item}`/`{chave_pix}`/`{contato}`/`{apelido}`/`{razao_social}`/`{saudacao}` com cascata `{a\|b\|c}`, pré-seleção automática do modelo pela situação da cobrança | `2026-10-11-aviso-whatsapp.md` · spec `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` | **validada** (2026-10-11, merge `e59745e` + extensões pós-merge) |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma

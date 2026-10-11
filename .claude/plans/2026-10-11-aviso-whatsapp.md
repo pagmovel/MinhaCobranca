@@ -1592,14 +1592,14 @@ Antes de rodar, mostrar ao usuário: conexão (host/porta/banco/usuário), que s
 (`php artisan migrate --no-interaction`), e esperar o "sim" — autorização específica para este comando, não
 herdada de autorizações anteriores.
 
-- [x] **Step 3: Conferência no navegador (browser-agent, nunca Playwright)** — testada
+- [x] **Step 3: Conferência no navegador (browser-agent, nunca Playwright)** — validada
 
 Roteiro mínimo: cadastrar um modelo com variáveis no perfil; abrir "Avisar no WhatsApp" numa cobrança pendente da
 lista (prévia confere, telefone pré-preenchido quando o cliente tem celular válido); abrir o bloco "Vencendo" no
 Painel com pelo menos um cliente agrupado; confirmar que o link `wa.me` abre numa aba nova com o texto certo
 (sem precisar realmente enviar); confirmar "Copiar mensagem"; confirmar que "avisado em" aparece depois.
 
-- [x] **Step 4: Revisão final (fresh reviewer, opus) + documentação** — concluída
+- [x] **Step 4: Revisão final (fresh reviewer, opus) + documentação** — validada
 
 Revisor opus rodou a suíte (PHP 458/458, JS 73/73), leu os 30 arquivos do diff. Veredito: "Com correções".
 Nenhum Critical; 7 Important (todos corrigidos com TDD, commits a559a44/00dbdef/4bdbde9/2e8dbac/4f5238b); 12 Minor
@@ -1607,12 +1607,28 @@ Nenhum Critical; 7 Important (todos corrigidos com TDD, commits a559a44/00dbdef/
 ledger (`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`). Falta: atualizar `.claude/skills/recibos/SKILL.md`
 e `.claude/plans/2026-10-10-roteiro-modulos.md`, e o merge na `main`.
 
-## RETOMAR AQUI (2026-10-11, antes de compactar)
+## Fase 24 — encerrada (validada pelo usuário em 2026-10-11)
 
-**Estado:** Tasks 1-8 completas, testadas e commitadas. Task 9 (conferência final) em andamento — Steps 1, 2 e 3
-feitos; falta o Step 4.
+Merge na `main` (`e59745e`) seguido de 4 rodadas de extensão pedidas pelo usuário, cada uma com TDD e push próprio:
 
-### O que já foi feito
+1. **`{item}`/`{chave_pix}` + prévia reativa no formulário de modelo** (commit `7d3d48e`): `{itens}` só monta lista
+   multi-linha, não serve em frase corrida — `{item}` junta só os nomes ("a, b e c"). `{chave_pix}` pega a chave PIX
+   da cobrança (ou da primeira do lote que tiver uma). Prévia com dados de exemplo, reativa ao digitar.
+2. **Campo "pessoa de contato" no cliente + `{contato}`** (commit `72f909a`): migração `clientes.contato` (nulável,
+   fora do snapshot do recibo, mesmo tratamento do `apelido`); vazia se não cadastrada, sem fallback pro nome.
+3. **Cascata `{a|b|c}` + `{saudacao}`/`{apelido}`/`{razao_social}`** (commit `742f11e`): uma chave pode trazer
+   várias variáveis separadas por `|`, usa a primeira preenchida — ex. `{contato|apelido|razao_social}`.
+   `montarMensagem` reescrito para resolver por mapa de valores + regex, não mais `replaceAll` em cadeia.
+4. **`tipo_situacao` no modelo pré-seleciona a mensagem certa** (commit `8f5a441`): A vencer/Vencendo (vence
+   hoje)/Vencida, mesmos valores de `Cobranca::situacao()`. Só um modelo por tipo. Em lote, usa a situação mais
+   urgente do grupo (vencida > vence hoje > a vencer).
+
+Suíte final: **PHP 488/488, JS 91/91**. Todas as migrações aplicadas no banco de dev (autorizadas uma a uma).
+Detalhe completo de cada decisão, pegadinha e acerto na skill (`.claude/skills/recibos/SKILL.md`, bloco Fase 24).
+
+**Validação do usuário: "acabei de validar" (2026-10-11).**
+
+### Histórico de execução (Tasks 1-9 originais, antes das extensões acima)
 
 - **T24.1-T24.8:** todo o código da Fase 24 (modelos de mensagem, dias_aviso, tela do perfil, módulo
   `mensagemWhatsapp.js`, endpoints `/cobrancas/aviso` e `/cobrancas/avisadas`, modal `AvisarWhatsapp.vue`, bloco
@@ -1652,35 +1668,14 @@ feitos; falta o Step 4.
   **Chrome de automação** ainda pode estar aberto na porta 9333 (`--user-data-dir` em
   `.../b245cf65-.../scratchpad/chrome-smoke-t24`) — não é um processo crítico, pode ficar ou ser fechado.
 
-### O que falta (retomar exatamente aqui)
+### Fatos que não podem se perder
 
-**Passo A (T24.9 Step 4) — concluído.** Revisão final por subagente opus feita, 7 Important corrigidos com TDD
-(commits a559a44, 00dbdef, 4bdbde9, 2e8dbac, 4f5238b), 12 Minor ledgerados como deferred, 7 itens "declined to
-judge" do revisor viraram Ruling no ledger. Validação extra no navegador real (browser-use) dos 3 fixes sem
-cobertura automatizada (.vue): todos funcionaram — detalhe completo, incluindo o achado sobre `execCommand('copy')`
-falhar neste Chrome de automação ([A VERIFICAR] se também falha num Chrome desktop humano), no ledger
-(`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`). Suite final: PHP 467/467, JS 74/74.
-
-**Passo B — Merge na `main` + push** (memória `[[merge-e-push-por-fase]]`): `git checkout main`, `git merge --no-ff
-feat/aviso-whatsapp`, suíte completa de novo na `main`, pedir autorização e `git push origin main`. Apagar depois o
-workspace `.superpowers/sdd/2026-10-11-aviso-whatsapp/` (git log já é o registro — regra da skill `executing-plans`).
-
-**Passo C — Documentação:** atualizar `.claude/skills/recibos/SKILL.md` (seção "Acertos", um bloco "Fase 24" nos
-moldes do que já existe para a Fase 23 — citar os achados do smoke como Pegadinhas, especialmente o travamento do
-Modal com `<Transition>` + `window.open` e a descoberta de que `ref` dentro de `v-for` vira array no Vue 3.5) e
-`.claude/plans/2026-10-10-roteiro-modulos.md` seção 0 (Fase 24 mergeada, próximo item do backlog: T17.11 ou outro
-que o usuário escolher).
-
-**Passo D — Validação final do usuário:** pedir para o usuário confirmar que a integração ficou correta, igual ao
-que foi feito ao fim da Fase 23.
-
-**Fatos que não podem se perder:**
-- Branch de trabalho: `feat/aviso-whatsapp`, HEAD em `4f5238b` neste momento, árvore limpa.
-- `main` ainda não tem nada da Fase 24 (não foi mergeada ainda).
-- Suíte: PHP 467/467 (exit 0), JS 74/74, build ok (rodado `npm run build` manualmente durante o smoke — sem Vite
-  dev ativo neste ambiente, `public/build` fica desatualizado até alguém rodar o build).
-- Migração já aplicada no banco de dev — não repetir o PORTÃO-BANCO para essas 3 migrações.
-- Revisão externa (subagente opus) já rodou — não repetir antes do merge, a menos que novo código seja escrito.
-- Dado órfão no banco de dev: modelo "Aviso padrão" (id=1) ficou com `padrao=false` (criado antes do fix da regra
-  de padrão único) — não é bug de código, é dado pré-existente; não corrigido (fora do escopo dos achados do
-  revisor), usuário pode marcar como padrão manualmente se quiser.
+- Nada pendente desta fase: merge feito, push feito, migrações aplicadas no banco de dev, documentação atualizada,
+  validação do usuário recebida. Próximo trabalho é outro item do backlog (ver
+  `.claude/plans/2026-10-10-roteiro-modulos.md` seção 0.1).
+- Dado órfão no banco de dev: modelo "Aviso padrão" (id=1, usuário SMOKE) ficou com `padrao=false` (criado antes do
+  fix da regra de padrão único) — não é bug de código, é dado pré-existente; não corrigido (fora do escopo dos
+  achados do revisor), usuário pode marcar como padrão manualmente se quiser.
+- `execCommand('copy')` falha neste Chrome de automação (browser-use/CDP) mesmo com texto selecionado —
+  **[A VERIFICAR]** se também falha num Chrome desktop humano normal. O botão manual "Já copiei, marcar como
+  avisada" é a garantia real contra travamento (Review Focus 1), não o fallback de clipboard.
