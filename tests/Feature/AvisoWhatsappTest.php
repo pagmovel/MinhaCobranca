@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
+use App\Enums\TipoChavePix;
+use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\User;
@@ -69,6 +72,31 @@ class AvisoWhatsappTest extends TestCase
 
         $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")
             ->assertJson(['itens' => [['nome' => 'Serviço', 'valor_centavos' => 5000]]]);
+    }
+
+    public function test_inclui_a_chave_pix_quando_a_forma_de_pagamento_e_pix(): void
+    {
+        $chave = ChavePix::factory()->for($this->usuario)->create(['tipo' => TipoChavePix::Email, 'chave' => 'cobranca@paguemovel.net.br']);
+        $cobranca = $this->cobranca(['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $chave->id]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['chave_pix' => 'cobranca@paguemovel.net.br']);
+    }
+
+    public function test_chave_pix_vazia_quando_a_forma_de_pagamento_nao_e_pix(): void
+    {
+        $cobranca = $this->cobranca(['forma_pagamento' => FormaPagamento::Nenhuma]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['chave_pix' => '']);
+    }
+
+    /** Decisão do usuário (2026-10-11): em lote, usa a chave PIX da primeira cobrança do grupo que tiver uma. */
+    public function test_chave_pix_em_lote_usa_a_da_primeira_cobranca_que_tiver(): void
+    {
+        $chave = ChavePix::factory()->for($this->usuario)->create(['tipo' => TipoChavePix::Email, 'chave' => 'a@exemplo.com']);
+        $semPix = $this->cobranca(['vencimento' => '2026-10-13', 'forma_pagamento' => FormaPagamento::Nenhuma]);
+        $comPix = $this->cobranca(['vencimento' => '2026-10-14', 'forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $chave->id]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$semPix->id}&ids[]={$comPix->id}")->assertJson(['chave_pix' => 'a@exemplo.com']);
     }
 
     public function test_junta_varias_cobrancas_do_mesmo_cliente(): void

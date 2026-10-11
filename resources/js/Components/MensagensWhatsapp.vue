@@ -1,22 +1,37 @@
 <script setup>
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
+import { montarMensagem } from '../mensagemWhatsapp.js';
 
 const props = defineProps({
     modelos: { type: Array, required: true },
+    prestador: { type: String, default: '' },
 });
 
 const VARIAVEIS = [
     { token: '{cliente}', legenda: 'nome do cliente' },
+    { token: '{item}', legenda: 'nome do(s) item(ns), em frase' },
     { token: '{itens}', legenda: 'lista dos itens vencendo' },
     { token: '{vencimento}', legenda: 'data(s) de vencimento' },
     { token: '{total}', legenda: 'valor total' },
+    { token: '{chave_pix}', legenda: 'sua chave PIX (quando a cobrança usa PIX)' },
     { token: '{prestador}', legenda: 'seu nome ou razão social' },
 ];
+
+// Dados fictícios só para a prévia — a janela de envio real usa os dados da cobrança.
+const EXEMPLO = {
+    cliente: 'Fulano da Silva',
+    itens: [{ nome: 'Hospedagem do domínio exemplo.com.br', valorCentavos: 8990 }],
+    vencimentos: ['2026-10-15'],
+    totalCentavos: 8990,
+    chavePix: 'cobranca@suaempresa.com.br',
+};
 
 const editando = ref(null); // id do modelo em edição, 'novo' para inclusão
 const confirmando = ref(null);
 const form = useForm({ nome: '', texto: '', padrao: false });
+
+const previa = computed(() => montarMensagem(form.texto, { ...EXEMPLO, prestador: props.prestador || 'Seu nome ou razão social' }));
 
 const linhas = () => (editando.value === 'novo' ? [...props.modelos, { id: 'novo' }] : props.modelos);
 
@@ -94,6 +109,10 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
                                 {{ variavel.token }}
                             </button>
                         </div>
+                    </div>
+                    <div>
+                        <p class="mb-1 text-xs font-medium text-grafite/75">Prévia (com dados de exemplo)</p>
+                        <p class="border border-linha bg-papel p-3 text-sm whitespace-pre-wrap">{{ previa }}</p>
                     </div>
                     <label class="flex items-center gap-2 text-sm">
                         <input v-model="form.padrao" type="checkbox"> Usar como modelo padrão

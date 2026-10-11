@@ -83,6 +83,6 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
 
         <ChavesPix class="mt-10" :chaves="chavesPix" :tipos="tiposChavePix" />
         <Feriados class="mt-10" :feriados="feriados" :nacionais="feriadosNacionais" :vencimentos="vencimentosParaAjustar" />
-        <MensagensWhatsapp class="mt-10" :modelos="modelosMensagem" />
+        <MensagensWhatsapp class="mt-10" :modelos="modelosMensagem" :prestador="form.nome_fantasia || form.name" />
     </CamadaApp>
 </template>

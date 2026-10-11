@@ -19,27 +19,38 @@ function formatarData(iso, comAno) {
     return comAno ? `${dia}/${mes}/${ano}` : `${dia}/${mes}`;
 }
 
+/** Uma string: ela mesma. Duas ou mais: "a, b e c". */
+function juntarComE(lista) {
+    if (lista.length === 1) {
+        return lista[0];
+    }
+
+    return `${lista.slice(0, -1).join(', ')} e ${lista.at(-1)}`;
+}
+
 /** Uma data: dia/mês/ano. Duas ou mais: "a, b e c" — só a última com o ano. */
 function juntarVencimentos(vencimentos) {
     if (vencimentos.length === 1) {
         return formatarData(vencimentos[0], true);
     }
     const curtas = vencimentos.slice(0, -1).map((data) => formatarData(data, false));
-    const ultima = formatarData(vencimentos.at(-1), true);
 
-    return `${curtas.join(', ')} e ${ultima}`;
+    return juntarComE([...curtas, formatarData(vencimentos.at(-1), true)]);
 }
 
 /**
  * Substitui as variáveis conhecidas por valores reais; o que não reconhece fica literal no texto (erro de
  * digitação no modelo não pode travar nem sumir pedaço da mensagem).
  */
-export function montarMensagem(texto, { cliente, itens, vencimentos, totalCentavos, prestador }) {
+export function montarMensagem(texto, { cliente, itens, vencimentos, totalCentavos, prestador, chavePix }) {
     return texto
         .replaceAll('{cliente}', cliente)
+        // Nomes em frase corrida ("vence a hospedagem do domínio {item}"), sem "-" nem valor — diferente de {itens}.
+        .replaceAll('{item}', juntarComE(itens.map((item) => item.nome)))
         .replaceAll('{itens}', itens.map(linhaDoItem).join('\n'))
         .replaceAll('{vencimento}', juntarVencimentos(vencimentos))
         .replaceAll('{total}', `R$ ${formatarCentavos(totalCentavos)}`)
+        .replaceAll('{chave_pix}', chavePix ?? '')
         .replaceAll('{prestador}', prestador);
 }
 

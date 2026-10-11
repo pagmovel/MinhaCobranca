@@ -40,6 +40,7 @@ function atualizarTexto() {
         vencimentos: dados.value.vencimentos,
         totalCentavos: dados.value.total_centavos,
         prestador: props.prestador,
+        chavePix: dados.value.chave_pix,
     });
 }
 

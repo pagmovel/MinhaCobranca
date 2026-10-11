@@ -68,6 +68,37 @@ test('mensagemMuitoLonga: true a partir de 1000 caracteres', () => {
     assert.equal(mensagemMuitoLonga('a'.repeat(1001)), true);
 });
 
+test('{item}: nome puro, sem "-" nem valor, para usar em frase corrida', () => {
+    const texto = montarMensagem('vence a hospedagem do domínio {item}.', dados({
+        itens: [{ nome: 'exemplo.com.br', valorCentavos: 8990 }],
+    }));
+    assert.equal(texto, 'vence a hospedagem do domínio exemplo.com.br.');
+});
+
+test('{item}: mais de um item junta com "e" (mesmo padrão de {vencimento})', () => {
+    const texto = montarMensagem('{item}', dados({
+        itens: [{ nome: 'Hospedagem', valorCentavos: 8990 }, { nome: 'Domínio', valorCentavos: 4000 }],
+    }));
+    assert.equal(texto, 'Hospedagem e Domínio');
+});
+
+test('{item}: três ou mais junta com vírgula e "e" antes do último', () => {
+    const texto = montarMensagem('{item}', dados({
+        itens: [{ nome: 'A', valorCentavos: 100 }, { nome: 'B', valorCentavos: 200 }, { nome: 'C', valorCentavos: 300 }],
+    }));
+    assert.equal(texto, 'A, B e C');
+});
+
+test('{chave_pix}: substitui pela chave formatada', () => {
+    const texto = montarMensagem('Chave: {chave_pix}', dados({ chavePix: 'cobranca@paguemovel.net.br' }));
+    assert.equal(texto, 'Chave: cobranca@paguemovel.net.br');
+});
+
+test('{chave_pix}: sem chave fornecida, fica vazia (não trava nem mostra undefined)', () => {
+    const texto = montarMensagem('Chave: {chave_pix}.', dados());
+    assert.equal(texto, 'Chave: .');
+});
+
 test('MENSAGEM_SUGERIDA: itens em bloco, sem concordância verbal (achado da revisão, T24.9)', () => {
     const texto = montarMensagem(MENSAGEM_SUGERIDA, dados({
         itens: [{ nome: 'Hospedagem', valorCentavos: 8990 }, { nome: 'Domínio', valorCentavos: 4000 }],

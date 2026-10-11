@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
@@ -18,7 +19,7 @@ class AvisoWhatsappController extends Controller
         $dados = $request->validate(['ids' => ['required', 'array', 'max:50'], 'ids.*' => ['integer']]);
 
         $cobrancas = $request->user()->cobrancas()->where('status', StatusCobranca::Pendente)
-            ->whereIn('id', $dados['ids'])->with(['cliente', 'itens'])->get();
+            ->whereIn('id', $dados['ids'])->with(['cliente', 'itens', 'chavePix'])->get();
 
         abort_if($cobrancas->isEmpty(), 404);
         abort_if($cobrancas->pluck('cliente_id')->unique()->count() > 1, 422, 'As cobranças escolhidas são de clientes diferentes.');
@@ -36,12 +37,16 @@ class AvisoWhatsappController extends Controller
             return collect([['nome' => $primeiraLinha !== '' ? $primeiraLinha : 'Serviço', 'valor_centavos' => $cobranca->valor_centavos]]);
         });
 
+        // Em lote (várias cobranças do grupo), usa a chave PIX da primeira que tiver uma — decisão do usuário.
+        $comPix = $cobrancas->first(fn (Cobranca $cobranca) => $cobranca->forma_pagamento === FormaPagamento::Pix && $cobranca->chavePix !== null);
+
         return response()->json([
             'cliente' => $cobrancas->first()->cliente->exibicao(),
             'telefone' => $cobrancas->first()->cliente->telefone ?? '',
             'itens' => $itens->values(),
             'vencimentos' => $cobrancas->pluck('vencimento')->unique()->sort()->map(fn ($data) => $data->toDateString())->values(),
             'total_centavos' => $cobrancas->sum('valor_centavos'),
+            'chave_pix' => $comPix ? $comPix->chavePix->tipo->formatar($comPix->chavePix->chave) : '',
         ]);
     }
 
