@@ -8,6 +8,34 @@ description: Use ao trabalhar no sistema de cobranças e recibos (Laravel 13 + I
 Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 
+## Padrões de usabilidade (obrigatórios — prioridade do usuário)
+**Foco principal do produto (palavras do usuário, 2026-10-10): facilidades de uso.** "Não é legal quando estamos numa
+tela de lançamentos e precisamos sair perdendo tudo que já fizemos porque faltou cadastrar outra coisa em outra tela."
+O usuário espera que eu **antecipe** esses atritos e **padronize** a solução em todas as telas parecidas — não esperar
+ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
+
+1. **Nunca mandar sair da tela para cadastrar o que falta.** Cadastro rápido em modal, o registro volta já escolhido e
+   o formulário de fundo fica intacto (cliente, produto/serviço, chave PIX já fazem isso — `CampoCliente`,
+   `CadastroRapido*.vue`, `Modal.vue`, `enviarJson`). Formulário não bloqueia por falta de cadastro prévio.
+2. **Mensagem de erro/trava sempre oferece a saída** (o botão que resolve, ali mesmo). Nunca "faça X" sem X na tela.
+   Ação escondida (ex.: encerrar por checkbox no rodapé) é defeito.
+3. **Autosugestão:** lista os primeiros ao focar/clicar, indicador girando no canto direito enquanto busca, opção
+   "+ Cadastrar «texto»", teclado (setas/Enter/Esc), não reabre depois de sair do campo (`BuscaAutosugestao.vue`).
+4. **Máscaras em todo campo com formato** (diretiva `v-mascara`, `resources/js/mascaras.js`: valor, documento
+   CPF/CNPJ, cpf, telefone, cep, linhaDigitavel, minusculas; colar valor usa `valorColado`). Servidor continua
+   normalizando e validando.
+5. **Animações** (o usuário pediu: "encanta os usuários"): transições curtas em inputs/selects/botões, listas
+   (`TransitionGroup name="lista"`), avisos e listas de sugestão (`surgir`), modais (`modal`), troca de tela
+   (`.aparecer`), número que mudou (`.destacar`). Só CSS/Vue, sem biblioteca; `prefers-reduced-motion` desliga.
+6. **Valor negociado:** preço do catálogo é sugestão; o foco vai para o preço ao incluir item.
+7. **Filtros aplicam ao escolher** (select/mês), campo nunca fica bloqueado sem explicação.
+8. **Edição na própria linha** (lista com edição rápida abre o formulário dentro da linha clicada) e **ação destrutiva
+   com cara própria** (`botao-perigo` / `botao-perigo-confirmar`, confirmação no segundo clique).
+9. **Ação em lote mostra a prévia antes** (o que muda, quanto, o que fica) e só então confirma.
+10. **390 px sem rolagem horizontal** (fieldset com `min-w-0`; contêiner de tabela `relative overflow-x-auto`).
+
+Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
+
 ## Módulos do produto (SaaS por planos de assinatura — definição do usuário em 2026-10-10)
 Cada módulo é **vendável sozinho**: não depende de outro para funcionar; integrações entre módulos são opcionais e
 degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
