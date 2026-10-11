@@ -55,6 +55,20 @@ class TelasCobrancaTest extends TestCase
         $this->getJson('/cobrancas/dados')->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $doMes->id);
     }
 
+    /** Spec §4: "A linha mostra 'Avisado em dd/mm'" — não só no bloco do Painel (achado da revisão, T24.9). */
+    public function test_lista_mostra_avisado_em(): void
+    {
+        $avisada = $this->cobranca();
+        $avisada->avisado_em = '2026-10-08 09:00:00';
+        $avisada->save();
+        $naoAvisada = $this->cobranca(['vencimento' => '2026-10-16']);
+
+        $this->actingAs($this->usuario)->getJson('/cobrancas/dados')->assertJson(['linhas' => [
+            ['id' => $avisada->id, 'avisado_em' => '08/10'],
+            ['id' => $naoAvisada->id, 'avisado_em' => null],
+        ]]);
+    }
+
     public function test_filtros_de_mes_situacao_e_cliente(): void
     {
         $outroCliente = Cliente::factory()->for($this->usuario)->create();

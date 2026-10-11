@@ -206,6 +206,7 @@ async function fecharFaixa() {
                             <td class="order-2 whitespace-nowrap xl:px-3 xl:py-3">
                                 <Carimbo :situacao="cobranca.situacao" />
                                 <p v-if="cobranca.pago_em" class="mt-1 font-estreita text-xs text-grafite/80">em {{ cobranca.pago_em }}</p>
+                                <p v-if="cobranca.avisado_em" class="mt-1 font-estreita text-xs text-grafite/80">Avisado em {{ cobranca.avisado_em }}</p>
                             </td>
                             <td class="order-3 font-estreita text-xs whitespace-nowrap text-grafite/80 xl:px-3 xl:py-3 xl:text-sm">
                                 <template v-if="cobranca.recibo"><span class="xl:hidden">Recibo </span>{{ cobranca.recibo.numero }}</template>

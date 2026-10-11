@@ -109,6 +109,7 @@ class Cobranca extends Model
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,
+            'avisado_em' => $this->avisado_em?->format('d/m'),
             'editavel' => $this->editavel(),
             // Só quando a lista carregou as auditorias (evita uma consulta por linha).
             'historico' => $this->relationLoaded('auditorias')
