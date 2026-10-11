@@ -60,6 +60,9 @@ O que o usuário já definiu (2026-10-10):
 - **Primeira tarefa obrigatória:** pesquisar em **fontes oficiais** as regras fiscais (LC 116/2003 lista de serviços,
   alíquotas de ISS municipais, IBS/CBS da reforma, leiaute da NFS-e nacional) — o cálculo de tributos é **opcional** e
   só vale quando o cliente emite NF.
+- **Os XMLs são de notas EMITIDAS pelo usuário** (ele é o prestador; os clientes são os tomadores), não de compras
+  (confirmado pelo usuário em 2026-10-10). Logo, a importação se liga ao módulo **Cobrança** (nota ↔ cobrança/recibo,
+  como previa a Fase 6 original e a "NFS-e vinculada" da skill), não ao Contas a Pagar.
 - XMLs de exemplo em `MATERIAIS/` (fora do git; dados pessoais): `NFSe_2026000000015_EC5K-BUEZ.xml` e
   `NFSe_2026000000016_AINQ-DWPJ.xml`. **Achados (só estrutura, 2026-10-10):** padrão **ABRASF versão 2.02**
   (`CompNfse`, namespace `http://www.abrasf.org.br/nfse.xsd`), assinatura digital; têm **ChaveAcesso de 50 dígitos**
