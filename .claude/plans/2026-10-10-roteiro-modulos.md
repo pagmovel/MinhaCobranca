@@ -8,16 +8,15 @@ sem depender do histórico.
 
 ### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da conferência visual da Fase 20)
 1. **Fase 20 — validação do usuário.** Conferência visual feita e corrigida em 2026-10-11; depois, com o "siga conforme achar melhor" do usuário, corrigidos os Minor 1, 8, 9 e 10 e as datas gravadas com ano de 5 dígitos (`date_format:Y-m-d`). Seguem adiados os Minor 2–7 e o botão "Enviar" do Painel a 390 px (motivos no "Registro de execução" do plano da Fase 20). Falta **só a validação do usuário** (Usuários não foi vista no navegador: o SMOKE não é admin).
-2. **Depois: T17.13, apelido do cliente** — o usuário **lembrou de novo em 2026-10-11** ("não esqueça de incluir o
-   campo apelido no cadastro do cliente, para facilitar a identificação nas telas e nas buscas"). Desenho já aprovado
-   na seção T17.13 de `.claude/plans/2026-10-10-facilidades-de-uso.md` (apelido no lugar do nome nas listas, filtros e
-   autosugestão; busca pelos dois; mesmo CNPJ permitido com apelido diferente; no recibo, "Unidade atendida" só nos
-   novos `webiss-v2`/`danfse-v2`). Tem migração: **PORTÃO-BANCO** (pedir o "sim" com host, banco, contagem e comando).
+2. **Fase 21 — apelido do cliente (T17.13)**, plano `.claude/plans/2026-10-11-apelido-do-cliente.md`: T21.1–T21.4
+   **testadas** (cadastro, busca pelos dois nomes, mesmo CNPJ em outra unidade, apelido em todas as telas, recibo
+   `-v2` com "Unidade atendida"). Falta a **T21.5**: migração no banco de dev (**PORTÃO-BANCO**, pedir o "sim" com
+   host, banco, contagem e comando), conferência visual (pede autorização) e validação do usuário.
 
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
 - Último commit: o da conferência visual da Fase 20 (2026-10-11), depois de `809544d`.
-- Suítes: PHP **388/388** (`php artisan test --compact`), JS **47/47** (`node --test resources/js/*.test.js`), build ok.
+- Suítes: PHP **394/394** (`php artisan test --compact`), JS **47/47** (`node --test resources/js/*.test.js`), build ok.
 - **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
   do usuário.
 - O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste

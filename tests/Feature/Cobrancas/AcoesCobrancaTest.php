@@ -92,12 +92,12 @@ class AcoesCobrancaTest extends TestCase
         [$usuario, $cliente] = $this->prestadorComCliente();
         $nacional = Cliente::factory()->for($usuario)->create(['modelo' => FamiliaModelo::Danfse]);
         $cobranca = $this->cobrancaComRecibo($usuario, $cliente);
-        $this->assertSame(ModeloRecibo::WebissV1, $cobranca->recibo->modelo);
+        $this->assertSame(ModeloRecibo::WebissV2, $cobranca->recibo->modelo);
 
         $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($nacional))->assertRedirect('/cobrancas');
 
         $recibo = $cobranca->recibo->fresh();
-        $this->assertSame(ModeloRecibo::DanfseV1, $recibo->modelo);
+        $this->assertSame(ModeloRecibo::DanfseV2, $recibo->modelo);
         $this->assertSame(1, $recibo->numero);
         $this->assertSame($nacional->nome, $recibo->snapshot['tomador']['nome']);
     }

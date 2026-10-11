@@ -49,6 +49,8 @@ class AmostrasVisuaisTest extends TestCase
     {
         $cliente = Cliente::factory()->for($this->usuario)->create([
             'nome' => 'Sindicato Exemplo dos Trabalhadores em Educação do Estado',
+            // Pior caso da linha "Unidade atendida" (-v2): o apelido no limite de 60 caracteres.
+            'apelido' => mb_substr('Delegacia Sindical do Sisal - Regional de Araci, Bahia e Região', 0, 60),
             'modelo' => $modelo,
             'logradouro' => 'Rua Exemplo Oliveira Lima',
             'complemento' => 'Delegacia Sindical do Sisal',

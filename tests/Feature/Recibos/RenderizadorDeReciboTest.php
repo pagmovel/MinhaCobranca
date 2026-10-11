@@ -3,6 +3,7 @@
 namespace Tests\Feature\Recibos;
 
 use App\Enums\FormaPagamento;
+use App\Enums\ModeloRecibo;
 use App\Enums\StatusCobranca;
 use App\Enums\TipoChavePix;
 use App\Models\ChavePix;
@@ -171,5 +172,29 @@ class RenderizadorDeReciboTest extends TestCase
         $cobranca->pago_em = null;
         $cobranca->save();
         $this->assertSame(['forma' => null], $this->renderizador->dados($recibo->fresh(), CarbonImmutable::now())['pagamento']);
+    }
+
+    /** T17.13: o tomador continua com o nome oficial; o apelido sai em "Unidade atendida", só nos modelos -v2. */
+    public function test_apelido_sai_como_unidade_atendida_so_nos_modelos_novos(): void
+    {
+        $html = fn (Recibo $recibo) => view($recibo->modelo->view(), $this->renderizador->dados($recibo, CarbonImmutable::now()))->render();
+
+        foreach (['webiss', 'danfse'] as $familia) {
+            $recibo = $this->recibo(['modelo' => $familia, 'nome' => 'Zeta Sindicato', 'apelido' => 'Regional Araci']);
+            $this->assertSame('Regional Araci', $recibo->snapshot['tomador']['apelido']);
+            $this->assertStringContainsString('Unidade atendida', $html($recibo), $familia);
+            $this->assertStringContainsString('Regional Araci', $html($recibo), $familia);
+            $this->assertStringContainsString('Zeta Sindicato', $html($recibo), "{$familia}: nome oficial no tomador");
+
+            $this->assertStringNotContainsString('Unidade atendida', $html($this->recibo(['modelo' => $familia])), "{$familia} sem apelido");
+        }
+
+        // Recibo já emitido (v1, snapshot sem a chave): sai igual a antes, e o -v1 nunca mostra a linha.
+        $antigo = $this->recibo(['apelido' => 'Regional Araci']);
+        $snapshot = $antigo->snapshot;
+        unset($snapshot['tomador']['apelido']);
+        $antigo->forceFill(['modelo' => ModeloRecibo::WebissV1, 'snapshot' => $snapshot])->save();
+        $this->assertSame('', $this->renderizador->dados($antigo->fresh(), CarbonImmutable::now())['tomador']['apelido']);
+        $this->assertStringNotContainsString('Unidade atendida', $html($antigo->fresh()));
     }
 }
