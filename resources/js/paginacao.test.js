@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chaveDoFiltro, fatiarBloco, filtrosAlterados, paginasVisiveis } from './paginacao.js';
+import { chaveDoFiltro, fatiarBloco, filtrosAlterados, paginadorVisivel, paginasVisiveis } from './paginacao.js';
 
 test('páginas visíveis: primeira, última, atual ±1 e reticências nos buracos', () => {
     assert.deepEqual(paginasVisiveis(1, 1), [1]);
@@ -37,4 +37,9 @@ test('filtros alterados: só os campos dos padrões contam, e 7 é igual a "7"',
     assert.equal(filtrosAlterados({ ...padroes, cliente_id: 7 }, padroes), true);
     assert.equal(filtrosAlterados({ ...padroes, canceladas: true }, padroes), true);
     assert.equal(filtrosAlterados({ ...padroes, cliente_id: '7' }, { ...padroes, cliente_id: 7 }), false);
+});
+
+test('paginador do painel: aparece se o total passa da menor opção, para dar como voltar a ela', () => {
+    assert.equal(paginadorVisivel(12, [10, 25, 50]), true); // mesmo com 25 por página escolhido
+    assert.equal(paginadorVisivel(10, [10, 25, 50]), false);
 });

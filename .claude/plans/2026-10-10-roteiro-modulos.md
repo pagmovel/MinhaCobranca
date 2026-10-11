@@ -20,23 +20,18 @@ sem depender do histórico.
 |---|---|---|---|
 | 18 | Previsão de recebimentos: previstas calculadas pelos contratos, nada gravado | `.claude/plans/2026-10-11-previsao-de-recebimentos.md` | **validada** |
 | 19 | Lista de cobranças por ajax: blocos de 4 páginas, cache, paginador acima e abaixo, totais por situação, esqueleto | `.claude/plans/2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; revisão final feita e corrigida (`1a84e9a`) |
-| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | especificação `docs/superpowers/specs/2026-10-11-listas-por-ajax-design.md` | **aguardando a revisão da especificação pelo usuário** |
+| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | `.claude/plans/2026-10-11-listas-por-ajax.md` (especificação aprovada: "concordo") | T20.1–T20.10 **testadas**; revisão final feita e corrigida; **falta a conferência visual** (pede autorização) e a validação do usuário |
 
 Detalhes da Fase 19: as 5 Minor adiadas, a pegadinha do `<tfoot>` e as decisões estão no "Registro de execução" do
 plano.
 
-**Fase 20:** as listas são Clientes, Contratos, Produtos e serviços, Auditoria, Usuários (admin), Painel e
-Relatórios. Escolhas do usuário: **"Juntas"** (tabelas de clientes, contratos e produtos no mesmo trabalho) e
-**Painel e Relatórios entram**. Na revisão, destacar as escolhas que foram minhas:
-- Painel com paginador **só embaixo** de cada lista, 10 por página;
-- totais de Contratos **por periodicidade**;
-- busca nos campos de texto 400 ms depois de parar de digitar.
-
-Depois da aprovação: plano com fases e tarefas (superpowers:writing-plans), executado inline. A base já existe:
-`resources/js/listaPaginada.js` (`criarListaPaginada`, com teste) e `Paginador.vue`.
+**Fase 20:** todas as listas (Clientes, Contratos, Produtos e serviços, Auditoria, Usuários, Painel, Relatórios) por
+ajax; especificação e plano aprovados pelo usuário em 2026-10-11 ("concordo"). Executada inline em 2026-10-11; detalhes,
+decisões e os 10 Minor adiados da revisão final no "Registro de execução" do plano; padrão na skill ("Fase 20").
 
 **Pendências que dependem do usuário**
-1. Revisar a especificação da Fase 20.
+1. Fase 20: autorizar a **conferência visual** (grava sessões no banco de dev) e validar; decidir sobre os 10 Minor
+   adiados.
 2. ~~Conferência visual da lista de cobranças~~ **feita em 2026-10-11** (ver plano da Fase 19). Falta só "dar baixa e
    ver a lista recarregar": **grava pagamento**, então pede autorização à parte. Usar o Chrome dedicado da porta 9333
    (`BU_CDP_URL`), nunca o do usuário.

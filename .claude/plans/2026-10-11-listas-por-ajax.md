@@ -68,7 +68,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T20.7 | Usuários (admin) em tabela por ajax, filtros, ação principal pela situação | testada (RED: módulo inexistente, 3 falhas PHP → GREEN; JS 44/44, suíte 358/358, build ok) |
 | T20.8 | Painel: três listas por ajax | testada (RED: 5 falhas → GREEN; suíte 360/360, build ok) |
 | T20.9 | Relatórios por ajax | testada (RED: 10 falhas → GREEN; CSV byte a byte igual; suíte 362/362, JS 44/44, build ok) |
-| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | pendente |
+| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | concluída: teste "só lê" (22 casos, provado com defeito de propósito), limpeza, skill, revisão final (0 Critical; 1 Important + 1 subido corrigidos com TDD; 10 Minor adiados); suítes PHP 384/384, JS 46/46, build ok. **Falta:** conferência visual (pede autorização) e validação do usuário |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - **Decisões do plano (antes da execução):**
@@ -94,6 +94,36 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
     auxiliar cria sempre "Hospedagem de site"). O teste usa um contrato com item e dois sem item; mede a mesma coisa.
     No teste do gerador, os auxiliares do próprio arquivo (`prestador`, `contrato`, `gerar`). Custo se errado: nenhum
     (só o arranjo do teste).
+- **T20.8:** no `dados` do Painel, o ternário usado como instrução do plano virou `if/else` (regra de estilo do
+  projeto: chaves em toda estrutura de controle). Mesmo comportamento.
+- **T20.9:** o teste novo de relatório por cliente usa o auxiliar `cobranca()` do próprio `ReceitaTest`.
+- **Revisão final (2026-10-11, subagente Opus, só leitura, pacote `2640825..d5f3f99`):** 0 Critical, 1 Important,
+  11 Minor. Reclassificados pelo efeito para quem usa:
+  - **Corrigido — resposta que chega depois de sair da tela trocava a URL da tela nova** (Important). O
+    `router.replace` do Inertia usa a página aberta naquele momento; digitar no filtro e clicar em "Novo cliente"
+    antes da resposta deixava o formulário com a URL da lista (F5 perderia o digitado). `criarListaPaginada.encerrar()`
+    (chamado no `onUnmounted` de `usarListaPaginada`) descarta o pedido em andamento e ignora o timer da busca ao
+    digitar. Teste `tela que saiu: resposta atrasada e busca adiada não mexem na URL nem pedem de novo`
+    RED (`l.encerrar is not a function`) → GREEN; JS 46/46, PHP 384/384, build ok.
+  - **Corrigido — Painel: quem escolhia 25 por página perdia o paginador e não voltava a 10** (Minor no relatório,
+    subido para Important: armadilha sem saída na tela). `paginadorVisivel(total, opcoes)` em `paginacao.js`: o
+    paginador aparece quando o total passa da **menor** opção. Teste RED (export inexistente) → GREEN.
+  - **Minor adiados** (para o usuário decidir):
+    1. Mensagem de lista vazia segue o filtro digitado, não o do resultado (por ~400 ms mostra "Nenhum cliente
+       ainda" ao apagar a busca). Correção: `filtrosAlterados(resumo.filtros, PADROES)`.
+    2. Trocar um select durante os 400 ms da busca de texto manda um pedido a mais (resultado final certo).
+    3. Usuários: e-mail longo pode passar da largura em 390 px (`break-all` na célula) — [A VERIFICAR na
+       conferência visual].
+    4. 422 depois da primeira carga deixa a tabela do período anterior na tela (desenho da Fase 19).
+    5. Contas a receber com `de`/`ate` inválidos na URL (só link montado à mão) mostra "Corrija o período" sem campo
+       de período.
+    6. Foco vai para o body ao abrir "Confirmar bloqueio" e depois de dar baixa no Painel.
+    7. "Tentar de novo" volta para a página anterior à que falhou e não mostra que está carregando.
+    8. Vazio/falha sem região viva para leitor de tela; dois `nav` "Páginas" com o mesmo rótulo.
+    9. Campos de data/mês com `@change` pedem a cada dígito do ano digitado (no relatório aparece de passagem o 422
+       de 36 meses) — [A VERIFICAR no navegador].
+    10. `existentes()` monta um model por cobrança (com 100 contratos de 10 anos, ~12 mil por abertura de Painel);
+        `toBase()` resolveria.
 
 ---
 

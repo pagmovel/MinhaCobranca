@@ -43,7 +43,10 @@ export function usarListaPaginada({ url, filtro, componente, endereco = null, id
             }
         });
     });
-    onUnmounted(() => pararDeOuvir());
+    onUnmounted(() => {
+        pararDeOuvir();
+        lista.encerrar();
+    });
 
     return lista;
 }

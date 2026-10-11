@@ -4,11 +4,12 @@ import EstadoDaLista from './EstadoDaLista.vue';
 import LinhaCobranca from './LinhaCobranca.vue';
 import Paginador from './Paginador.vue';
 import { formatarCentavos } from '../itens.js';
+import { paginadorVisivel } from '../paginacao.js';
 import { usarListaPaginada } from '../usarListaPaginada.js';
 
 /**
  * Uma lista do painel, carregada por conta própria (/painel/dados?lista=…): 10 por página, paginador só embaixo e só
- * com mais de uma página (seis paginadores numa tela de resumo pesariam demais); contagem e soma no título.
+ * quando o total passa da menor opção (seis paginadores numa tela de resumo pesariam demais); contagem e soma no título.
  */
 const props = defineProps({
     lista: { type: String, required: true },
@@ -16,6 +17,7 @@ const props = defineProps({
     vazio: { type: String, required: true },
 });
 
+const OPCOES = [10, 25, 50];
 const filtro = reactive({ lista: props.lista, pagina: 1, por_pagina: 10 });
 const { linhas, resumo, carregando, falha, estado, irPara, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/painel/dados', filtro, componente: 'Painel', idDoFoco: `lista-${props.lista}`,
@@ -43,13 +45,13 @@ const { linhas, resumo, carregando, falha, estado, irPara, recarregar, escolheuP
                 </LinhaCobranca>
             </ul>
             <Paginador
-                v-if="resumo.pagina.total > filtro.por_pagina"
+                v-if="paginadorVisivel(resumo.pagina.total, OPCOES)"
                 :id="`paginador-${lista}`"
                 :pagina="filtro.pagina"
                 :por-pagina="filtro.por_pagina"
                 :total="resumo.pagina.total"
                 :carregando="carregando"
-                :opcoes="[10, 25, 50]"
+                :opcoes="OPCOES"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />

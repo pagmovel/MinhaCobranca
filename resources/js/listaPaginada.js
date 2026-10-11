@@ -15,6 +15,7 @@ export function criarListaPaginada({ url, filtro, buscar, aoMostrar = () => {} }
     const erros = ref({});
     let cache = { chave: null, paginas: {} };
     let pedido = 0; // só a resposta do pedido mais recente vale (cliques rápidos)
+    let encerrada = false; // a tela saiu: nada mais muda URL, foco ou lista (encerrar)
 
     // A regra "boolean" do Laravel não aceita "true"/"false" na URL: verdadeiro vai 1, falso e vazios ficam de fora.
     const parametros = (pagina) => new URLSearchParams(
@@ -30,6 +31,9 @@ export function criarListaPaginada({ url, filtro, buscar, aoMostrar = () => {} }
     }
 
     async function irPara(pagina, { focar = false } = {}) {
+        if (encerrada) {
+            return; // ex.: o timer da busca ao digitar disparou depois de sair da tela
+        }
         const chave = chaveDoFiltro(filtro);
         if (cache.chave !== chave) {
             cache = { chave, paginas: {} };
@@ -72,6 +76,12 @@ export function criarListaPaginada({ url, filtro, buscar, aoMostrar = () => {} }
         }
         recarregar();
     }
+    // A tela saiu (onUnmounted): o pedido em andamento fica velho e nada mais pede ou mostra. Sem isso, a resposta que
+    // chega depois troca a URL da tela nova pelo router.replace (o Inertia usa a página aberta naquele momento).
+    function encerrar() {
+        encerrada = true;
+        pedido++;
+    }
     function escolheuPorPagina(quantidade) {
         filtro.por_pagina = quantidade;
         filtrar();
@@ -89,7 +99,7 @@ export function criarListaPaginada({ url, filtro, buscar, aoMostrar = () => {} }
         return resumo.value.pagina.total ? 'lista' : 'vazio';
     });
 
-    return { linhas, resumo, carregando, carregou, falha, erros, estado, parametros, irPara, filtrar, recarregar, aoTerminarAcao, escolheuPorPagina };
+    return { linhas, resumo, carregando, carregou, falha, erros, estado, parametros, irPara, filtrar, recarregar, aoTerminarAcao, escolheuPorPagina, encerrar };
 }
 
 /** Busca ao digitar: espera `ms` sem tecla nova; `.agora()` (Enter, "Filtrar") não espera. */

@@ -133,3 +133,18 @@ test('busca ao digitar: só depois de 400 ms sem tecla nova; Enter busca na hora
     t.mock.timers.tick(1000);
     assert.equal(buscas, 2);
 });
+
+test('tela que saiu: resposta atrasada e busca adiada não mexem na URL nem pedem de novo', async () => {
+    const falso = servidor();
+    let mostradas = 0;
+    const filtro = reactive({ mes: '2026-10', canceladas: false, pagina: 1, por_pagina: 25 });
+    const l = criarListaPaginada({ url: '/x/dados', filtro, buscar: falso.buscar, aoMostrar: () => mostradas++ });
+
+    l.irPara(1);
+    l.encerrar();
+    falso.pedidos[0].resolver(bloco(1));
+    await esperar();
+    l.irPara(2); // o timer do "adiar" disparando depois de sair
+
+    assert.deepEqual([mostradas, falso.pedidos.length], [0, 1]);
+});

@@ -50,7 +50,13 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
     - rodapé de totais;
     - esqueleto de linhas na primeira carga.
 
-    Ver "Fase 19" nos Acertos.
+    **Desde a Fase 20, vale para todas as listas** (cobranças, clientes, contratos, produtos e serviços, auditoria,
+    usuários, painel e relatórios). Filtros: selects, datas e autosugestão aplicam na hora; texto 400 ms depois de
+    parar de digitar ou no Enter (`adiar`); "Limpar filtros" é um link para a tela sem parâmetros e só aparece quando
+    algum filtro difere do padrão (`filtrosAlterados`). Tela nova com lista: usar `usarListaPaginada` +
+    `EstadoDaLista` + `Paginador` + `BlocoDePaginas`.
+
+    Ver "Fase 19" e "Fase 20" nos Acertos.
 
 Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
 
@@ -719,8 +725,37 @@ o relatório mostra a parte que existe.
   - **Pegadinha (browser-use):** o print (`browser_screenshot` ou `Page.captureScreenshot`) de uma aba aberta com
     `new_tab` estoura o tempo no Chrome sem janela até chamar `cdp("Target.activateTarget", targetId=...)` e
     `cdp("Page.bringToFront")`. Print de página inteira (`captureBeyondViewport`) trava a aba: rolar e tirar por partes.
-- **Pedido do usuário (2026-10-11):** levar este padrão a **todas as telas com lista de dados**. Fase própria depois da
-  19, junto com a T17.18.
+- **Fase 20 — todas as listas por ajax (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-listas-por-ajax-design.md`, plano `.claude/plans/2026-10-11-listas-por-ajax.md`)**
+  - **Servidor.** Cada tela tem `GET …/dados` (JSON, **só leitura**; `tests/Feature/DadosDasListasTest.php` prova os
+    11 endereços: 401 sem sessão e nenhum INSERT/UPDATE/DELETE, mesmo com cobrança devida). A página Inertia só abre a
+    tela com os filtros (`filtros()` privado em cada controlador, já no formato da tela, `''` = sem filtro).
+    `App\Support\BlocoDePaginas::de(Builder|Relation|Collection, pagina, porPagina)` e `::regras([25, 50, 100])`.
+  - **Acerto (PostgreSQL):** `count(*)`/`sum()` com `ORDER BY` de coluna é erro no PostgreSQL e passa no SQLite dos
+    testes. `BlocoDePaginas` conta com `toBase()->getCountForPagination()` (tira o ORDER BY; teste do SQL da contagem);
+    contratos somam por periodicidade numa consulta **sem ordem** (`filtrada()` e a ordem só na lista); o painel soma
+    antes de ordenar.
+  - **Navegador.** `usarListaPaginada({ url, filtro, componente, endereco, idDoFoco, aoMostrar })` liga
+    `criarListaPaginada` à tela (primeira carga, URL por `router.replace`, foco, recarga no `success` da página
+    `componente`). `EstadoDaLista.vue` (esqueleto, filtro recusado, falha, vazio). `Etiqueta.vue` (selo reto de
+    situação de cadastro; o carimbo girado fica para cobranças e recibos). `estilosLista.js` (`botaoPrincipal`,
+    `itemMenu`). `chaveDoFiltro` vale para qualquer filtro (todas as chaves menos `pagina`).
+  - **Telas.** Clientes, Contratos, Produtos e Usuários em tabela (T17.15). Contratos: situação Ativo / Encerra em /
+    Encerrado e totais dos ativos **por periodicidade** (não se somam periodicidades diferentes); o filtro de produto
+    virou autosugestão (só ativos; o `produtoFiltro` da página mostra o nome mesmo inativo). Usuários: ação principal
+    pela situação (`acoesUsuario.js`), "Bloquear" no menu com confirmação no segundo clique, nunca na própria conta.
+    Painel: três `ListaDoPainel` independentes, 10 por página (10/25/50), paginador só embaixo e só com mais de uma
+    página, contagem e soma no título. Relatórios: faturamento inteiro numa página (o gráfico precisa de todas as
+    linhas), os outros paginam; totais sempre do relatório inteiro; CSV inteiro pelo link de sempre; títulos em
+    `relatorios.js` (aparecem antes dos dados).
+  - **N+1 corrigido:** `GeradorDeCobrancas::existentes(Collection $contratos)` busca as cobranças existentes de todos os
+    contratos numa consulta só (antes, uma por contrato; com o PostgreSQL remoto a ~580 ms por consulta). Usado pelo
+    gerador e pela previsão; teste conta as consultas.
+  - **Pegadinhas (execução).**
+    1. No Git Bash, `sed` trocando linhas `use App\…` do PHP (barra invertida) falha calado: usar o editor.
+    2. Script que converte asserções com regex `(.*?)\)\);` comeu o parêntese do último `->where(`: conferir o diff e
+       `php -l` depois de conversão automática.
+    3. Auxiliar de teste que cria produto com nome fixo estoura o `unique(user_id, nome)` se chamado duas vezes.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

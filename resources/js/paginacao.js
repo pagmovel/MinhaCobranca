@@ -28,3 +28,8 @@ export function fatiarBloco(linhas, inicio, porPagina) {
 
     return paginas;
 }
+
+/** O paginador do painel (só embaixo) aparece se o total passa da menor opção: quem escolheu 25 consegue voltar a 10. */
+export function paginadorVisivel(total, opcoes) {
+    return total > Math.min(...opcoes);
+}
