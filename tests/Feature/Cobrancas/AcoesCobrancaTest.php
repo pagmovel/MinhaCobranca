@@ -13,11 +13,12 @@ use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Tests\Concerns\ComItens;
 use Tests\TestCase;
 
 class AcoesCobrancaTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use ComItens, LazilyRefreshDatabase;
 
     /** @return array{0: User, 1: Cliente} */
     private function prestadorComCliente(): array
@@ -33,10 +34,7 @@ class AcoesCobrancaTest extends TestCase
         return array_merge([
             'cliente_id' => $cliente->id,
             'descricao' => 'Manutenção extra do site',
-            'codigo_servico' => '0102 - Programação',
-            'codigo_nbs' => '',
-            'codigo_tributacao_nacional' => '',
-            'valor' => '150,00',
+            'itens' => $this->itensPara($cliente, '150,00'),
             'periodo_inicio' => '2026-10-01',
             'periodo_fim' => '2026-10-31',
             'vencimento' => '2026-10-20',
@@ -80,7 +78,7 @@ class AcoesCobrancaTest extends TestCase
         [$usuario, $cliente] = $this->prestadorComCliente();
         $cobranca = $this->cobrancaComRecibo($usuario, $cliente);
 
-        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['valor' => '300,00']))
+        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['itens' => $this->itensPara($cliente, '300,00')]))
             ->assertRedirect('/cobrancas');
 
         $cobranca->refresh()->load('recibo');
@@ -111,7 +109,7 @@ class AcoesCobrancaTest extends TestCase
         $cobranca->enviado_em = now();
         $cobranca->save();
 
-        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['valor' => '300,00']))
+        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['itens' => $this->itensPara($cliente, '300,00')]))
             ->assertSessionHas('erro', 'Cobrança já enviada não pode ser editada. Cancele e crie uma cobrança avulsa.');
         $this->assertSame(26060, $cobranca->fresh()->valor_centavos);
     }
@@ -124,7 +122,7 @@ class AcoesCobrancaTest extends TestCase
             'contrato_id' => $contrato->id, 'periodo_inicio' => '2026-09-21', 'periodo_fim' => '2026-10-20',
         ]);
 
-        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['valor' => '300,00']));
+        $this->actingAs($usuario)->put("/cobrancas/{$cobranca->id}", $this->dados($cliente, ['itens' => $this->itensPara($cliente, '300,00')]));
 
         $cobranca->refresh();
         $this->assertSame('2026-09-21', $cobranca->periodo_inicio->toDateString());

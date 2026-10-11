@@ -2,3 +2,4 @@
 - [Documentação por tarefa](memory/documentacao-por-tarefa.md) — plano e skill atualizados no commit de cada tarefa
 - [Merge e push por fase](memory/merge-e-push-por-fase.md) — fase concluída vai para a main e para o origin sem pedir de novo
 - [Produto em módulos](memory/produto-em-modulos.md) — SaaS por planos de assinatura; documentação por módulo
+- [Roteiro do produto](plans/2026-10-10-roteiro-modulos.md) — estado atual, próximo passo e backlog por módulo (ler ao retomar)

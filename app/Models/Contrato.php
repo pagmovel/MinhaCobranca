@@ -57,4 +57,9 @@ class Contrato extends Model
     {
         return $this->hasMany(Cobranca::class);
     }
+
+    public function itens(): HasMany
+    {
+        return $this->hasMany(ContratoItem::class)->orderBy('ordem');
+    }
 }

@@ -373,6 +373,44 @@ o relatório mostra a parte que existe.
   portão pegou — parar e pedir de novo.
 - QR com margem branca de 4 módulos (padrão do QR Code e da biblioteca; o plano tinha 2). Não muda o conteúdo do código.
 
+- **Usabilidade das chaves PIX (relato do usuário, 2026-10-10):** "Editar" abria o formulário depois do fim da lista e
+  quem não tem prática não o via. Agora o formulário abre **dentro da linha clicada** (fundo `bg-papel`), com foco e
+  rolagem para o campo "Chave"; a chave nova entra como linha extra no fim da lista (`linhas` computada), então o
+  formulário existe num lugar só do template. Esc ou "Cancelar" fecha. Usar o mesmo padrão (edição na própria linha)
+  em listas novas com edição rápida. Conferência visual: pendência V5.
+- **Ação destrutiva tem cara própria (relato do usuário, 2026-10-10):** "Editar" e "Excluir" eram iguais
+  (`botao-secundario`). Classes em `resources/css/app.css`: `botao-perigo` (contorno e texto vermelhos, primeiro clique de
+  excluir/cancelar) e `botao-perigo-confirmar` (vermelho cheio, o clique que apaga). Aplicadas em chaves PIX, cliente e
+  cancelamento de cobrança. **Toda exclusão ou cancelamento novo usa essas classes**, nunca `botao-secundario`.
+
+- **Decisões do módulo Cobrança (2026-10-10, spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`):** itens
+  do catálogo somam o valor do contrato (descrição do recibo continua livre); cobranças copiam os itens; códigos fiscais
+  do item principal; contrato guarda o próprio preço (reajuste por ação explícita); custo fica no Contas a Pagar;
+  tributos só no módulo de Notas (pesquisa oficial primeiro); **"recebido" = pago no mês (caixa)**, inclusive no painel.
+- T12.1: catálogo `produtos_servicos` (único por usuário+nome); preço sugerido pode ser 0
+  (`new ValorEmReais(aceitaZero: true)`; `ValorEmReais::MAXIMO_CENTAVOS` público); busca de autosugestão só traz ativos;
+  `App\Support\Busca::contem()` (padrão `like` com `%`/`_` escapados) e `App\Support\Paginacao::dados()` + `Paginacao.vue`
+  compartilhados pelas listas. Rota com `{produto}` numérico (`Route::pattern`). Resource com `->parameters(['produtos-servicos' => 'produto'])`.
+- T12.2: valor do contrato = soma dos itens **recalculada no servidor** (o `valor` enviado pela tela é ignorado;
+  `RegrasDeItens::after` recusa total 0 ou acima do máximo); quantidade em milésimos, total `intdiv(q×p+500, 1000)`
+  (`App\Support\ItensDeVenda`; `itens.js` faz a mesma conta com BigInt só para exibir); códigos fiscais do item principal
+  (o marcado ou, sem marcação, o de maior total); contrato antigo sem itens continua valendo e exige itens ao editar;
+  `ContratoRequest::authorize` dá 404 para contrato alheio; item usado em contrato não é excluído (só desativado);
+  `BuscaCliente` virou `BuscaAutosugestao` (props `url`, `nenhum`, `limparAoEscolher`; slot `opcao`; evento `escolhido`).
+  **Pegadinha:** a regra `numeric` aceita `+1` e `1e3`; a regex `^\d{1,5}(\.\d{1,3})?$` fecha o formato antes de
+  `ItensDeVenda::milesimos`.
+- T12.3: cobrança guarda **cópia** dos itens (`cobranca_itens`: nome, unidade, quantidade, preço, total, principal;
+  `produto_servico_id` só como referência, `nullOnDelete`); a geração copia do contrato, avulsa/edição gravam os
+  escolhidos; mudar contrato ou catálogo depois **não** altera cobrança existente; cobrança antiga sem itens continua
+  valendo; `CobrancaRequest::authorize` dá 404 para cobrança alheia; item usado em contrato **ou** cobrança não é excluído.
+- T12.4: reajuste (`/produtos-servicos/{produto}/reajuste`) só nos contratos **ativos escolhidos** que usam o item;
+  recalcula `valor_centavos`; total fora do limite desfaz a transação inteira (`ValidationException` lançada dentro de
+  `DB::transaction`); cobranças já geradas não mudam; o preço do catálogo não muda (é só sugestão). Sem FormRequest: o
+  `findOrFail` do item vem antes do `$request->validate()`, então item alheio dá 404 antes da validação.
+- **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
+  massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
+  CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
