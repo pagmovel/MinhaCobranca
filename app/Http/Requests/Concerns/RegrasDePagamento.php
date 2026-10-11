@@ -25,6 +25,7 @@ trait RegrasDePagamento
             'chave_pix_id' => [
                 'nullable',
                 'required_if:forma_pagamento,pix',
+                'integer',
                 Rule::exists('chaves_pix', 'id')->where('user_id', $this->user()->id),
             ],
         ];

@@ -436,6 +436,15 @@ o relatório mostra a parte que existe.
   calcula dias de atraso em PHP (`diffInDays` do Carbon 3 tem sinal).
 - T15.4: contas a receber é a situação de **hoje** (sem período); faixas 0–30 (vence hoje inclusive), 31–60, 61–90 e
   depois de 90; a soma das faixas é o total pendente; "maior atraso" não soma.
+- **Pegadinha (revisão final, 2026-10-10): id não numérico no `exists` quebra só no PostgreSQL.** `where id = 'abc'`
+  numa coluna bigint é erro de SQL (500) no PostgreSQL; no SQLite dos testes vira só "não existe". **Acerto:** o
+  validador do Laravel pula `exists`/`unique` quando o campo já falhou em outra regra
+  (`Validator::hasNotFailedPreviousRuleIfPresenceRule`), então basta `integer` **antes** do `exists` — sem `bail`.
+  `cliente_id` (contrato/cobrança) e `chave_pix_id` não tinham `integer`; corrigido.
+  `tests/Feature/IdsNaoNumericosTest.php` prova com `DB::listen` que nenhuma consulta recebe o texto.
+- **Acerto (revisão final):** os serviços de consulta (`app/Services/Consultas/*`) trocam por `null` todo campo da
+  resposta que não seja texto ou número (`is_scalar`) antes de qualquer `(string)`; campo com tipo errado vira
+  "não veio", não erro 500.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

@@ -18,6 +18,8 @@ final class BrasilApiCep
         }
 
         $dados = $resposta->successful() ? $resposta->json() : null;
+        // Campo que não é texto nem número (resposta fora do formato) conta como ausente.
+        $dados = is_array($dados) ? array_map(fn ($valor) => is_scalar($valor) ? $valor : null, $dados) : null;
 
         if (! is_array($dados) || blank($dados['city'] ?? null)) {
             return null;

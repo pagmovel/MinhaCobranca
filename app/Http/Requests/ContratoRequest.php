@@ -34,7 +34,7 @@ class ContratoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cliente_id' => ['required', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
+            'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
             'descricao' => ['required', 'string', 'max:2000', new LinhasMaximas(25)],
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
             'modalidade' => ['required', Rule::enum(Modalidade::class)],

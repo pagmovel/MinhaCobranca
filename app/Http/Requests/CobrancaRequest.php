@@ -32,7 +32,7 @@ class CobrancaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cliente_id' => ['required', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
+            'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
             'descricao' => ['required', 'string', 'max:2000', new LinhasMaximas(25)],
             'periodo_inicio' => ['required', 'date'],
             'periodo_fim' => ['required', 'date', 'after_or_equal:periodo_inicio'],
