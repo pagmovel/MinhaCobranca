@@ -6,22 +6,27 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
-### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
-- **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido").
-- **Fase 23 (vencimento em dia útil): executada** (nativa), plano `.claude/plans/2026-10-11-vencimento-em-dia-util.md`.
-  T23.1–T23.11 testadas; migração `feriados` aplicada no dev; P1/P2 = sim (feitas); spinner global "Carregando…" (pedido
-  do usuário); duas revisões opus (Important corrigidos); conferência no navegador feita. **Aguarda:** validação do
-  usuário, decisão sobre 6 Minor da 2ª revisão (lista no registro do plano) e o merge na `main` (antes, a revisão final
-  da branch inteira, Fases 17–23).
-- Depois: Fase 24 (aviso pelo WhatsApp, spec aguardando revisão); revisão final da branch + merge na `main`; T17.11.
+### 0.1 PRÓXIMO PASSO IMEDIATO (atualizado em 2026-10-11, depois do merge das Fases 17–23)
+- **Fases 17–23 mergeadas na `main` e enviadas ao remoto** (merge `da2d53f`, `main` em `github.com:pagmovel/MinhaCobranca.git`
+  no commit `da2d53f`). Fase 23 (vencimento em dia útil): T23.1–T23.12 testadas; 6 Minor da 2ª revisão tratados (5
+  corrigidos com TDD, 1 — limite de 100 feriados sem lock — ruling documentado na skill); spinner global "Carregando…"
+  feito (pedido do usuário no meio da execução).
+- **Revisão final de branch inteira** (fabe501..e93665f, 93 commits, Fases 17–23) achou 1 Critical e 4 Important — todos
+  corrigidos com TDD antes do merge (commits `9f1c9de`, `a79f78a`, `f716528`, `aeee09a`, `a681ea5`): editar contrato
+  pulava cobrança/desfazia escolha de retroativos; 419 em DELETE/PUT/PATCH caía em 405; "Fim do contrato" reagendava
+  encerramento já agendado sem passar pelo plano; "Recomeçar" cobrava de novo período já pago; suíte saía com código 1.
+  1 Minor ficou deferido (N+1 em `GeradorDeCobrancas::gerarPara`, ~580 ms/contrato — otimização, não bug).
+- **Falta:** validação final do usuário confirmando que a integração ficou certa (pedido dele: "integrar primeiro e
+  depois validar"). Depois disso, próximo item do backlog é a **T17.11** (item 2 abaixo) ou a Fase 24 (WhatsApp, spec
+  aguardando revisão do usuário).
 
 ### 0.2 Estado da branch
-**Branch:** `feat/modulo-cobranca-catalogo`, no remoto, árvore limpa. Último commit: `bf1a814` (iniciais do WebISS).
-- Suítes: PHP **399/399** (`php artisan test --compact`), JS **50/50** (`node --test resources/js/*.test.js`), build ok.
-- **Banco de dev:** todas as migrações aplicadas (a do apelido em 2026-10-11, com o "sim" do usuário).
-- **Merge na `main` ainda não feito** das Fases 17 (resto) a 22. A memória "Merge e push por fase" autoriza merge por fase
-  concluída; antes, fazer a **revisão final da branch inteira** (`git merge-base main HEAD`..HEAD) e mostrar o resultado.
-- O usuário fez um commit dele na `main` (`761f6d0`, PHP ^8.4 no composer); a branch tem o mesmo ajuste (`b83f22d`).
+**Branch de trabalho `feat/modulo-cobranca-catalogo`:** mergeada na `main` (`da2d53f`), segue existindo no remoto (não
+apagada — decisão de não apagar branches sem pedido explícito).
+- **`main`:** suítes PHP **440/440** (saída limpa, exit 0), JS **60/60**, build ok. Workspace do plano da Fase 23
+  (`.superpowers/sdd/2026-10-11-vencimento-em-dia-util/`) apagado após o merge (git log é o registro).
+- **Banco de dev:** todas as migrações aplicadas (inclusive `feriados`, 2026-10-11, com o "sim" do usuário).
+- Commit do usuário incorporado no merge: `761f6d0` (PHP ^8.4 no composer) — já estava na `main` antes do merge.
 
 **Fases recentes**
 
@@ -32,6 +37,7 @@ sem depender do histórico.
 | 20 | Todas as listas por ajax e em tabela (T17.18) | `2026-10-11-listas-por-ajax.md` | **validada** (2026-10-11); Minor 2–7 e o "Enviar" do Painel a 390 px adiados (motivos no plano) |
 | 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
+| 23 | Vencimento em dia útil: calendário de feriados, ajuste em lote, aviso na avulsa e no Painel, spinner global | `2026-10-11-vencimento-em-dia-util.md` | **testada e mergeada** (2026-10-11, merge `da2d53f`); aguarda validação final do usuário pós-merge |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
 0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:
@@ -74,7 +80,7 @@ sem depender do histórico.
      no perfil: lista local (dia/mês todo ano, ou data móvel como Corpus Christi) e **prévia** das cobranças em aberto
      não enviadas que caem em dia não útil, com "Ajustar" (padrão 9) — serve também para o ajuste inicial. Avulsa: aviso
      com botão "Usar <data>". Verificação feita (ver spec, seção 2).
-1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
+1. ~~Revisão final da branch e merge na `main`~~ — **feito em 2026-10-11** (Fases 17–23, merge `da2d53f`, ver seção 0.1).
 2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
    fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
    data fica para a prorrogação.
