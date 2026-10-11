@@ -74,6 +74,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
         Route::post('/cobrancas/{cobranca}/desfazer-baixa', [CobrancaController::class, 'desfazerBaixa']);
     });
     Route::get('/auditoria', [AuditoriaController::class, 'index']);
+    Route::get('/auditoria/dados', [AuditoriaController::class, 'dados']);
 
     Route::get('/recibos/{recibo}/pdf', ReciboPdfController::class);
 

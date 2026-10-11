@@ -1,20 +1,23 @@
 <script setup>
-import { reactive } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, reactive } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
-import Paginacao from '../../Components/Paginacao.vue';
+import EstadoDaLista from '../../Components/EstadoDaLista.vue';
+import Paginador from '../../Components/Paginador.vue';
+import { filtrosAlterados } from '../../paginacao.js';
+import { usarListaPaginada } from '../../usarListaPaginada.js';
 
 const props = defineProps({
-    registros: { type: Array, required: true },
-    paginacao: { type: Object, required: true },
     filtros: { type: Object, required: true },
+    padroes: { type: Object, required: true },
 });
 
 const filtro = reactive({ ...props.filtros });
-
-// Aplica ao escolher a data (padrão de usabilidade 7).
-const filtrar = () => router.get('/auditoria', filtro, { preserveState: true, replace: true });
+const filtrando = computed(() => filtrosAlterados(filtro, props.padroes));
+const { linhas, resumo, carregando, falha, erros, estado, irPara, filtrar, recarregar, escolheuPorPagina } = usarListaPaginada({
+    url: '/auditoria/dados', filtro, componente: 'Auditoria/Index', endereco: '/auditoria',
+});
 </script>
 
 <template>
@@ -25,29 +28,49 @@ const filtrar = () => router.get('/auditoria', filtro, { preserveState: true, re
             quem fez, quando e por quê. Os registros não podem ser alterados.
         </p>
 
-        <form class="mb-6 grid max-w-xl gap-4 sm:grid-cols-2" @submit.prevent="filtrar">
-            <Campo id="de" rotulo="De">
+        <form class="mb-6 flex flex-wrap items-end gap-4" @submit.prevent="filtrar">
+            <Campo id="de" rotulo="De" :erro="erros.de">
                 <input id="de" v-model="filtro.de" type="date" class="entrada" @change="filtrar">
             </Campo>
-            <Campo id="ate" rotulo="Até">
+            <Campo id="ate" rotulo="Até" :erro="erros.ate">
                 <input id="ate" v-model="filtro.ate" type="date" class="entrada" :min="filtro.de" @change="filtrar">
             </Campo>
+            <Link v-if="filtrando" href="/auditoria" class="pb-2 font-estreita text-sm text-carbono underline">Limpar filtros</Link>
         </form>
 
-        <p v-if="!registros.length" class="text-sm text-grafite/80">Nenhuma ação registrada neste período.</p>
-        <TransitionGroup v-else name="lista" tag="ul" class="relative divide-y divide-linha border border-linha bg-white">
-            <li v-for="registro in registros" :key="registro.id" class="grid gap-1 px-4 py-3 sm:grid-cols-[9rem_1fr]">
-                <span class="font-estreita text-sm text-grafite/75 tabular-nums">{{ registro.quando }}</span>
-                <div class="min-w-0">
-                    <p>
-                        <Link v-if="registro.link" :href="registro.link" class="underline">{{ registro.resumo }}</Link>
-                        <template v-else>{{ registro.resumo }}</template>
-                    </p>
-                    <p v-if="registro.motivo" class="text-sm text-grafite/80">Motivo: {{ registro.motivo }}</p>
-                </div>
-            </li>
-        </TransitionGroup>
-
-        <Paginacao :paginacao="paginacao" />
+        <EstadoDaLista
+            :estado="estado"
+            :falha="falha"
+            carregando="Carregando registros…"
+            vazio="Nenhuma ação registrada neste período."
+            erro-filtro="Corrija o período acima para ver os registros."
+            @tentar="recarregar"
+        >
+            <Paginador id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />
+            <div class="border border-linha bg-white transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
+                <TransitionGroup tag="table" name="lista" class="block w-full text-sm xl:table">
+                    <thead key="cabecalho" class="hidden font-estreita text-xs text-grafite/75 xl:table-header-group">
+                        <tr class="border-b border-linha text-left">
+                            <th scope="col" class="px-4 py-2 font-medium">Quando</th>
+                            <th scope="col" class="px-3 py-2 font-medium">Registro</th>
+                            <th scope="col" class="px-4 py-2 font-medium">Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody v-for="registro in linhas" :key="registro.id" class="block border-b border-linha last:border-b-0 xl:table-row-group">
+                        <tr class="flex flex-col gap-1 px-4 py-3 xl:table-row xl:p-0">
+                            <td class="font-estreita text-xs whitespace-nowrap tabular-nums text-grafite/75 xl:w-px xl:px-4 xl:py-3 xl:text-sm">{{ registro.quando }}</td>
+                            <td class="xl:px-3 xl:py-3">
+                                <Link v-if="registro.link" :href="registro.link" class="underline">{{ registro.resumo }}</Link>
+                                <template v-else>{{ registro.resumo }}</template>
+                            </td>
+                            <td class="text-grafite/80 xl:px-4 xl:py-3">
+                                <template v-if="registro.motivo"><span class="xl:hidden">Motivo: </span>{{ registro.motivo }}</template>
+                            </td>
+                        </tr>
+                    </tbody>
+                </TransitionGroup>
+            </div>
+            <Paginador id="paginador-base" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />
+        </EstadoDaLista>
     </CamadaApp>
 </template>

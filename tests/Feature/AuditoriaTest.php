@@ -193,12 +193,18 @@ class AuditoriaTest extends TestCase
 
         $this->actingAs($this->usuario)->get('/auditoria')->assertInertia(fn (Assert $pagina) => $pagina
             ->component('Auditoria/Index')
-            ->has('registros', 1)
-            ->where('registros.0.resumo', 'Baixa desfeita (estava paga em 17/06/2026)')
-            ->where('registros.0.motivo', 'Baixa errada')
-            ->where('registros.0.quando', '10/10/2026 10:00')
-            ->where('registros.0.link', '/cobrancas?mes=2026-05'));
+            ->missing('registros')
+            ->where('filtros', ['de' => '2026-09-10', 'ate' => '2026-10-10', 'pagina' => 1, 'por_pagina' => 25])
+            ->where('padroes', ['de' => '2026-09-10', 'ate' => '2026-10-10']));
 
-        $this->get('/auditoria?de=2026-10-11&ate=2026-10-31')->assertInertia(fn (Assert $pagina) => $pagina->has('registros', 0));
+        $this->getJson('/auditoria/dados')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.resumo', 'Baixa desfeita (estava paga em 17/06/2026)')
+            ->assertJsonPath('linhas.0.motivo', 'Baixa errada')
+            ->assertJsonPath('linhas.0.quando', '10/10/2026 10:00')
+            ->assertJsonPath('linhas.0.link', '/cobrancas?mes=2026-05');
+
+        $this->getJson('/auditoria/dados?de=2026-10-11&ate=2026-10-31')->assertOk()->assertJsonCount(0, 'linhas');
+        $this->getJson('/auditoria/dados?de=2026-10-11&ate=2026-10-01')->assertUnprocessable()->assertJsonValidationErrors('ate');
     }
 }

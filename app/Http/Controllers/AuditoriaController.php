@@ -3,36 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
-use App\Support\Paginacao;
+use App\Support\BlocoDePaginas;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AuditoriaController extends Controller
 {
-    /** Ações sensíveis do usuário (padrão: últimos 30 dias), mais recentes primeiro. */
+    /** Ações sensíveis do usuário. A lista vem por ajax de /auditoria/dados; a página só abre a tela com os filtros. */
     public function index(Request $request): Response
     {
-        $usuario = $request->user();
-        $hoje = CarbonImmutable::today();
-        $filtros = $request->validate([
-            'de' => ['nullable', 'date'],
-            'ate' => ['nullable', 'date', 'after_or_equal:de'],
+        return Inertia::render('Auditoria/Index', [
+            'filtros' => $this->filtros($request),
+            'padroes' => $this->padroes(),
         ]);
-        $de = CarbonImmutable::parse($filtros['de'] ?? $hoje->subDays(30))->startOfDay();
-        $ate = CarbonImmutable::parse($filtros['ate'] ?? $hoje)->endOfDay();
+    }
 
-        $pagina = $usuario->auditorias()->whereBetween('created_at', [$de, $ate])
-            ->orderByDesc('id')->paginate(25)->withQueryString();
+    /** Dados da lista (JSON, só leitura): padrão últimos 30 dias, mais recentes primeiro. */
+    public function dados(Request $request): JsonResponse
+    {
+        $request->validate(['ate' => ['nullable', 'date', 'after_or_equal:de']]);
+        $filtros = $this->filtros($request);
 
-        // Uma consulta para os links das cobranças (a lista abre no mês do vencimento).
-        $vencimentos = $usuario->cobrancas()
-            ->whereIn('id', collect($pagina->items())->where('alvo_tipo', 'cobranca')->pluck('alvo_id'))
+        $bloco = BlocoDePaginas::de(
+            $request->user()->auditorias()
+                ->whereBetween('created_at', [CarbonImmutable::parse($filtros['de'])->startOfDay(), CarbonImmutable::parse($filtros['ate'])->endOfDay()])
+                ->orderByDesc('id'),
+            $filtros['pagina'],
+            $filtros['por_pagina'],
+        );
+
+        // Uma consulta para os links das cobranças do bloco (a lista abre no mês do vencimento).
+        $vencimentos = $request->user()->cobrancas()
+            ->whereIn('id', $bloco['itens']->where('alvo_tipo', 'cobranca')->pluck('alvo_id'))
             ->pluck('vencimento', 'id');
 
-        return Inertia::render('Auditoria/Index', [
-            'registros' => collect($pagina->items())->map(fn (Auditoria $registro) => [
+        return response()->json([
+            'linhas' => $bloco['itens']->map(fn (Auditoria $registro) => [
                 'id' => $registro->id,
                 'quando' => $registro->created_at->format('d/m/Y H:i'),
                 'resumo' => $registro->resumo,
@@ -42,9 +51,39 @@ class AuditoriaController extends Controller
                     isset($vencimentos[$registro->alvo_id]) => '/cobrancas?mes='.CarbonImmutable::parse($vencimentos[$registro->alvo_id])->format('Y-m'),
                     default => null,
                 },
-            ]),
-            'paginacao' => Paginacao::dados($pagina),
-            'filtros' => ['de' => $de->toDateString(), 'ate' => $ate->toDateString()],
+            ])->all(),
+            'pagina' => $bloco['pagina'],
+            'filtros' => $filtros,
         ]);
+    }
+
+    /** @return array{de: string, ate: string} */
+    private function padroes(): array
+    {
+        $hoje = CarbonImmutable::today();
+
+        return ['de' => $hoje->subDays(30)->toDateString(), 'ate' => $hoje->toDateString()];
+    }
+
+    /**
+     * Filtros já no formato da tela. Aqui só o formato: a ordem das datas é conferida no JSON (422 embaixo do "Até").
+     *
+     * @return array{de: string, ate: string, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request): array
+    {
+        $validados = $request->validate([
+            'de' => ['nullable', 'date'],
+            'ate' => ['nullable', 'date'],
+            ...BlocoDePaginas::regras(),
+        ]);
+        $padroes = $this->padroes();
+
+        return [
+            'de' => isset($validados['de']) ? CarbonImmutable::parse($validados['de'])->toDateString() : $padroes['de'],
+            'ate' => isset($validados['ate']) ? CarbonImmutable::parse($validados['ate'])->toDateString() : $padroes['ate'],
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
     }
 }
