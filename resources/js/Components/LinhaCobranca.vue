@@ -5,7 +5,7 @@ defineProps({ cobranca: { type: Object, required: true } });
 </script>
 
 <template>
-    <li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <li class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div class="min-w-0">
             <p class="font-semibold">{{ cobranca.cliente }}</p>
             <p class="font-estreita text-sm text-grafite/80">
@@ -13,6 +13,9 @@ defineProps({ cobranca: { type: Object, required: true } });
                 <template v-else>Vence {{ cobranca.vencimento }}</template>
                 <template v-if="cobranca.recibo"> · recibo {{ cobranca.recibo.numero }}</template>
             </p>
+            <ul v-if="cobranca.historico?.length" class="mt-1 font-estreita text-xs text-grafite/70">
+                <li v-for="(linha, indice) in cobranca.historico" :key="indice">{{ linha }}</li>
+            </ul>
         </div>
         <div class="flex flex-wrap items-center gap-3">
             <span class="text-lg font-semibold tabular-nums">R$ {{ cobranca.valor }}</span>

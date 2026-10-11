@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UsuarioController;
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ChavePixController;
@@ -63,6 +64,12 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
     Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);
+    // Pedem a senha: limite de tentativas por usuário.
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('/cobrancas/{cobranca}/corrigir-pagamento', [CobrancaController::class, 'corrigirPagamento']);
+        Route::post('/cobrancas/{cobranca}/desfazer-baixa', [CobrancaController::class, 'desfazerBaixa']);
+    });
+    Route::get('/auditoria', [AuditoriaController::class, 'index']);
 
     Route::get('/recibos/{recibo}/pdf', ReciboPdfController::class);
 

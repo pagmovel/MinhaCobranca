@@ -8,6 +8,7 @@ import LinhaCobranca from '../../Components/LinhaCobranca.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
 import CancelarInline from '../../Components/CancelarInline.vue';
+import CorrecaoPagamentoInline from '../../Components/CorrecaoPagamentoInline.vue';
 import PagamentoInline from '../../Components/PagamentoInline.vue';
 
 const props = defineProps({
@@ -92,6 +93,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
                 />
                 <Link v-if="cobranca.editavel" :href="`/cobrancas/${cobranca.id}/edit`" class="botao-secundario">Editar</Link>
                 <CancelarInline v-if="aberta(cobranca)" :cobranca-id="cobranca.id" />
+                <CorrecaoPagamentoInline v-if="cobranca.situacao === 'paga'" :cobranca-id="cobranca.id" :enviada="cobranca.enviado" />
             </LinhaCobranca>
         </TransitionGroup>
     </CamadaApp>

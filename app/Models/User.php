@@ -110,6 +110,11 @@ class User extends Authenticatable
         return $this->hasMany(Cobranca::class);
     }
 
+    public function auditorias(): HasMany
+    {
+        return $this->hasMany(Auditoria::class);
+    }
+
     public function recibos(): HasMany
     {
         return $this->hasMany(Recibo::class);

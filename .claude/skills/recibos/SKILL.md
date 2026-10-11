@@ -557,6 +557,16 @@ o relatório mostra a parte que existe.
   `CalculadoraDePeriodos::anteriores`); gerador e encerramento pulam períodos anteriores. Sem o campo, gera desde o
   início (como antes). A pergunta usa rádios `required` dentro do `<form>`: a validação nativa do navegador obriga a
   escolher. **Pegadinha:** a tela que o usuário via era o build anterior — depois de `npm run build`, recarregar a página.
+- **T17.12 — corrigir/desfazer baixa e auditoria (pedido do usuário, 2026-10-10):** `POST /cobrancas/{id}/corrigir-pagamento`
+  (`pago_em` até hoje) e `/desfazer-baixa` (volta a pendente) exigem **senha** (`current_password`,
+  `ValidatesAttributes.php:602`) e **motivo**; rotas em `throttle:6,1`; `findOrFail` antes do `validate` (alheia = 404
+  antes de checar senha). Tabela `auditorias` só de inclusão (`UPDATED_AT = null`): `Auditoria::registrar($request, acao,
+  alvo, resumo, antes, depois, motivo)` grava usuário e IP. Ações registradas: `pagamento.corrigido`, `baixa.desfeita`,
+  `cobranca.cancelada`, `cobranca.editada`, `contrato.encerrado`, `contrato.recomecado`, `contrato.corrigido` (sempre na
+  mesma transação da mudança). Histórico na linha (`Cobranca::auditorias()` carregado com `with` na lista; `paraLista`
+  só lê se a relação estiver carregada — sem N+1) e tela `/auditoria` (30 dias por padrão, link para a cobrança no mês do
+  vencimento ou para o contrato). `CorrecaoPagamentoInline.vue` na lista de cobranças pagas. Efeito esperado: o
+  "recebido" (caixa) muda de mês quando a data muda; recibo pago já enviado sai com a data nova se reenviado.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

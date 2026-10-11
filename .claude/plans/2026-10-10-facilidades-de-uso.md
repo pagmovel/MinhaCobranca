@@ -35,6 +35,8 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | concluída; testada na suíte (293/293, JS 16/16, build ok) com as correções da revisão e o encerramento agendado; migração aplicada no dev (autorizada); smoke pendente (pede autorização: grava dados do SMOKE) |
 | T17.10 | Corrigir início errado de contrato sem cobrança paga + perguntar na hora se gera os períodos retroativos (também ao criar contrato com início no passado) | concluída; testada na suíte (303/303, JS 16/16, build ok; `tests/Feature/CorrecaoDoInicioTest.php`); migração aplicada no dev com autorização (contratos 6 linhas, migrations 14→15); **validada** pelo usuário em 2026-10-10 ("aqui funcionou"): contrato nº 6 corrigido para 17/01/2026, 10 cobranças geradas (jan–out, retroativas escolhidas), a antiga cancelada desvinculada |
 | T17.11 | Renovar ou prorrogar contrato perto do fim, com os mesmos dados e permitindo alterações antes de concluir | pendente (desenho a fazer com o usuário) |
+| T17.12 | Corrigir pagamento (data) e desfazer baixa, com senha + motivo; auditoria das ações sensíveis; histórico na cobrança e tela "Auditoria" | concluída; testada na suíte (313/313, JS 16/16, build ok; `tests/Feature/AuditoriaTest.php`); **migração `auditorias` pendente (PORTÃO-BANCO)** — até lá a lista de cobranças do dev dá erro |
+| T17.13 | Apelido (nome curto) opcional no cliente — ex.: sindicato com CNPJ/endereço da sede, serviço prestado à regional ARACI/BA | pendente (perguntas ao usuário: onde o apelido aparece; mesmo CNPJ em mais de um cadastro) |
 
 ### Decisões de 2026-10-10, após a revisão da T17.9 (respostas do usuário)
 - **Relato:** contrato nº 6 (usuário 1) criado com início 10/10/2026 em vez de 17/01/2026; a única cobrança está
@@ -118,3 +120,15 @@ rotas `GET /contratos/{contrato}/encerramento?fim=` (prévia JSON), `POST /contr
 `em_curso`); contrato encerrado: `ativo=false`, `data_fim=fim`. Calculadora: `devidos()` com `hoje` distante e
 `dataFim` lista todos os períodos até o fim. Sem migração. TDD; exemplo de teste: hoje 15/10/2026, contrato mensal
 pré-pago desde 01/08 — set/vencida mantém; out (01–31/10, vence 20/10) com fim 18/10 → 143,84; nov cancelada.
+
+## T17.12 — Corrigir/desfazer baixa com senha e auditoria (desenho aprovado pelo usuário em 2026-10-10)
+**Relato:** "Dei baixa na data errada, não tem como corrigir." Sugestão do usuário: permitir a correção pedindo a
+senha e registrando em auditoria a alteração ou exclusão.
+**Decisões:** (1) Cobrança paga ganha **"Corrigir pagamento"** (troca `pago_em`, até hoje) e **"Desfazer baixa"**
+(volta a pendente, `pago_em` nulo), na própria linha, com **senha** (`current_password`, rota com limite de tentativas)
+e **motivo obrigatório**. (2) Tabela nova **`auditorias`** só de inclusão: usuário, ação, alvo (cobrança/contrato),
+resumo legível, antes/depois (JSON), motivo, IP, data. (3) Registra **todas as ações sensíveis**: corrigir/desfazer
+baixa (pedem senha) e, só registrando, cancelar e editar cobrança, encerrar, recomeçar e corrigir contrato.
+(4) Histórico **na linha da cobrança** ("Pagamento corrigido em 10/10/2026 (antes: 17/06/2026)") e **tela
+"Auditoria"** no menu com filtro por período. (5) Recibo pago já enviado: a linha avisa que o cliente recebeu a data
+antiga. Efeito conhecido: o "recebido" (caixa, por `pago_em`) muda de mês ao corrigir — esperado.

@@ -7,6 +7,7 @@ use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\ContratoRequest;
+use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\ContratoItem;
@@ -19,6 +20,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -147,6 +149,11 @@ class ContratoController extends Controller
 
         DB::transaction(function () use ($registro, $dados, $request, $corrigir) {
             if ($corrigir) {
+                Auditoria::registrar($request, 'contrato.corrigido', $registro, 'Contrato corrigido (antes: início '
+                    .$registro->data_inicio->format('d/m/Y').', '.mb_strtolower($registro->periodicidade->rotulo())
+                    .', '.mb_strtolower($registro->modalidade->rotulo()).')',
+                    $registro->only(['data_inicio', 'periodicidade', 'modalidade']),
+                    Arr::only($dados, ['data_inicio', 'periodicidade', 'modalidade']));
                 $registro->cobrancas()->where('status', StatusCobranca::Pendente)->update(['status' => StatusCobranca::Cancelada]);
                 // Canceladas saem do contrato: o índice único (contrato, início do período) bloquearia um período novo
                 // que comece no mesmo dia, e o gerador o pularia achando que já existe.
@@ -218,7 +225,10 @@ class ContratoController extends Controller
         }
 
         [$fim, $proporcional] = $this->dadosDoEncerramento($request, $registro);
-        $encerrador->encerrar($registro, $fim, $proporcional, CarbonImmutable::today());
+        DB::transaction(function () use ($encerrador, $registro, $fim, $proporcional, $request) {
+            $encerrador->encerrar($registro, $fim, $proporcional, CarbonImmutable::today());
+            $this->registrarEncerramento($request, $registro, $fim);
+        });
 
         return redirect("/contratos/{$registro->id}/edit")
             ->with('sucesso', $fim->gt(CarbonImmutable::today())
@@ -250,14 +260,24 @@ class ContratoController extends Controller
 
         $novo = DB::transaction(function () use ($request, $registro, $dados, $inicio, $encerrador) {
             $encerrador->encerrar($registro, $inicio->subDay(), $request->input('em_curso') !== 'cancelar', CarbonImmutable::today());
+            $this->registrarEncerramento($request, $registro, $inicio->subDay());
             $novo = $request->user()->contratos()->create(array_merge($dados, ['ativo' => true]));
             $novo->itens()->createMany($request->itensDoContrato());
+            Auditoria::registrar($request, 'contrato.recomecado', $registro,
+                "Contrato recomeçado: novo contrato nº {$novo->id} a partir de ".$inicio->format('d/m/Y'));
 
             return $novo;
         });
 
         return redirect("/contratos/{$novo->id}/edit")->with('sucesso', 'Contrato anterior termina em '
             .$inicio->subDay()->format('d/m/Y').'. Este é o contrato novo, a partir de '.$inicio->format('d/m/Y').'.');
+    }
+
+    private function registrarEncerramento(Request $request, Contrato $contrato, CarbonImmutable $fim): void
+    {
+        Auditoria::registrar($request, 'contrato.encerrado', $contrato, $fim->gt(CarbonImmutable::today())
+            ? 'Encerramento agendado para '.$fim->format('d/m/Y')
+            : 'Contrato encerrado em '.$fim->format('d/m/Y'), null, ['data_fim' => $fim->toDateString(), 'ultimo_periodo' => $contrato->ultimo_periodo]);
     }
 
     /** @return array{0: CarbonImmutable, 1: bool} data de fim e se o período em curso fica proporcional */

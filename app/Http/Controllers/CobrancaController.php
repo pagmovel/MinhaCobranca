@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\CobrancaRequest;
 use App\Http\Requests\PagamentoRequest;
+use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
 use App\Services\EmissorDeRecibos;
@@ -38,7 +39,7 @@ class CobrancaController extends Controller
         $mes = CarbonImmutable::createFromFormat('Y-m-d', ($filtros['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
 
         $status = $filtros['status'] ?? null;
-        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo'])->orderBy('vencimento')->orderBy('id');
+        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo', 'auditorias'])->orderBy('vencimento')->orderBy('id');
 
         // "Vencendo hoje" e "Vencidas" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
         if (! in_array($status, ['vence_hoje', 'vencida'], true)) {
@@ -147,8 +148,13 @@ class CobrancaController extends Controller
             $dados = Arr::except($dados, ['cliente_id', 'periodo_inicio', 'periodo_fim']);
         }
 
-        DB::transaction(function () use ($registro, $dados, $emissor, $request) {
+        $antes = ['valor_centavos' => $registro->valor_centavos, 'vencimento' => $registro->vencimento->toDateString()];
+        $resumo = 'Cobrança editada (antes: R$ '.Dinheiro::formatar($registro->valor_centavos).', vence '.$registro->vencimento->format('d/m/Y').')';
+
+        DB::transaction(function () use ($registro, $dados, $emissor, $request, $antes, $resumo) {
             $registro->update($dados);
+            Auditoria::registrar($request, 'cobranca.editada', $registro, $resumo, $antes,
+                ['valor_centavos' => $registro->valor_centavos, 'vencimento' => $registro->vencimento->toDateString()]);
             $registro->itens()->delete();
             $registro->itens()->createMany($request->itensDaCobranca());
             $emissor->refazer($registro->recibo, $registro->wasChanged('cliente_id'));
@@ -179,10 +185,77 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pendentes podem ser canceladas.');
         }
 
-        $registro->status = StatusCobranca::Cancelada;
-        $registro->save();
+        DB::transaction(function () use ($registro, $request) {
+            $registro->status = StatusCobranca::Cancelada;
+            $registro->save();
+            Auditoria::registrar($request, 'cobranca.cancelada', $registro, 'Cobrança cancelada (R$ '
+                .Dinheiro::formatar($registro->valor_centavos).', vence '.$registro->vencimento->format('d/m/Y').')');
+        });
 
         return back()->with('sucesso', 'Cobrança cancelada. O recibo passa a sair como cancelado.');
+    }
+
+    /** Baixa com a data errada: troca a data do pagamento (senha + motivo, registrado na auditoria). */
+    public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $dados = $request->validate(['pago_em' => ['required', 'date', 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
+
+        if ($registro->status !== StatusCobranca::Paga) {
+            return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
+        }
+
+        $antes = $registro->pago_em;
+
+        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+            $registro->pago_em = $dados['pago_em'];
+            $registro->save();
+            Auditoria::registrar($request, 'pagamento.corrigido', $registro, 'Pagamento corrigido (antes: '.$antes->format('d/m/Y').')',
+                ['pago_em' => $antes->toDateString()], ['pago_em' => $registro->pago_em->toDateString()], trim($dados['motivo']));
+        });
+
+        return back()->with('sucesso', 'Data do pagamento corrigida. Se o recibo pago já foi enviado, envie de novo: ele sai com a data nova.');
+    }
+
+    /** Baixa na cobrança errada: volta a pendente (senha + motivo, registrado na auditoria). */
+    public function desfazerBaixa(Request $request, int $cobranca): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $dados = $request->validate($this->confirmacao(), $this->mensagensDeConfirmacao());
+
+        if ($registro->status !== StatusCobranca::Paga) {
+            return back()->with('erro', 'Só cobranças pagas têm a baixa desfeita.');
+        }
+
+        $antes = $registro->pago_em;
+
+        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+            $registro->status = StatusCobranca::Pendente;
+            $registro->pago_em = null;
+            $registro->save();
+            Auditoria::registrar($request, 'baixa.desfeita', $registro, 'Baixa desfeita (estava paga em '.$antes->format('d/m/Y').')',
+                ['status' => 'paga', 'pago_em' => $antes->toDateString()], ['status' => 'pendente', 'pago_em' => null], trim($dados['motivo']));
+        });
+
+        return back()->with('sucesso', 'Baixa desfeita: a cobrança voltou a ficar em aberto.');
+    }
+
+    /** Senha de quem está logado + motivo: a mudança fica registrada em nome da pessoa e explicada. */
+    private function confirmacao(): array
+    {
+        return [
+            'senha' => ['required', 'string', 'current_password'],
+            'motivo' => ['required', 'string', 'max:500'],
+        ];
+    }
+
+    private function mensagensDeConfirmacao(): array
+    {
+        return [
+            'senha.required' => 'Digite sua senha para confirmar.',
+            'senha.current_password' => 'Senha incorreta.',
+            'motivo.required' => 'Escreva o motivo da correção.',
+        ];
     }
 
     public function pagar(Request $request, int $cobranca): RedirectResponse

@@ -71,6 +71,11 @@ class Cobranca extends Model
         return $this->hasMany(CobrancaItem::class)->orderBy('id');
     }
 
+    public function auditorias(): HasMany
+    {
+        return $this->hasMany(Auditoria::class, 'alvo_id')->where('alvo_tipo', 'cobranca')->orderBy('id');
+    }
+
     public function situacao(CarbonImmutable $hoje): string
     {
         return match ($this->status) {
@@ -102,6 +107,10 @@ class Cobranca extends Model
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,
             'editavel' => $this->editavel(),
+            // Só quando a lista carregou as auditorias (evita uma consulta por linha).
+            'historico' => $this->relationLoaded('auditorias')
+                ? $this->auditorias->map(fn (Auditoria $registro) => $registro->created_at->format('d/m/Y').' · '.$registro->resumo)->all()
+                : [],
             'pagamento' => [
                 'forma_pagamento' => $this->forma_pagamento->value,
                 'chave_pix_id' => $this->chave_pix_id ?? '',
