@@ -37,6 +37,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/perfil/chaves-pix', [ChavePixController::class, 'store']);
     Route::put('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'update']);
     Route::delete('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'destroy']);
+    Route::post('/perfil/feriados/ajustar', [FeriadoController::class, 'ajustar']);
     Route::post('/perfil/feriados', [FeriadoController::class, 'store']);
     Route::put('/perfil/feriados/{feriado}', [FeriadoController::class, 'update']);
     Route::delete('/perfil/feriados/{feriado}', [FeriadoController::class, 'destroy']);

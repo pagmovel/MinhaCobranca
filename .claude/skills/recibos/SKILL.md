@@ -821,6 +821,13 @@ o relatório mostra a parte que existe.
     `after()` confere o dia no mês com 2024 como ano de referência (29/02 aceito, 31/02 recusado); data única com
     `date_format:Y-m-d`; feriado alheio dá 404 no `authorize()`. O perfil recebe `feriados` (com `quando` pronto para a
     tela) e `feriadosNacionais` do ano corrente (só leitura).
+  - **Ajuste das cobranças já geradas** (`App\Services\AjusteDeVencimentos`, padrão 9): `previa()` e `ajustar()` usam a
+    **mesma** consulta (contrato, pendente, `enviado_em` nulo, vencimento em dia não útil). `POST /perfil/feriados/ajustar`
+    recebe os `ids` da prévia e só ajusta os que **ainda** estão na lista: id alheio, enviado, pago, avulso ou já ajustado
+    é ignorado (prévia velha e clique duplo seguros; o 2º clique responde "Nenhuma cobrança precisava de ajuste.").
+    Ajustar = vencimento novo + `EmissorDeRecibos::refazer` (mesmo número), numa transação. Boleto: ajusta e avisa
+    "Tem boleto: confira a data no banco" (D3). A prévia é prop do perfil (`vencimentosParaAjustar`), recalculada a cada
+    abertura — cadastrar feriado volta ao perfil com ela atualizada. Sem auditoria (P1 do plano, padrão "não").
   - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
     10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
     de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.

@@ -7,6 +7,7 @@ use App\Enums\TipoChavePix;
 use App\Http\Requests\PerfilRequest;
 use App\Models\ChavePix;
 use App\Models\Feriado;
+use App\Services\AjusteDeVencimentos;
 use App\Support\DiasUteis;
 use App\Support\Ufs;
 use Carbon\CarbonImmutable;
@@ -25,7 +26,7 @@ class PerfilController extends Controller
         'dias_antecedencia',
     ];
 
-    public function edit(Request $request): Response
+    public function edit(Request $request, AjusteDeVencimentos $ajuste): Response
     {
         $usuario = $request->user();
         $ano = CarbonImmutable::today()->year;
@@ -56,6 +57,8 @@ class PerfilController extends Controller
             'feriadosNacionais' => collect((new DiasUteis)->nacionais($ano))
                 ->map(fn (string $nome, string $data) => ['data' => CarbonImmutable::parse($data)->format('d/m'), 'descricao' => $nome])
                 ->values(),
+            // Recalculada a cada abertura: cadastrar ou excluir feriado volta para cá e a prévia já vem atualizada.
+            'vencimentosParaAjustar' => $ajuste->previa($usuario),
             'ufs' => Ufs::TODAS,
         ]);
     }
