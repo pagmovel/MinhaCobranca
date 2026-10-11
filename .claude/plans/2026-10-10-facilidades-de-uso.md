@@ -25,7 +25,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | Tarefa | O quê | Estado |
 |---|---|---|
 | T17.1 | Filtro de cobranças: Vencendo hoje, Vencidas (ignoram o mês), A vencer; aplica ao escolher | testada (suíte 255/255; navegador ok) — commit `4e7fb2d` |
-| T17.2 | Base: `enviarJson()` (CSRF, 422 → erros), `Modal.vue` acessível (foco preso, Esc, volta o foco), animações base em `app.css` | pendente |
+| T17.2 | Base: `enviarJson()` (CSRF, 422 → erros), `Modal.vue` acessível (foco preso, Esc, volta o foco), animações base em `app.css` | testada (JS 16/16; build ok) |
 | T17.3 | Itens: catálogo ao focar, "Ver catálogo" (modal com busca), "Cadastrar «texto»" (modal → `POST /produtos-servicos` JSON), foco no preço, "Incluir outro" | pendente |
 | T17.4 | Cliente sem sair da tela: "Cadastrar cliente «texto»" no contrato e na cobrança (modal com CNPJ/CEP → `POST /clientes` JSON) | pendente |
 | T17.5 | Chave PIX sem sair da tela: "Nova chave PIX" na forma de pagamento (modal → `POST /perfil/chaves-pix` JSON) | pendente |

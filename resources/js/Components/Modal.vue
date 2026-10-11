@@ -1,0 +1,84 @@
+<script setup>
+import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
+
+/**
+ * Janela por cima do formulário (cadastro rápido, catálogo). O formulário de fundo fica intacto.
+ * Fecha com Esc ou pelo botão; clique fora não fecha (não perder o que foi digitado por acidente).
+ */
+const props = defineProps({
+    aberto: { type: Boolean, required: true },
+    titulo: { type: String, required: true },
+    largura: { type: String, default: 'max-w-lg' },
+});
+
+const emit = defineEmits(['fechar']);
+
+const painel = ref(null);
+const idTitulo = `${useId()}-titulo`;
+let focoAnterior = null;
+
+const focaveis = () => [...(painel.value?.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+) ?? [])];
+
+function teclado(evento) {
+    if (evento.key === 'Escape') {
+        evento.stopPropagation();
+        emit('fechar');
+    } else if (evento.key === 'Tab') {
+        // Foco preso dentro da janela enquanto ela está aberta.
+        const lista = focaveis();
+        if (!lista.length) {
+            return;
+        }
+        const primeiro = lista[0];
+        const ultimo = lista[lista.length - 1];
+        if (evento.shiftKey && document.activeElement === primeiro) {
+            evento.preventDefault();
+            ultimo.focus();
+        } else if (!evento.shiftKey && document.activeElement === ultimo) {
+            evento.preventDefault();
+            primeiro.focus();
+        }
+    }
+}
+
+watch(() => props.aberto, async (aberto) => {
+    if (aberto) {
+        focoAnterior = document.activeElement;
+        document.body.style.overflow = 'hidden';
+        await nextTick();
+        (painel.value?.querySelector('[autofocus]') ?? focaveis()[0])?.focus();
+    } else {
+        document.body.style.overflow = '';
+        focoAnterior?.focus?.();
+    }
+});
+
+onBeforeUnmount(() => {
+    document.body.style.overflow = '';
+});
+</script>
+
+<template>
+    <Teleport to="body">
+        <Transition name="modal">
+            <div v-if="aberto" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-grafite/40 px-4 py-10" @keydown="teclado">
+                <div
+                    ref="painel"
+                    role="dialog"
+                    aria-modal="true"
+                    :aria-labelledby="idTitulo"
+                    class="w-full border border-linha bg-white p-6 shadow-lg"
+                    :class="largura"
+                >
+                    <div class="mb-4 flex items-start justify-between gap-4">
+                        <h2 :id="idTitulo" class="text-lg font-semibold">{{ titulo }}</h2>
+                        <button type="button" class="botao-secundario px-2 py-1" aria-label="Fechar" @click="emit('fechar')">✕</button>
+                    </div>
+                    <slot />
+                </div>
+            </div>
+        </Transition>
+    </Teleport>
+</template>
