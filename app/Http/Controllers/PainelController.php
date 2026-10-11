@@ -12,6 +12,7 @@ use App\Support\Dinheiro;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -42,6 +43,9 @@ class PainelController extends Controller
             'diasAntecedencia' => $usuario->dias_antecedencia,
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
+            'diasAviso' => $usuario->dias_aviso,
+            'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
+            'prestadorNome' => $usuario->nome_fantasia ?: $usuario->name,
             'resumo' => [
                 'previsto' => Dinheiro::formatar((int) $doMes()->sum('valor_centavos')),
                 // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento.
@@ -55,10 +59,15 @@ class PainelController extends Controller
     public function dados(Request $request): JsonResponse
     {
         $filtros = $request->validate([
-            'lista' => ['required', Rule::in(['para_enviar', 'aguardando', 'recebidas'])],
+            'lista' => ['required', Rule::in(['para_enviar', 'aguardando', 'recebidas', 'vencendo'])],
             ...BlocoDePaginas::regras([10, 25, 50]),
         ]);
         $hoje = CarbonImmutable::today();
+
+        if ($filtros['lista'] === 'vencendo') {
+            return $this->dadosDeVencendo($request, $hoje, (int) ($filtros['pagina'] ?? 1), (int) ($filtros['por_pagina'] ?? 10));
+        }
+
         $consulta = $request->user()->cobrancas();
 
         match ($filtros['lista']) {
@@ -79,6 +88,43 @@ class PainelController extends Controller
         return response()->json([
             'linhas' => $bloco['itens']->map(fn (Cobranca $cobranca) => $cobranca->paraLista($hoje))->all(),
             'total_geral' => ['quantidade' => $bloco['pagina']['total'], 'soma_centavos' => $soma],
+            'pagina' => $bloco['pagina'],
+        ]);
+    }
+
+    /** Pendentes vencendo nos próximos "dias_aviso" dias, agrupadas por cliente (a forma rompe o padrão 1 linha = 1 cobrança). */
+    private function dadosDeVencendo(Request $request, CarbonImmutable $hoje, int $pagina, int $porPagina): JsonResponse
+    {
+        $usuario = $request->user();
+        $fim = $hoje->addDays($usuario->dias_aviso);
+
+        $grupos = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)
+            ->whereBetween('vencimento', [$hoje, $fim])
+            ->with('cliente:id,nome,apelido')
+            ->orderBy('vencimento')
+            ->get()
+            ->groupBy('cliente_id')
+            ->map(function (Collection $cobrancas) {
+                $centavos = (int) $cobrancas->sum('valor_centavos');
+
+                return [
+                    'cliente_id' => $cobrancas->first()->cliente_id,
+                    'cliente' => $cobrancas->first()->cliente->exibicao(),
+                    'quantidade' => $cobrancas->count(),
+                    'vencimentos' => $cobrancas->pluck('vencimento')->unique()->sort()->map(fn ($data) => $data->format('d/m/Y'))->values()->all(),
+                    'total_centavos' => $centavos,
+                    'total' => Dinheiro::formatar($centavos),
+                    'avisado_em' => $cobrancas->pluck('avisado_em')->filter()->sort()->last()?->format('d/m'),
+                    'ids' => $cobrancas->pluck('id')->all(),
+                ];
+            })
+            ->values();
+
+        $bloco = BlocoDePaginas::de($grupos, $pagina, $porPagina);
+
+        return response()->json([
+            'linhas' => $bloco['itens'],
+            'total_geral' => ['quantidade' => $grupos->count(), 'soma_centavos' => (int) $grupos->sum('total_centavos')],
             'pagina' => $bloco['pagina'],
         ]);
     }

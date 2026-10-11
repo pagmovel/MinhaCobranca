@@ -108,4 +108,31 @@ class AvisoWhatsappTest extends TestCase
         $this->assertNull($paga->fresh()->avisado_em);
         $this->assertNull($alheia->fresh()->avisado_em);
     }
+
+    public function test_painel_vencendo_agrupa_por_cliente_dentro_da_janela_de_dias(): void
+    {
+        $this->usuario->forceFill(['dias_aviso' => 5])->save();
+        $daJanela = $this->cobranca(['vencimento' => '2026-10-14', 'valor_centavos' => 8990]); // hoje + 3
+        $this->cobranca(['vencimento' => '2026-10-20']); // hoje + 9, fora dos 5 dias
+        $this->cobranca(['vencimento' => '2026-10-13', 'status' => StatusCobranca::Paga, 'pago_em' => '2026-10-01']);
+
+        $this->getJson('/painel/dados?lista=vencendo')->assertOk()->assertJson([
+            'linhas' => [[
+                'cliente' => $this->cliente->exibicao(),
+                'quantidade' => 1,
+                'vencimentos' => ['14/10/2026'],
+                'total_centavos' => 8990,
+                'ids' => [$daJanela->id],
+            ]],
+            'total_geral' => ['quantidade' => 1, 'soma_centavos' => 8990],
+        ]);
+    }
+
+    public function test_painel_vencendo_mostra_avisado_em_mais_recente_do_grupo(): void
+    {
+        $this->cobranca(['vencimento' => '2026-10-13', 'avisado_em' => '2026-10-05 10:00:00']);
+        $this->cobranca(['vencimento' => '2026-10-14', 'avisado_em' => '2026-10-08 10:00:00']);
+
+        $this->getJson('/painel/dados?lista=vencendo')->assertJsonPath('linhas.0.avisado_em', '08/10');
+    }
 }
