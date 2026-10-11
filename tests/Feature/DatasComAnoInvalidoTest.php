@@ -39,7 +39,16 @@ class DatasComAnoInvalidoTest extends TestCase
         ];
     }
 
-    #[DataProvider('anosInvalidos')]
+    /** @return array<string, array{string}> data (Y-m-d) inválida — só o que os testes abaixo usam. */
+    public static function datasInvalidas(): array
+    {
+        return [
+            'ano com 5 dígitos' => ['72026-08-01'],
+            'ano 0000' => ['0000-08-01'],
+        ];
+    }
+
+    #[DataProvider('datasInvalidas')]
     public function test_baixa_e_correcao_do_pagamento(string $data): void
     {
         $pendente = Cobranca::factory()->for($this->usuario)->create();
@@ -53,14 +62,14 @@ class DatasComAnoInvalidoTest extends TestCase
         $this->assertSame('2026-10-01', $paga->fresh()->pago_em->toDateString());
     }
 
-    #[DataProvider('anosInvalidos')]
+    #[DataProvider('datasInvalidas')]
     public function test_cobranca_avulsa(string $data): void
     {
         $this->post('/cobrancas', ['periodo_inicio' => $data, 'periodo_fim' => $data, 'vencimento' => $data])
             ->assertSessionHasErrors(['periodo_inicio', 'vencimento']);
     }
 
-    #[DataProvider('anosInvalidos')]
+    #[DataProvider('datasInvalidas')]
     public function test_contrato_inicio_retroativos_e_encerramento(string $data): void
     {
         $this->post('/contratos', ['data_inicio' => $data])->assertSessionHasErrors('data_inicio');
@@ -72,7 +81,7 @@ class DatasComAnoInvalidoTest extends TestCase
         $this->assertNull($contrato->fresh()->data_fim);
     }
 
-    #[DataProvider('anosInvalidos')]
+    #[DataProvider('datasInvalidas')]
     public function test_feriado_de_data_unica_e_proximo_dia_util(string $data): void
     {
         $this->post('/perfil/feriados', ['descricao' => 'X', 'tipo' => 'unico', 'data' => $data])->assertSessionHasErrors('data');
