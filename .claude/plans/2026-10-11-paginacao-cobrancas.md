@@ -56,7 +56,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T19.1 | `GET /cobrancas/dados` + serviço `ListaDeCobrancas` (lista leve, totais, bloco) + `valor_centavos` em `paraLista` | testada (RED 8× 404 → GREEN; Cobrancas 65/65; JSON sem sessão = 401) |
 | T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | testada (RED: as 2 asserções da página falharam como esperado → GREEN; suíte inteira 340/340) |
 | T19.3 | JS puro: `paginacao.js` (páginas visíveis, chave do cache, fatiar bloco) e `buscarJson` em `http.js` | testada (RED: módulo e export inexistentes → GREEN; JS 32/32) |
-| T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | pendente |
+| T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | concluída (build ok; JS 32/32; PHP 340/340); conferência no navegador na T19.5 |
 | T19.5 | Skill, revisão final, conferência no navegador (com autorização), validação do usuário | pendente |
 
 ## Registro de execução (decisões tomadas durante a execução)
@@ -72,6 +72,9 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
   contêm listas de dados". Depois da validação desta fase, abrir uma fase própria para levar o mesmo padrão às outras
   listas (ajax, cache por bloco, paginador acima e abaixo, totais quando houver valor). Entra junto com a T17.18
   (clientes e contratos em tabela).
+- **Pegadinha (T19.4):** ao copiar o rodapé do plano por script, o filtro `'<tfoot' in bloco` pegou o bloco do
+  esqueleto, que só cita `<tfoot>` num comentário. O build passou com o template errado. Corrigido escolhendo o bloco
+  que **começa** com `<tfoot`, conferindo `count('<tfoot') == 1` e restaurando o arquivo do commit antes de refazer.
 - **Rótulos do rodapé no plural e em texto** ("Vencidas", "Previstas"…), não o carimbo rotacionado: a especificação
   diz "rótulo do carimbo", mas uma pilha de carimbos no rodapé pesa demais. Se o usuário preferir o carimbo, a troca
   é só no template.
