@@ -174,6 +174,16 @@ class ContratoController extends Controller
         $registro = $request->user()->contratos()->findOrFail($contrato);
         $dados = $request->dadosContrato();
 
+        // O plano de encerramento (cancelar período depois do fim, ajustar o em curso à proporcional, emitir os que
+        // faltam) só roda em `/encerrar`. Reagendar por aqui deixaria a cobrança já proporcional (ajustada para o fim
+        // antigo) com o valor errado, sem aviso nenhum — mudar o fim de um encerramento já agendado passa por lá.
+        if ($registro->ativo && $registro->ultimo_periodo !== 'inteiro' && $dados['data_fim'] !== $registro->data_fim?->toDateString()) {
+            return back()->withErrors([
+                'data_fim' => 'O encerramento deste contrato já está agendado para '.$registro->data_fim->format('d/m/Y')
+                    .'. Para mudar, use "Encerrar contrato" de novo.',
+            ]);
+        }
+
         $mudaPeriodos = $registro->periodicidade->value !== $dados['periodicidade']
             || $registro->data_inicio->toDateString() !== CarbonImmutable::parse($dados['data_inicio'])->toDateString()
             || $registro->modalidade->value !== $dados['modalidade'];

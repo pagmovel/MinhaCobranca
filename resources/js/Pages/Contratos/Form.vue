@@ -148,7 +148,10 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
                 </p>
             </Campo>
             <Campo id="data_fim" rotulo="Fim do contrato (opcional)" :erro="form.errors.data_fim" class="sm:col-span-3">
-                <input id="data_fim" v-model="form.data_fim" type="date" class="entrada">
+                <input id="data_fim" v-model="form.data_fim" type="date" class="entrada" :disabled="contrato?.encerramento_agendado">
+                <p v-if="contrato?.encerramento_agendado" class="mt-1 text-xs text-grafite/70">
+                    Encerramento já agendado: para mudar a data, use "Encerrar contrato" abaixo.
+                </p>
             </Campo>
             <PerguntaRetroativos
                 v-if="perguntaRetroativos && !(mudaPeriodos && modo === 'recomecar')"

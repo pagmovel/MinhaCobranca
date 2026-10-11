@@ -89,6 +89,27 @@ class EncerramentoContratoTest extends TestCase
         $this->assertSame([true, '2026-10-18', 'proporcional'], [$contrato->ativo, $contrato->data_fim->toDateString(), $contrato->ultimo_periodo]);
     }
 
+    /**
+     * O campo "Fim do contrato" do formulário comum não passa pelo plano de encerramento (cancelar, ajustar a
+     * proporcional etc.) — só `/encerrar` faz isso. Reagendar por ali deixaria a cobrança já proporcional (ajustada
+     * para o fim antigo) parada no valor errado, sem nenhum aviso.
+     */
+    public function test_editar_outro_campo_nao_pode_reagendar_um_encerramento_ja_agendado(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18', 'em_curso' => 'proporcional'])
+            ->assertRedirect("/contratos/{$contrato->id}/edit");
+        $contrato->refresh();
+        $this->assertSame(['2026-10-18', 'proporcional'], [$contrato->data_fim->toDateString(), $contrato->ultimo_periodo]);
+
+        $this->put("/contratos/{$contrato->id}", $this->dadosDoContrato(['data_fim' => '2026-11-18']))
+            ->assertSessionHasErrors('data_fim');
+
+        $contrato->refresh();
+        $this->assertSame(['2026-10-18', 'proporcional'], [$contrato->data_fim->toDateString(), $contrato->ultimo_periodo],
+            'editar outro campo não pode reagendar um encerramento já agendado');
+    }
+
     public function test_em_curso_ja_enviada_cancela_a_original_e_emite_avulsa_proporcional(): void
     {
         $contrato = $this->contratoComCobrancas();
