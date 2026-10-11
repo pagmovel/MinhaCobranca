@@ -1583,6 +1583,26 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
    resources/js/*.test.js`, `npm run build` (só quando mexeu em JS/Vue), commit por item (mensagem `fix: ... (T23.12,
    minor N)`), ledger (`Task 12 (T23.12): ...` ao final de todos, ou uma linha por commit).
 
+**T23.12: concluída e testada (2026-10-11).** 5 de 6 Minor corrigidos com TDD, 1 documentado como ruling aceito:
+1. Fixed — `onHttpException` (retorna `false`, suprime o diálogo do Inertia) + `onNetworkError` em `Feriados.vue`.
+   Sem teste automatizado (projeto não tem harness de teste para `.vue`); verificado por `npm run build`.
+2. Fixed — `Math.max(0, pendentes.value - 1)` em `contarPedido`. Teste novo RED(-1)→GREEN.
+3. Fixed — `criarIndicadorComAtraso` (atraso de 250 ms para mostrar, esconde na hora) em `carregando.js`, usado em
+   `IndicadorDeCarregamento.vue` via `watch`. 3 testes novos RED→GREEN.
+4. Fixed — `AjusteDeVencimentos::quantas()` + `baseQuery()` compartilhada (sem `with` de cliente/recibo).
+   `PainelController` usa `quantas()`. Teste novo prova paridade com `previa()` e menos consultas.
+5. Fixed — `EmissorDeRecibos::refazerEmLote` lança `LogicException` se o lote tiver mais de um `user_id`.
+   `EmissorDeRecibosTest` criado.
+6. Ruling (não corrigido) — limite de 100 feriados sem lock contra cliques simultâneos fica como risco aceito:
+   botão já desabilita durante o próprio pedido (cobre o caso comum), o limite é preferência de UX e não a defesa
+   contra calendário sem dia útil (essa é o `LogicException` do `proximoDiaUtil`, independente), e a correção de
+   verdade (transação + `lockForUpdate`) é mais complexa do que o risco remanescente justifica. Documentado em
+   `.claude/skills/recibos/SKILL.md`. Custo se errado: usuário passa de 100 por 1-2, sem crash e sem dado errado.
+
+Suíte após T23.12: PHP 435/435, JS 60/60, build ok, Pint ok. Commits: `c0aed13` (minors 1-2), minor 3, minor 4,
+minor 5 (`EmissorDeRecibosTest` criado) e o ruling do minor 6 documentado na skill — ver `git log` para os hashes
+exatos de cada um.
+
 ### Passo B — Revisão final de branch inteira (Fases 17–23, pré-merge)
 - `git merge-base main HEAD` para achar o ponto de partida real da branch `feat/modulo-cobranca-catalogo`.
 - Gerar o pacote de revisão com `review-package` (script do superpowers) para o diff `merge-base..HEAD`.
