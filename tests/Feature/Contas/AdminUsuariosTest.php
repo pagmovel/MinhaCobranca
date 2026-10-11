@@ -26,10 +26,34 @@ class AdminUsuariosTest extends TestCase
         $this->actingAs($admin)->get('/admin/usuarios')
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Usuarios')
-                ->has('usuarios', 3)
-                ->where('usuarios.0.nome', 'Zé Pendente')
-                ->where('usuarios.0.status', 'pendente')
+                ->missing('usuarios')
+                ->where('filtros', ['q' => '', 'status' => '', 'pagina' => 1, 'por_pagina' => 25])
                 ->where('pendentes', 1));
+        $this->getJson('/admin/usuarios/dados')->assertOk()
+            ->assertJsonCount(3, 'linhas')
+            ->assertJsonPath('linhas.0.nome', 'Zé Pendente')
+            ->assertJsonPath('linhas.0.status', 'pendente');
+    }
+
+    public function test_dados_pendentes_primeiro_com_busca_situacao_e_eu(): void
+    {
+        $admin = User::factory()->admin()->create(['name' => 'Admin']);
+        User::factory()->create(['name' => 'Ana Liberada', 'email' => 'ana.liberada@exemplo.test']);
+        User::factory()->pendente()->create(['name' => 'Zé Pendente']);
+        User::factory()->bloqueado()->create(['name' => 'Bia Bloqueada']);
+        $nomes = fn (string $consulta = '') => array_column($this->actingAs($admin)->getJson('/admin/usuarios/dados'.$consulta)->assertOk()->json('linhas'), 'nome');
+
+        $this->assertSame(['Zé Pendente', 'Admin', 'Ana Liberada', 'Bia Bloqueada'], $nomes());
+        $this->assertSame(['Ana Liberada'], $nomes('?q=ANA.LIBERADA@'));
+        $this->assertSame(['Ana Liberada'], $nomes('?q=liberada'));
+        $this->assertSame(['Bia Bloqueada'], $nomes('?status=bloqueado'));
+        $this->getJson('/admin/usuarios/dados')->assertJsonPath('linhas.1.eu', true)->assertJsonPath('linhas.0.eu', false);
+        $this->getJson('/admin/usuarios/dados?status=talvez')->assertUnprocessable()->assertJsonValidationErrors('status');
+    }
+
+    public function test_dados_so_para_admin(): void
+    {
+        $this->actingAs(User::factory()->create())->getJson('/admin/usuarios/dados')->assertForbidden();
     }
 
     public function test_admin_aprova_bloqueia_e_reativa(): void
