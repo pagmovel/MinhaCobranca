@@ -33,7 +33,8 @@ function valor(coluna, conteudo) {
         return '';
     }
 
-    return coluna.tipo === 'dinheiro' ? `R$ ${formatarCentavos(conteudo)}` : conteudo;
+    // Espaço inseparável: no celular a coluna estreita quebrava "R$" de um lado e o número do outro.
+    return coluna.tipo === 'dinheiro' ? `R$\u00a0${formatarCentavos(conteudo)}` : conteudo;
 }
 </script>
 

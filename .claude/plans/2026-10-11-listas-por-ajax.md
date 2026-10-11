@@ -68,7 +68,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T20.7 | Usuários (admin) em tabela por ajax, filtros, ação principal pela situação | testada (RED: módulo inexistente, 3 falhas PHP → GREEN; JS 44/44, suíte 358/358, build ok) |
 | T20.8 | Painel: três listas por ajax | testada (RED: 5 falhas → GREEN; suíte 360/360, build ok) |
 | T20.9 | Relatórios por ajax | testada (RED: 10 falhas → GREEN; CSV byte a byte igual; suíte 362/362, JS 44/44, build ok) |
-| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | concluída: teste "só lê" (22 casos, provado com defeito de propósito), limpeza, skill, revisão final (0 Critical; 1 Important + 1 subido corrigidos com TDD; 10 Minor adiados); suítes PHP 384/384, JS 46/46, build ok. **Falta:** conferência visual (pede autorização) e validação do usuário |
+| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | concluída: teste "só lê" (22 casos, provado com defeito de propósito), limpeza, skill, revisão final (0 Critical; 1 Important + 1 subido corrigidos com TDD; 10 Minor adiados); suítes PHP 384/384, JS 46/46, build ok. **Testada:** conferência visual feita em 2026-10-11 (autorizada); 3 defeitos corrigidos, PHP 385/385, JS 46/46, build ok. **Falta:** validação do usuário e decisão sobre os Minor |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - **Decisões do plano (antes da execução):**
@@ -124,6 +124,34 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
        de 36 meses) — [A VERIFICAR no navegador].
     10. `existentes()` monta um model por cobrança (com 100 contratos de 10 anos, ~12 mil por abertura de Painel);
         `toBase()` resolveria.
+- **Conferência visual (2026-10-11, autorizada: "Sim, autorizo"; usuário SMOKE, Chrome dedicado 9333,
+  `http://recibos.test`; nada de negócio gravado, só sessões e a geração preguiçosa).**
+  - **Conferido e certo:** esqueleto com "Carregando…" na primeira carga (rede atrasada em 2,5 s por
+    `Network.emulateNetworkConditions`); paginador acima e abaixo; Cobranças com 64 linhas: página 3 do bloco em
+    0,07 s **sem pedido novo**, URL com a página, foco no paginador; busca ao digitar = **1 pedido** (Clientes `q=Nacio`,
+    Produtos `nome=SMO`); autosugestão de cliente em Contratos aplica ao escolher (1 pedido); select de situação em
+    Cobranças aplica na hora; "Limpar filtros" aparece e volta ao padrão (Clientes, Cobranças); F5 reabre igual
+    (Clientes com `q`); Painel com contagem e soma no título e sem paginador (nenhuma lista passa de 10); os 4
+    relatórios (1 pedido cada; tabela larga rola dentro do próprio contêiner); `scrollWidth === clientWidth` em 1264 e
+    390 px em todas as telas.
+  - **Defeitos achados e corrigidos:**
+    1. Clientes: "2contratos ativos" sem espaço. O compilador do Vue apaga o texto só de espaço que abre um elemento
+       antes de uma interpolação (`<span> {{ x }}</span>`). Espaço passou para fora do `<span>`. Visto corrigido.
+    2. Relatórios a 390 px: "R$" numa linha e o número na outra. `valor()` usa espaço inseparável (`R$ `).
+       Visto corrigido.
+    3. Auditoria: a regra `date` aceitava o ano de 5 dígitos que o campo do Chrome deixa digitar e lia `72026-08-01`
+       como **2006-08-01** (200 com outro período). Agora `date_format:Y-m-d`; teste
+       `test_ano_com_mais_de_quatro_digitos_e_recusado_e_nao_vira_outra_data` RED (200) → GREEN; PHP 385/385.
+  - **Minor da revisão conferidos:** **9 confirmado** — o `change` do campo de data dispara a cada dígito do ano
+    (0001, 0015, 0150, 1507…): digitar uma data na Auditoria mandou 12 pedidos, que no dev entraram em fila e levaram
+    11–23 s cada (um pedido sozinho: ~5,3 s). Os campos de mês dos relatórios e das cobranças usam o mesmo `@change`.
+    **3 não conferido:** o SMOKE não é admin (`/admin/usuarios` → 403); Usuários fica sem conferência visual.
+  - **Achados novos, fora do escopo da fase (para o usuário decidir):**
+    - Os formulários que **gravam** datas usam a mesma regra `date` (`pago_em` da baixa e da correção, início e fim de
+      contrato, período e vencimento da cobrança): um ano digitado com 5 dígitos pode ser gravado como outra data.
+      Correção: `date_format:Y-m-d`, com teste em cada formulário.
+    - Painel a 390 px: o botão "Enviar" ora fica ao lado do carimbo, ora desce para a linha de baixo, conforme a
+      largura do valor (`LinhaCobranca`, anterior à fase).
 
 ---
 

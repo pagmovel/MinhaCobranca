@@ -6,39 +6,23 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
-### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, segunda compactação)
-**Conferência visual da Fase 20 — AUTORIZADA pelo usuário em 2026-10-11 ("Sim, autorizo").** A autorização vale só
-para esta conferência e foi dada para o escopo abaixo; não estende a outras escritas.
-- **Escopo autorizado:** abrir as telas no Chrome de teste com o usuário SMOKE (id 2). Isso grava sessões no banco de
-  dev (PostgreSQL `207.180.205.211:1`, banco `recibos`, usuário `recibos_app`; **não é produção**) e roda a geração
-  preguiçosa ao abrir Painel e Cobranças (uso normal). **Não dar baixa, não bloquear, não editar nada** — qualquer ação
-  que grave dado de negócio pede autorização à parte.
-- **Telas:** Clientes, Contratos, Produtos e serviços, Auditoria, Usuários (o SMOKE não é admin: [A VERIFICAR] se dá
-  para abrir `/admin/usuarios`; se não, registrar como não conferido), Painel, Relatórios (os 4), e Cobranças de novo
-  (migrou para `usarListaPaginada`).
-- **Em cada tela:** esqueleto na 1ª carga; paginador acima/abaixo (Painel: só embaixo, só com total > 10); troca de
-  página dentro do bloco **sem pedido novo** (contar com `performance.getEntriesByType('resource')` filtrando
-  `/dados`); busca ao digitar = 1 pedido depois de parar (Clientes `q`, Produtos `nome`); "Limpar filtros" aparece e
-  volta ao padrão; F5 reabre igual; `scrollWidth === clientWidth` em 1264 px e em 390 px
-  (`Emulation.setDeviceMetricsOverride`). Conferir os Minor marcados [A VERIFICAR] no plano da Fase 20 (e-mail longo
-  em Usuários a 390 px; campo de data pedindo a cada dígito).
-- **Como (pegadinhas já registradas na skill):** browser-use com `BU_CDP_URL=http://127.0.0.1:9333` (Chrome 114
-  dedicado, `--user-data-dir` no scratchpad; nunca o Chrome do usuário). URL: `http://recibos.test/...` (Laragon; já
-  havia sessão do SMOKE na aba). `goto_url`/`new_tab` estouram 5 s com o PostgreSQL remoto: esperar e ler depois.
-  Antes do print, `cdp("Target.activateTarget", targetId=…)` + `cdp("Page.bringToFront")`; nunca print de página
-  inteira (trava a aba). `js()` não pode devolver promessa. Senha do SMOKE em `scratchpad\smoke-senha.txt` (ler sem
-  imprimir), só se a sessão tiver caído.
-- **Processos de fundo da sessão anterior** (podem ter morrido com a compactação; conferir com `curl`):
-  `php artisan serve --port=8000` e o Chrome headless na 9333. Se o Chrome não responder em
-  `http://127.0.0.1:9333/json/version`, subir de novo como na skill (linha "browser-use (browser-harness)").
-- **Depois:** registrar o resultado no plano da Fase 20 (T20.10, "Registro de execução") e na skill; corrigir o que
-  aparecer (com teste quando houver lógica); pedir a validação do usuário (só ele marca **validada**); perguntar sobre
-  os 10 Minor adiados.
+### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da conferência visual da Fase 20)
+1. **Fase 20 — validação do usuário.** A conferência visual foi feita em 2026-10-11 (autorizada): 3 defeitos achados e
+   corrigidos ("2contratos", "R$" quebrado nos relatórios a 390 px, ano de 5 dígitos lido como outra data na
+   Auditoria). Resultado completo no "Registro de execução" do plano da Fase 20. Usuários **não** foi conferida (o SMOKE
+   não é admin). Falta: o usuário validar e decidir sobre os 10 Minor (o 9 foi **confirmado**: data digitada manda um
+   pedido por dígito do ano) e sobre os 2 achados novos (regra `date` nos formulários que gravam datas; botão "Enviar"
+   do Painel a 390 px).
+2. **Depois: T17.13, apelido do cliente** — o usuário **lembrou de novo em 2026-10-11** ("não esqueça de incluir o
+   campo apelido no cadastro do cliente, para facilitar a identificação nas telas e nas buscas"). Desenho já aprovado
+   na seção T17.13 de `.claude/plans/2026-10-10-facilidades-de-uso.md` (apelido no lugar do nome nas listas, filtros e
+   autosugestão; busca pelos dois; mesmo CNPJ permitido com apelido diferente; no recibo, "Unidade atendida" só nos
+   novos `webiss-v2`/`danfse-v2`). Tem migração: **PORTÃO-BANCO** (pedir o "sim" com host, banco, contagem e comando).
 
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
-- Último commit: `36510fb` (correções da revisão final da Fase 20; árvore limpa).
-- Suítes: PHP **384/384** (`php artisan test --compact`), JS **46/46** (`node --test resources/js/*.test.js`), build ok.
+- Último commit: o da conferência visual da Fase 20 (2026-10-11), depois de `809544d`.
+- Suítes: PHP **385/385** (`php artisan test --compact`), JS **46/46** (`node --test resources/js/*.test.js`), build ok.
 - **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
   do usuário.
 - O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste
@@ -50,7 +34,7 @@ para esta conferência e foi dada para o escopo abaixo; não estende a outras es
 |---|---|---|---|
 | 18 | Previsão de recebimentos: previstas calculadas pelos contratos, nada gravado | `.claude/plans/2026-10-11-previsao-de-recebimentos.md` | **validada** |
 | 19 | Lista de cobranças por ajax: blocos de 4 páginas, cache, paginador acima e abaixo, totais por situação, esqueleto | `.claude/plans/2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; revisão final feita e corrigida (`1a84e9a`) |
-| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | `.claude/plans/2026-10-11-listas-por-ajax.md` (especificação aprovada: "concordo") | T20.1–T20.10 **testadas**; revisão final feita e corrigida; **falta a conferência visual** (pede autorização) e a validação do usuário |
+| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | `.claude/plans/2026-10-11-listas-por-ajax.md` (especificação aprovada: "concordo") | T20.1–T20.10 **testadas**; revisão final e conferência visual feitas e corrigidas; **falta a validação do usuário** |
 
 Detalhes da Fase 19: as 5 Minor adiadas, a pegadinha do `<tfoot>` e as decisões estão no "Registro de execução" do
 plano.
@@ -60,13 +44,13 @@ ajax; especificação e plano aprovados pelo usuário em 2026-10-11 ("concordo")
 decisões e os 10 Minor adiados da revisão final no "Registro de execução" do plano; padrão na skill ("Fase 20").
 
 **Pendências que dependem do usuário**
-1. Fase 20: autorizar a **conferência visual** (grava sessões no banco de dev) e validar; decidir sobre os 10 Minor
-   adiados.
+1. Fase 20: ~~conferência visual~~ **feita em 2026-10-11**; falta validar e decidir sobre os 10 Minor adiados e os 2
+   achados novos.
 2. ~~Conferência visual da lista de cobranças~~ **feita em 2026-10-11** (ver plano da Fase 19). Falta só "dar baixa e
    ver a lista recarregar": **grava pagamento**, então pede autorização à parte. Usar o Chrome dedicado da porta 9333
    (`BU_CDP_URL`), nunca o do usuário.
 3. Validações antigas: T17.9 (smoke), T17.12, T17.14.
-4. **T17.13 (apelido do cliente):** o usuário respondeu **"Sim"** em 2026-10-11 — **já existe recibo emitido em
+4. **T17.13 (apelido do cliente) — PRÓXIMO TRABALHO** (o usuário lembrou de novo em 2026-10-11). O usuário respondeu **"Sim"** em 2026-10-11 — **já existe recibo emitido em
    produção.** Logo, mostrar o apelido no recibo exige criar `webiss-v2`/`danfse-v2`; os `-v1` não mudam.
 5. T17.11 (renovar ou prorrogar contrato): desenho a fazer com o usuário.
 6. ~~`MATERIAIS/lists-m05.html` vazio~~ — o usuário excluiu o arquivo (2026-10-11).

@@ -98,7 +98,7 @@ const cobrancasDo = (cliente) => `/cobrancas?${new URLSearchParams({ cliente_id:
                             <td class="font-estreita text-xs whitespace-nowrap text-grafite/80 xl:px-3 xl:py-3 xl:text-sm">{{ cliente.cidade || 'Sem cidade' }}</td>
                             <td class="font-estreita text-xs whitespace-nowrap text-grafite/80 xl:px-3 xl:py-3 xl:text-sm"><span class="xl:hidden">Recibo </span>{{ cliente.modelo }}</td>
                             <td class="font-estreita text-xs whitespace-nowrap tabular-nums text-grafite/80 xl:px-3 xl:py-3 xl:text-right xl:text-sm">
-                                {{ cliente.contratos_ativos }}<span class="xl:hidden"> {{ cliente.contratos_ativos === 1 ? 'contrato ativo' : 'contratos ativos' }}</span>
+                                {{ cliente.contratos_ativos }} <span class="xl:hidden">{{ cliente.contratos_ativos === 1 ? 'contrato ativo' : 'contratos ativos' }}</span>
                             </td>
                             <td class="basis-full pt-2 xl:w-px xl:px-4 xl:py-3 xl:whitespace-nowrap">
                                 <div class="flex items-center gap-2 xl:justify-end">

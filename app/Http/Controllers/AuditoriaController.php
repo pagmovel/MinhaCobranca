@@ -24,7 +24,7 @@ class AuditoriaController extends Controller
     /** Dados da lista (JSON, só leitura): padrão últimos 30 dias, mais recentes primeiro. */
     public function dados(Request $request): JsonResponse
     {
-        $request->validate(['ate' => ['nullable', 'date', 'after_or_equal:de']]);
+        $request->validate(['ate' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:de']]);
         $filtros = $this->filtros($request);
 
         $bloco = BlocoDePaginas::de(
@@ -73,8 +73,9 @@ class AuditoriaController extends Controller
     private function filtros(Request $request): array
     {
         $validados = $request->validate([
-            'de' => ['nullable', 'date'],
-            'ate' => ['nullable', 'date'],
+            // date_format, não "date": "date" lia o ano de 5 dígitos do campo do Chrome (72026-08-01) como 2006-08-01.
+            'de' => ['nullable', 'date_format:Y-m-d'],
+            'ate' => ['nullable', 'date_format:Y-m-d'],
             ...BlocoDePaginas::regras(),
         ]);
         $padroes = $this->padroes();

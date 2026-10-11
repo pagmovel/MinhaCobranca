@@ -207,4 +207,11 @@ class AuditoriaTest extends TestCase
         $this->getJson('/auditoria/dados?de=2026-10-11&ate=2026-10-31')->assertOk()->assertJsonCount(0, 'linhas');
         $this->getJson('/auditoria/dados?de=2026-10-11&ate=2026-10-01')->assertUnprocessable()->assertJsonValidationErrors('ate');
     }
+
+    public function test_ano_com_mais_de_quatro_digitos_e_recusado_e_nao_vira_outra_data(): void
+    {
+        // O campo de data do Chrome aceita até 6 dígitos no ano; a regra "date" lia 72026-08-01 como 2006-08-01.
+        $this->actingAs($this->usuario)->getJson('/auditoria/dados?de=72026-08-01&ate=2026-10-11')
+            ->assertUnprocessable()->assertJsonValidationErrors('de');
+    }
 }

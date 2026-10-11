@@ -756,6 +756,19 @@ o relatório mostra a parte que existe.
     2. Script que converte asserções com regex `(.*?)\)\);` comeu o parêntese do último `->where(`: conferir o diff e
        `php -l` depois de conversão automática.
     3. Auxiliar de teste que cria produto com nome fixo estoura o `unique(user_id, nome)` se chamado duas vezes.
+    4. **Vue apaga o espaço que abre um elemento antes de interpolação:** `{{ n }}<span> {{ rotulo }}</span>` sai
+       "2contratos". Pôr o espaço fora (`{{ n }} <span>…`). Texto puro (`<span> em contratos</span>`) mantém o espaço.
+    5. **Regra `date` aceita ano de 5 dígitos** (o `<input type="date">` do Chrome deixa digitar até 6) e lê
+       `72026-08-01` como 2006-08-01, sem erro. Filtro e formulário de data: `date_format:Y-m-d` (mês: `Y-m`).
+    6. **`@change` em campo de data/mês dispara a cada dígito do ano** (0001, 0015, 0150…): uma data digitada vira
+       ~8 pedidos (Minor 9 da revisão, confirmado na conferência).
+    7. Valor em reais em coluna estreita quebra "R$" e o número em linhas diferentes: espaço inseparável
+       (`R$ `). `grep -P '\xC2\xA0'` não acha o caractere no Git Bash; conferir com `od -c`.
+  - **Conferência visual (2026-10-11, autorizada):** resultado e defeitos no "Registro de execução" do plano. Usuários
+    não foi conferida (o SMOKE não é admin). **Browser-use:** `cdp("Page.navigate")` estoura 5 s com o PostgreSQL
+    remoto; navegar com `js("setTimeout(()=>location.href='…',0);1")` e esperar por condição. A entrada de
+    `performance.getEntriesByType('resource')` só aparece quando a resposta termina. Esqueleto: atrasar a rede com
+    `Network.enable` + `Network.emulateNetworkConditions(latency=2500)` para dar tempo de ver.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
