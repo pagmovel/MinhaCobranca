@@ -46,6 +46,7 @@ final class GeradorDeCobrancas
 
             foreach ($devidos as $periodo) {
                 if (! in_array($periodo->inicio->toDateString(), $existentes, true)
+                    && ! $this->antesDeCobrar($contrato, $periodo)
                     && ! ($this->contemOFim($contrato, $periodo) && $contrato->ultimo_periodo === 'nao_cobrar')) {
                     $aGerar[] = [$contrato, $periodo];
                 }
@@ -134,6 +135,12 @@ final class GeradorDeCobrancas
             'linha_digitavel' => null,
             'descricao' => trim($cobranca->descricao) === '' ? $linha : rtrim($cobranca->descricao)."\n".$linha,
         ]);
+    }
+
+    /** Períodos anteriores ao "cobrar a partir de" (a pessoa escolheu não gerar os retroativos). */
+    public function antesDeCobrar(Contrato $contrato, Periodo $periodo): bool
+    {
+        return $contrato->cobrar_a_partir_de !== null && $periodo->inicio->lt($contrato->cobrar_a_partir_de);
     }
 
     private function contemOFim(Contrato $contrato, Periodo $periodo): bool

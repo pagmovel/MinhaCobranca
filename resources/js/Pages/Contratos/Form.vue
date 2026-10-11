@@ -6,6 +6,7 @@ import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
 import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
+import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
@@ -19,7 +20,8 @@ const props = defineProps({
 });
 
 // `reativar` só existe para contrato encerrado: sem ele marcado, salvar não desfaz o encerramento.
-const form = useForm(props.contrato ? { ...props.contrato, reativar: false } : {
+const form = useForm(props.contrato ? { ...props.contrato, reativar: false, gerar_retroativas: null } : {
+    gerar_retroativas: null,
     cliente_id: '',
     descricao: '',
     itens: [],
@@ -35,17 +37,37 @@ const form = useForm(props.contrato ? { ...props.contrato, reativar: false } : {
 
 const semItens = Boolean(props.contrato && !props.contrato.itens.length);
 
-const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}`) : form.post('/contratos'));
 
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 const hoje = new Date().toLocaleDateString('sv-SE');
 
-/** Contrato com cobranças não muda a âncora dos períodos: a saída é encerrar e criar outro (recomeçar). */
+/** Início ou periodicidade mudou (ou contrato novo): a tela pergunta sobre os períodos que já terminaram. */
+const perguntaRetroativos = computed(() => !props.contrato
+    || form.data_inicio !== props.contrato.data_inicio
+    || form.periodicidade !== props.contrato.periodicidade);
+
+/**
+ * Contrato com cobranças não muda a âncora dos períodos sem um caminho explícito: sem cobrança paga, corrigir
+ * (as pendentes são canceladas); com paga, recomeçar (encerra e cria outro a partir de uma data posterior).
+ */
 const mudaPeriodos = computed(() => Boolean(props.contrato?.tem_cobrancas) && (
     form.data_inicio !== props.contrato.data_inicio
     || form.periodicidade !== props.contrato.periodicidade
     || form.modalidade !== props.contrato.modalidade
 ));
+const modoEscolhido = ref(null);
+const modo = computed(() => (props.contrato?.tem_pagas ? 'recomecar' : (modoEscolhido.value ?? 'corrigir')));
+
+const salvar = () => {
+    if (!props.contrato) {
+        form.post('/contratos');
+        return;
+    }
+
+    const corrigir = mudaPeriodos.value && modo.value === 'corrigir';
+    form.transform((dados) => ({ ...dados, corrigir }))
+        .put(`/contratos/${props.contrato.id}`, { onFinish: () => form.transform((dados) => dados) });
+};
 const inicioSemRecomeco = computed(() => Boolean(form.data_inicio) && form.data_inicio <= props.contrato.data_inicio);
 const vespera = computed(() => {
     const data = new Date(`${form.data_inicio}T12:00:00`);
@@ -55,6 +77,7 @@ const vespera = computed(() => {
 });
 
 const desfazerMudancaDePeriodos = () => {
+    modoEscolhido.value = null;
     form.data_inicio = props.contrato.data_inicio;
     form.periodicidade = props.contrato.periodicidade;
     form.modalidade = props.contrato.modalidade;
@@ -118,19 +141,70 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
             <Campo id="data_inicio" rotulo="Início do primeiro período" :erro="form.errors.data_inicio" class="sm:col-span-3">
                 <input id="data_inicio" v-model="form.data_inicio" type="date" class="entrada" required>
                 <p v-if="contrato?.tem_cobrancas" class="mt-1 text-xs" :class="mudaPeriodos ? 'text-tinta-vermelha' : 'text-grafite/70'">
-                    Este contrato já tem cobranças: mudar o início, a periodicidade ou a modalidade encerra este contrato e
-                    cria um novo{{ mudaPeriodos ? ' (veja abaixo).' : '.' }}
+                    {{ contrato.tem_pagas
+                        ? 'Este contrato tem cobrança paga: mudar o início, a periodicidade ou a modalidade encerra este contrato e cria um novo'
+                        : 'Este contrato já tem cobranças: mudar o início, a periodicidade ou a modalidade pede confirmação' }}{{ mudaPeriodos ? ' (veja abaixo).' : '.' }}
                 </p>
             </Campo>
             <Campo id="data_fim" rotulo="Fim do contrato (opcional)" :erro="form.errors.data_fim" class="sm:col-span-3">
                 <input id="data_fim" v-model="form.data_fim" type="date" class="entrada">
             </Campo>
+            <PerguntaRetroativos
+                v-if="perguntaRetroativos && !(mudaPeriodos && modo === 'recomecar')"
+                v-model="form.gerar_retroativas"
+                :data-inicio="form.data_inicio"
+                :periodicidade="form.periodicidade"
+                :erro="form.errors.gerar_retroativas"
+            />
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
             <label v-if="contrato && !contrato.ativo" class="flex items-center gap-2 text-sm sm:col-span-6">
                 <input v-model="form.reativar" type="checkbox"> Reativar contrato
             </label>
             <Transition name="surgir" mode="out-in">
-                <section v-if="mudaPeriodos" key="recomecar" class="grid gap-3 sm:col-span-6">
+                <section v-if="mudaPeriodos && modo === 'corrigir'" key="corrigir" class="grid gap-3 sm:col-span-6">
+                    <h2 class="text-lg font-semibold">Corrigir o contrato</h2>
+                    <div v-if="contrato.cobrancas_pendentes.length" class="grid gap-2 border border-tinta-vermelha/40 bg-white p-4 text-sm">
+                        <p>
+                            {{ contrato.cobrancas_pendentes.length === 1 ? 'Esta cobrança pendente será cancelada' : 'Estas cobranças pendentes serão canceladas' }}
+                            (o número do recibo não volta) e o contrato passa a gerar pelos dados novos:
+                        </p>
+                        <div class="relative overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="font-estreita text-xs text-grafite/75">
+                                    <tr>
+                                        <th class="py-1 pr-3 font-medium">Período</th>
+                                        <th class="py-1 pr-3 font-medium">Vencimento</th>
+                                        <th class="py-1 pr-3 text-right font-medium">Valor</th>
+                                        <th class="py-1 font-medium">Situação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="cobranca in contrato.cobrancas_pendentes" :key="cobranca.periodo" class="border-t border-carbono/10">
+                                        <td class="py-1 pr-3 whitespace-nowrap">{{ cobranca.periodo }}</td>
+                                        <td class="py-1 pr-3">{{ cobranca.vencimento }}</td>
+                                        <td class="py-1 pr-3 text-right whitespace-nowrap text-grafite/60 line-through">R$ {{ cobranca.valor }}</td>
+                                        <td class="py-1">{{ cobranca.enviada ? 'Já enviada ao cliente' : 'Não enviada' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <p v-else class="text-sm">
+                        Nenhuma cobrança pendente: as canceladas deixam de ficar ligadas a este contrato, e ele passa a gerar
+                        pelos dados novos.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <button :class="contrato.cobrancas_pendentes.length ? 'botao-perigo-confirmar' : 'botao'" :disabled="form.processing">
+                            {{ contrato.cobrancas_pendentes.length ? 'Cancelar as pendentes e salvar a correção' : 'Salvar a correção' }}
+                        </button>
+                        <button type="button" class="botao-secundario" @click="desfazerMudancaDePeriodos">Desfazer a mudança</button>
+                    </div>
+                    <p v-if="form.data_inicio > contrato.data_inicio && contrato.cobrancas_pendentes.length" class="text-sm">
+                        Essas cobranças são devidas e devem continuar?
+                        <button type="button" class="underline" @click="modoEscolhido = 'recomecar'">Recomeçar o contrato em vez de corrigir</button>
+                    </p>
+                </section>
+                <section v-else-if="mudaPeriodos" key="recomecar" class="grid gap-3 sm:col-span-6">
                     <h2 class="text-lg font-semibold">Recomeçar o contrato</h2>
                     <template v-if="inicioSemRecomeco">
                         <p class="text-sm">
@@ -155,6 +229,9 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
                     <div v-if="inicioSemRecomeco">
                         <button type="button" class="botao-secundario" @click="desfazerMudancaDePeriodos">Desfazer a mudança</button>
                     </div>
+                    <p v-if="!contrato.tem_pagas" class="text-sm">
+                        <button type="button" class="underline" @click="modoEscolhido = 'corrigir'">Corrigir em vez de recomeçar</button>
+                    </p>
                 </section>
                 <div v-else key="salvar" class="sm:col-span-6">
                     <button class="botao" :disabled="form.processing">Salvar contrato</button>

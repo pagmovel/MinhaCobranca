@@ -46,6 +46,27 @@ final class CalculadoraDePeriodos
         return $candidato->gt($fim) ? $candidato : $this->diaNoMes($fim->startOfMonth()->addMonthNoOverflow(), $dia);
     }
 
+    /**
+     * Períodos que terminaram antes de hoje (os "anteriores ao atual") e o início do primeiro que não terminou.
+     *
+     * @return array{quantidade: int, de: ?CarbonImmutable, ate: ?CarbonImmutable, a_partir_de: CarbonImmutable}
+     */
+    public function anteriores(CarbonImmutable $dataInicio, Periodicidade $periodicidade, CarbonImmutable $hoje): array
+    {
+        $indice = 0;
+
+        while ($indice < self::LIMITE && $this->periodo($dataInicio, $periodicidade, 1, $indice)->fim->lt($hoje->startOfDay())) {
+            $indice++;
+        }
+
+        return [
+            'quantidade' => $indice,
+            'de' => $indice > 0 ? $dataInicio->startOfDay() : null,
+            'ate' => $indice > 0 ? $this->periodo($dataInicio, $periodicidade, 1, $indice - 1)->fim : null,
+            'a_partir_de' => $this->periodo($dataInicio, $periodicidade, 1, $indice)->inicio,
+        ];
+    }
+
     /** @return list<Periodo> */
     public function devidos(
         CarbonImmutable $dataInicio,

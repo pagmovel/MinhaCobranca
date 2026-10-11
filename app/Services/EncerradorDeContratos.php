@@ -67,7 +67,7 @@ final class EncerradorDeContratos
         $agendada = $fim->gt($hoje->startOfDay());
 
         foreach ($periodos as $periodo) {
-            if (in_array($periodo->inicio->toDateString(), $existentes, true)) {
+            if (in_array($periodo->inicio->toDateString(), $existentes, true) || $this->gerador->antesDeCobrar($contrato, $periodo)) {
                 continue;
             }
 

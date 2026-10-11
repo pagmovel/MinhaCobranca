@@ -42,6 +42,9 @@ class ContratoRequest extends FormRequest
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
             'ativo' => ['boolean'],
+            'reativar' => ['nullable', 'boolean'],
+            'corrigir' => ['nullable', 'boolean'],
+            'gerar_retroativas' => ['nullable', 'boolean'],
             ...$this->regrasDeItens(),
             ...$this->regrasDePagamento(false),
         ];
@@ -53,7 +56,7 @@ class ContratoRequest extends FormRequest
 
         // Descrição é complemento opcional (o recibo lista os itens); a coluna não aceita nulo.
         return ['descricao' => (string) ($dados['descricao'] ?? '')]
-            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id'])
+            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id', 'reativar', 'corrigir', 'gerar_retroativas'])
             + ['ativo' => $this->boolean('ativo', true)]
             + $this->resumoDosItens()
             + $this->dadosDePagamento($dados);

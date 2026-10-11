@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\FormaPagamento;
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
+use App\Enums\StatusCobranca;
 use App\Http\Requests\ContratoRequest;
+use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\ContratoItem;
+use App\Services\CalculadoraDePeriodos;
 use App\Services\EncerradorDeContratos;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
@@ -84,8 +87,10 @@ class ContratoController extends Controller
 
     public function store(ContratoRequest $request): RedirectResponse
     {
-        DB::transaction(function () use ($request) {
-            $contrato = $request->user()->contratos()->create($request->dadosContrato());
+        $dados = $request->dadosContrato() + ['cobrar_a_partir_de' => $this->cobrarAPartirDe($request)];
+
+        DB::transaction(function () use ($request, $dados) {
+            $contrato = $request->user()->contratos()->create($dados);
             $contrato->itens()->createMany($request->itensDoContrato());
         });
 
@@ -103,19 +108,31 @@ class ContratoController extends Controller
         $dados = $request->dadosContrato();
 
         $mudaPeriodos = $registro->periodicidade->value !== $dados['periodicidade']
-            || $registro->data_inicio->toDateString() !== CarbonImmutable::parse($dados['data_inicio'])->toDateString();
+            || $registro->data_inicio->toDateString() !== CarbonImmutable::parse($dados['data_inicio'])->toDateString()
+            || $registro->modalidade->value !== $dados['modalidade'];
+        $corrigir = false;
 
-        // Mudar a âncora dos períodos geraria períodos novos sobrepostos aos já cobrados.
+        // Mudar a âncora dos períodos geraria períodos novos sobrepostos aos já cobrados. Sem cobrança paga, a
+        // pessoa pode corrigir (data errada): as pendentes são canceladas depois da prévia. Com paga, só recomeçar.
         if ($mudaPeriodos && $registro->cobrancas()->exists()) {
-            return back()->withErrors([
-                'data_inicio' => 'Este contrato já tem cobranças. Para mudar o início ou a periodicidade, encerre-o e crie outro.',
-            ]);
+            if ($registro->cobrancas()->where('status', StatusCobranca::Paga)->exists()) {
+                return back()->withErrors([
+                    'data_inicio' => 'Este contrato tem cobrança paga: para mudar o início, a periodicidade ou a modalidade, '
+                        .'recomece o contrato a partir de uma data posterior.',
+                ]);
+            }
+
+            if (! $request->boolean('corrigir')) {
+                return back()->withErrors([
+                    'data_inicio' => 'Confirme a correção: as cobranças pendentes deste contrato serão canceladas.',
+                ]);
+            }
+
+            $corrigir = true;
         }
 
-        if ($registro->modalidade->value !== $dados['modalidade'] && $registro->cobrancas()->exists()) {
-            return back()->withErrors([
-                'modalidade' => 'Este contrato já tem cobranças. Para mudar a modalidade, encerre-o e crie outro.',
-            ]);
+        if ($mudaPeriodos || $request->has('gerar_retroativas')) {
+            $dados['cobrar_a_partir_de'] = $this->cobrarAPartirDe($request);
         }
 
         // Encerrado só volta a valer com "Reativar" marcado: um formulário aberto antes do encerramento (outra aba)
@@ -125,15 +142,42 @@ class ContratoController extends Controller
             $dados['data_fim'] = $registro->data_fim;
         } elseif (! $registro->ativo) {
             $dados['ativo'] = true;
+            $dados['ultimo_periodo'] = 'inteiro';
         }
 
-        DB::transaction(function () use ($registro, $dados, $request) {
+        DB::transaction(function () use ($registro, $dados, $request, $corrigir) {
+            if ($corrigir) {
+                $registro->cobrancas()->where('status', StatusCobranca::Pendente)->update(['status' => StatusCobranca::Cancelada]);
+                // Canceladas saem do contrato: o índice único (contrato, início do período) bloquearia um período novo
+                // que comece no mesmo dia, e o gerador o pularia achando que já existe.
+                $registro->cobrancas()->update(['contrato_id' => null]);
+            }
+
             $registro->update($dados);
             $registro->itens()->delete();
             $registro->itens()->createMany($request->itensDoContrato());
         });
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As mudanças valem para as próximas cobranças.');
+    }
+
+    /** Quantos períodos terminaram antes de hoje para um início no passado (a tela pergunta se gera esses). */
+    public function retroativos(Request $request, CalculadoraDePeriodos $calculadora): JsonResponse
+    {
+        $dados = $request->validate([
+            'data_inicio' => ['required', 'date'],
+            'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
+        ]);
+        $anteriores = $calculadora->anteriores(
+            CarbonImmutable::parse($dados['data_inicio']), Periodicidade::from($dados['periodicidade']), CarbonImmutable::today(),
+        );
+
+        return response()->json([
+            'quantidade' => $anteriores['quantidade'],
+            'de' => $anteriores['de']?->format('d/m/Y'),
+            'ate' => $anteriores['ate']?->format('d/m/Y'),
+            'a_partir_de' => $anteriores['a_partir_de']->format('d/m/Y'),
+        ]);
     }
 
     /** Prévia do encerramento (JSON): o que acontece com cada cobrança, sem gravar nada. */
@@ -229,6 +273,22 @@ class ContratoController extends Controller
         return [CarbonImmutable::parse($dados['fim'])->startOfDay(), ($dados['em_curso'] ?? 'proporcional') === 'proporcional'];
     }
 
+    /** "Cobrar a partir de": nulo gera desde o início (padrão de sempre); sem os retroativos, o período atual. */
+    private function cobrarAPartirDe(ContratoRequest $request): ?CarbonImmutable
+    {
+        if ($request->boolean('gerar_retroativas', true)) {
+            return null;
+        }
+
+        $anteriores = app(CalculadoraDePeriodos::class)->anteriores(
+            CarbonImmutable::parse($request->validated('data_inicio')),
+            Periodicidade::from($request->validated('periodicidade')),
+            CarbonImmutable::today(),
+        );
+
+        return $anteriores['quantidade'] > 0 ? $anteriores['a_partir_de'] : null;
+    }
+
     private function formulario(Request $request, ?Contrato $contrato): Response
     {
         return Inertia::render('Contratos/Form', [
@@ -253,6 +313,15 @@ class ContratoController extends Controller
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
                 'ativo' => $contrato->ativo,
                 'tem_cobrancas' => $contrato->cobrancas()->exists(),
+                'tem_pagas' => $contrato->cobrancas()->where('status', StatusCobranca::Paga)->exists(),
+                // O que uma correção de início cancelaria (prévia na tela).
+                'cobrancas_pendentes' => $contrato->cobrancas()->where('status', StatusCobranca::Pendente)->orderBy('periodo_inicio')->get()
+                    ->map(fn (Cobranca $cobranca) => [
+                        'periodo' => $cobranca->periodo_inicio->format('d/m/Y').' a '.$cobranca->periodo_fim->format('d/m/Y'),
+                        'vencimento' => $cobranca->vencimento->format('d/m/Y'),
+                        'valor' => Dinheiro::formatar($cobranca->valor_centavos),
+                        'enviada' => $cobranca->enviado_em !== null,
+                    ])->all(),
                 'encerramento_agendado' => $contrato->ativo && $contrato->ultimo_periodo !== 'inteiro',
                 'forma_pagamento' => $contrato->forma_pagamento->value,
                 'chave_pix_id' => $contrato->chave_pix_id ?? '',

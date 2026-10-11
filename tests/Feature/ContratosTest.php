@@ -147,7 +147,7 @@ class ContratosTest extends TestCase
         Cobranca::factory()->for($usuario)->for($cliente)->create(['contrato_id' => $contrato->id]);
 
         $this->put("/contratos/{$contrato->id}", $this->dados($cliente, ['modalidade' => 'pospago']))
-            ->assertSessionHasErrors(['modalidade' => 'Este contrato já tem cobranças. Para mudar a modalidade, encerre-o e crie outro.']);
+            ->assertSessionHasErrors(['data_inicio' => 'Confirme a correção: as cobranças pendentes deste contrato serão canceladas.']);
         $this->assertSame(Modalidade::Prepago, $contrato->fresh()->modalidade);
     }
 }

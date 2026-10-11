@@ -547,6 +547,16 @@ o relatório mostra a parte que existe.
   proporcional sai **sem linha digitável** (o valor do boleto está no código). Contrato encerrado só volta com `reativar`
   marcado (aba antiga não desfaz encerramento). Encerramento agendado não é reagendado (reduziria de novo a quantidade
   já reduzida) — mudar a data fica para a prorrogação (T17.11).
+- **T17.10 — corrigir início errado (relato do usuário, contrato nº 6, 2026-10-10):** contrato com cobranças e **sem
+  cobrança paga** pode mudar início/periodicidade/modalidade com `corrigir=1` (a tela "Corrigir o contrato" mostra antes
+  as pendentes que serão canceladas): pendentes viram canceladas e **todas** as cobranças saem do contrato
+  (`contrato_id` nulo) — senão o índice único e o `$existentes` do gerador pulariam um período novo que comece no mesmo
+  dia. Com cobrança paga: só recomeçar (início posterior). Sem `corrigir`, a mudança é recusada ("Confirme a correção").
+  **Retroativos — perguntar na hora** (`PerguntaRetroativos.vue` + `GET /contratos/retroativos`, ao criar e ao mudar o
+  início): `gerar_retroativas=0` grava `cobrar_a_partir_de` = início do período atual (o primeiro que não terminou,
+  `CalculadoraDePeriodos::anteriores`); gerador e encerramento pulam períodos anteriores. Sem o campo, gera desde o
+  início (como antes). A pergunta usa rádios `required` dentro do `<form>`: a validação nativa do navegador obriga a
+  escolher. **Pegadinha:** a tela que o usuário via era o build anterior — depois de `npm run build`, recarregar a página.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
