@@ -75,6 +75,15 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 - **Pegadinha (T19.4):** ao copiar o rodapé do plano por script, o filtro `'<tfoot' in bloco` pegou o bloco do
   esqueleto, que só cita `<tfoot>` num comentário. O build passou com o template errado. Corrigido escolhendo o bloco
   que **começa** com `<tfoot`, conferindo `count('<tfoot') == 1` e restaurando o arquivo do commit antes de refazer.
+- **419 "Page Expired" (relato do usuário, 2026-10-11, excluir produto em `/produtos-servicos/6/edit`):** a exclusão
+  estava certa; a sessão tinha trocado de id (às 08:29, a sessão de 01:26 venceu e o "lembrar de mim" fez o login de
+  novo; de 08:31 em diante, 9 sessões novas em 2 minutos, todas do mesmo Chrome), e a página aberta ficou com um token
+  vencido. **Correção aprovada:** `bootstrap/app.php` → `respond()`. Com 419 fora de JSON, volta para a mesma página
+  com `erro` = "A página expirou. Tente de novo." (padrão da documentação do Inertia v3). JSON continua 419. Teste:
+  `tests/Feature/PaginaExpiradaTest.php`. A causa da troca de sessões está **[A VERIFICAR]** no navegador (o usuário
+  autorizou).
+- **Pedido do usuário:** "Carregando cobranças…" com o indicador girando no fim do texto e uma tabela-esqueleto, como
+  no YouTube (aprovado: "SIM"). Ajuste da T19.4.
 - **Rótulos do rodapé no plural e em texto** ("Vencidas", "Previstas"…), não o carimbo rotacionado: a especificação
   diz "rótulo do carimbo", mas uma pilha de carimbos no rodapé pesa demais. Se o usuário preferir o carimbo, a troca
   é só no template.
