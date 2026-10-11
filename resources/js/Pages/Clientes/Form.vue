@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
+import BuscaCnpj from '../../Components/BuscaCnpj.vue';
 import CamposEndereco from '../../Components/CamposEndereco.vue';
 
 const props = defineProps({
@@ -41,6 +42,7 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
                     <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
                 </Campo>
+                <BuscaCnpj :form="form" />
                 <Campo id="inscricao_municipal" rotulo="Inscrição municipal" :erro="form.errors.inscricao_municipal" class="sm:col-span-2">
                     <input id="inscricao_municipal" v-model="form.inscricao_municipal" class="entrada">
                 </Campo>

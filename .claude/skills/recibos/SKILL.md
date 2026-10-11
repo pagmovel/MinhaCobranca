@@ -419,6 +419,10 @@ o relatório mostra a parte que existe.
   **Pegadinhas:** ViaCEP responde **200** com `{"erro": "true"}` para CEP inexistente; BrasilAPI responde 403 ao
   User-Agent padrão do Python (o do Laravel passa); o CNPJ `11.222.333/0001-81` dos testes antigos é de empresa real —
   nos testes de consulta usar só `Http::fake()` com `Http::preventStrayRequests()`.
+- T14.2: `preencherVazios` (`resources/js/consultas.js`) nunca sobrescreve o que a pessoa digitou; CEP automático ao
+  completar 8 dígitos (o CEP já salvo não é consultado de novo; o campo CEP subiu para o topo do endereço); botão
+  "Buscar dados do CNPJ" (`BuscaCnpj.vue`) aparece com 14 caracteres e a validade é conferida pelo servidor; o perfil
+  usa `campo-nome="name"`. `consultar()` nunca lança: falha vira mensagem e o formulário segue manual.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

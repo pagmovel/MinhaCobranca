@@ -2,6 +2,7 @@
 import { useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
+import BuscaCnpj from '../../Components/BuscaCnpj.vue';
 import CamposEndereco from '../../Components/CamposEndereco.vue';
 import ChavesPix from '../../Components/ChavesPix.vue';
 
@@ -32,6 +33,7 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
                     <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
                 </Campo>
+                <BuscaCnpj :form="form" campo-nome="name" />
                 <Campo id="nome_fantasia" rotulo="Nome fantasia" :erro="form.errors.nome_fantasia" class="sm:col-span-3">
                     <input id="nome_fantasia" v-model="form.nome_fantasia" class="entrada">
                 </Campo>
