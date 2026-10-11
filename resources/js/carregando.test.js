@@ -15,6 +15,23 @@ test('o contador sobe durante o pedido e volta a zero no fim, com sucesso ou fal
     assert.equal(pendentes.value, 0, 'falha também apaga o indicador');
 });
 
+test('o piso de zero evita que uma baixa extra deixe o contador negativo e trave o próximo aviso', async () => {
+    let terminar;
+    const pedido = contarPedido(new Promise((resolve) => { terminar = resolve; }));
+    assert.equal(pendentes.value, 1);
+
+    pendentes.value = 0; // outra baixa chegou por fora enquanto este pedido ainda estava em andamento
+    terminar('ok');
+    await pedido;
+    assert.equal(pendentes.value, 0, 'não fica negativo');
+
+    let outroTerminar;
+    const outroPedido = contarPedido(new Promise((resolve) => { outroTerminar = resolve; }));
+    assert.equal(pendentes.value, 1, 'o próximo pedido ainda liga o aviso');
+    outroTerminar('ok');
+    await outroPedido;
+});
+
 test('vigiarFetch faz todo fetch contar, sem mudar o que ele devolve', async () => {
     const alvo = { fetch: async (url) => `resposta de ${url}` };
     vigiarFetch(alvo);

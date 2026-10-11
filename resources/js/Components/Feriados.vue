@@ -67,6 +67,8 @@ const excluir = (id) => router.delete(`/perfil/feriados/${id}`, {
     onFinish: () => { confirmando.value = null; },
 });
 
+const ERRO_GENERICO = 'Não foi possível ajustar agora. Tente de novo.';
+
 const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.vencimentos.slice(0, POR_PEDIDO).map((item) => item.id) }, {
     preserveScroll: true,
     onStart: () => {
@@ -75,7 +77,17 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
     },
     // Erro sempre na tela, com o botão de tentar de novo ao lado (padrão 2).
     onError: (erros) => {
-        erroAjuste.value = Object.values(erros)[0] ?? 'Não foi possível ajustar agora. Tente de novo.';
+        erroAjuste.value = Object.values(erros)[0] ?? ERRO_GENERICO;
+    },
+    // Sessão expirada (419), erro no servidor (500) ou qualquer outra resposta HTTP fora de validação: mesmo lugar,
+    // mesma mensagem; `false` evita o diálogo de erro padrão do Inertia (tela cinza fora do padrão visual do projeto).
+    onHttpException: () => {
+        erroAjuste.value = ERRO_GENERICO;
+        return false;
+    },
+    // Sem conexão com o servidor.
+    onNetworkError: () => {
+        erroAjuste.value = ERRO_GENERICO;
     },
     onFinish: () => { ajustando.value = false; },
 });

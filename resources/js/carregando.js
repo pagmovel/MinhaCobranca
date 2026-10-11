@@ -8,7 +8,7 @@ export function contarPedido(promessa) {
     pendentes.value++;
 
     return promessa.finally(() => {
-        pendentes.value--;
+        pendentes.value = Math.max(0, pendentes.value - 1);
     });
 }
 
