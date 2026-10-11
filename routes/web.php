@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AvisoWhatsappController;
 use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CobrancaController;
@@ -73,6 +74,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/dados', [CobrancaController::class, 'dados']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);
+    Route::get('/cobrancas/aviso', [AvisoWhatsappController::class, 'dados']);
+    Route::post('/cobrancas/avisadas', [AvisoWhatsappController::class, 'avisadas']);
     Route::get('/cobrancas/{cobranca}/edit', [CobrancaController::class, 'edit']);
     Route::post('/cobrancas', [CobrancaController::class, 'store']);
     Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);

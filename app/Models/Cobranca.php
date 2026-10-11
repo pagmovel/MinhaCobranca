@@ -35,6 +35,7 @@ class Cobranca extends Model
             'vencimento' => 'immutable_date',
             'pago_em' => 'immutable_date',
             'enviado_em' => 'immutable_datetime',
+            'avisado_em' => 'immutable_datetime',
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
