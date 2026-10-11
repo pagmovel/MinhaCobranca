@@ -493,7 +493,19 @@ o relatório mostra a parte que existe.
 - **Pegadinha (390 px): `sr-only` é `position: absolute`** — dentro de tabela com rolagem, escapa do recorte se o
   contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
 - **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
-  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
+  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço. **E** não deixar a expressão devolver
+  a promessa: `js()` espera `awaitPromise`. Usar `(async () => …)()` no fim estourou de novo; `setTimeout(async () =>
+  …, 0); 1` funciona.
+- **Pegadinha (sessão, 2026-10-11, relato de 419 ao excluir produto):** com a sessão vencida (120 min) e o cookie
+  "lembrar de mim" válido, **cada pedido que chega junto refaz o login e cria uma sessão própria**. Reproduzido no
+  Chrome de teste: 3 `fetch` em paralelo sem cookie de sessão viraram 3 sessões novas, de 184 bytes cada. O usuário
+  teve 9 sessões em 2 minutos. Uma página que guardou o token de uma delas leva 419 na próxima ação.
+  - **Correção para quem usa:** `bootstrap/app.php` → `respond()`. Com 419 fora de JSON, volta para a página com
+    "A página expirou. Tente de novo.", e o segundo clique funciona. Teste: `PaginaExpiradaTest`.
+  - **O que não foi reproduzido:** o 419 em si. No teste os cookies chegaram consistentes e a sonda deu 404.
+    **[INCONCLUSIVO]**.
+  - **Sonda segura de CSRF:** `DELETE /produtos-servicos/999999` com `X-XSRF-TOKEN`. Token válido → 404; token
+    vencido → 419 ou redirect. Não muda dado.
 - **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
   "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
   setembro aparece em outubro; o rótulo do mês avisa "buscando em todos os meses"). Trocar situação ou mês aplica o

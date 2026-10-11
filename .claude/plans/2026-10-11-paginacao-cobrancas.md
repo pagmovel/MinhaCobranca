@@ -80,8 +80,14 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
   novo; de 08:31 em diante, 9 sessões novas em 2 minutos, todas do mesmo Chrome), e a página aberta ficou com um token
   vencido. **Correção aprovada:** `bootstrap/app.php` → `respond()`. Com 419 fora de JSON, volta para a mesma página
   com `erro` = "A página expirou. Tente de novo." (padrão da documentação do Inertia v3). JSON continua 419. Teste:
-  `tests/Feature/PaginaExpiradaTest.php`. A causa da troca de sessões está **[A VERIFICAR]** no navegador (o usuário
-  autorizou).
+  `tests/Feature/PaginaExpiradaTest.php`. Observado no navegador com autorização (Chrome de teste, usuário SMOKE, banco de desenvolvimento):
+  - no uso normal e com a sessão vencida e um pedido por vez, sai uma sessão só, e o token continua válido (sonda 404);
+  - **com 3 pedidos em paralelo sem sessão, saem 3 sessões novas** de 184 bytes, o mesmo tamanho das do usuário: é o
+    "lembrar de mim" refazendo o login em cada pedido;
+  - o 419 em si não foi reproduzido **[INCONCLUSIVO]**; a correção da tela cobre o caso.
+
+  O teste criou 5 linhas em `sessions` (usuário 2). Elas expiram sozinhas e não foram apagadas, porque apagar também
+  é escrita no banco.
 - **Pedido do usuário:** "Carregando cobranças…" com o indicador girando no fim do texto e uma tabela-esqueleto, como
   no YouTube (aprovado: "SIM"). Ajuste da T19.4.
 - **Rótulos do rodapé no plural e em texto** ("Vencidas", "Previstas"…), não o carimbo rotacionado: a especificação
