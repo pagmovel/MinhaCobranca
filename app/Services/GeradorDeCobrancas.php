@@ -30,9 +30,7 @@ final class GeradorDeCobrancas
         $aGerar = [];
 
         foreach ($usuario->contratos()->where('ativo', true)->with('itens.produtoServico')->get() as $contrato) {
-            $existentes = $contrato->cobrancas()->pluck('periodo_inicio')
-                ->map(fn ($data) => CarbonImmutable::parse($data)->toDateString())
-                ->all();
+            $existentes = $this->existentes($contrato);
 
             $devidos = $this->calculadora->devidos(
                 $contrato->data_inicio,
@@ -45,9 +43,7 @@ final class GeradorDeCobrancas
             );
 
             foreach ($devidos as $periodo) {
-                if (! in_array($periodo->inicio->toDateString(), $existentes, true)
-                    && ! $this->antesDeCobrar($contrato, $periodo)
-                    && ! ($this->contemOFim($contrato, $periodo) && $contrato->ultimo_periodo === 'nao_cobrar')) {
+                if ($this->cobravel($contrato, $periodo, $existentes)) {
                     $aGerar[] = [$contrato, $periodo];
                 }
             }
@@ -137,13 +133,34 @@ final class GeradorDeCobrancas
         ]);
     }
 
+    /** @return list<string> início (Y-m-d) dos períodos do contrato que já têm cobrança, em qualquer situação. */
+    public function existentes(Contrato $contrato): array
+    {
+        return $contrato->cobrancas()->pluck('periodo_inicio')
+            ->map(fn ($data) => CarbonImmutable::parse($data)->toDateString())
+            ->all();
+    }
+
+    /**
+     * O período vira cobrança? Não, se já existe (inclusive cancelada), se é anterior ao "cobrar a partir de" ou se é o
+     * que contém o fim com "não cobrar". A geração e a previsão usam esta mesma regra.
+     *
+     * @param  list<string>  $existentes
+     */
+    public function cobravel(Contrato $contrato, Periodo $periodo, array $existentes): bool
+    {
+        return ! in_array($periodo->inicio->toDateString(), $existentes, true)
+            && ! $this->antesDeCobrar($contrato, $periodo)
+            && ! ($this->contemOFim($contrato, $periodo) && $contrato->ultimo_periodo === 'nao_cobrar');
+    }
+
     /** Períodos anteriores ao "cobrar a partir de" (a pessoa escolheu não gerar os retroativos). */
     public function antesDeCobrar(Contrato $contrato, Periodo $periodo): bool
     {
         return $contrato->cobrar_a_partir_de !== null && $periodo->inicio->lt($contrato->cobrar_a_partir_de);
     }
 
-    private function contemOFim(Contrato $contrato, Periodo $periodo): bool
+    public function contemOFim(Contrato $contrato, Periodo $periodo): bool
     {
         return $contrato->data_fim !== null && $periodo->fim->gt($contrato->data_fim);
     }

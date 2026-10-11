@@ -108,4 +108,17 @@ class CalculadoraDePeriodosTest extends TestCase
         // Setembro vence 10/10 (devido desde 30/09); outubro vence 10/11 (ainda não).
         $this->assertSame(['2026-10-10'], array_map(fn ($periodo) => $periodo->vencimento->toDateString(), $devidos));
     }
+
+    public function test_entre_lista_os_vencimentos_do_intervalo_ate_o_fim_do_contrato(): void
+    {
+        $calc = new CalculadoraDePeriodos;
+        $vencimentos = fn (?string $fim) => array_map(
+            fn ($periodo) => $periodo->vencimento->toDateString(),
+            $calc->entre($this->data('2026-09-21'), $fim === null ? null : $this->data($fim), Periodicidade::Mensal, 21, Modalidade::Prepago, $this->data('2026-10-01'), $this->data('2027-01-21')),
+        );
+
+        $this->assertSame(['2026-10-21', '2026-11-21', '2026-12-21', '2027-01-21'], $vencimentos(null));
+        // Fim em 05/12: o período 21/11–20/12 contém o fim e entra; o de 21/12 começa depois e fica de fora.
+        $this->assertSame(['2026-10-21', '2026-11-21'], $vencimentos('2026-12-05'));
+    }
 }

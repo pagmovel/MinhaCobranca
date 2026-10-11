@@ -95,4 +95,36 @@ final class CalculadoraDePeriodos
 
         return $devidos;
     }
+
+    /**
+     * Períodos com vencimento entre `$de` e `$ate` (dias inteiros), sem passar do fim do contrato: o período que contém
+     * o fim entra; o que começa depois dele, não. Usado pela previsão de cobranças.
+     *
+     * @return list<Periodo>
+     */
+    public function entre(
+        CarbonImmutable $dataInicio,
+        ?CarbonImmutable $dataFim,
+        Periodicidade $periodicidade,
+        int $diaVencimento,
+        Modalidade $modalidade,
+        CarbonImmutable $de,
+        CarbonImmutable $ate,
+    ): array {
+        $periodos = [];
+
+        for ($indice = 0; $indice < self::LIMITE; $indice++) {
+            $periodo = $this->periodo($dataInicio, $periodicidade, $diaVencimento, $indice, $modalidade);
+
+            if (($dataFim !== null && $periodo->inicio->gt($dataFim)) || $periodo->vencimento->gt($ate->startOfDay())) {
+                break;
+            }
+
+            if ($periodo->vencimento->gte($de->startOfDay())) {
+                $periodos[] = $periodo;
+            }
+        }
+
+        return $periodos;
+    }
 }

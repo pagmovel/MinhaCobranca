@@ -50,12 +50,22 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T18.1 | `CalculadoraDePeriodos::entre()` + regra comum do gerador (`existentes`, `cobravel`, `contemOFim` público) | pendente |
+| T18.1 | `CalculadoraDePeriodos::entre()` + regra comum do gerador (`existentes`, `cobravel`, `contemOFim` público) | testada (RED: método inexistente → GREEN; gerador, encerramento, correção do início e Unit 117/117) |
 | T18.2 | Serviço `PrevisaoDeCobrancas::entre()` + teste de igualdade com o gerador | pendente |
 | T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | pendente |
 | T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | pendente |
 | T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | pendente |
 | T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | pendente |
+
+## Registro de execução (decisões tomadas durante a execução)
+- Execução **inline** (superpowers:executing-plans). O usuário pediu "e iniciar" sem escolher o método. Se fosse
+  preferível subagente por tarefa, a única perda é a revisão por tarefa; a revisão final continua.
+- Pré-checagem das interfaces:
+  - T18.1 → T18.2: os nomes batem.
+  - T18.2 → T18.3: `cliente_id` é `int` e `situacao` é `'prevista'`.
+  - T18.2 → T18.5: `vencimento` em `d/m/Y`; o mês sai de `substr(…, 3)`.
+
+  Sem conflito.
 
 ---
 
