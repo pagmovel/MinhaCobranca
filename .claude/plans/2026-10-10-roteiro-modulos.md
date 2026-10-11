@@ -63,6 +63,16 @@ O que o usuário já definiu (2026-10-10):
 - **Os XMLs são de notas EMITIDAS pelo usuário** (ele é o prestador; os clientes são os tomadores), não de compras
   (confirmado pelo usuário em 2026-10-10). Logo, a importação se liga ao módulo **Cobrança** (nota ↔ cobrança/recibo,
   como previa a Fase 6 original e a "NFS-e vinculada" da skill), não ao Contas a Pagar.
+- **Requisito do usuário (2026-10-10): se o tomador ainda não for cliente, o importador cadastra o cliente** com os
+  dados do XML (identifica pelo CPF/CNPJ, único por usuário; cliente já existente não é sobrescrito). LGPD ok: são dados
+  da nota que o próprio usuário emitiu, não cadastro de outro usuário. Campos do `Tomador` nos XMLs (só nomes conferidos):
+  `CpfCnpj/Cnpj`, `RazaoSocial`, `Endereco/{Endereco, Numero, Complemento, Bairro, CodigoMunicipio, Uf, CodigoPais, Cep}`,
+  `Contato/Email` (só no 16). **Não há nome da cidade** (só código IBGE): preencher pela consulta de CEP da Fase 14
+  (ViaCEP devolve `localidade` e `ibge` — conferir o código); falhando, cidade em branco. Sem telefone nem inscrição
+  municipal no XML. Modelo do recibo do cliente novo = `modelo_padrao` do usuário.
+- Proposta feita (aguardando resposta): importação como **Fase 16 do módulo Cobrança** (depois dos relatórios, porque
+  usa a consulta de CEP da Fase 14) — importar XML guardando o original, cadastrar cliente se faltar, sugerir a cobrança
+  correspondente para vincular, mostrar a NFS-e no recibo/lista. Emissão, sincronização e tributos ficam no módulo Notas.
 - XMLs de exemplo em `MATERIAIS/` (fora do git; dados pessoais): `NFSe_2026000000015_EC5K-BUEZ.xml` e
   `NFSe_2026000000016_AINQ-DWPJ.xml`. **Achados (só estrutura, 2026-10-10):** padrão **ABRASF versão 2.02**
   (`CompNfse`, namespace `http://www.abrasf.org.br/nfse.xsd`), assinatura digital; têm **ChaveAcesso de 50 dígitos**
