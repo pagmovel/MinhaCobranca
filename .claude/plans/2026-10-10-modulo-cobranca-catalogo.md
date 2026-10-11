@@ -45,7 +45,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 14 | T14.1 Consulta de CNPJ e CEP no servidor | testada (suíte 239/239) |
 | 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | testada (JS 13/13; build ok; suíte 239/239; navegador na T15.5) |
 | 14 | T14.3 Fechamento da fase 14 | concluída (sem banco; merge na main) |
-| 15 | T15.1 Painel: recebido = pago no mês | pendente |
+| 15 | T15.1 Painel: recebido = pago no mês | testada (suíte 240/240) |
 | 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | pendente |
 | 15 | T15.3 Relatórios: receita por cliente e por produto/serviço | pendente |
 | 15 | T15.4 Relatório: contas a receber | pendente |
@@ -4300,7 +4300,7 @@ Definições (spec, seção 7; "recebido" = decisão D1, regime de caixa):
 
 ### Tarefa T15.1: Painel: recebido = pago no mês
 
-**Estado:** pendente
+**Estado:** testada (suíte 240/240)
 
 **Arquivos:**
 - Modificar: `app/Http/Controllers/PainelController.php`

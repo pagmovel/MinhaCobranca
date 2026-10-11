@@ -78,4 +78,23 @@ class PainelTest extends TestCase
                 ->where('perfilCompleto', false)
                 ->has('paraEnviar', 0));
     }
+
+    public function test_recebido_e_o_que_foi_pago_no_mes_qualquer_que_seja_o_vencimento(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $paga = function (string $vencimento, string $pagoEm, int $valor) use ($usuario, $cliente) {
+            $cobranca = Cobranca::factory()->for($usuario)->for($cliente)->create(['vencimento' => $vencimento, 'valor_centavos' => $valor]);
+            $cobranca->status = StatusCobranca::Paga;
+            $cobranca->pago_em = $pagoEm;
+            $cobranca->save();
+        };
+        $paga('2026-09-25', '2026-10-02', 10000); // venceu em setembro, pago em outubro: entra
+        $paga('2026-10-20', '2026-10-05', 5000);  // adiantado: entra
+        $paga('2026-10-03', '2026-09-30', 7000);  // pago em setembro: não entra
+
+        $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
+            ->where('resumo.recebido', '150,00')
+            ->where('resumo.previsto', '120,00'));
+    }
 }

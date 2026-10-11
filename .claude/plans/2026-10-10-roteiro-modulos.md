@@ -36,7 +36,7 @@ sem depender do histórico.
 |---|---|---|
 | V1–V3 conferências visuais (amostras x notas, carimbo/rodapé, prints do smoke) | plano `2026-10-09-sistema-recibos.md` | pendente (usuário) |
 | V4 visual de VENCENDO HOJE e bloco de pagamento | plano `2026-10-10-pagamento-e-formularios.md` | pendente; **QR já validado pelo usuário no celular** |
-| D1 "recebido" | — | **decidida: pago no mês (caixa)** → implementar na Fase 15 |
+| D1 "recebido" | — | **decidida: pago no mês (caixa)** → **implementada na T15.1 (testada)** |
 | L1 limpeza dos dados SMOKE (user id 2 e tudo dele, inclusive chaves PIX 5 e 6, contrato 4, cobranças 7 e 8) | plano `2026-10-09-…` | pendente — pedir PORTÃO-BANCO com comando literal |
 | M1–M2 (valor com 20+ dígitos → 500; enviada aceita cancelada) | plano `2026-10-09-…` | adiados |
 | M3–M7 (corrida/acessibilidade do BuscaCliente, chave de cobrança paga, favorecido no WebISS, máscara ao trocar tipo) | plano `2026-10-10-pagamento-…` | adiados |

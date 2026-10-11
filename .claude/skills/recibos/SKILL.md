@@ -423,6 +423,8 @@ o relatório mostra a parte que existe.
   completar 8 dígitos (o CEP já salvo não é consultado de novo; o campo CEP subiu para o topo do endereço); botão
   "Buscar dados do CNPJ" (`BuscaCnpj.vue`) aparece com 14 caracteres e a validade é conferida pelo servidor; o perfil
   usa `campo-nome="name"`. `consultar()` nunca lança: falha vira mensagem e o formulário segue manual.
+- T15.1: o "recebido" do painel soma as pagas com `pago_em` no mês (regime de caixa, D1), qualquer que seja o
+  vencimento; o "previsto" continua pelo vencimento — a frase pode mostrar recebido maior que previsto (esperado).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
