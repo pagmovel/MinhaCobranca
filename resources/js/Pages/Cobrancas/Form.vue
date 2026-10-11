@@ -1,6 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
+import { buscarJson } from '../../http.js';
+import { adiar } from '../../listaPaginada.js';
+import { anoCompleto } from '../../filtroPeriodo.js';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
@@ -32,6 +35,24 @@ const form = useForm(props.cobranca ?? {
     chave_pix_id: '',
     linha_digitavel: '',
 });
+
+// Vencimento em dia não útil (Fase 23): a data digitada vale; o aviso só sugere o próximo dia útil (regra no servidor).
+const diaUtil = ref(null);
+let ultimoPedido = 0;
+const conferirVencimento = adiar(async () => {
+    const pedido = ++ultimoPedido;
+    const data = form.vencimento;
+    if (!data || !anoCompleto(data)) {
+        diaUtil.value = null;
+        return;
+    }
+    const { dados } = await buscarJson(`/dias-uteis/proximo?data=${encodeURIComponent(data)}`);
+    // Resposta atrasada de uma data já trocada é descartada; falha não mostra aviso (o formulário segue normal).
+    if (pedido === ultimoPedido) {
+        diaUtil.value = dados && !dados.util ? dados : null;
+    }
+});
+watch(() => form.vencimento, conferirVencimento, { immediate: true });
 
 const travado = Boolean(props.cobranca?.de_contrato);
 const semItens = Boolean(props.cobranca && !props.cobranca.itens.length);
@@ -68,6 +89,12 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
             <Campo id="periodo_fim" rotulo="Fim do período" :erro="form.errors.periodo_fim" class="sm:col-span-2">
                 <input id="periodo_fim" v-model="form.periodo_fim" type="date" class="entrada" :disabled="travado" required>
             </Campo>
+            <Transition name="surgir">
+                <p v-if="diaUtil" role="status" class="flex flex-wrap items-center gap-2 border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+                    <span>{{ diaUtil.aviso }} Próximo dia útil: {{ diaUtil.proximo_rotulo }}.</span>
+                    <button type="button" class="botao-secundario" @click="form.vencimento = diaUtil.proximo">Usar {{ diaUtil.proximo_rotulo }}</button>
+                </p>
+            </Transition>
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" com-linha-digitavel />
             <div class="sm:col-span-6">
                 <button class="botao" :disabled="form.processing">{{ cobranca ? 'Salvar cobrança' : 'Criar cobrança e recibo' }}</button>

@@ -5,6 +5,7 @@ import Campo from '../../Components/Campo.vue';
 import BuscaCnpj from '../../Components/BuscaCnpj.vue';
 import CamposEndereco from '../../Components/CamposEndereco.vue';
 import ChavesPix from '../../Components/ChavesPix.vue';
+import Feriados from '../../Components/Feriados.vue';
 
 const props = defineProps({
     perfil: { type: Object, required: true },
@@ -12,6 +13,9 @@ const props = defineProps({
     ufs: { type: Array, required: true },
     chavesPix: { type: Array, required: true },
     tiposChavePix: { type: Array, required: true },
+    feriados: { type: Array, required: true },
+    feriadosNacionais: { type: Array, required: true },
+    vencimentosParaAjustar: { type: Array, required: true },
 });
 
 const form = useForm({ ...props.perfil, logo: null });
@@ -73,5 +77,6 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
         </form>
 
         <ChavesPix class="mt-10" :chaves="chavesPix" :tipos="tiposChavePix" />
+        <Feriados class="mt-10" :feriados="feriados" :nacionais="feriadosNacionais" :vencimentos="vencimentosParaAjustar" />
     </CamadaApp>
 </template>

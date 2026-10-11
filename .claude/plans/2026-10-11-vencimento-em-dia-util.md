@@ -72,7 +72,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 ### Fase C — Telas, banco de dev e validação
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T23.6 | Seção "Feriados" no perfil + aviso no formulário da cobrança | pendente |
+| T23.6 | Seção "Feriados" no perfil + aviso no formulário da cobrança | **concluída**: build ok, JS 50/50, PHP 419/419; conferência visual na T23.7 |
 | T23.7 | PORTÃO-BANCO da migração, conferência no navegador, validação do usuário | pendente |
 
 ## Mapa de arquivos

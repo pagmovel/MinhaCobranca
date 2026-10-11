@@ -831,6 +831,11 @@ o relatório mostra a parte que existe.
   - **Aviso da avulsa:** `GET /dias-uteis/proximo?data=Y-m-d` (só leitura, 401 sem sessão, 422 com ano inválido) devolve
     `{util, aviso, proximo, proximo_rotulo}` com o calendário do usuário — a regra fica no servidor, o JS não duplica o
     calendário. A data digitada é respeitada; o aviso só sugere.
+  - **Telas.** `Feriados.vue` (seção do perfil, abaixo das chaves PIX, `id="feriados"`): prévia "N cobranças em aberto
+    vencem em dia não útil" com "Ajustar N cobranças" no topo (só aparece quando há), lista local com edição na linha e
+    exclusão em dois cliques (mesmo padrão de `ChavesPix.vue`), nacionais do ano num `<details>`. `Cobrancas/Form.vue`:
+    `watch` do vencimento → `adiar` (400 ms) + `anoCompleto` + contador de pedido (resposta atrasada é descartada) → aviso
+    `surgir` com "Usar <dia>"; vale ao criar e ao editar.
   - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
     10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
     de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.
