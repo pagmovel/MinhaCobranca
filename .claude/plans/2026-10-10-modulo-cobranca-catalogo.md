@@ -39,7 +39,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | testada (suíte 219/219; build ok) |
 | 12 | T12.4 Reajustar contratos | testada (suíte 224/224; build ok) |
 | 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | concluída (migrações no lote 4 com autorização; merge na main) |
-| 13 | T13.1 Filtros e paginação de Clientes | pendente |
+| 13 | T13.1 Filtros e paginação de Clientes | testada (suíte 228/228; build ok) |
 | 13 | T13.2 Filtros e paginação de Contratos | pendente |
 | 13 | T13.3 Fechamento da fase 13 | pendente |
 | 14 | T14.1 Consulta de CNPJ e CEP no servidor | pendente |
@@ -3015,7 +3015,7 @@ git commit -m "feat: reajuste de preço do item nos contratos escolhidos"
 
 ### Tarefa T13.1: Filtros e paginação de Clientes
 
-**Estado:** pendente
+**Estado:** testada (suíte 228/228; build ok)
 
 **Arquivos:**
 - Modificar: `app/Models/Cliente.php` (escopo `comTermo`), `app/Http/Controllers/ClienteController.php` (`index`, `busca`),

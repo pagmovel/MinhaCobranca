@@ -407,6 +407,10 @@ o relatório mostra a parte que existe.
   recalcula `valor_centavos`; total fora do limite desfaz a transação inteira (`ValidationException` lançada dentro de
   `DB::transaction`); cobranças já geradas não mudam; o preço do catálogo não muda (é só sugestão). Sem FormRequest: o
   `findOrFail` do item vem antes do `$request->validate()`, então item alheio dá 404 antes da validação.
+- T13.1: listas paginadas de 25 com `paginate(25)->withQueryString()` (filtros sobrevivem à troca de página e ao link
+  copiado); `orderBy('id')` de desempate para a paginação não repetir nem pular registro; escopo `Cliente::comTermo`
+  compartilhado entre lista e autosugestão; a prop da lista continua sendo array (testes antigos valem) e a paginação
+  vai em `paginacao`.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.

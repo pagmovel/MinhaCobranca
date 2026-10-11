@@ -71,6 +71,8 @@ return [
     'attributes' => [
         'name' => 'nome',
         'itens' => 'itens',
+        'q' => 'busca',
+        'contrato' => 'contrato',
         'quantidade' => 'quantidade',
         'email' => 'e-mail',
         'password' => 'senha',
