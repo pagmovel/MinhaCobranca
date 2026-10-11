@@ -57,6 +57,21 @@ class FeriadosTest extends TestCase
         $this->assertSame(1, $usuario->feriados()->count());
     }
 
+    public function test_limite_de_100_feriados_locais_vale_so_para_incluir(): void
+    {
+        $usuario = User::factory()->create();
+        Feriado::factory()->for($usuario)->count(100)->create();
+        $this->actingAs($usuario);
+
+        $this->post('/perfil/feriados', ['descricao' => 'Mais um', 'tipo' => 'anual', 'dia' => '3', 'mes' => '7'])
+            ->assertSessionHasErrors(['descricao' => 'Limite de 100 feriados locais. Exclua um que não vale mais antes de incluir outro.']);
+        $this->assertSame(100, $usuario->feriados()->count());
+
+        $primeiro = $usuario->feriados()->first();
+        $this->put("/perfil/feriados/{$primeiro->id}", ['descricao' => 'Editado', 'tipo' => 'anual', 'dia' => '3', 'mes' => '7'])
+            ->assertSessionHas('sucesso', 'Feriado atualizado.');
+    }
+
     public function test_edita_e_exclui_so_o_proprio_feriado(): void
     {
         $usuario = User::factory()->create();

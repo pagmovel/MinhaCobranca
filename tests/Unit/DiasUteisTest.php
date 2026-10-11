@@ -90,6 +90,19 @@ class DiasUteisTest extends TestCase
         $this->assertSame('Tiradentes', $dias->motivo($this->data('2026-04-21')), 'no mesmo dia, vale o nome do nacional');
     }
 
+    public function test_calendario_sem_nenhum_dia_util_para_com_erro_em_vez_de_travar(): void
+    {
+        $todosOsDias = [];
+        for ($mes = 1; $mes <= 12; $mes++) {
+            for ($dia = 1; $dia <= (int) date('t', mktime(0, 0, 0, $mes, 1, 2024)); $dia++) {
+                $todosOsDias[] = ['descricao' => 'Feriado', 'tipo' => 'anual', 'dia' => $dia, 'mes' => $mes, 'data' => null];
+            }
+        }
+
+        $this->expectException(\LogicException::class);
+        (new DiasUteis($todosOsDias))->proximoDiaUtil($this->data('2026-10-14'));
+    }
+
     public function test_29_de_fevereiro_anual_so_nos_anos_bissextos(): void
     {
         $dias = new DiasUteis([['descricao' => 'Dia bissexto', 'tipo' => 'anual', 'dia' => 29, 'mes' => 2, 'data' => null]]);

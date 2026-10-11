@@ -10,6 +10,8 @@ use Illuminate\Validation\Validator;
 
 class FeriadoRequest extends FormRequest
 {
+    public const LIMITE = 100;
+
     /** Feriado de outro usuário vira 404 antes da validação (padrão de `ChavePixRequest`). */
     public function authorize(): bool
     {
@@ -50,6 +52,11 @@ class FeriadoRequest extends FormRequest
             if ($this->input('tipo') === 'anual' && ! $validator->errors()->hasAny(['dia', 'mes'])
                 && ! checkdate((int) $this->input('mes'), (int) $this->input('dia'), 2024)) {
                 $validator->errors()->add('dia', 'Este dia não existe no mês escolhido.');
+            }
+
+            // Uma lista local que cobrisse todos os dias deixaria o calendário sem dia útil (`DiasUteis` para com erro).
+            if ($this->route('feriado') === null && $this->user()->feriados()->count() >= self::LIMITE) {
+                $validator->errors()->add('descricao', 'Limite de '.self::LIMITE.' feriados locais. Exclua um que não vale mais antes de incluir outro.');
             }
         }];
     }

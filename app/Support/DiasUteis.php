@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Carbon\CarbonImmutable;
+use LogicException;
 
 /**
  * Calendário de dias úteis do prestador (Fase 23): sábado, domingo, feriados nacionais, Carnaval, Sexta-feira da Paixão
@@ -35,12 +36,19 @@ final class DiasUteis
         return $this->motivo($data) === null;
     }
 
-    /** A própria data, se for dia útil; senão o primeiro dia útil depois dela. */
+    /**
+     * A própria data, se for dia útil; senão o primeiro dia útil depois dela. Um ano inteiro sem dia útil só acontece com
+     * uma lista local que cobre todos os dias: para com erro em vez de girar até acabar a memória.
+     */
     public function proximoDiaUtil(CarbonImmutable $data): CarbonImmutable
     {
         $dia = $data->startOfDay();
 
-        while (! $this->ehDiaUtil($dia)) {
+        for ($passos = 0; ! $this->ehDiaUtil($dia); $passos++) {
+            if ($passos >= 366) {
+                throw new LogicException('Nenhum dia útil em um ano a partir de '.$data->format('d/m/Y').': confira os feriados locais.');
+            }
+
             $dia = $dia->addDay();
         }
 
