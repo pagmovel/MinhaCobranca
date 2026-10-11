@@ -54,7 +54,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | Tarefa | O quê | Estado |
 |---|---|---|
 | T19.1 | `GET /cobrancas/dados` + serviço `ListaDeCobrancas` (lista leve, totais, bloco) + `valor_centavos` em `paraLista` | testada (RED 8× 404 → GREEN; Cobrancas 65/65; JSON sem sessão = 401) |
-| T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | pendente |
+| T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | testada (RED: as 2 asserções da página falharam como esperado → GREEN; suíte inteira 340/340) |
 | T19.3 | JS puro: `paginacao.js` (páginas visíveis, chave do cache, fatiar bloco) e `buscarJson` em `http.js` | pendente |
 | T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | pendente |
 | T19.5 | Skill, revisão final, conferência no navegador (com autorização), validação do usuário | pendente |
@@ -68,6 +68,10 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
     depois da resposta (`dist/index.js:2715`) e não em erro de validação. As visitas feitas só no navegador
     (`router.replace` → `performClientVisit`) não disparam o evento.
   - **URL sem pedido ao servidor.** `router.replace({ url, props })` é a "client-side visit" da v3.
+- **Pedido do usuário durante a execução (2026-10-11):** "se ficar bom, vamos implementar isto em todas as telas que
+  contêm listas de dados". Depois da validação desta fase, abrir uma fase própria para levar o mesmo padrão às outras
+  listas (ajax, cache por bloco, paginador acima e abaixo, totais quando houver valor). Entra junto com a T17.18
+  (clientes e contratos em tabela).
 - **Rótulos do rodapé no plural e em texto** ("Vencidas", "Previstas"…), não o carimbo rotacionado: a especificação
   diz "rótulo do carimbo", mas uma pilha de carimbos no rodapé pesa demais. Se o usuário preferir o carimbo, a troca
   é só no template.

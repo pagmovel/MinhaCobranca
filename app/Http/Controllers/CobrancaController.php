@@ -12,7 +12,6 @@ use App\Models\CobrancaItem;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Services\ListaDeCobrancas;
-use App\Services\PrevisaoDeCobrancas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
@@ -28,75 +27,20 @@ use Inertia\Response;
 
 class CobrancaController extends Controller
 {
-    public function index(Request $request, GeradorDeCobrancas $gerador, PrevisaoDeCobrancas $previsao): Response|RedirectResponse
+    public function index(Request $request, GeradorDeCobrancas $gerador): Response
     {
         $usuario = $request->user();
         $hoje = CarbonImmutable::today();
         $gerador->gerarPara($usuario, $hoje);
 
-        $filtros = $request->validate([
-            'mes' => ['nullable', 'date_format:Y-m'],
-            'ate' => ['nullable', 'date_format:Y-m'],
-            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
-            'cliente_id' => ['nullable', 'integer'],
-            'canceladas' => ['nullable', 'boolean'],
-        ]);
-        $comCanceladas = (bool) ($filtros['canceladas'] ?? false);
-
-        $mes = CarbonImmutable::createFromFormat('Y-m-d', ($filtros['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
-        $ate = isset($filtros['ate']) ? CarbonImmutable::createFromFormat('Y-m-d', $filtros['ate'].'-01')->startOfDay() : $mes;
-
-        // Mesmas mensagens dos relatórios.
-        if ($mes->gt($ate)) {
-            return back()->withErrors(['ate' => 'O fim do período deve ser igual ou depois do início.']);
-        }
-        if ($mes->diffInMonths($ate) >= 36) {
-            return back()->withErrors(['ate' => 'Escolha um período de até 36 meses.']);
-        }
-
-        $status = $filtros['status'] ?? null;
-        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo', 'auditorias'])->orderBy('vencimento')->orderBy('id');
-
-        // "Vencendo hoje" e "Vencidas" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
-        if (! in_array($status, ['vence_hoje', 'vencida'], true)) {
-            $consulta->whereBetween('vencimento', [$mes, $ate->endOfMonth()]);
-        }
-
-        match ($status) {
-            // "Todas" deixa as canceladas de fora, salvo com "Incluir canceladas" marcado (pedido do usuário).
-            null => $comCanceladas ? null : $consulta->where('status', '!=', StatusCobranca::Cancelada),
-            'vence_hoje' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]),
-            'vencida' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '<', $hoje),
-            'a_vencer' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay()),
-            default => $consulta->where('status', $status),
-        };
-        // Previstas (calculadas pelos contratos, nada gravado) só onde entram as em aberto e só depois de hoje: até hoje a
-        // geração ao abrir a tela já criou as cobranças de verdade.
-        $previstas = in_array($status, [null, 'a_vencer', 'pendente'], true)
-            ? $previsao->entre($usuario, $mes->max($hoje->addDay()), $ate->endOfMonth())
-            : [];
-        if (! empty($filtros['cliente_id'])) {
-            $consulta->where('cliente_id', $filtros['cliente_id']);
-            $previstas = array_filter($previstas, fn (array $prevista) => $prevista['cliente_id'] === (int) $filtros['cliente_id']);
-        }
-
-        $lista = $consulta->get()->map(fn (Cobranca $cobranca) => $cobranca->paraLista($hoje))
-            ->concat($previstas)
-            ->sortBy(fn (array $linha) => CarbonImmutable::createFromFormat('!d/m/Y', $linha['vencimento'])->toDateString())
-            ->values();
+        // A lista vem por ajax de /cobrancas/dados; a página só abre a tela com os filtros (o período é conferido lá).
+        $filtros = $this->filtros($request, $hoje);
 
         return Inertia::render('Cobrancas/Index', [
-            'cobrancas' => $lista,
-            'filtros' => [
-                'mes' => $mes->format('Y-m'),
-                'ate' => $ate->format('Y-m'),
-                'status' => $filtros['status'] ?? '',
-                'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
-                'canceladas' => $comCanceladas,
-            ],
+            'filtros' => $this->filtrosParaTela($filtros),
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
-            'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
         ]);
     }
 

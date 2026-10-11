@@ -46,7 +46,8 @@ class FiltroSituacaoTest extends TestCase
     /** @return list<string> */
     private function valores(string $url): array
     {
-        $cobrancas = $this->actingAs($this->usuario)->get($url)->assertOk()->inertiaProps('cobrancas');
+        $this->actingAs($this->usuario)->get($url)->assertOk(); // a página gera as cobranças devidas
+        $cobrancas = $this->getJson(str_replace('/cobrancas', '/cobrancas/dados', $url))->assertOk()->json('linhas');
 
         return array_map(fn (array $cobranca) => $cobranca['valor'], $cobrancas);
     }

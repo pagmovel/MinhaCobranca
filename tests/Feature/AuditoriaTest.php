@@ -179,8 +179,8 @@ class AuditoriaTest extends TestCase
             'pago_em' => '2026-05-17', 'senha' => 'password', 'motivo' => 'Data digitada errada',
         ]);
 
-        $this->get('/cobrancas?mes=2026-05')->assertInertia(fn (Assert $pagina) => $pagina
-            ->where('cobrancas.0.historico', ['10/10/2026 · Pagamento corrigido (antes: 17/06/2026)']));
+        $this->getJson('/cobrancas/dados?mes=2026-05')
+            ->assertJsonPath('linhas.0.historico', ['10/10/2026 · Pagamento corrigido (antes: 17/06/2026)']);
     }
 
     public function test_tela_de_auditoria_lista_so_os_registros_do_usuario_no_periodo(): void

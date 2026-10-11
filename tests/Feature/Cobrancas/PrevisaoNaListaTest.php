@@ -31,9 +31,11 @@ class PrevisaoNaListaTest extends TestCase
     /** @return list<array{0: string, 1: string}> vencimento e situação de cada linha */
     private function linhas(string $consulta): array
     {
+        $this->actingAs($this->usuario)->get('/cobrancas'.$consulta)->assertOk(); // a página gera as cobranças devidas
+
         return array_map(
             fn (array $linha) => [$linha['vencimento'], $linha['situacao']],
-            $this->actingAs($this->usuario)->get('/cobrancas'.$consulta)->assertOk()->inertiaProps('cobrancas'),
+            $this->getJson('/cobrancas/dados'.$consulta)->assertOk()->json('linhas'),
         );
     }
 
@@ -91,14 +93,16 @@ class PrevisaoNaListaTest extends TestCase
         $this->assertSame([['21/10/2026', 'prevista']], $this->linhas('?mes=2026-09&ate=2026-10'));
     }
 
-    public function test_ate_antes_do_mes_ou_mais_de_36_meses_e_recusado(): void
+    public function test_ate_antes_do_mes_ou_mais_de_36_meses_e_recusado_no_json_sem_derrubar_a_pagina(): void
     {
         $this->actingAs($this->usuario);
 
-        $this->get('/cobrancas?mes=2026-10&ate=2026-09')->assertSessionHasErrors(['ate' => 'O fim do período deve ser igual ou depois do início.']);
-        $this->get('/cobrancas?mes=2026-01&ate=2029-01')->assertSessionHasErrors(['ate' => 'Escolha um período de até 36 meses.']);
+        // Link com período ruim abre a tela; o erro vem do JSON e aparece embaixo do "Até".
+        $this->get('/cobrancas?mes=2026-10&ate=2026-09')->assertOk()->assertInertia(fn ($page) => $page->where('filtros.ate', '2026-09'));
+        $this->getJson('/cobrancas/dados?mes=2026-10&ate=2026-09')->assertJsonValidationErrors(['ate' => 'O fim do período deve ser igual ou depois do início.']);
+        $this->getJson('/cobrancas/dados?mes=2026-01&ate=2029-01')->assertJsonValidationErrors(['ate' => 'Escolha um período de até 36 meses.']);
         $this->get('/cobrancas?ate=outubro')->assertSessionHasErrors('ate');
-        $this->get('/cobrancas?mes=2026-01&ate=2028-12')->assertOk();
+        $this->getJson('/cobrancas/dados?mes=2026-01&ate=2028-12')->assertOk();
     }
 
     public function test_previsao_nao_grava_nada(): void
