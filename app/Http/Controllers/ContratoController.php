@@ -12,6 +12,7 @@ use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\ContratoItem;
 use App\Models\User;
+use App\Rules\AnoValido;
 use App\Services\CalculadoraDePeriodos;
 use App\Services\EncerradorDeContratos;
 use App\Support\BlocoDePaginas;
@@ -236,7 +237,7 @@ class ContratoController extends Controller
     public function retroativos(Request $request, CalculadoraDePeriodos $calculadora): JsonResponse
     {
         $dados = $request->validate([
-            'data_inicio' => ['required', 'date_format:Y-m-d'],
+            'data_inicio' => ['required', 'date_format:Y-m-d', new AnoValido],
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
         ]);
         $anteriores = $calculadora->anteriores(
@@ -348,7 +349,7 @@ class ContratoController extends Controller
     private function dadosDoEncerramento(Request $request, Contrato $contrato): array
     {
         $dados = $request->validate([
-            'fim' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$contrato->data_inicio->toDateString()],
+            'fim' => ['required', 'date_format:Y-m-d', new AnoValido, 'after_or_equal:'.$contrato->data_inicio->toDateString()],
             'em_curso' => ['nullable', Rule::in(['proporcional', 'cancelar'])],
         ], [
             'fim.after_or_equal' => 'O fim não pode ser antes do início do contrato ('.$contrato->data_inicio->format('d/m/Y').').',

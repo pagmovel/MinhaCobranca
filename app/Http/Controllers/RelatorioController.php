@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Rules\AnoValido;
 use App\Services\Relatorios;
 use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
@@ -78,7 +79,7 @@ class RelatorioController extends Controller
     /** @return array<string, list<mixed>> */
     private function regras(): array
     {
-        return ['de' => ['nullable', 'date_format:Y-m'], 'ate' => ['nullable', 'date_format:Y-m'], ...BlocoDePaginas::regras()];
+        return ['de' => ['nullable', 'date_format:Y-m', new AnoValido], 'ate' => ['nullable', 'date_format:Y-m', new AnoValido], ...BlocoDePaginas::regras()];
     }
 
     /** @return array{0: CarbonImmutable, 1: CarbonImmutable} padrão: os últimos 12 meses */

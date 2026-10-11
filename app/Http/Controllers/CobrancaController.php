@@ -9,6 +9,7 @@ use App\Http\Requests\PagamentoRequest;
 use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
+use App\Rules\AnoValido;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Services\ListaDeCobrancas;
@@ -72,8 +73,8 @@ class CobrancaController extends Controller
     private function filtros(Request $request, CarbonImmutable $hoje): array
     {
         $validados = $request->validate([
-            'mes' => ['nullable', 'date_format:Y-m'],
-            'ate' => ['nullable', 'date_format:Y-m'],
+            'mes' => ['nullable', 'date_format:Y-m', new AnoValido],
+            'ate' => ['nullable', 'date_format:Y-m', new AnoValido],
             'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
             'canceladas' => ['nullable', 'boolean'],
@@ -235,7 +236,7 @@ class CobrancaController extends Controller
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
-        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
 
         if ($registro->status !== StatusCobranca::Paga) {
             return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
@@ -297,7 +298,7 @@ class CobrancaController extends Controller
     public function pagar(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
-        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', 'before_or_equal:today']]);
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']]);
 
         if ($registro->status !== StatusCobranca::Pendente) {
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');

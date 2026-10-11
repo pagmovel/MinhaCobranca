@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Feriado;
+use App\Rules\AnoValido;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -38,7 +39,7 @@ class FeriadoRequest extends FormRequest
             'tipo' => ['required', Rule::in(Feriado::TIPOS)],
             'dia' => ['nullable', 'required_if:tipo,anual', 'integer', 'between:1,31'],
             'mes' => ['nullable', 'required_if:tipo,anual', 'integer', 'between:1,12'],
-            'data' => ['nullable', 'required_if:tipo,unico', 'date_format:Y-m-d'],
+            'data' => ['nullable', 'required_if:tipo,unico', 'date_format:Y-m-d', new AnoValido],
         ];
     }
 

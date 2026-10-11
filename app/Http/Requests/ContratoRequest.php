@@ -6,6 +6,7 @@ use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Http\Requests\Concerns\RegrasDeItens;
 use App\Http\Requests\Concerns\RegrasDePagamento;
+use App\Rules\AnoValido;
 use App\Rules\LinhasMaximas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -39,8 +40,8 @@ class ContratoRequest extends FormRequest
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
             'modalidade' => ['required', Rule::enum(Modalidade::class)],
             'dia_vencimento' => ['required', 'integer', 'between:1,31'],
-            'data_inicio' => ['required', 'date_format:Y-m-d'],
-            'data_fim' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:data_inicio'],
+            'data_inicio' => ['required', 'date_format:Y-m-d', new AnoValido],
+            'data_fim' => ['nullable', 'date_format:Y-m-d', new AnoValido, 'after_or_equal:data_inicio'],
             'ativo' => ['boolean'],
             'reativar' => ['nullable', 'boolean'],
             'corrigir' => ['nullable', 'boolean'],

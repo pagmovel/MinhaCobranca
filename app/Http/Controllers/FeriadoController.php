@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FeriadoRequest;
+use App\Rules\AnoValido;
 use App\Services\AjusteDeVencimentos;
 use App\Support\DiasUteis;
 use Carbon\CarbonImmutable;
@@ -48,7 +49,7 @@ class FeriadoController extends Controller
     /** Aviso da cobrança avulsa (spec seção 5): só leitura; a data digitada continua valendo. */
     public function proximoDiaUtil(Request $request): JsonResponse
     {
-        $dados = $request->validate(['data' => ['required', 'date_format:Y-m-d']]);
+        $dados = $request->validate(['data' => ['required', 'date_format:Y-m-d', new AnoValido]]);
         $data = CarbonImmutable::createFromFormat('Y-m-d', $dados['data'])->startOfDay();
         $diasUteis = $request->user()->diasUteis();
         $motivo = $diasUteis->motivo($data);
