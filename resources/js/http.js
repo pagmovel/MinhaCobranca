@@ -34,6 +34,10 @@ async function pedirJson(url, metodo, corpo, falha) {
         if (resposta.status === 419) {
             return { mensagem: 'A sessão expirou. Recarregue a página e tente de novo.' };
         }
+        // Pedido JSON sem sessão: o Laravel responde 401 (não redireciona), e "tentar de novo" falharia sempre.
+        if (resposta.status === 401) {
+            return { mensagem: 'A sessão expirou. Recarregue a página para entrar de novo.' };
+        }
 
         return { mensagem: falha };
     } catch {

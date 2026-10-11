@@ -16,7 +16,7 @@ import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
 import { ajustarAte } from '../../filtroPeriodo.js';
 import { buscarJson } from '../../http.js';
 import { formatarCentavos } from '../../itens.js';
-import { chaveDoFiltro, fatiarBloco } from '../../paginacao.js';
+import { criarListaPaginada } from '../../listaPaginada.js';
 
 const props = defineProps({
     filtros: { type: Object, required: true },
@@ -46,25 +46,8 @@ function escolheuAte() {
     escolheuPeriodo();
 }
 
-// A lista vem de /cobrancas/dados em blocos de páginas; o navegador guarda as páginas por filtro e desenha só a atual.
-const linhasDaPagina = ref([]);
-const resumo = ref(null); // { totais, total_geral, pagina: { inicio, por_pagina, total } }
-const carregando = ref(false);
-const carregou = ref(false);
-const falha = ref('');
-const erroAte = ref('');
-let cache = { chave: null, paginas: {} };
-let pedido = 0; // só a resposta do pedido mais recente vale (cliques rápidos)
-
-// A regra "boolean" do Laravel não aceita "true"/"false" na URL: canceladas vai 1 ou nada; vazios ficam de fora.
-const parametros = (pagina) => new URLSearchParams(
-    Object.entries({ ...filtro, canceladas: filtro.canceladas ? 1 : '', pagina })
-        .filter(([, valor]) => valor !== '' && valor !== null && valor !== undefined),
-).toString();
-
-function mostrar(pagina, focar) {
-    filtro.pagina = pagina;
-    linhasDaPagina.value = cache.paginas[pagina] ?? [];
+// A lista vem de /cobrancas/dados em blocos de páginas (listaPaginada.js); a tela só cuida de URL, foco e faixa.
+function aoMostrar(pagina, focar) {
     faixa.value = null;
     // Filtros e página na URL (F5, voltar, link), sem pedido ao servidor nem entrada nova no histórico.
     router.replace({ url: `/cobrancas?${parametros(pagina)}`, props: (atuais) => ({ ...atuais, filtros: { ...filtro } }), preserveState: true, preserveScroll: true });
@@ -76,49 +59,15 @@ function mostrar(pagina, focar) {
         });
     }
 }
+const {
+    linhas: linhasDaPagina, resumo, carregando, falha, erros, estado, parametros, irPara, filtrar, recarregar, aoTerminarAcao, escolheuPorPagina,
+} = criarListaPaginada({ url: '/cobrancas/dados', filtro, buscar: buscarJson, aoMostrar });
+const erroAte = computed(() => erros.value.ate ?? '');
 
-async function irPara(pagina, { focar = false } = {}) {
-    const chave = chaveDoFiltro(filtro);
-    if (cache.chave !== chave) {
-        cache = { chave, paginas: {} };
-    }
-    if (cache.paginas[pagina]) {
-        mostrar(pagina, focar);
-        return;
-    }
-
-    const meu = ++pedido;
-    carregando.value = true;
-    const { dados, erros, mensagem } = await buscarJson(`/cobrancas/dados?${parametros(pagina)}`);
-    if (meu !== pedido) {
-        return; // chegou depois de um pedido mais novo: descarta
-    }
-    carregando.value = false;
-    erroAte.value = erros?.ate ?? '';
-    falha.value = erros ? '' : (mensagem ?? '');
-    if (!dados) {
-        return;
-    }
-    cache.paginas = { ...cache.paginas, ...fatiarBloco(dados.linhas, dados.pagina.inicio, dados.pagina.por_pagina) };
-    resumo.value = dados;
-    carregou.value = true;
-    mostrar(dados.pagina.inicio, focar);
-}
-
-// Filtro novo: o cache dele começa vazio na página 1.
-const filtrar = () => irPara(1);
-const recarregar = () => {
-    cache = { chave: null, paginas: {} };
-    irPara(filtro.pagina);
-};
 function escolheuPeriodo() {
     if (todosOsMeses.value) {
         filtro.status = '';
     }
-    filtrar();
-}
-function escolheuPorPagina(quantidade) {
-    filtro.por_pagina = quantidade;
     filtrar();
 }
 
@@ -128,8 +77,8 @@ let pararDeOuvir = () => {};
 onMounted(() => {
     irPara(filtro.pagina);
     pararDeOuvir = router.on('success', (evento) => {
-        if (evento.detail.page.component === 'Cobrancas/Index' && !carregando.value) {
-            recarregar();
+        if (evento.detail.page.component === 'Cobrancas/Index') {
+            aoTerminarAcao();
         }
     });
 });
@@ -207,7 +156,7 @@ async function fecharFaixa() {
         </Transition>
 
         <!-- Primeira carga: esqueleto no formato das linhas (como o YouTube), sem a tela "pular" quando os dados chegam. -->
-        <div v-if="!carregou && !falha" class="border border-linha bg-white" aria-busy="true">
+        <div v-if="estado === 'carregando'" class="border border-linha bg-white" aria-busy="true">
             <p class="flex items-center gap-2 px-4 py-3 text-sm text-grafite/75" role="status">
                 Carregando cobranças…
                 <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-carbono/25 border-t-carbono" aria-hidden="true" />
@@ -221,11 +170,14 @@ async function fecharFaixa() {
                 <span class="hidden h-8 w-28 rounded-sm bg-linha sm:block" />
             </div>
         </div>
-        <div v-else-if="falha" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
+        <p v-else-if="estado === 'erro-filtro'" class="border border-carbono bg-white px-4 py-3 text-sm">
+            Corrija o período acima para ver as cobranças.
+        </p>
+        <div v-else-if="estado === 'falha'" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
             <span>{{ falha }}</span>
             <button type="button" class="botao-secundario" @click="recarregar">Tentar de novo</button>
         </div>
-        <p v-else-if="!resumo.pagina.total" class="border border-carbono bg-white px-4 py-3 text-sm">
+        <p v-else-if="estado === 'vazio'" class="border border-carbono bg-white px-4 py-3 text-sm">
             {{ vazio }}
         </p>
 

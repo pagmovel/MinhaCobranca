@@ -57,7 +57,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | testada (RED: as 2 asserções da página falharam como esperado → GREEN; suíte inteira 340/340) |
 | T19.3 | JS puro: `paginacao.js` (páginas visíveis, chave do cache, fatiar bloco) e `buscarJson` em `http.js` | testada (RED: módulo e export inexistentes → GREEN; JS 32/32) |
 | T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | **validada** pelo usuário em 2026-10-11 ("Aprovo o carregamento da lista de cobranças"); build ok, JS 32/32, PHP 342/342 |
-| T19.5 | Skill, revisão final, conferência no navegador (com autorização), validação do usuário | pendente |
+| T19.5 | Skill, revisão final, conferência no navegador (com autorização), validação do usuário | concluída: skill atualizada; revisão final (Opus, só leitura, sem rodar suítes) com 0 Critical, 2 Important e 7 Minor; correções testadas (JS 38/38, PHP 342/342, build ok); conferência visual completa pendente (pede autorização) |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - **Verificado antes do plano** (o que estava marcado [A VERIFICAR] na especificação):
@@ -90,6 +90,25 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
   é escrita no banco.
 - **Pedido do usuário:** "Carregando cobranças…" com o indicador girando no fim do texto e uma tabela-esqueleto, como
   no YouTube (aprovado: "SIM"). Ajuste da T19.4.
+- **Revisão final (Opus, só leitura; não rodou as suítes): 0 Critical, 2 Important, 7 Minor.**
+  - **Corrigido:** a lógica de carga saiu do `Index.vue` para `resources/js/listaPaginada.js`
+    (`criarListaPaginada`), com teste usando `fetch` falso. O mesmo módulo é a base da Fase 20.
+    - **I1:** clicar numa página do cache enquanto outra carrega deixava a resposta atrasada mudar a página. Agora o
+      caminho do cache invalida o pedido em andamento.
+    - **I2:** link com período ruim deixava o esqueleto girando para sempre. Agora há o estado `erro-filtro`, com
+      "Corrija o período acima para ver as cobranças.".
+    - **M1, subido para Important:** a recarga depois de uma ação se perdia se outra página estivesse carregando.
+      Agora `aoTerminarAcao` só pula na primeira carga.
+    - **M5, subido para Important:** sessão caída em pedido JSON (401) mostrava "Tentar de novo", que falharia sempre.
+      Agora a mensagem manda recarregar a página.
+    - Os testes de I1 e M1 foram conferidos reintroduzindo cada defeito numa cópia: os dois falham.
+  - **Adiados (Minor):**
+    - **M2:** ao trocar "Por página", o paginador mostra números errados até a resposta chegar.
+    - **M3:** o estado vazio e o de falha não têm indicador de carregando.
+    - **M4:** 422 num campo que não é `ate` fica sem mensagem.
+    - **M6:** `role="status"` criado já com conteúdo, dois `<nav>` com o mesmo rótulo, e o foco cai no `body` quando
+      a linha some depois de uma ação.
+    - **M7:** o 419 não tem teste com os cabeçalhos do Inertia.
 - **Rótulos do rodapé no plural e em texto** ("Vencidas", "Previstas"…), não o carimbo rotacionado: a especificação
   diz "rótulo do carimbo", mas uma pilha de carimbos no rodapé pesa demais. Se o usuário preferir o carimbo, a troca
   é só no template.

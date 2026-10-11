@@ -57,3 +57,9 @@ test('buscarJson faz GET sem corpo e avisa a falha como "carregar"', async () =>
     globalThis.fetch = async () => { throw new TypeError('sem rede'); };
     assert.deepEqual(await buscarJson('/x'), { mensagem: 'Não foi possível carregar agora. Tente de novo.' });
 });
+
+test('401 (sessão caiu num pedido JSON) diz para recarregar, em vez do "tente de novo" que falharia sempre', async () => {
+    globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Unauthenticated.' }), { status: 401 });
+
+    assert.deepEqual(await buscarJson('/x'), { mensagem: 'A sessão expirou. Recarregue a página para entrar de novo.' });
+});
