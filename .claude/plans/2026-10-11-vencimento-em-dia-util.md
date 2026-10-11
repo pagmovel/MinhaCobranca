@@ -46,7 +46,7 @@ Skill: `.claude/skills/recibos/SKILL.md` (ler inteira antes de executar).
    `FeriadosTest::test_recusa_dia_que_nao_existe_e_data_com_ano_de_cinco_digitos`,
    `VencimentoEmDiaUtilTest::test_proximo_dia_util_para_o_aviso_da_avulsa` (T23.3, T23.5).
 
-## Perguntas em aberto (não bloqueiam; padrão adotado entre parênteses)
+## Perguntas (respondidas pelo usuário em 2026-10-11: **P1 e P2 = SIM** → T23.10 e T23.11)
 - **P1.** Registrar o ajuste em lote na auditoria (`cobranca.vencimento_ajustado`, como `cobranca.editada`)? (Padrão: não;
   a spec não pede.)
 - **P2.** Avisar no Painel quando houver cobranças em aberto vencendo em dia não útil, com link para o perfil? (Padrão:
@@ -73,7 +73,20 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | Tarefa | O quê | Estado |
 |---|---|---|
 | T23.6 | Seção "Feriados" no perfil + aviso no formulário da cobrança | **concluída**: build ok, JS 50/50, PHP 419/419; conferência visual na T23.7 |
-| T23.7 | PORTÃO-BANCO da migração, conferência no navegador, validação do usuário | pendente |
+| T23.7 | PORTÃO-BANCO da migração, conferência no navegador, validação do usuário | **migração aplicada** no dev (2026-10-11, "sim" do usuário; `207.180.205.211:1`, `recibos`, `recibos_app`, não é produção; 18 → 19 tabelas, 0 pendentes). Conferência no navegador: depois da fase D |
+
+### Fase D — pedidos do usuário depois da revisão final (2026-10-11)
+Palavras do usuário: "Aplicar revisão final (revisor independente). Corrigir agora os problemas menores que foram deixados
+para depois. As perguntas P1 (registrar o ajuste na auditoria) e P2 (aviso no Painel) passam para SIM." E, no meio da
+execução: "Eu quero que toda requisição ajax seja sinalizada no frontend como um spinner bem visível para que o cliente
+não pense que está tudo parado. Agora mesmo tive algumas interações que me deixaram achando que algo tinha quebrado."
+
+| Tarefa | O quê | Estado |
+|---|---|---|
+| T23.8 | Indicador global de carregamento: todo `fetch` (embrulho único do `fetch` global — 6 componentes chamam `fetch` direto) e toda visita do Inertia (`router.on('start'/'finish')`) acendem um aviso fixo "Carregando…" com spinner | **testada**: `carregando.test.js` (3) RED → GREEN; JS 53/53, build ok. Conferência no navegador na T23.7 |
+| T23.9 | Os 6 menores da revisão final (ano 0000; laço sem limite; aviso velho na avulsa; falha do "Ajustar" sem mensagem; acessibilidade; consultas por cobrança no "Ajustar") | pendente |
+| T23.10 | P1: o ajuste em lote grava `cobranca.vencimento_ajustado` na auditoria (uma linha por cobrança, mesma transação) | pendente |
+| T23.11 | P2: aviso no Painel "N cobranças em aberto vencem em dia não útil" com o link que resolve (`/perfil#feriados`) | pendente |
 
 ## Mapa de arquivos
 | Arquivo | Responsabilidade |

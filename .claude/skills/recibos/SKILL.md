@@ -57,6 +57,13 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
     `EstadoDaLista` + `Paginador` + `BlocoDePaginas`.
 
     Ver "Fase 19" e "Fase 20" nos Acertos.
+13. **Todo pedido ao servidor mostra o indicador global "Carregando…"** (pedido do usuário, 2026-10-11: "toda requisição
+    ajax seja sinalizada ... para que o cliente não pense que está tudo parado"). Já é automático: `resources/js/carregando.js`
+    embrulha o `fetch` global uma vez (`vigiarFetch`) e conta as visitas do Inertia (`router.on('start'/'finish')` em
+    `app.js`); `IndicadorDeCarregamento.vue` (renderizado ao lado do `App` na raiz, vale em todas as telas, inclusive
+    login) mostra uma pílula fixa no topo com spinner, acima dos modais (`z-[60]`), sem bloquear cliques, com região
+    `aria-live` sempre presente. **Tela nova não precisa fazer nada** — mas não usar `XMLHttpRequest` nem outra biblioteca
+    HTTP (escaparia do contador). O spinner local da lista/autosugestão continua (mostra *onde* está carregando).
 
 Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
 
