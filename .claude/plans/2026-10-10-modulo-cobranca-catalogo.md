@@ -38,7 +38,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 12 | T12.2 Itens no contrato | testada (suíte 213/213; build ok) |
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | testada (suíte 219/219; build ok) |
 | 12 | T12.4 Reajustar contratos | testada (suíte 224/224; build ok) |
-| 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | pendente |
+| 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | concluída (migrações no lote 4 com autorização; merge na main) |
 | 13 | T13.1 Filtros e paginação de Clientes | pendente |
 | 13 | T13.2 Filtros e paginação de Contratos | pendente |
 | 13 | T13.3 Fechamento da fase 13 | pendente |
@@ -2995,7 +2995,7 @@ git commit -m "feat: reajuste de preço do item nos contratos escolhidos"
 
 ### Tarefa T12.5: PORTÃO-BANCO + fechamento da fase 12
 
-**Estado:** pendente
+**Estado:** concluída (2026-10-10: `php artisan migrate` autorizado; lote 4; contratos 4 e cobranças 8 inalterados)
 
 - [ ] `php artisan db:show --counts` e `php artisan migrate:status` (leitura); mostrar ao usuário: conexão (PostgreSQL de
   **desenvolvimento** `207.180.205.211:1`, banco `recibos`, usuário `recibos_app`), as contagens de `contratos` e
