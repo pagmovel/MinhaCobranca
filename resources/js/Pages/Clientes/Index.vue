@@ -62,7 +62,7 @@ const filtrar = () => router.get('/clientes', filtro, { preserveState: true, rep
             {{ filtrando ? 'Nenhum cliente com estes filtros.' : 'Nenhum cliente ainda. Cadastre o primeiro para criar contratos e cobranças.' }}
         </p>
 
-        <TransitionGroup v-else tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
             <li v-for="cliente in clientes" :key="cliente.id">
                 <Link :href="`/clientes/${cliente.id}/edit`" class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 hover:bg-papel">
                     <span class="font-semibold">{{ cliente.nome }}</span>

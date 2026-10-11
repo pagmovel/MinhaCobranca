@@ -25,9 +25,14 @@ abstract class TestCase extends BaseTestCase
         return $app;
     }
 
-    /** @param  array{driver?: string, database?: string}  $conexao */
+    /** @param  array{driver?: string, database?: string, url?: ?string}  $conexao */
     public static function bancoDeTeste(array $conexao): bool
     {
+        // DB_URL definida no ambiente manda no banco de verdade, por cima do nome: recusar sempre.
+        if (! empty($conexao['url'])) {
+            return false;
+        }
+
         return match ($conexao['driver'] ?? null) {
             'pgsql' => ($conexao['database'] ?? null) === 'recibos_teste',
             'sqlite' => ($conexao['database'] ?? null) === ':memory:',

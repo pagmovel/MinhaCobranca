@@ -72,7 +72,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
             {{ vazio }}
         </p>
 
-        <TransitionGroup v-else tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
             <LinhaCobranca v-for="cobranca in cobrancas" :key="cobranca.id" :cobranca="cobranca">
                 <a v-if="cobranca.recibo" :href="cobranca.recibo.pdf_url" target="_blank" rel="noopener" class="botao-secundario">Ver PDF</a>
                 <BotaoEnviar

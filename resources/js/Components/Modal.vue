@@ -33,7 +33,11 @@ function teclado(evento) {
         }
         const primeiro = lista[0];
         const ultimo = lista[lista.length - 1];
-        if (evento.shiftKey && document.activeElement === primeiro) {
+        // Foco fora da janela (botão que sumiu, clique no fundo): volta para dentro.
+        if (!painel.value?.contains(document.activeElement)) {
+            evento.preventDefault();
+            primeiro.focus();
+        } else if (evento.shiftKey && document.activeElement === primeiro) {
             evento.preventDefault();
             ultimo.focus();
         } else if (!evento.shiftKey && document.activeElement === ultimo) {
@@ -47,23 +51,27 @@ watch(() => props.aberto, async (aberto) => {
     if (aberto) {
         focoAnterior = document.activeElement;
         document.body.style.overflow = 'hidden';
+        // No documento, não no fundo: Esc e Tab valem mesmo se o foco cair no body.
+        document.addEventListener('keydown', teclado);
         await nextTick();
         (painel.value?.querySelector('[autofocus]') ?? focaveis()[0])?.focus();
     } else {
         document.body.style.overflow = '';
+        document.removeEventListener('keydown', teclado);
         focoAnterior?.focus?.();
     }
 });
 
 onBeforeUnmount(() => {
     document.body.style.overflow = '';
+    document.removeEventListener('keydown', teclado);
 });
 </script>
 
 <template>
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="aberto" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-grafite/40 px-4 py-10" @keydown="teclado">
+            <div v-if="aberto" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-grafite/40 px-4 py-10">
                 <div
                     ref="painel"
                     role="dialog"

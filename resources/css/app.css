@@ -96,6 +96,12 @@
     opacity: 0;
     transform: translateX(12px);
 }
+/* Em listas (ul), a linha que sai deixa o fluxo para as outras deslizarem; em tabela (tr) fica, senão a coluna quebra. */
+ul > .lista-leave-active {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
 
 /* Modal: fundo escurece e o painel cresce um pouco. */
 .modal-enter-active,

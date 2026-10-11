@@ -476,6 +476,11 @@ o relatório mostra a parte que existe.
 - **Animações (pedido do usuário):** classes em `app.css` — `<Transition name="surgir">` (avisos, listas),
   `<TransitionGroup name="lista">` (linhas), `modal`, `.aparecer`, `.destacar` (total que mudou), transição de
   foco/hover/clique em `.entrada` e botões; tudo desligado por `prefers-reduced-motion`.
+- **Pegadinha (revisão Fase 17): resposta que chega depois do blur reabre a lista** e ela fica flutuando sobre o
+  formulário. Toda autosugestão: no blur cancelar timer + fetch; depois do `await`, só abrir se
+  `document.activeElement` ainda é o campo. **Modal:** ouvir `keydown` no `document` (não no fundo) — botão que some
+  (ex.: "Incluir" → "✓ Incluído") joga o foco no `body` e o Esc deixaria de funcionar.
+- **Trava do banco de teste recusa `DB_URL` preenchida** (a URL manda no banco de verdade, por cima do nome).
 - **Pegadinha (smoke):** `element.focus()` por script num Chrome headless sem foco de janela **não dispara** o evento
   `focus` (parecia defeito da lista ao focar). Usar clique real: `Input.dispatchMouseEvent` (pressed/released).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da

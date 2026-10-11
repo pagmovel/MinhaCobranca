@@ -8,7 +8,6 @@ import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
     contrato: { type: Object, default: null },
-    temClientes: { type: Boolean, required: true },
     clienteAtual: { type: Object, default: null },
     periodicidades: { type: Array, required: true },
     modalidades: { type: Array, required: true },

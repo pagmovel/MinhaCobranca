@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import Campo from './Campo.vue';
 import CadastroRapidoChavePix from './CadastroRapidoChavePix.vue';
 
@@ -23,6 +23,7 @@ watch(() => props.chavesPix, (novas) => {
 function chaveCriada(chave) {
     chaves.value.push(chave);
     props.form.chave_pix_id = chave.id;
+    router.reload({ only: ['chavesPix'] }); // as outras linhas da tela (lista de cobranças) também passam a vê-la
 }
 </script>
 

@@ -37,4 +37,8 @@ test('falha de rede ou resposta sem JSON vira mensagem; nunca lança', async () 
 
     globalThis.fetch = async () => new Response('<html>erro</html>', { status: 500 });
     assert.deepEqual(await enviarJson('/x', {}), { mensagem: FALHA });
+
+    // Redirecionamento seguido pelo fetch (ex.: conta bloqueada → /entrar) chega como 200 com HTML.
+    globalThis.fetch = async () => new Response('<html>entrar</html>', { status: 200 });
+    assert.deepEqual(await enviarJson('/x', {}), { mensagem: FALHA });
 });

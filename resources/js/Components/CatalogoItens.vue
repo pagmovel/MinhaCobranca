@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
 import Modal from './Modal.vue';
 
 /** Catálogo em lista: inclui vários itens sem fechar a janela; o que já está no contrato aparece marcado. */
@@ -38,6 +38,16 @@ async function buscar() {
     }
 }
 
+async function incluir(item, evento) {
+    const linha = evento.currentTarget.closest('li');
+    emit('incluir', item);
+    await nextTick();
+    const proximo = linha?.parentElement && [...linha.parentElement.querySelectorAll('li button')].find(
+        (botao) => linha.compareDocumentPosition(botao) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    (proximo ?? document.getElementById('catalogo_busca'))?.focus();
+}
+
 function digitou() {
     clearTimeout(espera);
     espera = setTimeout(buscar, 250);
@@ -73,14 +83,14 @@ watch(() => props.aberto, (aberto) => {
         <p v-if="!itens.length && !carregando" class="border border-linha bg-papel px-4 py-3 text-sm">
             {{ termo.trim() ? 'Nada encontrado com esse nome.' : 'Seu catálogo ainda está vazio.' }}
         </p>
-        <TransitionGroup v-else tag="ul" name="lista" class="max-h-96 divide-y divide-linha overflow-y-auto border border-linha">
+        <TransitionGroup v-else tag="ul" name="lista" class="relative max-h-96 divide-y divide-linha overflow-y-auto border border-linha">
             <li v-for="item in itens" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                 <span>
                     <span class="font-semibold">{{ item.nome }}</span>
                     <span class="block font-estreita text-xs text-grafite/70">R$ {{ item.preco }} por {{ item.unidade }}</span>
                 </span>
                 <span v-if="incluidos.includes(item.id)" class="font-estreita text-sm text-tinta-verde">✓ Incluído</span>
-                <button v-else type="button" class="botao-secundario px-3 py-1" @click="emit('incluir', item)">Incluir</button>
+                <button v-else type="button" class="botao-secundario px-3 py-1" :aria-label="`Incluir ${item.nome}`" @click="incluir(item, $event)">Incluir</button>
             </li>
         </TransitionGroup>
         <p class="mt-2 text-xs text-grafite/70">Mostra até 10 por vez; digite para encontrar outros. Só itens ativos.</p>

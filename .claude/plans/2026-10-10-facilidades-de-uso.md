@@ -30,7 +30,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.4 | Cliente sem sair da tela: "Cadastrar cliente «texto»" no contrato e na cobrança (modal com CNPJ/CEP → `POST /clientes` JSON) | testada (suíte; navegador: modal abre com o texto digitado, Esc fecha sem perder o formulário) — gravação real não exercitada no smoke (sem autorização para criar dados) |
 | T17.5 | Chave PIX sem sair da tela: "Nova chave PIX" na forma de pagamento (modal → `POST /perfil/chaves-pix` JSON) | testada (suíte; navegador: modal na forma de pagamento, erro de chave inválida, 390 px) |
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | testada (navegador: 6 telas animadas sem erro no console; filtro preserva estado; build ok) |
-| T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | pendente |
+| T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | testada (revisão opus: 0 Critical, 2 Important + 1 Minor de segurança corrigidos; suíte 264/264; JS 16/16; navegador ok) — merge na main |
 
 Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smoke) → `validada` (usuário confirmou).
 
@@ -40,3 +40,13 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smok
   formato da autosugestão; validação continua no mesmo FormRequest (422 automático).
 - `BuscaAutosugestao.vue` ganha: busca com termo vazio ao focar (servidor devolve os primeiros 10 quando `q` vazio,
   só para `GET` com `todos=1`), slot/emit `cadastrar(texto)` mostrado quando não há resultado ou sempre no fim.
+
+## Revisão final (2026-10-10, subagente opus)
+- Corrigidos: (I1) lista da autosugestão reabria depois do blur — `saiu()` cancela a busca e a resposta só abre a
+  lista se o campo ainda tem foco; (I2) Esc/Tab perdidos no catálogo depois de "Incluir" — listener do Modal no
+  `document` + foco vai para o próximo "Incluir"; (M8→Important) trava do banco recusa `DB_URL` preenchida
+  (`TravaDoBancoDeTesteTest` RED→GREEN); (M3) `enviarJson` trata 200 sem JSON como falha (`http.test.js` RED→GREEN);
+  (M1) 1 letra mostra só "Cadastrar"; (M2) clique não duplica a busca; (M4) chave PIX nova recarrega `chavesPix`;
+  (M5) `temClientes` removido; (M6) linha que sai de `ul` fica `absolute`; (M7) teste com cabeçalhos reais do Inertia.
+- Não julgados (decisão): durações das animações (regra 5), `color-mix()` (navegadores suportados não definidos),
+  vários `Modal` por linha (só renderizam abertos), heurística CPF/CNPJ do cadastro rápido de cliente.

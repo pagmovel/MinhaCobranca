@@ -151,7 +151,6 @@ class ContratoController extends Controller
                 'forma_pagamento' => $contrato->forma_pagamento->value,
                 'chave_pix_id' => $contrato->chave_pix_id ?? '',
             ] : null,
-            'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $contrato?->cliente()->first(['id', 'nome']),
             'periodicidades' => Periodicidade::opcoes(),
             'modalidades' => Modalidade::opcoes(),

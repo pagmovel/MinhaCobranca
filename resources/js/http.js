@@ -26,7 +26,8 @@ export async function enviarJson(url, dados, metodo = 'POST') {
         });
         const corpo = await resposta.json().catch(() => null);
 
-        if (resposta.ok) {
+        // 200 sem JSON = redirecionamento seguido pelo fetch (ex.: sessão caiu → /entrar): não deu certo.
+        if (resposta.ok && corpo !== null) {
             return { dados: corpo };
         }
         if (resposta.status === 422 && corpo?.errors) {

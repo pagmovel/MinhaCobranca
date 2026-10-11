@@ -22,6 +22,7 @@ const sugestoes = ref([]);
 const ativo = ref(-1);
 const aberto = ref(false);
 const carregando = ref(false);
+const campo = ref(null);
 let espera = null;
 let controle = null;
 
@@ -50,7 +51,8 @@ async function buscar(termo) {
         });
         sugestoes.value = resposta.ok ? await resposta.json() : [];
         ativo.value = opcoes.value.length ? 0 : -1;
-        aberto.value = true;
+        // A resposta pode chegar depois de a pessoa sair do campo (Tab): aí a lista não reabre sozinha.
+        aberto.value = document.activeElement === campo.value;
     } catch (falha) {
         if (falha.name !== 'AbortError') {
             sugestoes.value = [];
@@ -70,9 +72,17 @@ function digitou() {
 
 /** Campo vazio recebendo o foco: mostra os primeiros, sem precisar adivinhar o que digitar. */
 function focou() {
-    if (!props.desativado && texto.value.trim() === '' && !aberto.value) {
+    if (!props.desativado && texto.value.trim() === '' && !aberto.value && !carregando.value) {
         buscar('');
     }
+}
+
+/** Saiu do campo: fecha e cancela a busca pendente (senão a resposta reabriria a lista sobre o formulário). */
+function saiu() {
+    clearTimeout(espera);
+    controle?.abort();
+    carregando.value = false;
+    aberto.value = false;
 }
 
 function escolher(opcao) {
@@ -125,6 +135,7 @@ onBeforeUnmount(() => {
     <div class="relative">
         <input
             :id="id"
+            ref="campo"
             v-model="texto"
             type="text"
             role="combobox"
@@ -142,7 +153,7 @@ onBeforeUnmount(() => {
             @focus="focou"
             @click="focou"
             @keydown="teclado"
-            @blur="aberto = false"
+            @blur="saiu"
         >
         <Transition name="surgir">
             <span
@@ -159,7 +170,7 @@ onBeforeUnmount(() => {
                 role="listbox"
                 class="absolute z-20 mt-1 max-h-72 w-full overflow-auto border border-linha bg-white shadow-md"
             >
-                <li v-if="!sugestoes.length && !carregando" class="px-3 py-2 text-sm text-grafite/70">{{ nenhum }}</li>
+                <li v-if="!sugestoes.length && !carregando && texto.trim().length !== 1" role="presentation" class="px-3 py-2 text-sm text-grafite/70">{{ nenhum }}</li>
                 <li
                     v-for="(opcao, indice) in opcoes"
                     :id="`${id}-opcao-${indice}`"

@@ -87,7 +87,7 @@ class TelasCobrancaTest extends TestCase
 
         $this->actingAs($this->usuario);
         $this->get('/cobrancas/create')
-            ->assertInertia(fn (Assert $page) => $page->component('Cobrancas/Form')->where('cobranca', null)->where('temClientes', true)->where('clienteAtual', null));
+            ->assertInertia(fn (Assert $page) => $page->component('Cobrancas/Form')->where('cobranca', null)->where('clienteAtual', null));
         $this->get("/cobrancas/{$editavel->id}/edit")
             ->assertInertia(fn (Assert $page) => $page->where('cobranca.id', $editavel->id)->where('cobranca.valor', '260,60')->where('clienteAtual.id', $this->cliente->id));
         $this->get("/cobrancas/{$enviada->id}/edit")

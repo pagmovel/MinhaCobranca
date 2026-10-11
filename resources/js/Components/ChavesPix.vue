@@ -49,7 +49,7 @@ const excluir = (id) => router.delete(`/perfil/chaves-pix/${id}`, {
         <h2 id="titulo-chaves-pix" class="text-sm font-semibold">Chaves PIX</h2>
         <p class="text-sm text-grafite/80">As chaves aparecem para escolha nos contratos e cobranças; o recibo mostra o QR Code da chave escolhida.</p>
 
-        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
             <li v-for="chave in linhas" :key="chave.id" :class="editando === chave.id ? 'bg-papel' : ''">
                 <form
                     v-if="editando === chave.id"

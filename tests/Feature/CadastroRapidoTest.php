@@ -66,6 +66,10 @@ class CadastroRapidoTest extends TestCase
 
     public function test_formulario_tradicional_continua_redirecionando(): void
     {
+        // Cabeçalhos reais de uma visita do Inertia: não é pedido de JSON, então o redirect continua.
+        $this->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest', 'Accept' => 'text/html, application/xhtml+xml'])
+            ->post('/produtos-servicos', ['nome' => 'Domínio', 'tipo' => 'servico', 'unidade' => 'un', 'preco' => '40,00'])
+            ->assertRedirect('/produtos-servicos');
         $this->post('/produtos-servicos', ['nome' => 'Hospedagem', 'tipo' => 'servico', 'unidade' => 'mês', 'preco' => '89,90'])
             ->assertRedirect('/produtos-servicos');
         $this->post('/clientes', ['nome' => 'Ana', 'documento' => '529.982.247-25', 'modelo' => 'webiss'])
@@ -94,7 +98,7 @@ class CadastroRapidoTest extends TestCase
     public function test_formulario_abre_mesmo_sem_cliente_cadastrado(): void
     {
         foreach (['/contratos/create', '/cobrancas/create'] as $url) {
-            $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page->where('temClientes', false));
+            $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page->where('clienteAtual', null)->missing('temClientes'));
         }
     }
 
