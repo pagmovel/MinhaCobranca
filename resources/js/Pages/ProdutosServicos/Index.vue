@@ -50,7 +50,7 @@ const filtrar = () => router.get('/produtos-servicos', filtro, { preserveState: 
             Nenhum produto ou serviço com estes filtros. Cadastre o que você vende para montar contratos por itens.
         </p>
 
-        <ul v-else class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
             <li v-for="item in itens" :key="item.id" :class="{ 'opacity-60': !item.ativo }">
                 <Link :href="`/produtos-servicos/${item.id}/edit`" class="grid gap-1 px-4 py-3 hover:bg-papel sm:grid-cols-[1fr_auto]">
                     <span class="font-semibold">{{ item.nome }}</span>
@@ -58,7 +58,7 @@ const filtrar = () => router.get('/produtos-servicos', filtro, { preserveState: 
                     <span class="font-estreita text-xs text-grafite/70">{{ item.tipo }}{{ item.ativo ? '' : ', inativo' }}</span>
                 </Link>
             </li>
-        </ul>
+        </TransitionGroup>
 
         <Paginacao :paginacao="paginacao" />
     </CamadaApp>

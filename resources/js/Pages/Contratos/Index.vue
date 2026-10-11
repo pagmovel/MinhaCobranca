@@ -70,7 +70,7 @@ const filtrar = () => router.get('/contratos', filtro, { preserveState: true, re
                 : 'Nenhum contrato ainda. Com um contrato, a cobrança e o recibo de cada período são gerados sozinhos.' }}
         </p>
 
-        <ul v-else class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
             <li v-for="contrato in contratos" :key="contrato.id" :class="{ 'opacity-60': !contrato.ativo }">
                 <Link :href="`/contratos/${contrato.id}/edit`" class="grid gap-1 px-4 py-3 hover:bg-papel sm:grid-cols-[1fr_auto]">
                     <span class="font-semibold">{{ contrato.cliente }}</span>
@@ -81,7 +81,7 @@ const filtrar = () => router.get('/contratos', filtro, { preserveState: true, re
                     </span>
                 </Link>
             </li>
-        </ul>
+        </TransitionGroup>
 
         <Paginacao :paginacao="paginacao" />
     </CamadaApp>

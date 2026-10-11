@@ -72,7 +72,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
             {{ vazio }}
         </p>
 
-        <ul v-else class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="divide-y divide-linha border border-linha bg-white">
             <LinhaCobranca v-for="cobranca in cobrancas" :key="cobranca.id" :cobranca="cobranca">
                 <a v-if="cobranca.recibo" :href="cobranca.recibo.pdf_url" target="_blank" rel="noopener" class="botao-secundario">Ver PDF</a>
                 <BotaoEnviar
@@ -93,6 +93,6 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
                 <Link v-if="cobranca.editavel" :href="`/cobrancas/${cobranca.id}/edit`" class="botao-secundario">Editar</Link>
                 <CancelarInline v-if="aberta(cobranca)" :cobranca-id="cobranca.id" />
             </LinhaCobranca>
-        </ul>
+        </TransitionGroup>
     </CamadaApp>
 </template>

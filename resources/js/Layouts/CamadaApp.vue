@@ -71,13 +71,20 @@ const sair = () => router.post('/sair');
         </nav>
 
         <main class="mx-auto w-full max-w-5xl px-4 py-6 md:px-8">
-            <p v-if="flash.sucesso" role="status" class="mb-4 border-l-4 border-tinta-verde bg-white px-4 py-2 text-sm">
-                {{ flash.sucesso }}
-            </p>
-            <p v-if="flash.erro" role="alert" class="mb-4 border-l-4 border-tinta-vermelha bg-white px-4 py-2 text-sm">
-                {{ flash.erro }}
-            </p>
-            <slot />
+            <Transition name="surgir">
+                <p v-if="flash.sucesso" :key="flash.sucesso" role="status" class="mb-4 border-l-4 border-tinta-verde bg-white px-4 py-2 text-sm">
+                    {{ flash.sucesso }}
+                </p>
+            </Transition>
+            <Transition name="surgir">
+                <p v-if="flash.erro" :key="flash.erro" role="alert" class="mb-4 border-l-4 border-tinta-vermelha bg-white px-4 py-2 text-sm">
+                    {{ flash.erro }}
+                </p>
+            </Transition>
+            <!-- Anima ao trocar de tela; mudar só o filtro (mesma tela) não remonta nada. -->
+            <div :key="page.component" class="aparecer">
+                <slot />
+            </div>
         </main>
     </div>
 </template>
