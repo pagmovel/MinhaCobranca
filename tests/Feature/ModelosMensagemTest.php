@@ -26,7 +26,9 @@ class ModelosMensagemTest extends TestCase
         $this->post('/perfil/mensagens', ['nome' => 'Aviso', 'texto' => 'Olá {cliente}!'])
             ->assertRedirect()->assertSessionHas('sucesso', 'Modelo cadastrado.');
         $modelo = $this->usuario->modelosMensagem()->sole();
-        $this->assertSame(['Aviso', 'Olá {cliente}!', false], [$modelo->nome, $modelo->texto, $modelo->padrao]);
+        // Primeiro (e único) modelo do usuário: vira padrão mesmo sem marcar o checkbox (spec §2: "exatamente um
+        // padrão quando houver modelos" — achado da revisão, T24.9).
+        $this->assertSame(['Aviso', 'Olá {cliente}!', true], [$modelo->nome, $modelo->texto, $modelo->padrao]);
 
         $this->put("/perfil/mensagens/{$modelo->id}", ['nome' => 'Aviso editado', 'texto' => 'Oi {cliente}!'])
             ->assertRedirect()->assertSessionHas('sucesso', 'Modelo atualizado.');
@@ -50,15 +52,59 @@ class ModelosMensagemTest extends TestCase
         $this->assertSame([true, false], [$um->fresh()->padrao, $dois->fresh()->padrao]);
     }
 
-    public function test_desmarcar_o_padrao_funciona_mesmo_sem_mandar_outro(): void
+    /**
+     * Checkbox desmarcado: o navegador não manda a chave "padrao" (não "padrao=false") — essa é a pegadinha.
+     * Mas o resultado não pode zerar o padrão (spec §2: "exatamente um padrão quando houver modelos"), então a
+     * desmarcação do único padrão é recusada (achado da revisão, T24.9).
+     */
+    public function test_nao_e_possivel_zerar_o_padrao_desmarcando_o_unico_modelo(): void
     {
         $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x', 'padrao' => true]);
         $modelo = $this->usuario->modelosMensagem()->sole();
 
-        // Checkbox desmarcado: o navegador não manda a chave "padrao" (não "padrao=false").
         $this->put("/perfil/mensagens/{$modelo->id}", ['nome' => 'Um', 'texto' => 'x']);
 
-        $this->assertFalse($modelo->fresh()->padrao);
+        $this->assertTrue($modelo->fresh()->padrao);
+    }
+
+    public function test_primeiro_modelo_cadastrado_vira_padrao_mesmo_sem_marcar(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Aviso', 'texto' => 'x']);
+
+        $this->assertTrue($this->usuario->modelosMensagem()->sole()->padrao);
+    }
+
+    public function test_segundo_modelo_sem_marcar_nao_vira_padrao(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x']); // vira padrão por ser o primeiro
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y']);
+
+        $dois = $this->usuario->modelosMensagem()->where('nome', 'Dois')->sole();
+        $this->assertFalse($dois->padrao);
+    }
+
+    public function test_excluir_o_padrao_promove_o_mais_antigo_remanescente(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x']); // vira padrão por ser o primeiro
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y']);
+        $um = $this->usuario->modelosMensagem()->where('nome', 'Um')->sole();
+        $dois = $this->usuario->modelosMensagem()->where('nome', 'Dois')->sole();
+
+        $this->delete("/perfil/mensagens/{$um->id}");
+
+        $this->assertTrue($dois->fresh()->padrao);
+    }
+
+    public function test_excluir_modelo_que_nao_e_padrao_nao_promove_ninguem(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x']); // vira padrão por ser o primeiro
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y']);
+        $um = $this->usuario->modelosMensagem()->where('nome', 'Um')->sole();
+        $dois = $this->usuario->modelosMensagem()->where('nome', 'Dois')->sole();
+
+        $this->delete("/perfil/mensagens/{$dois->id}");
+
+        $this->assertTrue($um->fresh()->padrao);
     }
 
     public function test_modelo_de_outro_usuario_da_404(): void
