@@ -54,6 +54,15 @@ class AvisoWhatsappTest extends TestCase
             ->assertJson(['itens' => [['nome' => 'Manutenção mensal', 'valor_centavos' => 5000]]]);
     }
 
+    /** Convenção do projeto: descrição em lista já começa com "- " (ex.: ContratoFactory) — não pode duplicar o traço. */
+    public function test_cobranca_sem_itens_com_descricao_em_lista_nao_duplica_o_traco(): void
+    {
+        $cobranca = $this->cobranca(['descricao' => "- Hospedagem do domínio exemplo.com.br\n- Servidor de Arquivos", 'valor_centavos' => 5000]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")
+            ->assertJson(['itens' => [['nome' => 'Hospedagem do domínio exemplo.com.br', 'valor_centavos' => 5000]]]);
+    }
+
     public function test_cobranca_sem_itens_e_sem_descricao_usa_servico(): void
     {
         $cobranca = $this->cobranca(['descricao' => '', 'valor_centavos' => 5000]);

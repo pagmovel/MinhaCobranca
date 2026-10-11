@@ -29,7 +29,9 @@ class AvisoWhatsappController extends Controller
             }
 
             // `Str::of(...)->before(...)->trim()` devolve um Stringable: objeto é sempre truthy, então `?:` nunca cairia no "Serviço".
-            $primeiraLinha = (string) Str::of($cobranca->descricao)->before("\n")->trim();
+            // Descrição em lista (convenção do projeto, ex. ContratoFactory) já começa com "-": tira para não duplicar
+            // o traço que `linhaDoItem` (mensagemWhatsapp.js) acrescenta na frente de cada linha de item.
+            $primeiraLinha = (string) Str::of($cobranca->descricao)->before("\n")->trim()->ltrim('- ')->trim();
 
             return collect([['nome' => $primeiraLinha !== '' ? $primeiraLinha : 'Serviço', 'valor_centavos' => $cobranca->valor_centavos]]);
         });
