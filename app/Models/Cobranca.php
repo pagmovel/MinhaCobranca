@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
@@ -63,6 +64,11 @@ class Cobranca extends Model
     public function recibo(): HasOne
     {
         return $this->hasOne(Recibo::class);
+    }
+
+    public function itens(): HasMany
+    {
+        return $this->hasMany(CobrancaItem::class)->orderBy('id');
     }
 
     public function situacao(CarbonImmutable $hoje): string

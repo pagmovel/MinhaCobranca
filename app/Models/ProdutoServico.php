@@ -41,4 +41,9 @@ class ProdutoServico extends Model
     {
         return $this->hasMany(ContratoItem::class);
     }
+
+    public function cobrancaItens(): HasMany
+    {
+        return $this->hasMany(CobrancaItem::class);
+    }
 }

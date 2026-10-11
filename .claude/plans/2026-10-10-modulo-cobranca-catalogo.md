@@ -36,7 +36,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 |---|---|---|
 | 12 | T12.1 Catálogo de produtos e serviços | testada (suíte 200/200; build ok) |
 | 12 | T12.2 Itens no contrato | testada (suíte 213/213; build ok) |
-| 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | pendente |
+| 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | testada (suíte 219/219; build ok) |
 | 12 | T12.4 Reajustar contratos | pendente |
 | 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | pendente |
 | 13 | T13.1 Filtros e paginação de Clientes | pendente |
@@ -2162,7 +2162,7 @@ git commit -m "feat: contrato montado por itens do catálogo, valor pela soma (m
 
 ### Tarefa T12.3: Itens na cobrança (avulsa, edição e geração)
 
-**Estado:** pendente
+**Estado:** testada (suíte 219/219; build ok)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_10_110200_create_cobranca_itens_table.php`, `app/Models/CobrancaItem.php`

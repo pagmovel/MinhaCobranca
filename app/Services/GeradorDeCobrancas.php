@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ContratoItem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -23,7 +24,7 @@ final class GeradorDeCobrancas
 
         $aGerar = [];
 
-        foreach ($usuario->contratos()->where('ativo', true)->get() as $contrato) {
+        foreach ($usuario->contratos()->where('ativo', true)->with('itens.produtoServico')->get() as $contrato) {
             $existentes = $contrato->cobrancas()->pluck('periodo_inicio')
                 ->map(fn ($data) => CarbonImmutable::parse($data)->toDateString())
                 ->all();
@@ -67,6 +68,17 @@ final class GeradorDeCobrancas
                         'forma_pagamento' => $contrato->forma_pagamento,
                         'chave_pix_id' => $contrato->chave_pix_id,
                     ]);
+
+                    // Cópia: mudar o contrato ou o catálogo depois não altera esta cobrança.
+                    $cobranca->itens()->createMany($contrato->itens->map(fn (ContratoItem $item) => [
+                        'produto_servico_id' => $item->produto_servico_id,
+                        'nome' => $item->produtoServico->nome,
+                        'unidade' => $item->produtoServico->unidade,
+                        'quantidade' => $item->quantidade,
+                        'preco_unitario_centavos' => $item->preco_unitario_centavos,
+                        'total_centavos' => $item->total(),
+                        'principal' => $item->principal,
+                    ])->all());
 
                     $this->emissor->emitir($cobranca);
                 });

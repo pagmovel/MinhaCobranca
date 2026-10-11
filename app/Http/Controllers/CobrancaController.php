@@ -7,9 +7,11 @@ use App\Enums\StatusCobranca;
 use App\Http\Requests\CobrancaRequest;
 use App\Http\Requests\PagamentoRequest;
 use App\Models\Cobranca;
+use App\Models\CobrancaItem;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Support\Dinheiro;
+use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -83,9 +85,14 @@ class CobrancaController extends Controller
                 'de_contrato' => $cobranca->contrato_id !== null,
                 'cliente_id' => $cobranca->cliente_id,
                 'descricao' => $cobranca->descricao,
-                'codigo_servico' => $cobranca->codigo_servico ?? '',
-                'codigo_nbs' => $cobranca->codigo_nbs ?? '',
-                'codigo_tributacao_nacional' => $cobranca->codigo_tributacao_nacional ?? '',
+                'itens' => $cobranca->itens->map(fn (CobrancaItem $item) => [
+                    'produto_servico_id' => $item->produto_servico_id,
+                    'nome' => $item->nome,
+                    'unidade' => $item->unidade,
+                    'quantidade' => ItensDeVenda::formatarQuantidade(ItensDeVenda::milesimos($item->quantidade)),
+                    'preco' => Dinheiro::formatar($item->preco_unitario_centavos),
+                    'principal' => $item->principal,
+                ])->all(),
                 'valor' => Dinheiro::formatar($cobranca->valor_centavos),
                 'periodo_inicio' => $cobranca->periodo_inicio->toDateString(),
                 'periodo_fim' => $cobranca->periodo_fim->toDateString(),
@@ -110,7 +117,9 @@ class CobrancaController extends Controller
         }
 
         DB::transaction(function () use ($usuario, $request, $emissor) {
-            $emissor->emitir($usuario->cobrancas()->create($request->dadosCobranca()));
+            $cobranca = $usuario->cobrancas()->create($request->dadosCobranca());
+            $cobranca->itens()->createMany($request->itensDaCobranca());
+            $emissor->emitir($cobranca);
         });
 
         return redirect('/cobrancas')->with('sucesso', 'Cobrança criada com o recibo.');
@@ -130,8 +139,10 @@ class CobrancaController extends Controller
             $dados = Arr::except($dados, ['cliente_id', 'periodo_inicio', 'periodo_fim']);
         }
 
-        DB::transaction(function () use ($registro, $dados, $emissor) {
+        DB::transaction(function () use ($registro, $dados, $emissor, $request) {
             $registro->update($dados);
+            $registro->itens()->delete();
+            $registro->itens()->createMany($request->itensDaCobranca());
             $emissor->refazer($registro->recibo, $registro->wasChanged('cliente_id'));
         });
 

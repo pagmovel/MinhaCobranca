@@ -39,7 +39,7 @@ class FormaPagamentoTest extends TestCase
     private function avulsa(Cliente $cliente, array $extra = []): array
     {
         return array_merge([
-            'cliente_id' => $cliente->id, 'descricao' => 'Manutenção', 'valor' => '150,00',
+            'cliente_id' => $cliente->id, 'descricao' => 'Manutenção', 'itens' => $this->itensPara($cliente, '150,00'),
             'periodo_inicio' => '2026-10-01', 'periodo_fim' => '2026-10-31', 'vencimento' => '2026-10-20',
         ], $extra);
     }

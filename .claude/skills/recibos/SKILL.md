@@ -399,6 +399,10 @@ o relatório mostra a parte que existe.
   `BuscaCliente` virou `BuscaAutosugestao` (props `url`, `nenhum`, `limparAoEscolher`; slot `opcao`; evento `escolhido`).
   **Pegadinha:** a regra `numeric` aceita `+1` e `1e3`; a regex `^\d{1,5}(\.\d{1,3})?$` fecha o formato antes de
   `ItensDeVenda::milesimos`.
+- T12.3: cobrança guarda **cópia** dos itens (`cobranca_itens`: nome, unidade, quantidade, preço, total, principal;
+  `produto_servico_id` só como referência, `nullOnDelete`); a geração copia do contrato, avulsa/edição gravam os
+  escolhidos; mudar contrato ou catálogo depois **não** altera cobrança existente; cobrança antiga sem itens continua
+  valendo; `CobrancaRequest::authorize` dá 404 para cobrança alheia; item usado em contrato **ou** cobrança não é excluído.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.

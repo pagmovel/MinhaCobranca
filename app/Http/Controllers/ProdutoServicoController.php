@@ -107,7 +107,7 @@ class ProdutoServicoController extends Controller
     {
         $registro = $request->user()->produtosServicos()->findOrFail($produto);
 
-        if ($registro->contratoItens()->exists()) {
+        if ($registro->contratoItens()->exists() || $registro->cobrancaItens()->exists()) {
             return back()->with('erro', 'Este item está em contratos ou cobranças. Desative-o em vez de excluir.');
         }
 

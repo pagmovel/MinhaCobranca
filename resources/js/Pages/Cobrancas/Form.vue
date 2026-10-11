@@ -4,6 +4,7 @@ import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
+import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
     cobranca: { type: Object, default: null },
@@ -18,10 +19,7 @@ const hoje = new Date().toLocaleDateString('sv-SE');
 const form = useForm(props.cobranca ?? {
     cliente_id: '',
     descricao: '',
-    codigo_servico: '',
-    codigo_nbs: '',
-    codigo_tributacao_nacional: '',
-    valor: '',
+    itens: [],
     periodo_inicio: hoje,
     periodo_fim: hoje,
     vencimento: hoje,
@@ -31,6 +29,7 @@ const form = useForm(props.cobranca ?? {
 });
 
 const travado = Boolean(props.cobranca?.de_contrato);
+const semItens = Boolean(props.cobranca && !props.cobranca.itens.length);
 
 const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}`) : form.post('/cobrancas'));
 </script>
@@ -55,25 +54,18 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
             <Campo id="descricao" rotulo="Descrição dos serviços (até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
                 <textarea id="descricao" v-model="form.descricao" rows="5" class="entrada" required />
             </Campo>
-            <Campo id="codigo_servico" rotulo="Serviço prestado" :erro="form.errors.codigo_servico" class="sm:col-span-6">
-                <input id="codigo_servico" v-model="form.codigo_servico" class="entrada">
-            </Campo>
-            <Campo id="codigo_nbs" rotulo="Código NBS" :erro="form.errors.codigo_nbs" class="sm:col-span-3">
-                <input id="codigo_nbs" v-model="form.codigo_nbs" class="entrada">
-            </Campo>
-            <Campo id="codigo_tributacao_nacional" rotulo="Código de tributação nacional" :erro="form.errors.codigo_tributacao_nacional" class="sm:col-span-3">
-                <input id="codigo_tributacao_nacional" v-model="form.codigo_tributacao_nacional" class="entrada">
-            </Campo>
-            <Campo id="valor" rotulo="Valor (R$)" :erro="form.errors.valor" class="sm:col-span-2">
-                <input id="valor" v-mascara="'valor'" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
-            </Campo>
-            <Campo id="vencimento" rotulo="Vencimento" :erro="form.errors.vencimento" class="sm:col-span-4">
+            <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+                Esta cobrança é anterior ao catálogo (valor atual: R$ {{ cobranca.valor }}). Inclua pelo menos um item; ao salvar,
+                o valor passa a ser a soma dos itens.
+            </p>
+            <SecaoItens :form="form" />
+            <Campo id="vencimento" rotulo="Vencimento" :erro="form.errors.vencimento" class="sm:col-span-2">
                 <input id="vencimento" v-model="form.vencimento" type="date" class="entrada" required>
             </Campo>
-            <Campo id="periodo_inicio" rotulo="Início do período" :erro="form.errors.periodo_inicio" class="sm:col-span-3">
+            <Campo id="periodo_inicio" rotulo="Início do período" :erro="form.errors.periodo_inicio" class="sm:col-span-2">
                 <input id="periodo_inicio" v-model="form.periodo_inicio" type="date" class="entrada" :disabled="travado" required>
             </Campo>
-            <Campo id="periodo_fim" rotulo="Fim do período" :erro="form.errors.periodo_fim" class="sm:col-span-3">
+            <Campo id="periodo_fim" rotulo="Fim do período" :erro="form.errors.periodo_fim" class="sm:col-span-2">
                 <input id="periodo_fim" v-model="form.periodo_fim" type="date" class="entrada" :disabled="travado" required>
             </Campo>
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" com-linha-digitavel />

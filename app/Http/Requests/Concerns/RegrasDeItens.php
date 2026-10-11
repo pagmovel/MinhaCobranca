@@ -124,4 +124,10 @@ trait RegrasDeItens
             $this->itensCalculados(),
         );
     }
+
+    /** Linhas para `cobranca_itens`: cópia completa (nome, unidade e total), que não muda se o catálogo mudar. */
+    public function itensDaCobranca(): array
+    {
+        return array_map(fn (array $item) => Arr::except($item, ['ordem']), $this->itensCalculados());
+    }
 }
