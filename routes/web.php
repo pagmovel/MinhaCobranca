@@ -28,6 +28,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/sair', [LoginController::class, 'destroy']);
     Route::get('/painel', PainelController::class)->name('painel');
+    Route::get('/painel/dados', [PainelController::class, 'dados']);
 
     Route::get('/perfil', [PerfilController::class, 'edit']);
     Route::post('/perfil', [PerfilController::class, 'update']);

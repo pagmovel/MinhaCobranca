@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import CamadaApp from '../Layouts/CamadaApp.vue';
-import LinhaCobranca from '../Components/LinhaCobranca.vue';
+import ListaDoPainel from '../Components/ListaDoPainel.vue';
 import BotaoEnviar from '../Components/BotaoEnviar.vue';
 import BaixaInline from '../Components/BaixaInline.vue';
 import PagamentoInline from '../Components/PagamentoInline.vue';
@@ -11,9 +11,6 @@ defineProps({
     perfilCompleto: { type: Boolean, required: true },
     diasAntecedencia: { type: Number, required: true },
     resumo: { type: Object, required: true },
-    paraEnviar: { type: Array, required: true },
-    aguardando: { type: Array, required: true },
-    recebidas: { type: Array, required: true },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
 });
@@ -29,38 +26,24 @@ defineProps({
             <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
         </p>
 
-        <section class="mt-8" aria-labelledby="bloco-enviar">
-            <h2 id="bloco-enviar" class="mb-2 text-lg font-semibold">Para enviar <span class="font-estreita text-grafite/70">({{ paraEnviar.length }})</span></h2>
-            <p v-if="!paraEnviar.length" class="text-sm text-grafite/80">
-                Nada para enviar agora. Cobranças novas aparecem aqui {{ diasAntecedencia }} dias antes do vencimento.
-            </p>
-            <ul v-else class="divide-y divide-linha border border-linha bg-white">
-                <LinhaCobranca v-for="cobranca in paraEnviar" :key="cobranca.id" :cobranca="cobranca">
-                    <BotaoEnviar v-if="cobranca.recibo" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-                </LinhaCobranca>
-            </ul>
-        </section>
+        <!-- Cada lista carrega por conta própria (/painel/dados); depois de uma ação, as três recarregam. -->
+        <ListaDoPainel
+            v-slot="{ cobranca }"
+            lista="para_enviar"
+            titulo="Para enviar"
+            :vazio="`Nada para enviar agora. Cobranças novas aparecem aqui ${diasAntecedencia} dias antes do vencimento.`"
+        >
+            <BotaoEnviar v-if="cobranca.recibo" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
+        </ListaDoPainel>
 
-        <section class="mt-8" aria-labelledby="bloco-aguardando">
-            <h2 id="bloco-aguardando" class="mb-2 text-lg font-semibold">Aguardando pagamento <span class="font-estreita text-grafite/70">({{ aguardando.length }})</span></h2>
-            <p v-if="!aguardando.length" class="text-sm text-grafite/80">Nenhuma cobrança enviada esperando pagamento.</p>
-            <ul v-else class="divide-y divide-linha border border-linha bg-white">
-                <LinhaCobranca v-for="cobranca in aguardando" :key="cobranca.id" :cobranca="cobranca">
-                    <BaixaInline :cobranca-id="cobranca.id" />
-                    <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
-                    <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-                </LinhaCobranca>
-            </ul>
-        </section>
+        <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" titulo="Aguardando pagamento" vazio="Nenhuma cobrança enviada esperando pagamento.">
+            <BaixaInline :cobranca-id="cobranca.id" />
+            <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
+            <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
+        </ListaDoPainel>
 
-        <section class="mt-8" aria-labelledby="bloco-recebidas">
-            <h2 id="bloco-recebidas" class="mb-2 text-lg font-semibold">Recebidas no mês <span class="font-estreita text-grafite/70">({{ recebidas.length }})</span></h2>
-            <p v-if="!recebidas.length" class="text-sm text-grafite/80">Nenhum pagamento registrado neste mês.</p>
-            <ul v-else class="divide-y divide-linha border border-linha bg-white">
-                <LinhaCobranca v-for="cobranca in recebidas" :key="cobranca.id" :cobranca="cobranca">
-                    <BotaoEnviar v-if="cobranca.recibo" rotulo="Enviar recibo pago" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-                </LinhaCobranca>
-            </ul>
-        </section>
+        <ListaDoPainel v-slot="{ cobranca }" lista="recebidas" titulo="Recebidas no mês" vazio="Nenhum pagamento registrado neste mês.">
+            <BotaoEnviar v-if="cobranca.recibo" rotulo="Enviar recibo pago" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
+        </ListaDoPainel>
     </CamadaApp>
 </template>
