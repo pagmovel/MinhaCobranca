@@ -30,11 +30,11 @@ function marcarPrincipal(indice) {
 </script>
 
 <template>
-    <fieldset class="flex flex-col gap-3 sm:col-span-6">
+    <fieldset class="flex min-w-0 flex-col gap-3 sm:col-span-6">
         <legend class="mb-2 text-sm font-semibold">Produtos e serviços</legend>
         <p v-if="form.errors.itens" class="text-xs text-tinta-vermelha">{{ form.errors.itens }}</p>
 
-        <div v-if="form.itens.length" class="overflow-x-auto border border-linha bg-white">
+        <div v-if="form.itens.length" class="relative overflow-x-auto border border-linha bg-white">
             <table class="w-full text-sm">
                 <thead class="font-estreita text-xs text-grafite/75">
                     <tr>

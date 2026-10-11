@@ -49,7 +49,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | testada (suíte 245/245; build ok) |
 | 15 | T15.3 Relatórios: receita por cliente e por produto/serviço | testada (suíte 248/248) |
 | 15 | T15.4 Relatório: contas a receber | testada (suíte 249/249; JS 13/13; build ok) |
-| 15 | T15.5 Smoke test, revisão final e fechamento | pendente |
+| 15 | T15.5 Smoke test, revisão final e fechamento | testada (smoke 2026-10-10 ok; revisão final opus: 0 Critical/Important, 2 Minor corrigidos; suíte 252/252) — aguarda validação do usuário |
 
 ### Pendências para o final
 - [ ] **V5** — conferência visual: seção de itens (contrato e cobrança), telas de catálogo e reajuste, filtros, e os
@@ -5273,7 +5273,12 @@ git commit -m "feat: relatório de contas a receber por cliente e faixa de venci
 
 ### Tarefa T15.5: Smoke test, revisão final e fechamento
 
-**Estado:** pendente
+**Estado:** testada (smoke 2026-10-10 ok; revisão final opus: 0 Critical/Important, 2 Minor corrigidos; suíte 252/252) — aguarda validação do usuário
+
+Achados do smoke: (1) contrato/cobrança a 390 px alargavam a página (fieldset `min-content` + `sr-only` absoluto) —
+corrigido em `SecaoItens.vue`; (2) filtro inválido na URL (`?uf=XX`) volta para a página anterior sem mostrar erro —
+Minor, só com URL digitada; (3) página 2 das listas não exercitada (poucos registros do SMOKE); (4) CSV conferido em
+bytes (BOM, `;`, vírgula, acentos), não aberto no Excel.
 
 - [ ] **PORTÃO-BANCO para o smoke** com o usuário SMOKE (id 2): mostrar a conexão (PostgreSQL de desenvolvimento) e as
   contagens de `produtos_servicos`, `contrato_itens`, `cobranca_itens`, `contratos`, `cobrancas` e `recibos`; dizer o

@@ -445,6 +445,17 @@ o relatório mostra a parte que existe.
 - **Acerto (revisão final):** os serviços de consulta (`app/Services/Consultas/*`) trocam por `null` todo campo da
   resposta que não seja texto ou número (`is_scalar`) antes de qualquer `(string)`; campo com tipo errado vira
   "não veio", não erro 500.
+- **Smoke T15.5 (2026-10-10, usuário SMOKE id 2, PostgreSQL de dev, autorizado):** catálogo (cadastro, filtros,
+  desativar, busca só de ativos), contrato por itens (1,5 × 120,00 + 89,90 = 269,90 ao vivo e gravado), contrato antigo
+  (aviso + exigência de itens), avulsa e edição (número mantido), cobrança gerada com itens copiados, reajuste só no
+  contrato marcado, filtros, CNPJ/CEP, 4 relatórios + CSV (BOM, `;`, vírgula), painel, PIX. PostgreSQL devolve
+  `quantidade` como `"1.500"` e as somas batem. Prints em `storage/app/private/verificacao/smoke-catalogo/`.
+- **Pegadinha (390 px): `<fieldset>` tem `min-inline-size: min-content` por padrão** — uma tabela larga dentro dele
+  alarga a coluna do grid e a página inteira, e o `overflow-x-auto` não age. Usar `min-w-0` no fieldset.
+- **Pegadinha (390 px): `sr-only` é `position: absolute`** — dentro de tabela com rolagem, escapa do recorte se o
+  contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
+- **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
+  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
