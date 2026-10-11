@@ -33,7 +33,8 @@ sem depender do histórico.
 0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:
    "Adicione também uma forma de compartilhar mensagens via whatsapp avisando sobre vencimento. Um campo para que possamos
    digitar modelos de mensagens a serem utilizadas por whatsapp que contenham os serviços ou produtos que estão vencendo
-   nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." **Em brainstorming.**
+   nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." Desenho aprovado ("sim").
+   **Spec escrita:** `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` — **aguarda revisão do usuário**.
    - Fatos: o cliente tem `telefone`; o envio de PDF hoje é `BotaoEnviar` (Web Share/download). Envio automático pela API
      do WhatsApp é pago → fora (regra: serviço externo só se gratuito); caminho gratuito: link `https://wa.me/<número>?text=`
      que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial (faq.whatsapp.com é montada por JS: o `curl` e o Chrome de teste não
