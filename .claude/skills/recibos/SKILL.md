@@ -801,6 +801,18 @@ o relatório mostra a parte que existe.
   `EmissorDeRecibos::aplicarModeloDoCliente` dentro da transação do `ClienteController::update`, só quando o modelo
   mudou; a tela de edição recebe `emAberto` e mostra a prévia (quantas mudam) com a caixa das enviadas. Teste:
   `TrocaDeModeloTest`.
+- **Fase 23 — vencimento em dia útil (spec `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md`, plano
+  `.claude/plans/2026-10-11-vencimento-em-dia-util.md`)**
+  - **Calendário puro.** `App\Support\DiasUteis` (sem banco nem relógio): sábado/domingo, nacionais (Leis 662/1949,
+    6.802/1980, 14.759/2023 — o 20/11 só de 2024 em diante), Carnaval e Sexta-feira da Paixão pela Páscoa (Meeus/Jones/
+    Butcher, sem serviço externo) e a lista local do usuário (`anual`, `corpus_christi`, `unico`). `motivo()` diz o fim de
+    semana antes do feriado; no mesmo dia, o nome nacional vence o local. 29/02 "todo ano" só acontece em ano bissexto.
+  - **Calculadora com calendário por cópia.** `CalculadoraDePeriodos::comDiasUteis()` devolve um clone; sem calendário,
+    tudo como antes (testes unitários antigos intactos). **Não pôr `DiasUteis` no construtor:** o container injetaria um
+    calendário vazio sozinho (a classe é instanciável) e os feriados locais seriam ignorados sem erro. Só o vencimento
+    muda; início, fim e o índice único do contrato não.
+  - *Pegadinha (teste):* 29/02/2028 é **terça de Carnaval** (Páscoa em 16/04/2028). Ao escolher data de exemplo para
+    feriado local, conferir se ela não cai em feriado nacional ou móvel.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

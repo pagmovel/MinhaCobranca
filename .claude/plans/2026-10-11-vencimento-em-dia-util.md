@@ -59,7 +59,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 ### Fase A — Regra no cálculo
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T23.1 | `DiasUteis` (calendário puro) + `CalculadoraDePeriodos::comDiasUteis` | pendente |
+| T23.1 | `DiasUteis` (calendário puro) + `CalculadoraDePeriodos::comDiasUteis` | **testada**: `DiasUteisTest` (8) e 2 da calculadora RED → GREEN; unitários 91/91 |
 | T23.2 | Tabela `feriados` + `Feriado` + `User::diasUteis()`; gerador, previsão e encerrador com o calendário; 7 testes antigos com a data nova | pendente |
 
 ### Fase B — Feriados locais e cobranças já geradas
@@ -1471,4 +1471,6 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
   da revisão final da branch inteira que o roteiro pede (item 1 do backlog).
 
 ## Registro de execução
-- (vazio — preencher a cada tarefa)
+- **T23.1:** código do plano sem mudança. **Correção no teste do plano:** `test_29_de_fevereiro_anual_so_nos_anos_bissextos`
+  usava 29/02/2028, que é **terça de Carnaval** (Páscoa de 2028 em 16/04): o nome nacional vence o local (regra do próprio
+  plano) e o teste falhou com "Carnaval". Trocado para 29/02/2036 (sexta; Páscoa em 13/04/2036). O código estava certo.

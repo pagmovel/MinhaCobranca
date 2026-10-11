@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
+use App\Support\DiasUteis;
 use App\Support\Periodo;
 use Carbon\CarbonImmutable;
 
@@ -11,6 +12,18 @@ final class CalculadoraDePeriodos
 {
     /** Trava de segurança: 100 anos de períodos mensais. */
     private const LIMITE = 1200;
+
+    /** Sem calendário (padrão), o vencimento sai como sempre; com ele, vai para o próximo dia útil (Fase 23). */
+    private ?DiasUteis $diasUteis = null;
+
+    /** Cópia desta calculadora com o calendário do usuário; a original não muda. */
+    public function comDiasUteis(DiasUteis $diasUteis): self
+    {
+        $copia = clone $this;
+        $copia->diasUteis = $diasUteis;
+
+        return $copia;
+    }
 
     public function periodo(
         CarbonImmutable $dataInicio,
@@ -26,6 +39,9 @@ final class CalculadoraDePeriodos
         $vencimento = $modalidade === Modalidade::Pospago
             ? $this->primeiroDiaDepois($fim, $diaVencimento)
             : $this->diaNoMes($inicio, $diaVencimento);
+
+        // Só o vencimento muda: início e fim do período (e o índice único do contrato) continuam.
+        $vencimento = $this->diasUteis?->proximoDiaUtil($vencimento) ?? $vencimento;
 
         return new Periodo($inicio, $fim, $vencimento);
     }
