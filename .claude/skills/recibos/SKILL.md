@@ -180,6 +180,41 @@ o relatório mostra a parte que existe.
 - Sessões ficam no banco (`SESSION_DRIVER=database`): ao trocar de banco, todo mundo precisa
   entrar de novo.
 
+- **Vue 3 `<Transition>` + `requestAnimationFrame` + aba em segundo plano (Fase 24, achado real no navegador):**
+  o Chrome para de rodar `requestAnimationFrame` numa aba que perde o foco (ex.: `window.open` de um modal), e o
+  mecanismo interno do Vue que aplica as classes CSS de transição de **saída** depende de rAF — a transição trava
+  no meio pra sempre se a aba perder o foco durante ela. `:duration` explícito e `:css="condição"` não resolvem
+  sozinhos; o `<Transition>` mantém um "retrato congelado" do vnode durante a saída, então uma ligação reativa
+  (`:style`/`:class`) em dados que mudam depois não chega a esse elemento. Única correção que funcionou: manipular
+  o DOM direto (fora do Vue) dentro de um `setTimeout` — diferente de rAF, `setTimeout` continua disparando (com
+  atraso) em aba oculta. Ver `Modal.vue` (rede de segurança por id estável via `useId()`).
+- `document` **não** está na lista de globais que o compilador de template do Vue 3 permite em expressões — usar
+  direto no template (`:css="!document.hidden"`) quebra o render em silêncio, sem erro capturável por
+  `window.onerror`. Mover para `<script setup>` como método/computed.
+- **`ref` dentro de `v-for` vira array no Vue 3.5**, não o elemento (`ref.value` é `[elemento]`). Pegar
+  `.value.focus()`/`.value.selectionStart` direto falha em silêncio ou lança `TypeError` dentro de callbacks async
+  (`nextTick`), sem aparecer como erro óbvio. Buscar por `id` com `document.getElementById(...)` quando o elemento
+  está dentro de uma lista repetida (mesmo padrão já usado para outros campos no projeto).
+- `Str::of(...)->trim()` devolve um `Stringable`, que é **sempre truthy** em PHP — `$stringable ?: 'padrão'` nunca
+  cai no padrão. Fazer `(string)` cast antes de comparar/usar `?:`.
+- `navigator.clipboard` é `undefined` (não apenas recusa) em contexto não seguro (`http://`, como o dev deste
+  projeto). `document.execCommand('copy')` **também pode falhar** silenciosamente (retorna `false`, sem lançar) —
+  confirmado num Chrome controlado via CDP (browser-use); **[A VERIFICAR]** se falha igual num Chrome desktop
+  comum usado por um humano. Nunca depender só de cópia automática: manter sempre uma saída manual (ex.: botão
+  "Já copiei, confirmar") que não depende de nenhuma API de clipboard.
+- **browser-use / `click_at_xy` vs `.click()`:** `click_at_xy` dá um clique "confiável" (gesto real, necessário
+  para `window.open` não ser bloqueado como popup), mas às vezes **não dispara o handler do Vue** mesmo acertando
+  o elemento certo (confirmado via `elementFromPoint`). `element.click()` via JS é mais robusto para testar
+  formulários/UI comuns, mas não conta como gesto do usuário para popups. Usar cada um conforme o caso.
+- **Build do frontend desatualizado sem Vite dev ativo:** neste ambiente (Laragon, sem `npm run dev` rodando),
+  `public/build` fica parado no último `npm run build` manual — editar `.vue` e testar no navegador sem rebuildar
+  reproduz bugs **já corrigidos no código-fonte**. Sempre `npm run build` antes de um smoke test depois de editar
+  `.vue`/`.js` do frontend.
+- Laragon serve pelo domínio do `hosts` (`Recibos.test`, com R maiúsculo) — `curl`/`Invoke-WebRequest` deste
+  ambiente de shell não resolveram esse domínio (**[A VERIFICAR]** a causa exata), mas o Chrome real do
+  `browser-use` resolve normalmente. Para testar via shell sem o navegador, usar
+  `curl -H "Host: Recibos.test" http://127.0.0.1/`.
+
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
   no inglês do framework (`APP_FALLBACK_LOCALE=en`).
@@ -892,6 +927,27 @@ o relatório mostra a parte que existe.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
+
+- **Aviso de vencimento pelo WhatsApp (Fase 24):** sem API paga — link "clique para conversar"
+  `https://wa.me/<DDI+DDD+número>?text=<mensagem codificada>` (confirmado via busca web nesta fase), aberto num
+  `window.open` disparado por gesto do usuário. Módulo puro `resources/js/mensagemWhatsapp.js` (testável por
+  `node --test`, sem harness para `.vue`) monta a mensagem e valida celular (11 dígitos, "9" no índice 2); o
+  servidor nunca mistura itens de clientes diferentes num aviso em lote (422 se `cliente_id` não for único).
+  - **Regra "exatamente um padrão quando há modelos" (spec) implementada nos 3 pontos do CRUD:** `store` força
+    padrão no primeiro modelo do usuário mesmo sem marcar o checkbox; `update` recusa desmarcar o único padrão
+    existente (mantém `true`); `destroy` promove o mais antigo remanescente quando o padrão é excluído. As três
+    regras ficam no controller, nunca no formulário — o formulário só manda `padrao: boolean`.
+  - **"Salvar como modelo" dentro do próprio modal de aviso**, sem sair da tela: `useForm().post('/perfil/mensagens')`
+    do Inertia, reaproveitando o `back()` que o CRUD do perfil já tinha — o Inertia visit atualiza a prop
+    `modelosMensagem` reativamente na página atual (Cobranças ou Painel), sem precisar de resposta JSON nem de
+    lógica nova no controller. Mesmo padrão de outros "cadastros rápidos" do projeto (ex. `CadastroRapidoCliente`).
+  - **Texto sugerido sem flexão verbal:** a sugestão padrão (sem modelo cadastrado) é escrita em bloco —
+    `{itens}` numa lista própria, não dentro de uma frase — para não precisar concordar o verbo com a quantidade
+    de itens nem quebrar a sintaxe quando `{itens}` é uma lista com traço. Ver `MENSAGEM_SUGERIDA` em
+    `mensagemWhatsapp.js`.
+  - **"Avisado em" é um registro, não trava o fluxo:** gravado via `router.post` sem esperar resposta antes de
+    fechar o modal (fire-and-forget) — avisar de novo é permitido, atualiza a data. Exibido tanto no bloco
+    "Vencendo" do Painel quanto na lista de Cobranças (linha, ao lado do carimbo de situação).
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
