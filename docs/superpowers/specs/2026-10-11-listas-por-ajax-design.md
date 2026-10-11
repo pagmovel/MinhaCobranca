@@ -42,6 +42,10 @@ O `Paginacao.vue` (só Anterior e Próxima) e o `App\Support\Paginacao` deixam d
   - **Com Collection:** fatia na memória. É o caso das cobranças, que mesclam previstas.
   - `regras(): array` com as regras de `pagina` (inteiro ≥ 1) e `por_pagina` (25/50/100), para todos os `/dados`.
   - `ListaDeCobrancas` passa a usar esse helper, sem mudar comportamento: os testes da Fase 19 continuam iguais.
+  - **Uma consulta só para as cobranças já existentes de todos os contratos** (achado da conferência visual de
+    2026-10-11). Hoje a previsão chama `GeradorDeCobrancas::existentes()` uma vez por contrato ativo (N+1). No dev, com o
+    PostgreSQL remoto a ~580 ms por consulta, 4 contratos já custam ~2,3 s; 100 contratos custariam 100 consultas. A
+    regra de "cobrável" não muda, só a forma de buscar. O Painel e os relatórios também passam por aqui.
 - **Navegador:** `resources/js/listaPaginada.js` (`criarListaPaginada`) **já existe**. Foi tirado da tela de cobranças
   na correção da revisão da Fase 19 e tem teste com `fetch` falso.
   - **Entrada:** `{ url, filtro, buscar, aoMostrar }`.

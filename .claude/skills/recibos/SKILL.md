@@ -704,6 +704,21 @@ o relatório mostra a parte que existe.
     1. Os testes que liam a prop `cobrancas` passaram a abrir a página (que gera) e ler o JSON.
     2. Ao colar trechos do plano por script, `'<tfoot' in bloco` pegou o bloco errado: escolher pelo começo do bloco e
        contar as ocorrências.
+    3. **Rolagem horizontal em ~1260 px** (achada na conferência visual de 2026-10-11): na 5ª coluna da grade de
+       filtros, "Incluir canceladas" (`shrink-0`) mais o botão "Filtrar" passavam da largura da coluna em 9 px.
+       Correção: `flex-wrap` no contêiner, e o botão desce para a linha de baixo. Ao montar filtros em grade, conferir
+       `scrollWidth === clientWidth` em 1264 px, não só em 390 px.
+    4. **Lentidão no dev não é defeito da lista:** 12 consultas × ~580 ms de ida e volta ao PostgreSQL remoto dão ~7 s
+       no `/cobrancas/dados` (medido com `DB::enableQueryLog`). Mesmo assim há uma consulta por contrato ativo:
+       `GeradorDeCobrancas::existentes()` (`$contrato->cobrancas()->pluck(...)`), chamada pela previsão. Com 100
+       contratos seriam 100 consultas — ver a Fase 20.
+  - **Conferência visual (2026-10-11, autorizada, usuário SMOKE, 64 cobranças em 3 páginas):** paginador acima e
+    abaixo, página 3 tirada do cache sem pedido novo (contado em `performance.getEntriesByType('resource')`), URL com a
+    página, foco no paginador de cima, F5 e link direto para a página 3, rodapé com as somas certas, 390 px sem
+    rolagem. **Não conferido:** dar baixa e ver a lista recarregar (grava pagamento; pede autorização à parte).
+  - **Pegadinha (browser-use):** o print (`browser_screenshot` ou `Page.captureScreenshot`) de uma aba aberta com
+    `new_tab` estoura o tempo no Chrome sem janela até chamar `cdp("Target.activateTarget", targetId=...)` e
+    `cdp("Page.bringToFront")`. Print de página inteira (`captureBeyondViewport`) trava a aba: rolar e tirar por partes.
 - **Pedido do usuário (2026-10-11):** levar este padrão a **todas as telas com lista de dados**. Fase própria depois da
   19, junto com a T17.18.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da

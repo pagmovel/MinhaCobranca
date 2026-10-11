@@ -7,7 +7,7 @@ sem depender do histórico.
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
-- Último commit: `0907d4d`.
+- Último commit: ver `git log` (conferência visual da Fase 19 feita em 2026-10-11).
 - Suítes: PHP **342/342** (`php artisan test --compact`), JS **38/38** (`node --test resources/js/*.test.js`), build ok.
 - **Ainda não foi feito merge na `main` das Fases 17 (resto), 18 e 19:** falta a revisão final da branch e a decisão
   do usuário.
@@ -37,14 +37,14 @@ Depois da aprovação: plano com fases e tarefas (superpowers:writing-plans), ex
 
 **Pendências que dependem do usuário**
 1. Revisar a especificação da Fase 20.
-2. **Conferência visual completa da lista de cobranças** (paginadores, cache 1→4 sem pedido, rodapé, dar baixa e
-   ver a lista atualizar, F5). **Pede autorização nova**, porque grava sessões no banco de dev. Usar o Chrome dedicado
-   da porta 9333 (`BU_CDP_URL`), nunca o do usuário.
+2. ~~Conferência visual da lista de cobranças~~ **feita em 2026-10-11** (ver plano da Fase 19). Falta só "dar baixa e
+   ver a lista recarregar": **grava pagamento**, então pede autorização à parte. Usar o Chrome dedicado da porta 9333
+   (`BU_CDP_URL`), nunca o do usuário.
 3. Validações antigas: T17.9 (smoke), T17.12, T17.14.
-4. **T17.13 (apelido do cliente):** espera a resposta "Já existe algum recibo emitido em produção?" (regra do `-v2`
-   do modelo de recibo).
+4. **T17.13 (apelido do cliente):** o usuário respondeu **"Sim"** em 2026-10-11 — **já existe recibo emitido em
+   produção.** Logo, mostrar o apelido no recibo exige criar `webiss-v2`/`danfse-v2`; os `-v1` não mudam.
 5. T17.11 (renovar ou prorrogar contrato): desenho a fazer com o usuário.
-6. Avisar o usuário: `MATERIAIS/lists-m05.html` está **vazio**.
+6. ~~`MATERIAIS/lists-m05.html` vazio~~ — o usuário excluiu o arquivo (2026-10-11).
 
 **Fatos desta sessão que não estão no código**
 - **419 ao excluir produto (relato do usuário):**

@@ -137,7 +137,8 @@ async function fecharFaixa() {
             <Campo id="cliente_id" rotulo="Cliente">
                 <BuscaAutosugestao id="cliente_id" v-model="filtro.cliente_id" :inicial="clienteFiltro" vazio="Todos os clientes" />
             </Campo>
-            <div class="flex items-end gap-4">
+            <!-- flex-wrap: sem ele, caixa + botão passam da 5ª coluna em telas de ~1260 px e a página rola na horizontal. -->
+            <div class="flex flex-wrap items-end gap-x-4 gap-y-2">
                 <!-- Só faz sentido em "Todas": as outras situações já dizem se entram canceladas. -->
                 <Transition name="surgir">
                     <label v-if="!filtro.status" class="flex shrink-0 items-center gap-2 py-2 text-sm">

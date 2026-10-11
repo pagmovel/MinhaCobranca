@@ -149,6 +149,7 @@ um cliente, com contratos e relatórios próprios).
 **Rascunho técnico (a confirmar no código):** `clientes.apelido` texto, vazio por padrão (`''`, não nulo — índice único
 `(user_id, documento, apelido)` funciona igual no PostgreSQL e no SQLite; com nulo, dois cadastros sem apelido passariam);
 trocar o único `(user_id, documento)`; regra de unicidade no request com o apelido; snapshot do tomador com o apelido
-(recibo antigo sem a chave sai igual); templates `webiss-v1`/`danfse-v1` ganham a linha — **[A VERIFICAR]** se já há
-recibo emitido em produção (skill: depois disso, mudança vira `-v2`) e se a linha cabe na página (`AmostrasVisuaisTest`).
+(recibo antigo sem a chave sai igual). **Já há recibo emitido em produção** (resposta do usuário em 2026-10-11): os
+`-v1` ficam intactos e a linha "Unidade atendida" entra em modelos novos `webiss-v2`/`danfse-v2`. **[A VERIFICAR]** se
+a linha cabe na página (`AmostrasVisuaisTest`).
 Migração: PORTÃO-BANCO.
