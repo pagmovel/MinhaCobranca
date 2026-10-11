@@ -34,7 +34,9 @@ class CobrancaController extends Controller
             'mes' => ['nullable', 'date_format:Y-m'],
             'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
+            'canceladas' => ['nullable', 'boolean'],
         ]);
+        $comCanceladas = (bool) ($filtros['canceladas'] ?? false);
 
         $mes = CarbonImmutable::createFromFormat('Y-m-d', ($filtros['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
 
@@ -47,7 +49,8 @@ class CobrancaController extends Controller
         }
 
         match ($status) {
-            null => null,
+            // "Todas" deixa as canceladas de fora, salvo com "Incluir canceladas" marcado (pedido do usuário).
+            null => $comCanceladas ? null : $consulta->where('status', '!=', StatusCobranca::Cancelada),
             'vence_hoje' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]),
             'vencida' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '<', $hoje),
             'a_vencer' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay()),
@@ -63,6 +66,7 @@ class CobrancaController extends Controller
                 'mes' => $mes->format('Y-m'),
                 'status' => $filtros['status'] ?? '',
                 'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
+                'canceladas' => $comCanceladas,
             ],
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),

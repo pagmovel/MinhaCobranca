@@ -6,9 +6,12 @@ import { useForm } from '@inertiajs/vue3';
 const props = defineProps({
     cobrancaId: { type: Number, required: true },
     enviada: { type: Boolean, default: false },
+    // Na faixa abaixo da linha da tabela: já abre no modo escolhido no menu e avisa a tabela ao fechar.
+    modoInicial: { type: String, default: null },
 });
+const emit = defineEmits(['fechar']);
 
-const modo = ref(null);
+const modo = ref(props.modoInicial);
 const hoje = new Date().toLocaleDateString('sv-SE');
 const form = useForm({ pago_em: hoje, motivo: '', senha: '' });
 const primeiroCampo = ref(null);
@@ -20,12 +23,13 @@ const abrir = async (qual) => {
     await nextTick();
     primeiroCampo.value?.focus();
 };
+const fechar = () => { modo.value = null; emit('fechar'); };
 
 const confirmar = () => form.post(
     `/cobrancas/${props.cobrancaId}/${modo.value === 'corrigir' ? 'corrigir-pagamento' : 'desfazer-baixa'}`,
     {
         preserveScroll: true,
-        onSuccess: () => { modo.value = null; },
+        onSuccess: fechar,
         onFinish: () => form.reset('senha'),
     },
 );
@@ -36,7 +40,7 @@ const confirmar = () => form.post(
         <button type="button" class="botao-secundario" @click="abrir('corrigir')">Corrigir pagamento</button>
         <button type="button" class="botao-perigo" @click="abrir('desfazer')">Desfazer baixa</button>
     </span>
-    <form v-else class="aparecer grid w-full gap-2 border border-carbono/20 bg-papel p-3 sm:grid-cols-2" @submit.prevent="confirmar" @keydown.esc="modo = null">
+    <form v-else class="aparecer grid w-full gap-2 border border-carbono/20 bg-papel p-3 sm:grid-cols-2" @submit.prevent="confirmar" @keydown.esc="fechar">
         <p class="text-sm font-medium sm:col-span-2">
             {{ modo === 'corrigir' ? 'Corrigir a data do pagamento' : 'Desfazer a baixa: a cobrança volta a ficar em aberto' }}
         </p>
@@ -70,7 +74,7 @@ const confirmar = () => form.post(
             <button :class="modo === 'corrigir' ? 'botao' : 'botao-perigo-confirmar'" :disabled="form.processing">
                 {{ modo === 'corrigir' ? 'Corrigir a data' : 'Desfazer a baixa' }}
             </button>
-            <button type="button" class="botao-secundario" @click="modo = null">Voltar</button>
+            <button type="button" class="botao-secundario" @click="fechar">Voltar</button>
         </div>
     </form>
 </template>

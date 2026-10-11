@@ -577,6 +577,21 @@ o relatório mostra a parte que existe.
   só lê se a relação estiver carregada — sem N+1) e tela `/auditoria` (30 dias por padrão, link para a cobrança no mês do
   vencimento ou para o contrato). `CorrecaoPagamentoInline.vue` na lista de cobranças pagas. Efeito esperado: o
   "recebido" (caixa) muda de mês quando a data muda; recibo pago já enviado sai com a data nova se reenviado.
+- **T17.15 — cobranças em tabela (2026-10-11):** `Cobrancas/Index.vue` é uma tabela a partir de `xl` (1280 px) e
+  cartões abaixo, **com o mesmo HTML** (`block`/`flex` no celular, `xl:table`/`xl:table-row`/`xl:table-cell`; a ordem do
+  cartão vem de `order-*`). Ações: `resources/js/acoesCobranca.js` (`acoesDaCobranca` → `{ principal, menu }`, testado
+  com `node --test`): em aberto e não enviada → **Enviar**; em aberto e enviada → **Dar baixa**; paga/cancelada → **Ver
+  PDF**; o resto no `MenuAcoes.vue` ("⋯", fecha no Esc e ao sair com foco/clique). Ações com formulário abrem numa **faixa
+  abaixo da linha** (`tr` extra, uma por vez, foco no primeiro campo e de volta à linha ao fechar); `BaixaInline`,
+  `PagamentoInline`, `CancelarInline` (`na-faixa`) e `CorrecaoPagamentoInline` (`modo-inicial`) emitem `fechar` — o
+  painel continua usando os mesmos componentes sem essas props. `BotaoEnviar` no menu usa `classe-botao`, e o menu
+  **não fecha** enquanto prepara o PDF (senão o erro some); ao marcar "enviada" a página recarrega.
+  **Pegadinhas:** (1) `TransitionGroup` exige chave em todo filho e `<template v-for>` não aceita chave nos filhos: a
+  linha e a faixa ficam num **`<tbody>` por cobrança** (`TransitionGroup tag="table"`, `thead` com `key`). (2) Menu
+  absoluto dentro de `overflow-x-auto` fica cortado: a tabela só aparece onde cabe (xl), sem contêiner rolável.
+  **Filtro "Incluir canceladas" (pedido do usuário, 2026-10-11):** "Todas" deixa as canceladas de fora; o checkbox
+  (`canceladas=1`) as inclui; só aparece com "Todas" (nas outras situações não muda nada); "Canceladas" continua no
+  select. A regra `boolean` do Laravel recusa `true`/`false` na URL: a tela manda `1` ou vazio.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
