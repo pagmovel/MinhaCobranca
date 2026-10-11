@@ -978,6 +978,17 @@ o relatório mostra a parte que existe.
     o início da Fase 24 (não mudou). `{apelido}` é uma variável nova e independente — só o apelido, vazio se não
     houver — para quem quer montar a própria cascata (`{apelido|razao_social}`) sem o comportamento combinado de
     `{cliente}`. As duas convivem; nenhuma substitui a outra.
+  - **Modelo pré-selecionado pela situação da cobrança (2026-10-11, pedido do usuário):** `modelos_mensagem.tipo_situacao`
+    (nulável) reaproveita os mesmos valores de `Cobranca::situacao()` — `a_vencer`, `vence_hoje`, `vencida` — em vez
+    de inventar uma taxonomia própria para "vencendo" (o usuário chamava assim o que o sistema já trata como
+    `vence_hoje`; confirmado por pergunta antes de implementar). Regra "só um por tipo" é código novo mas a mesma
+    forma da regra de `padrao` (`ModeloMensagemController`): marcar desmarca o anterior do mesmo tipo — só que aqui
+    **não** tem o "nasce com um automaticamente" do padrão, porque `tipo_situacao` pode legitimamente ficar sem
+    nenhum modelo marcado (nulo não é um estado inválido a corrigir).
+  - **Prioridade de escolha do modelo na janela de aviso:** sugerido pela situação (`modelo_sugerido_id`, calculado
+    no servidor) **>** padrão **>** texto sugerido genérico. O servidor decide o sugerido considerando o grupo
+    inteiro (lote do Painel pode juntar cobranças de situações diferentes do mesmo cliente) — usa a mais urgente
+    (`vencida > vence_hoje > a_vencer`), não a mais comum nem a da primeira cobrança da lista.
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
