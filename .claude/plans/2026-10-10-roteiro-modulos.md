@@ -36,7 +36,17 @@ sem depender do histórico.
    nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." **Em brainstorming.**
    - Fatos: o cliente tem `telefone`; o envio de PDF hoje é `BotaoEnviar` (Web Share/download). Envio automático pela API
      do WhatsApp é pago → fora (regra: serviço externo só se gratuito); caminho gratuito: link `https://wa.me/<número>?text=`
-     que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial.
+     que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial (faq.whatsapp.com é montada por JS: o `curl` e o Chrome de teste não
+     trouxeram o texto em 2026-10-11).
+   - **Respostas do usuário (2026-10-11):** (1) **bloco no Painel** "Vencendo nos próximos N dias", agrupado por cliente
+     (uma mensagem por cliente com as cobranças dele e o total) + ação no menu "⋯" de cada cobrança em aberto; (2) **vários
+     modelos, um padrão**, escolhido na hora com prévia; (3) prazo **configurável, padrão 5 dias**; (4) **marcar "avisado em"**
+     (pode avisar de novo).
+   - **Rascunho do desenho (a apresentar):** perfil com "Mensagens de WhatsApp" (modelos: nome, texto, padrão) e "Avisar
+     com N dias"; variáveis `{cliente}` (apelido ou nome), `{itens}`, `{vencimento}`, `{total}`, `{prestador}`; modal com
+     modelo + prévia editável + "Abrir WhatsApp" (link com o telefone do cliente; sem celular: digitar ou "Copiar
+     mensagem"); ao abrir, grava `avisado_em` nas cobranças do grupo. Só cobranças já geradas (previstas não entram).
+     Banco: `modelos_mensagem`, `users.dias_aviso`, `cobrancas.avisado_em` → PORTÃO-BANCO.
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
    cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
    cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**

@@ -720,6 +720,9 @@ o relatório mostra a parte que existe.
        filtros, "Incluir canceladas" (`shrink-0`) mais o botão "Filtrar" passavam da largura da coluna em 9 px.
        Correção: `flex-wrap` no contêiner, e o botão desce para a linha de baixo. Ao montar filtros em grade, conferir
        `scrollWidth === clientWidth` em 1264 px, não só em 390 px.
+       **Ajuste (pedido do usuário com print, 2026-10-11):** o botão "Filtrar" tinha `w-full` e sempre descia para baixo da
+       caixa. Agora a grade em `lg` é `[11rem_11rem_minmax(0,1fr)_minmax(0,1.4fr)_auto]` (datas com largura fixa; a última
+       coluna do tamanho da caixa + botão) e o botão é `px-4` sem `w-full`: caixa e botão na mesma linha em 1024–1700 px.
     4. **Lentidão no dev não é defeito da lista:** 12 consultas × ~580 ms de ida e volta ao PostgreSQL remoto dão ~7 s
        no `/cobrancas/dados` (medido com `DB::enableQueryLog`). Mesmo assim há uma consulta por contrato ativo:
        `GeradorDeCobrancas::existentes()` (`$contrato->cobrancas()->pluck(...)`), chamada pela previsão. Com 100

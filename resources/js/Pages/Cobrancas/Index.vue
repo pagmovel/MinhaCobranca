@@ -107,7 +107,9 @@ async function fecharFaixa() {
             <Link href="/cobrancas/create" class="botao">Nova cobrança avulsa</Link>
         </div>
 
-        <form class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5" @submit.prevent="filtrar">
+        <!-- Datas com largura fixa (o mês cabe em 11rem); situação e cliente dividem o resto; a última coluna é do tamanho
+             da caixa + botão, que ficam na mesma linha (pedido do usuário, 2026-10-11). -->
+        <form class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-[11rem_11rem_minmax(0,1fr)_minmax(0,1.4fr)_auto]" @submit.prevent="filtrar">
             <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (buscando em todos os meses)' : 'Mês do vencimento'">
                 <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
             </Campo>
@@ -137,7 +139,7 @@ async function fecharFaixa() {
                         Incluir canceladas
                     </label>
                 </Transition>
-                <button class="botao-secundario w-full">Filtrar</button>
+                <button class="botao-secundario px-4">Filtrar</button>
                 <Link v-if="filtrando" href="/cobrancas" class="font-estreita text-sm text-carbono underline">Limpar filtros</Link>
             </div>
         </form>
