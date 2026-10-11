@@ -29,9 +29,10 @@ final class PrevisaoDeCobrancas
     {
         $aPrever = [];
 
-        foreach ($usuario->contratos()->where('ativo', true)->with(['itens', 'cliente:id,nome'])->get() as $contrato) {
-            // ponytail: uma consulta por contrato para os períodos já emitidos (como o gerador); juntar numa só se a lista passar de centenas de contratos.
-            $existentes = $this->gerador->existentes($contrato);
+        $contratos = $usuario->contratos()->where('ativo', true)->with(['itens', 'cliente:id,nome'])->get();
+        $existentes = $this->gerador->existentes($contratos);
+
+        foreach ($contratos as $contrato) {
             $periodos = $this->calculadora->entre(
                 $contrato->data_inicio,
                 $contrato->data_fim,
@@ -43,7 +44,7 @@ final class PrevisaoDeCobrancas
             );
 
             foreach ($periodos as $periodo) {
-                if ($this->gerador->cobravel($contrato, $periodo, $existentes)) {
+                if ($this->gerador->cobravel($contrato, $periodo, $existentes[$contrato->id] ?? [])) {
                     $aPrever[] = [$contrato, $periodo];
                 }
             }

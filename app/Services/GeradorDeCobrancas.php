@@ -11,6 +11,7 @@ use App\Support\Periodo;
 use App\Support\ProRata;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class GeradorDeCobrancas
@@ -29,9 +30,10 @@ final class GeradorDeCobrancas
 
         $aGerar = [];
 
-        foreach ($usuario->contratos()->where('ativo', true)->with('itens.produtoServico')->get() as $contrato) {
-            $existentes = $this->existentes($contrato);
+        $contratos = $usuario->contratos()->where('ativo', true)->with('itens.produtoServico')->get();
+        $existentes = $this->existentes($contratos);
 
+        foreach ($contratos as $contrato) {
             $devidos = $this->calculadora->devidos(
                 $contrato->data_inicio,
                 $contrato->data_fim,
@@ -43,7 +45,7 @@ final class GeradorDeCobrancas
             );
 
             foreach ($devidos as $periodo) {
-                if ($this->cobravel($contrato, $periodo, $existentes)) {
+                if ($this->cobravel($contrato, $periodo, $existentes[$contrato->id] ?? [])) {
                     $aGerar[] = [$contrato, $periodo];
                 }
             }
@@ -133,11 +135,18 @@ final class GeradorDeCobrancas
         ]);
     }
 
-    /** @return list<string> início (Y-m-d) dos períodos do contrato que já têm cobrança, em qualquer situação. */
-    public function existentes(Contrato $contrato): array
+    /**
+     * Início (Y-m-d) dos períodos que já têm cobrança, em qualquer situação, por contrato: uma consulta para todos.
+     *
+     * @param  Collection<int, Contrato>  $contratos
+     * @return array<int, list<string>>
+     */
+    public function existentes(Collection $contratos): array
     {
-        return $contrato->cobrancas()->pluck('periodo_inicio')
-            ->map(fn ($data) => CarbonImmutable::parse($data)->toDateString())
+        return Cobranca::query()->whereIn('contrato_id', $contratos->modelKeys())
+            ->get(['contrato_id', 'periodo_inicio'])
+            ->groupBy('contrato_id')
+            ->map(fn (Collection $cobrancas) => $cobrancas->map(fn (Cobranca $cobranca) => $cobranca->periodo_inicio->toDateString())->all())
             ->all();
     }
 

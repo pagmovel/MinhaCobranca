@@ -12,6 +12,7 @@ use App\Models\CobrancaItem;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Services\ListaDeCobrancas;
+use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
@@ -74,8 +75,7 @@ class CobrancaController extends Controller
             'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
             'canceladas' => ['nullable', 'boolean'],
-            'pagina' => ['nullable', 'integer', 'min:1'],
-            'por_pagina' => ['nullable', Rule::in([25, 50, 100])],
+            ...BlocoDePaginas::regras(),
         ]);
         $mes = CarbonImmutable::createFromFormat('Y-m-d', ($validados['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
 

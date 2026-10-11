@@ -5,14 +5,12 @@ namespace App\Services;
 use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\User;
+use App\Support\BlocoDePaginas;
 use Carbon\CarbonImmutable;
 
 /** Lista da tela de cobranças (reais + previstas) em blocos de páginas, com os totais do resultado inteiro. */
 final class ListaDeCobrancas
 {
-    /** Páginas mandadas por pedido: o navegador guarda o bloco e troca de página sem pedir de novo. */
-    public const PAGINAS_POR_BLOCO = 4;
-
     private const ORDEM = ['vencida', 'vence_hoje', 'a_vencer', 'prevista', 'paga', 'cancelada'];
 
     public function __construct(private PrevisaoDeCobrancas $previsao) {}
@@ -80,20 +78,18 @@ final class ListaDeCobrancas
         // Cancelada não é dinheiro a receber: fica fora do total.
         $aReceber = $leves->where('situacao', '!=', 'cancelada');
 
-        $porPagina = $filtros['por_pagina'];
-        $inicio = min($filtros['pagina'], max(1, (int) ceil($leves->count() / $porPagina)));
-        $bloco = $leves->slice(($inicio - 1) * $porPagina, self::PAGINAS_POR_BLOCO * $porPagina)->values();
+        $bloco = BlocoDePaginas::de($leves, $filtros['pagina'], $filtros['por_pagina']);
 
         // Só as linhas do bloco carregam recibo, cliente e histórico.
         $completas = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo', 'auditorias'])
-            ->findMany($bloco->whereNull('prevista')->pluck('id'))
+            ->findMany($bloco['itens']->whereNull('prevista')->pluck('id'))
             ->keyBy('id');
 
         return [
-            'linhas' => $bloco->map(fn (array $leve) => $leve['prevista'] ?? $completas[$leve['id']]->paraLista($hoje))->all(),
+            'linhas' => $bloco['itens']->map(fn (array $leve) => $leve['prevista'] ?? $completas[$leve['id']]->paraLista($hoje))->all(),
             'totais' => $totais,
             'total_geral' => ['quantidade' => $aReceber->count(), 'soma_centavos' => (int) $aReceber->sum('valor_centavos')],
-            'pagina' => ['inicio' => $inicio, 'por_pagina' => $porPagina, 'total' => $leves->count()],
+            'pagina' => $bloco['pagina'],
         ];
     }
 }

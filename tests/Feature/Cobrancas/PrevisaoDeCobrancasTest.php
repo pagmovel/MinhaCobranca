@@ -12,6 +12,7 @@ use App\Services\GeradorDeCobrancas;
 use App\Services\PrevisaoDeCobrancas;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PrevisaoDeCobrancasTest extends TestCase
@@ -165,5 +166,21 @@ class PrevisaoDeCobrancasTest extends TestCase
         $this->assertCount(3, $previstas);
         $this->assertSame($previstas, $geradas);
         $this->assertSame([], $this->prever('2026-10-01', '2026-12-31'), 'depois de gerar, nada fica previsto');
+    }
+
+    public function test_uma_consulta_so_para_as_cobrancas_existentes_de_todos_os_contratos(): void
+    {
+        $this->contratoComItem();
+        Contrato::factory()->for($this->usuario)->count(2)->create(['data_inicio' => '2026-08-01']);
+        $consultas = 0;
+        DB::listen(function ($consulta) use (&$consultas) {
+            if (str_contains($consulta->sql, 'periodo_inicio')) {
+                $consultas++;
+            }
+        });
+
+        $this->prever('2026-11-01', '2027-01-31');
+
+        $this->assertSame(1, $consultas);
     }
 }
