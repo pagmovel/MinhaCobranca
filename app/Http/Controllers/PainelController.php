@@ -41,7 +41,9 @@ class PainelController extends Controller
             'formasPagamento' => FormaPagamento::opcoes(),
             'resumo' => [
                 'previsto' => Dinheiro::formatar((int) $doMes()->sum('valor_centavos')),
-                'recebido' => Dinheiro::formatar((int) $doMes()->where('status', StatusCobranca::Paga)->sum('valor_centavos')),
+                // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento.
+                'recebido' => Dinheiro::formatar((int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)
+                    ->whereBetween('pago_em', [$inicio, $fim])->sum('valor_centavos')),
             ],
             'paraEnviar' => $pendentes->whereNull('enviado_em')->values()->map($paraLista),
             'aguardando' => $pendentes->whereNotNull('enviado_em')->values()->map($paraLista),

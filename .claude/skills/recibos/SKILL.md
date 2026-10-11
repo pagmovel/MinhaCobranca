@@ -423,6 +423,39 @@ o relatório mostra a parte que existe.
   completar 8 dígitos (o CEP já salvo não é consultado de novo; o campo CEP subiu para o topo do endereço); botão
   "Buscar dados do CNPJ" (`BuscaCnpj.vue`) aparece com 14 caracteres e a validade é conferida pelo servidor; o perfil
   usa `campo-nome="name"`. `consultar()` nunca lança: falha vira mensagem e o formulário segue manual.
+- T15.1: o "recebido" do painel soma as pagas com `pago_em` no mês (regime de caixa, D1), qualquer que seja o
+  vencimento; o "previsto" continua pelo vencimento — a frase pode mostrar recebido maior que previsto (esperado).
+- T15.2: relatório = tabela genérica (`App\Services\Relatorios`: colunas com tipo e `soma`, linhas em centavos,
+  totais) usada pela tela e pelo CSV; CSV com `;`, BOM UTF-8 e `fputcsv(..., ';', '"', '')`; célula que começa com
+  `= + - @` ganha apóstrofo (injeção de CSV); período padrão 12 meses, máximo 36; "em atraso no fim do mês" é saldo
+  (sem total). **Pegadinhas:** PHP 8.4 deprecia `fputcsv` sem o argumento `escape`; `fputcsv` põe aspas em campo com
+  espaço (`"Em atraso no fim do mês"`).
+- T15.3: receita por produto soma `cobranca_itens.total_centavos` (a cópia) — bate com o valor das cobranças porque
+  valor = soma dos itens; cobranças anteriores ao catálogo entram na linha "Sem item"; "contratos ativos" não soma
+  (um contrato com dois itens contaria duas vezes); receita por cliente agrupa no SQL (`selectRaw` + `groupBy`) e
+  calcula dias de atraso em PHP (`diffInDays` do Carbon 3 tem sinal).
+- T15.4: contas a receber é a situação de **hoje** (sem período); faixas 0–30 (vence hoje inclusive), 31–60, 61–90 e
+  depois de 90; a soma das faixas é o total pendente; "maior atraso" não soma.
+- **Pegadinha (revisão final, 2026-10-10): id não numérico no `exists` quebra só no PostgreSQL.** `where id = 'abc'`
+  numa coluna bigint é erro de SQL (500) no PostgreSQL; no SQLite dos testes vira só "não existe". **Acerto:** o
+  validador do Laravel pula `exists`/`unique` quando o campo já falhou em outra regra
+  (`Validator::hasNotFailedPreviousRuleIfPresenceRule`), então basta `integer` **antes** do `exists` — sem `bail`.
+  `cliente_id` (contrato/cobrança) e `chave_pix_id` não tinham `integer`; corrigido.
+  `tests/Feature/IdsNaoNumericosTest.php` prova com `DB::listen` que nenhuma consulta recebe o texto.
+- **Acerto (revisão final):** os serviços de consulta (`app/Services/Consultas/*`) trocam por `null` todo campo da
+  resposta que não seja texto ou número (`is_scalar`) antes de qualquer `(string)`; campo com tipo errado vira
+  "não veio", não erro 500.
+- **Smoke T15.5 (2026-10-10, usuário SMOKE id 2, PostgreSQL de dev, autorizado):** catálogo (cadastro, filtros,
+  desativar, busca só de ativos), contrato por itens (1,5 × 120,00 + 89,90 = 269,90 ao vivo e gravado), contrato antigo
+  (aviso + exigência de itens), avulsa e edição (número mantido), cobrança gerada com itens copiados, reajuste só no
+  contrato marcado, filtros, CNPJ/CEP, 4 relatórios + CSV (BOM, `;`, vírgula), painel, PIX. PostgreSQL devolve
+  `quantidade` como `"1.500"` e as somas batem. Prints em `storage/app/private/verificacao/smoke-catalogo/`.
+- **Pegadinha (390 px): `<fieldset>` tem `min-inline-size: min-content` por padrão** — uma tabela larga dentro dele
+  alarga a coluna do grid e a página inteira, e o `overflow-x-auto` não age. Usar `min-w-0` no fieldset.
+- **Pegadinha (390 px): `sr-only` é `position: absolute`** — dentro de tabela com rolagem, escapa do recorte se o
+  contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
+- **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
+  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

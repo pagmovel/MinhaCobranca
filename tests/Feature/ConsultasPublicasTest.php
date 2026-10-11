@@ -94,6 +94,20 @@ class ConsultasPublicasTest extends TestCase
         $this->getJson('/consultas/cnpj/'.self::CNPJ)->assertOk()->assertJsonPath('nome', 'BANCO DO BRASIL SA');
     }
 
+    public function test_campo_com_tipo_errado_na_resposta_vira_mensagem_e_nao_erro(): void
+    {
+        Http::fake([
+            'brasilapi.com.br/api/cnpj/v1/*' => Http::response($this->respostaCnpj(['razao_social' => ['x' => 1]])),
+            'viacep.com.br/*' => Http::response(['localidade' => 'São Paulo', 'logradouro' => ['x' => 1], 'uf' => 'SP']),
+            'brasilapi.com.br/api/cep/v1/*' => Http::response(['city' => ['x' => 1]]),
+        ]);
+
+        $this->getJson('/consultas/cnpj/'.self::CNPJ)->assertNotFound()->assertJsonPath('mensagem', self::FALHA);
+        $this->getJson('/consultas/cep/01001000')->assertOk()->assertExactJson([
+            'logradouro' => '', 'bairro' => '', 'cidade' => 'São Paulo', 'uf' => 'SP',
+        ]);
+    }
+
     public function test_resposta_boa_fica_no_cache_por_30_dias(): void
     {
         Http::fake(['brasilapi.com.br/*' => Http::response($this->respostaCnpj())]);

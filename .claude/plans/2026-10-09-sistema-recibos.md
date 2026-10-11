@@ -70,10 +70,10 @@ tarefas ligadas a elas param em `testada`/`concluída` (não viram `validada`).
   centro, DANFSe no lugar do QR) e rodapé no pé da página. — pendente
 - [ ] **V3 — Prints do smoke test (T5.3 passos 5–6)**: `storage/app/private/verificacao/smoke/*.png`
   (1280 px e 390 px) e os PDFs reais `recibo-*.pdf`. Validar a direção visual e as fases 2–5. — pendente
-- [ ] **D1 — Decisão: o que conta como "recebido" no topo do painel.** Hoje (regra do plano, T5.1):
+- [x] **D1 — Decisão: o que conta como "recebido" no topo do painel.** Hoje (regra do plano, T5.1):
   parte paga das cobranças que **vencem** no mês. No smoke, um pagamento de setembro feito em outubro
   apareceu em "Recebidas no mês" mas não somou no "R$ … recebidos". Alternativa: somar o que foi **pago
-  no mês** (coerente com a lista, mas pode passar do previsto). — **decidida em 2026-10-10: regime de caixa (pago no mês)**; implementação na Fase 15 (spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`)
+  no mês** (coerente com a lista, mas pode passar do previsto). — **decidida em 2026-10-10: regime de caixa (pago no mês)**; implementação na Fase 15 (spec `2026-10-10-modulo-cobranca-catalogo-relatorios-design.md`) — **implementada na T15.1 (2026-10-10), testada**
 - [ ] **L1 — Limpeza dos dados SMOKE** (T5.3 passo 7): usuário `smoke@recibos.test` (id 2) e tudo dele
   (2 clientes, 2 contratos, 5 cobranças e recibos, logos em `storage/app/private/logos/2/`). Pedir
   PORTÃO-BANCO com o comando literal. — pendente
