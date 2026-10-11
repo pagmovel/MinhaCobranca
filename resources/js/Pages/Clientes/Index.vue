@@ -62,7 +62,7 @@ const filtrar = () => router.get('/clientes', filtro, { preserveState: true, rep
             {{ filtrando ? 'Nenhum cliente com estes filtros.' : 'Nenhum cliente ainda. Cadastre o primeiro para criar contratos e cobranças.' }}
         </p>
 
-        <ul v-else class="divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-else tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
             <li v-for="cliente in clientes" :key="cliente.id">
                 <Link :href="`/clientes/${cliente.id}/edit`" class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 hover:bg-papel">
                     <span class="font-semibold">{{ cliente.nome }}</span>
@@ -70,7 +70,7 @@ const filtrar = () => router.get('/clientes', filtro, { preserveState: true, rep
                     <span class="w-full font-estreita text-xs text-grafite/70">{{ cliente.cidade || 'Sem cidade' }}, recibo {{ cliente.modelo }}</span>
                 </Link>
             </li>
-        </ul>
+        </TransitionGroup>
 
         <Paginacao :paginacao="paginacao" />
     </CamadaApp>

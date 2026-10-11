@@ -3,3 +3,4 @@
 - [Merge e push por fase](memory/merge-e-push-por-fase.md) — fase concluída vai para a main e para o origin sem pedir de novo
 - [Produto em módulos](memory/produto-em-modulos.md) — SaaS por planos de assinatura; documentação por módulo
 - [Roteiro do produto](plans/2026-10-10-roteiro-modulos.md) — estado atual, próximo passo e backlog por módulo (ler ao retomar)
+- [Usabilidade: antecipar e animar](memory/usabilidade-antecipar-e-animar.md) — prever o atrito (lista/catálogo vazio), padronizar entre telas, animar interações

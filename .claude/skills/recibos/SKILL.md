@@ -456,6 +456,33 @@ o relatório mostra a parte que existe.
   contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
 - **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
   disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
+- **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
+  "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
+  setembro aparece em outubro; o rótulo do mês avisa "buscando em todos os meses"). Trocar situação ou mês aplica o
+  filtro na hora (`@change`), sem clicar em "Filtrar". **Campo de mês nunca fica bloqueado** (o usuário achou que era
+  defeito): escolher um mês nesse estado volta a situação para "Todas" e mostra o mês escolhido. Teste: `tests/Feature/Cobrancas/FiltroSituacaoTest.php`.
+- **Fase 17 — cadastro rápido sem sair da tela (regra do usuário, 2026-10-10):** cliente (`CampoCliente.vue` +
+  `CadastroRapidoCliente.vue`), produto/serviço (`CadastroRapidoProduto.vue`, `CatalogoItens.vue` "Ver catálogo") e
+  chave PIX (`CadastroRapidoChavePix.vue` em `CamposPagamento`) em **modal**; o registro novo volta já escolhido e o
+  formulário de fundo fica intacto. Os `store` de sempre respondem **JSON 201** quando `expectsJson()` (formato da
+  autosugestão); validação e isolamento são os mesmos FormRequests (422 automático). `enviarJson()` (`resources/js/http.js`)
+  manda o `X-XSRF-TOKEN` do cookie e nunca lança. `Modal.vue`: foco preso, Esc fecha, devolve o foco, **clique fora
+  não fecha** (não perder o digitado). Contrato/cobrança **não bloqueiam mais** sem cliente cadastrado.
+  `tiposChavePix` é prop compartilhada (Inertia) — `PagamentoInline` também abre o modal.
+- **Autosugestão (`BuscaAutosugestao.vue`):** lista os 10 primeiros ao focar/clicar com o campo vazio (`q` vazio no
+  servidor; 1 letra continua sem busca), indicador girando no canto direito enquanto busca (`aria-busy` + "Buscando…"
+  para leitor de tela; pedido do usuário), opção "+ Cadastrar «texto»" como última opção (setas/Enter/clique).
+  Ao incluir item, o foco vai para o **preço combinado** (selecionado); preço 0 ganha borda laranja e aviso.
+- **Animações (pedido do usuário):** classes em `app.css` — `<Transition name="surgir">` (avisos, listas),
+  `<TransitionGroup name="lista">` (linhas), `modal`, `.aparecer`, `.destacar` (total que mudou), transição de
+  foco/hover/clique em `.entrada` e botões; tudo desligado por `prefers-reduced-motion`.
+- **Pegadinha (revisão Fase 17): resposta que chega depois do blur reabre a lista** e ela fica flutuando sobre o
+  formulário. Toda autosugestão: no blur cancelar timer + fetch; depois do `await`, só abrir se
+  `document.activeElement` ainda é o campo. **Modal:** ouvir `keydown` no `document` (não no fundo) — botão que some
+  (ex.: "Incluir" → "✓ Incluído") joga o foco no `body` e o Esc deixaria de funcionar.
+- **Trava do banco de teste recusa `DB_URL` preenchida** (a URL manda no banco de verdade, por cima do nome).
+- **Pegadinha (smoke):** `element.focus()` por script num Chrome headless sem foco de janela **não dispara** o evento
+  `focus` (parecia defeito da lista ao focar). Usar clique real: `Input.dispatchMouseEvent` (pressed/released).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

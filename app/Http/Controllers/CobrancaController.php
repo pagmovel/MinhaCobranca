@@ -31,19 +31,27 @@ class CobrancaController extends Controller
 
         $filtros = $request->validate([
             'mes' => ['nullable', 'date_format:Y-m'],
-            'status' => ['nullable', Rule::in(['pendente', 'paga', 'cancelada'])],
+            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
         ]);
 
         $mes = CarbonImmutable::createFromFormat('Y-m-d', ($filtros['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
 
-        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo'])
-            ->whereBetween('vencimento', [$mes, $mes->endOfMonth()])
-            ->orderBy('vencimento');
+        $status = $filtros['status'] ?? null;
+        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo'])->orderBy('vencimento')->orderBy('id');
 
-        if (! empty($filtros['status'])) {
-            $consulta->where('status', $filtros['status']);
+        // "Vencendo hoje" e "Vencidas" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
+        if (! in_array($status, ['vence_hoje', 'vencida'], true)) {
+            $consulta->whereBetween('vencimento', [$mes, $mes->endOfMonth()]);
         }
+
+        match ($status) {
+            null => null,
+            'vence_hoje' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]),
+            'vencida' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '<', $hoje),
+            'a_vencer' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay()),
+            default => $consulta->where('status', $status),
+        };
         if (! empty($filtros['cliente_id'])) {
             $consulta->where('cliente_id', $filtros['cliente_id']);
         }
@@ -101,10 +109,10 @@ class CobrancaController extends Controller
                 'chave_pix_id' => $cobranca->chave_pix_id ?? '',
                 'linha_digitavel' => $cobranca->linha_digitavel ?? '',
             ] : null,
-            'temClientes' => $request->user()->clientes()->exists(),
             'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
             'chavesPix' => $request->user()->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
+            'cadastroRapido' => $request->user()->opcoesDeCadastroRapido(),
         ]);
     }
 

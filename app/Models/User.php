@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FamiliaModelo;
 use App\Enums\StatusUsuario;
+use App\Support\Ufs;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -78,6 +79,20 @@ class User extends Authenticatable
         return $this->chavesPix()->orderBy('id')->get()
             ->map(fn (ChavePix $chave) => ['id' => $chave->id, 'rotulo' => $chave->rotulo()])
             ->all();
+    }
+
+    /**
+     * Opções do cadastro rápido de cliente (modal) nos formulários de contrato e cobrança.
+     *
+     * @return array{modeloPadrao: string, modelos: list<array{valor: string, rotulo: string}>, ufs: list<string>}
+     */
+    public function opcoesDeCadastroRapido(): array
+    {
+        return [
+            'modeloPadrao' => $this->modelo_padrao->value,
+            'modelos' => FamiliaModelo::opcoes(),
+            'ufs' => Ufs::TODAS,
+        ];
     }
 
     public function clientes(): HasMany

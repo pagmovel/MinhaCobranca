@@ -17,5 +17,8 @@ class TravaDoBancoDeTesteTest extends TestCase
         $this->assertFalse(TestCaseDoProjeto::bancoDeTeste(['driver' => 'pgsql', 'database' => 'meus_projetos']));
         $this->assertFalse(TestCaseDoProjeto::bancoDeTeste(['driver' => 'sqlite', 'database' => 'database/database.sqlite']));
         $this->assertFalse(TestCaseDoProjeto::bancoDeTeste(['driver' => 'mysql', 'database' => 'recibos_teste']));
+        // DB_URL no ambiente manda no banco de verdade, por cima do nome: recusar sempre.
+        $this->assertFalse(TestCaseDoProjeto::bancoDeTeste(['driver' => 'pgsql', 'database' => 'recibos_teste', 'url' => 'pgsql://u:s@host:1/recibos']));
+        $this->assertTrue(TestCaseDoProjeto::bancoDeTeste(['driver' => 'pgsql', 'database' => 'recibos_teste', 'url' => '']));
     }
 }

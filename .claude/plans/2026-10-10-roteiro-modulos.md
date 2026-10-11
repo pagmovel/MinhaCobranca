@@ -30,6 +30,17 @@ sem depender do histórico.
 5. Pergunta aberta do usuário (2026-10-10): testes rodam em SQLite em memória porque não há PostgreSQL de teste (T7.1).
    Oferecido criar `recibos_teste` no mesmo servidor (escrita → PORTÃO-BANCO); aguardando resposta.
 
+### Atualização 2026-10-10 (fim da execução das Fases 12–15)
+- Fases 12, 13, 14 e 15 **mergeadas na `main`** (último merge `8bfc61a`). Suíte 252/252 (SQLite), JS 13/13.
+- Smoke T15.5 feito (usuário SMOKE id 2, autorizado); revisão final opus sem Critical/Important; 2 Minor corrigidos.
+- Banco **`recibos_teste`** criado (dono `recibos_app`, 2026-10-10, autorizado). `TestCase` tem trava: a suíte só roda
+  em `recibos_teste` (pgsql) ou `:memory:` (sqlite). `phpunit.xml` **continua em SQLite** — trocar para o PostgreSQL
+  só com autorização do usuário (a suíte remota passou de 400 s).
+- **Próximo (pedido do usuário, 2026-10-10):** usabilidade dos itens no contrato/cobrança (consulta ao catálogo,
+  cadastrar item sem sair da tela, valor negociado visível e editável, incluir vários itens) e **animações** em
+  transições, inclusões/remoções, inputs e selects — design curto aguardando aprovação. Depois: Fase 16 (importação
+  de XML) e Contas a Pagar.
+
 ## 3. Pendências em aberto (de planos anteriores)
 
 | Item | Onde está | Estado |

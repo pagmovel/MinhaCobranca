@@ -46,6 +46,97 @@
     }
 }
 
+/*
+ * Animações padrão (Fase 17): curtas, só para mostrar o que mudou. Componentes usam estas classes em <Transition
+ * name="surgir|modal"> e <TransitionGroup name="lista">; o bloco de reduced-motion abaixo desliga tudo.
+ */
+@layer components {
+    .entrada,
+    .botao,
+    .botao-secundario,
+    .botao-perigo,
+    .botao-perigo-confirmar {
+        transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+    }
+
+    .entrada:focus {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-carbono) 15%, transparent);
+    }
+
+    .botao:active:not(:disabled),
+    .botao-secundario:active:not(:disabled),
+    .botao-perigo:active:not(:disabled),
+    .botao-perigo-confirmar:active:not(:disabled) {
+        transform: scale(0.97);
+    }
+}
+
+/* Aviso, painel ou lista de sugestões que aparece/some. */
+.surgir-enter-active,
+.surgir-leave-active {
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+.surgir-enter-from,
+.surgir-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+/* Linhas que entram, saem ou mudam de lugar (itens, chaves PIX). */
+.lista-enter-active,
+.lista-leave-active,
+.lista-move {
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+.lista-enter-from {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+.lista-leave-to {
+    opacity: 0;
+    transform: translateX(12px);
+}
+/* Em listas (ul), a linha que sai deixa o fluxo para as outras deslizarem; em tabela (tr) fica, senão a coluna quebra. */
+ul > .lista-leave-active {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+/* Modal: fundo escurece e o painel cresce um pouco. */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 200ms ease;
+}
+.modal-enter-active > [role='dialog'],
+.modal-leave-active > [role='dialog'] {
+    transition: transform 200ms ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+.modal-enter-from > [role='dialog'],
+.modal-leave-to > [role='dialog'] {
+    transform: scale(0.96) translateY(8px);
+}
+
+/* Conteúdo da página ao navegar e destaque de um número que mudou (total). */
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes destacar {
+    from { background-color: color-mix(in srgb, var(--color-tinta-verde) 18%, transparent); }
+    to { background-color: transparent; }
+}
+.aparecer {
+    animation: aparecer 220ms ease both;
+}
+.destacar {
+    animation: destacar 700ms ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         transition-duration: 0s !important;

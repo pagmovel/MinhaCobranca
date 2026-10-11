@@ -68,20 +68,22 @@ class ProdutoServicoController extends Controller
     {
         $termo = trim((string) $request->query('q', ''));
 
-        if (mb_strlen($termo) < 2) {
+        // Vazio = o campo acabou de receber o foco: mostra os primeiros. Uma letra só ainda não busca.
+        if (mb_strlen($termo) === 1) {
             return response()->json([]);
         }
 
         $itens = $request->user()->produtosServicos()->where('ativo', true)
-            ->whereRaw("lower(nome) like ? escape '\\'", [Busca::contem($termo)])
+            ->when($termo !== '', fn ($consulta) => $consulta->whereRaw("lower(nome) like ? escape '\\'", [Busca::contem($termo)]))
             ->orderBy('nome')->limit(10)->get();
 
-        return response()->json($itens->map(fn (ProdutoServico $item) => [
-            'id' => $item->id,
-            'nome' => $item->nome,
-            'unidade' => $item->unidade,
-            'preco' => Dinheiro::formatar($item->preco_centavos),
-        ]));
+        return response()->json($itens->map(fn (ProdutoServico $item) => $this->paraBusca($item)));
+    }
+
+    /** @return array{id: int, nome: string, unidade: string, preco: string} */
+    private function paraBusca(ProdutoServico $item): array
+    {
+        return ['id' => $item->id, 'nome' => $item->nome, 'unidade' => $item->unidade, 'preco' => Dinheiro::formatar($item->preco_centavos)];
     }
 
     public function create(): Response
@@ -89,9 +91,14 @@ class ProdutoServicoController extends Controller
         return $this->formulario(null);
     }
 
-    public function store(ProdutoServicoRequest $request): RedirectResponse
+    public function store(ProdutoServicoRequest $request): RedirectResponse|JsonResponse
     {
-        $request->user()->produtosServicos()->create($request->dados());
+        $item = $request->user()->produtosServicos()->create($request->dados());
+
+        // Cadastro rápido (modal no contrato/cobrança): devolve o item pronto para entrar na lista.
+        if ($request->expectsJson()) {
+            return response()->json($this->paraBusca($item), 201);
+        }
 
         return redirect('/produtos-servicos')->with('sucesso', 'Produto ou serviço salvo.');
     }
