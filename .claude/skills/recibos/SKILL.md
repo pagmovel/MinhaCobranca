@@ -81,8 +81,7 @@ o relatório mostra a parte que existe.
 
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
-- Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`; desde a Fase 21 os
-  novos saem em `webiss-v2`/`danfse-v2`).
+- Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).
   Situação, data de pagamento e NFS-e vinculada são lidas na hora de gerar o PDF.
 - Modelo é do cliente; trocar vale só para recibos futuros.
 - Numeração por usuário e ano; número cancelado não volta.
@@ -783,12 +782,10 @@ o relatório mostra a parte que existe.
     reajuste mostram só a exibição. Ordem pela exibição: escopo `ordemDeExibicao` (`coalesce(nullif(apelido, ''), nome)`).
   - **Pegadinha.** Consulta que carrega colunas escolhidas do cliente (`with('cliente:id,nome')`) precisa de `apelido`
     na lista; senão a exibição volta ao nome sem erro nenhum. Ao criar consulta nova com cliente, incluir `apelido`.
-  - **Recibo -v2.** `webiss-v2`/`danfse-v2` = v1 + "Unidade atendida"; os v1 ficam intactos (há recibo em produção) e
-    `FamiliaModelo::versaoAtual()` aponta para o v2. O snapshot do tomador guarda o apelido; snapshot antigo sem a chave
-    sai igual. **Acerto (1 página):** no WebISS, linha nova (~17pt) e linha compacta (~10pt) levaram a amostra de 25
-    linhas para 2 páginas; com apelido, a linha do nome vira duas células (nome 62% a 8pt, "Unidade atendida" a 6pt
-    negrito, cabe 60 caracteres), sem altura extra. No DANFSe coube uma linha própria. `AmostrasVisuaisTest` usa apelido
-    de 60 caracteres. Mudança visual futura nos modelos = `-v3` quando já houver recibo `-v2` em produção.
+  - **Recibo: o apelido NÃO aparece** (decisão do usuário, 2026-10-11, depois de ver o `-v2` com "Unidade atendida",
+    que foi desfeito). O snapshot do tomador não guarda o apelido (`Cliente::CAMPOS` sem ele). Opcional: botão "Incluir o
+    apelido na descrição" no contrato e na cobrança (`DescricaoComplementar.vue` + `resources/js/apelido.js`), que põe o
+    apelido na 1ª linha da descrição, editável. Não voltar a pôr o apelido no recibo sem falar com o usuário.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

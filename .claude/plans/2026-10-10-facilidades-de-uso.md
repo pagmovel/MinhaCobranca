@@ -153,3 +153,5 @@ trocar o único `(user_id, documento)`; regra de unicidade no request com o apel
 `-v1` ficam intactos e a linha "Unidade atendida" entra em modelos novos `webiss-v2`/`danfse-v2`. **[A VERIFICAR]** se
 a linha cabe na página (`AmostrasVisuaisTest`).
 Migração: PORTÃO-BANCO.
+**Mudança do usuário (2026-10-11):** o apelido **não sai no recibo**; opcional, um botão no contrato/cobrança põe o
+apelido na primeira linha da descrição. Executado na Fase 21 (`.claude/plans/2026-10-11-apelido-do-cliente.md`).

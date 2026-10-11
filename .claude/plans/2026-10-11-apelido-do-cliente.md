@@ -9,7 +9,10 @@ ARACI/BA.
    acha pelos dois.
 2. **Mesmo CNPJ em mais de um cadastro, se o apelido for diferente** (cada regional vira um cliente, com contratos e
    relatórios próprios).
-3. No recibo, o tomador continua com nome e CNPJ oficiais e o apelido sai numa linha **"Unidade atendida"**. Já existe
+3. ~~No recibo, linha "Unidade atendida" em modelos `-v2`~~ — **mudado pelo usuário em 2026-10-11:** "Não é para exibir o
+   apelido nos recibos. Talvez seja legal apenas no campo de descrição do serviço, logo na primeira linha. Mas tem que ser
+   opcional." Escolha dele: **botão no contrato/cobrança** que põe o apelido como 1ª linha da descrição (editável).
+   Texto antigo do item: Já existe
    recibo emitido em produção: os `-v1` ficam intactos; a linha entra em modelos novos **`webiss-v2` / `danfse-v2`**.
 
 **Execução:** inline, TDD em cada tarefa (testes PHP no SQLite; nada escreve no banco de dev). O usuário delegou
@@ -23,8 +26,7 @@ ARACI/BA.
   ordenar pela exibição (`coalesce(nullif(apelido, ''), nome)`, SQL padrão).
 - O "nome oficial embaixo" aparece onde há espaço de lista (Clientes, Contratos, Cobranças, Painel, autosugestão). Nos
   **relatórios** (tela e CSV) e no reajuste sai só a exibição (uma coluna "Cliente").
-- Os recibos novos usam `-v2` sempre (com ou sem apelido); sem apelido, o `-v2` sai igual ao `-v1`. O snapshot do tomador
-  passa a guardar o apelido; recibo antigo sem a chave sai igual.
+- ~~Os recibos novos usam `-v2`~~ (desfeito: o apelido não vai para o recibo nem para o snapshot).
 - Documento repetido com o mesmo apelido: mensagem que oferece a saída — "Este CPF/CNPJ já está cadastrado. Para outra
   unidade do mesmo cliente, preencha um apelido diferente."
 
@@ -35,7 +37,7 @@ ARACI/BA.
 | T21.1 | Servidor do cadastro: migração, `Cliente` (exibição, busca pelo apelido, ordem), `ClienteRequest` (unicidade com apelido), lista e autosugestão | testada: `ClientesTest` (mesmo CNPJ com outro apelido; lista e busca pelo apelido, ordem pela exibição), RED → GREEN |
 | T21.2 | Telas do cadastro: formulário, cadastro rápido, lista de clientes e opção da autosugestão com o nome oficial embaixo | concluída (só telas; build ok); conferência visual na T21.5 |
 | T21.3 | Apelido nas outras telas: cobranças, painel, previstas, contratos, filtros de cliente, reajuste, relatórios | testada: `ApelidoNasTelasTest` (painel, cobranças, previstas, contratos, filtros, edição, relatórios) RED → GREEN |
-| T21.4 | Recibo `webiss-v2` / `danfse-v2` com "Unidade atendida"; versão atual passa a v2; amostras cabem em 1 página | testada: `RenderizadorDeReciboTest` (linha só no -v2 e só com apelido; -v1 antigo igual) e `AmostrasVisuaisTest` (apelido de 60 caracteres, 9 combinações em 1 página) |
+| T21.4 | ~~Recibo -v2 com "Unidade atendida"~~ **desfeito** (decisão do usuário). No lugar: botão "Incluir o apelido na descrição" no contrato e na cobrança; o snapshot não guarda o apelido | testada: `RenderizadorDeReciboTest::test_apelido_do_cliente_nao_vai_para_o_recibo` RED → GREEN; `apelido.test.js` (3) RED → GREEN; PHP 394/394, JS 50/50 |
 | T21.5 | PORTÃO-BANCO (migração no dev, com "sim"), conferência visual (pede autorização) e validação do usuário | pendente |
 
 ## Registro de execução
@@ -56,3 +58,9 @@ ARACI/BA.
   caracteres). No DANFSe, a linha própria (`c4`) coube. Conferido com pypdf: nome e apelido numa linha só, 1 página nas
   9 combinações. Custo se errado: nome oficial com mais de ~78 caracteres **e** apelido **e** descrição no limite pode
   quebrar o nome e ir para 2 páginas — **[A VERIFICAR]** se aparecer nome assim.
+- **T21.4 refeita (2026-10-11, decisão do usuário):** apelido **fora do recibo**. Removidos `webiss-v2`/`danfse-v2`,
+  os casos `V2` do enum e a chave `apelido` do renderizador; `versaoAtual()` voltou ao `-v1`; `Cliente::CAMPOS` (snapshot)
+  sem o apelido — o formulário recebe o apelido à parte. No lugar: `DescricaoComplementar.vue` (contrato e cobrança) com o
+  botão "Incluir o apelido na descrição (…)" que põe o apelido como primeira linha (`resources/js/apelido.js`: só com
+  cliente de apelido escolhido; some quando a 1ª linha já é o apelido). `CampoCliente` emite `escolhido`. Como vira texto
+  da descrição, conta nas 25 linhas pela validação de sempre. O ruling de layout do `-v2` deixou de valer.
