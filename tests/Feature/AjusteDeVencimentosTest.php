@@ -100,6 +100,21 @@ class AjusteDeVencimentosTest extends TestCase
         $this->assertSame('2026-10-22', $quarta->fresh()->vencimento->toDateString());
     }
 
+    public function test_cobranca_de_contrato_de_outro_usuario_nao_aparece_na_previa_nem_muda(): void
+    {
+        // De contrato, pendente, não enviada e num sábado: só não entra porque é de outro prestador.
+        $outroContrato = Contrato::factory()->create();
+        $alheia = Cobranca::factory()->for($outroContrato->user)->for($outroContrato->cliente)->create([
+            'contrato_id' => $outroContrato->id, 'vencimento' => '2026-10-24', 'periodo_inicio' => '2026-10-24', 'periodo_fim' => '2026-11-23',
+        ]);
+
+        $this->actingAs($this->usuario)->get('/perfil')->assertInertia(fn (Assert $page) => $page->has('vencimentosParaAjustar', 0));
+        $this->post('/perfil/feriados/ajustar', ['ids' => [$alheia->id]])
+            ->assertSessionHas('sucesso', 'Nenhuma cobrança precisava de ajuste.');
+
+        $this->assertSame('2026-10-24', $alheia->fresh()->vencimento->toDateString());
+    }
+
     public function test_pedido_sem_ids_ou_com_id_nao_numerico_e_recusado(): void
     {
         $this->actingAs($this->usuario)->post('/perfil/feriados/ajustar', [])->assertSessionHasErrors('ids');
