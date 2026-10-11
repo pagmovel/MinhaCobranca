@@ -1605,3 +1605,84 @@ Mesma disciplina da Fase 23: `review-package` do merge-base da branch `feat/avis
 opus, corrigir Critical/Important com TDD, Minor para decisão do usuário. Atualizar
 `.claude/skills/recibos/SKILL.md` (Acertos/Pegadinhas da Fase 24) e `.claude/plans/2026-10-10-roteiro-modulos.md`
 (seção 0) ao final, antes do merge na `main`.
+
+## RETOMAR AQUI (2026-10-11, antes de compactar)
+
+**Estado:** Tasks 1-8 completas, testadas e commitadas. Task 9 (conferência final) em andamento — Steps 1, 2 e 3
+feitos; falta o Step 4.
+
+### O que já foi feito
+
+- **T24.1-T24.8:** todo o código da Fase 24 (modelos de mensagem, dias_aviso, tela do perfil, módulo
+  `mensagemWhatsapp.js`, endpoints `/cobrancas/aviso` e `/cobrancas/avisadas`, modal `AvisarWhatsapp.vue`, bloco
+  "Vencendo" no Painel, ação no menu "⋯" da lista de cobranças) — cada tarefa com TDD, commit próprio, ledger
+  atualizado. Ver `.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md` para o detalhe task a task.
+- **T24.9 Step 1:** suíte completa — PHP 458/458 (saída limpa, exit 0), JS 73/73, build ok.
+- **T24.9 Step 2 (PORTÃO-BANCO):** autorizado pelo usuário e aplicado. `php artisan migrate --no-interaction` no
+  banco de dev (PostgreSQL `207.180.205.211:1`, banco `recibos`, usuário `recibos_app`) — as 3 migrações da Fase 24
+  (`modelos_mensagem`, `users.dias_aviso`, `cobrancas.avisado_em`) estão aplicadas. **Não repetir.**
+- **T24.9 Step 3 (smoke no navegador, browser-use, usuário SMOKE id 2, senha em
+  `C:\Users\MARCOS~1\AppData\Local\Temp\claude\d--laragon-www-Recibos\6ae7458a-79de-424f-a740-a66addcc7754\scratchpad\smoke-senha.txt`):**
+  feito extensivamente, achou e corrigiu **3 bugs reais** que nenhum teste automatizado pegaria:
+  1. **Traço duplicado** (`commit 738327e`): cobrança sem itens cuja descrição já começa com "- " (convenção do
+     projeto, ex. `ContratoFactory`) virava "- - Hospedagem..." na mensagem — `AvisoWhatsappController::dados()`
+     agora tira o traço da frente antes de devolver.
+  2. **Modal travado para sempre** (`commit a200934`): "Abrir WhatsApp" abre uma aba nova e tira o foco desta aba;
+     o Chrome para de rodar `requestAnimationFrame` em aba em segundo plano, e a transição de saída do `Modal.vue`
+     depende disso — ela travava no meio pra sempre, com o fundo escurecido bloqueando a tela inteira até
+     recarregar a página. Uma ligação reativa comum (`:style`/`:class`) **não** resolve, porque o `<Transition>`
+     mantém um retrato congelado do vnode durante a saída, sem reagir a mudanças de outros dados — só manipulação
+     direta do DOM (fora do Vue) funciona. Corrigido com uma rede de segurança no próprio `Modal.vue`: depois de
+     500ms sem a transição terminar, busca o elemento por um id estável (`document.getElementById(idTitulo)`) e
+     força `display:none` direto. `AvisarWhatsapp.vue` também fecha o modal (`emit('fechar')`) **antes** de chamar
+     `window.open`, pra transição começar a rodar com a aba ainda em primeiro plano.
+  3. **Erro de clipboard em silêncio** (`commit a200934`): `navigator.clipboard` fica `undefined` em contexto não
+     seguro (`http://`, como o ambiente de dev) — "Copiar mensagem" falhava sem nenhum aviso na tela. Corrigido com
+     try/catch e mensagem visível orientando a copiar manualmente.
+
+  Conferido com sucesso, de ponta a ponta, no navegador real: cadastro de modelo com variáveis (perfil), botões de
+  variável inserindo no texto, bloco "Vencendo nos próximos N dias" agrupado por cliente no Painel, modal com
+  prévia correta (texto sugerido e troca de modelo), telefone válido habilitando "Abrir WhatsApp", link `wa.me`
+  abrindo numa aba nova e redirecionando para `api.whatsapp.com/send/?phone=...&text=...` com o texto certo
+  (acentos, quebra de linha, R$ tudo codificado certo), `avisado_em` gravado no banco e mostrado como "Avisado em
+  dd/mm" na lista, menu "⋯" da lista de cobranças oferecendo "Avisar no WhatsApp" na posição certa (depois de "Ver
+  PDF"), e **sem regressão** em outro consumidor do `Modal.vue` (testado `CadastroRapidoCliente`, fecha normal).
+
+  **Chrome de automação** ainda pode estar aberto na porta 9333 (`--user-data-dir` em
+  `.../b245cf65-.../scratchpad/chrome-smoke-t24`) — não é um processo crítico, pode ficar ou ser fechado.
+
+### O que falta (retomar exatamente aqui)
+
+**Passo A — T24.9 Step 4: revisão final de branch inteira + merge.** Mesma disciplina da Fase 23:
+1. `git merge-base main HEAD` (branch `feat/aviso-whatsapp`) para achar o ponto de partida real.
+2. Gerar o pacote de revisão com o script `review-package` do plugin superpowers (mesmo usado nas revisões da
+   Fase 23 — caminho:
+   `C:\Users\marcossilva\.claude\plugins\cache\claude-plugins-official\superpowers\6.4.1\skills\subagent-driven-development\scripts\review-package`).
+3. Dispatch de um subagente em `opus` (Agent tool, `subagent_type: general-purpose`, `run_in_background: true`) com
+   o roteiro de `code-reviewer.md`: ler o plano (este arquivo) e a spec
+   (`docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md`), rodar a suíte, reportar Critical/Important/Minor
+   e "Declined to judge", apontar para o ledger
+   (`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`) pelas `Ruling:`/achados já registrados.
+4. Corrigir Critical/Important com TDD (RED→GREEN, suite inteira verde); Minor vira `Final: minor (deferred)` no
+   ledger e lista para o usuário decidir.
+
+**Passo B — Merge na `main` + push** (memória `[[merge-e-push-por-fase]]`): `git checkout main`, `git merge --no-ff
+feat/aviso-whatsapp`, suíte completa de novo na `main`, `git push origin main`. Apagar depois o workspace
+`.superpowers/sdd/2026-10-11-aviso-whatsapp/` (git log já é o registro — regra da skill `executing-plans`).
+
+**Passo C — Documentação:** atualizar `.claude/skills/recibos/SKILL.md` (seção "Acertos", um bloco "Fase 24" nos
+moldes do que já existe para a Fase 23 — citar os 3 achados do smoke como Pegadinhas, especialmente o travamento do
+Modal com `<Transition>` + `window.open`, que pode se repetir em qualquer feature futura que abra link externo a
+partir de um modal) e `.claude/plans/2026-10-10-roteiro-modulos.md` seção 0 (Fase 24 mergeada, próximo item do
+backlog: T17.11 ou outro que o usuário escolher).
+
+**Passo D — Validação final do usuário:** pedir para o usuário confirmar que a integração ficou correta, igual ao
+que foi feito ao fim da Fase 23.
+
+**Fatos que não podem se perder:**
+- Branch de trabalho: `feat/aviso-whatsapp`, HEAD em `a200934` neste momento, árvore limpa.
+- `main` ainda não tem nada da Fase 24 (não foi mergeada ainda).
+- Suíte: PHP 458/458 (exit 0), JS 73/73, build ok — conferir de novo antes do merge, depois de qualquer fix da
+  revisão final.
+- Migração já aplicada no banco de dev — não repetir o PORTÃO-BANCO para essas 3 migrações.
+- Nenhuma revisão externa (subagente) rodou ainda nesta fase — a do Passo A será a primeira e única antes do merge.
