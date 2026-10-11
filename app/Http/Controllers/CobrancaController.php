@@ -45,6 +45,8 @@ class CobrancaController extends Controller
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
             'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'])?->paraBusca(),
+            'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
+            'prestadorNome' => $usuario->nome_fantasia ?: $usuario->name,
         ]);
     }
 

@@ -6,6 +6,7 @@ import Campo from '../../Components/Campo.vue';
 import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import Carimbo from '../../Components/Carimbo.vue';
 import MenuAcoes from '../../Components/MenuAcoes.vue';
+import AvisarWhatsapp from '../../Components/AvisarWhatsapp.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
 import CancelarInline from '../../Components/CancelarInline.vue';
@@ -27,6 +28,8 @@ const props = defineProps({
     clienteFiltro: { type: Object, default: null },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
+    modelosMensagem: { type: Array, required: true },
+    prestadorNome: { type: String, required: true },
 });
 
 const filtro = reactive({ ...props.filtros });
@@ -84,6 +87,7 @@ const ROTULO_DO_TOTAL = { vencida: 'Vencidas', vence_hoje: 'Vencendo hoje', a_ve
 const temCanceladas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'cancelada')));
 const naFaixa = ['baixa', 'pagamento', 'cancelar', 'corrigir', 'desfazer'];
 const perigosa = (acao) => ['cancelar', 'desfazer'].includes(acao);
+const avisando = ref(null);
 
 // Formulário da ação numa faixa logo abaixo da linha (uma por vez); o foco vai para o primeiro campo e volta ao fechar.
 const faixa = ref(null);
@@ -234,6 +238,9 @@ async function fecharFaixa() {
                                                 :pdf-url="cobranca.recibo.pdf_url"
                                                 :nome-arquivo="cobranca.recibo.pdf_nome"
                                             />
+                                            <button v-else-if="acao === 'avisar'" type="button" :class="itemMenu" @click="fechar(); avisando = cobranca">
+                                                Avisar no WhatsApp
+                                            </button>
                                             <button
                                                 v-else
                                                 type="button"
@@ -296,5 +303,6 @@ async function fecharFaixa() {
                 @por-pagina="escolheuPorPagina"
             />
         </EstadoDaLista>
+        <AvisarWhatsapp :aberto="Boolean(avisando)" :ids="avisando ? [avisando.id] : []" :modelos="modelosMensagem" :prestador="prestadorNome" @fechar="avisando = null" />
     </CamadaApp>
 </template>

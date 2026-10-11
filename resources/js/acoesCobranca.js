@@ -18,7 +18,7 @@ function emOrdem(cobranca) {
     // Em aberto: antes de enviar, o próximo passo é enviar; depois, é receber.
     const inicio = cobranca.enviado ? ['baixa', ...enviar] : [...enviar, 'baixa'];
 
-    return [...inicio, ...pdf, 'pagamento', ...(cobranca.editavel ? ['editar'] : []), 'cancelar'];
+    return [...inicio, ...pdf, 'avisar', 'pagamento', ...(cobranca.editavel ? ['editar'] : []), 'cancelar'];
 }
 
 export function acoesDaCobranca(cobranca) {
@@ -35,6 +35,7 @@ const ROTULOS = {
     cancelar: 'Cancelar cobrança',
     corrigir: 'Corrigir pagamento',
     desfazer: 'Desfazer baixa',
+    avisar: 'Avisar no WhatsApp',
 };
 
 export function rotuloDaAcao(acao, cobranca) {
