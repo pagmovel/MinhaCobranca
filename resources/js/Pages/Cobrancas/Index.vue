@@ -27,6 +27,13 @@ const vazio = computed(() => ({
 }[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste mês e filtros.'));
 
 const filtrar = () => router.get('/cobrancas', filtro, { preserveState: true, replace: true });
+// Escolher um mês é pedir para ver aquele mês: sai de "Vencendo hoje"/"Vencidas", que buscam em todos os meses.
+function escolheuMes() {
+    if (todosOsMeses.value) {
+        filtro.status = '';
+    }
+    filtrar();
+}
 const aberta = (cobranca) => ['a_vencer', 'vence_hoje', 'vencida'].includes(cobranca.situacao);
 const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo pago' : cobranca.enviado ? 'Reenviar' : 'Enviar');
 </script>
@@ -39,8 +46,8 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
         </div>
 
         <form class="mb-6 grid gap-4 sm:grid-cols-4" @submit.prevent="filtrar">
-            <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (todos os meses)' : 'Mês do vencimento'">
-                <input id="mes" v-model="filtro.mes" type="month" class="entrada" :disabled="todosOsMeses" @change="filtrar">
+            <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (buscando em todos os meses)' : 'Mês do vencimento'">
+                <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
             </Campo>
             <Campo id="status" rotulo="Situação">
                 <select id="status" v-model="filtro.status" class="entrada" @change="filtrar">
