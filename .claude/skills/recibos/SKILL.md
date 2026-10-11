@@ -845,6 +845,16 @@ o relatório mostra a parte que existe.
   - **Datas: ano entre 1900 e 2100 em toda regra** (`App\Rules\AnoValido`, junto de cada `date_format` — 18 lugares,
     inclusive filtros `Y-m`). *Pegadinha:* o ano **0000** passa no `date_format` e o PostgreSQL recusa a data (500); o
     SQLite dos testes aceita, então só o teste com a regra pega. Campo de data novo: `'date_format:Y-m-d', new AnoValido`.
+  - *Pegadinha (2ª revisão):* regra própria que faz `(string) $value` quebra com valor em lista (`?mes[]=x` → "Array to
+    string conversion" = **500**): o Laravel roda a regra seguinte mesmo com o `date_format` já falhando (sem `bail`).
+    Regra nova: `if (! is_string($value) ...) return;` e deixar o formato para a regra de formato.
+  - *Pegadinha (navegador):* elemento saindo por `<Transition>` fica no DOM durante a animação **e clicável** — o
+    "Usar…" de um aviso velho aceitava clique por 180 ms. Corrigido de vez em `app.css`: `.surgir-leave-active,
+    .lista-leave-active, .modal-leave-active { pointer-events: none }`.
+  - *Pegadinha (browser-use):* heredoc sem aspas (`<<PY`) deixa o bash mexer no script e a busca falha calada — usar
+    `<<'PY'`; `const` repetido entre chamadas de `js()` dá "already been declared" (envolver em `(()=>{...})()`); regex
+    com `\s`/`\n` no Python vira escape errado — usar `split(String.fromCharCode(10))`. Ler as props da página Inertia v3:
+    `<script>` cujo texto tem `"component"` (não há `data-page` no `#app`).
   - **Calendário sem dia útil:** `proximoDiaUtil` para com `LogicException` depois de 366 dias (antes girava até
     esgotar a memória) e o cadastro aceita no máximo 100 feriados locais (`FeriadoRequest::LIMITE`).
   - **Aviso da avulsa** em `resources/js/avisoDiaUtil.js` (testado): apaga o aviso na hora ao trocar a data — o

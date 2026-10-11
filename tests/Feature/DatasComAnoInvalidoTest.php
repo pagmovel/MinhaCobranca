@@ -80,6 +80,13 @@ class DatasComAnoInvalidoTest extends TestCase
         $this->getJson('/dias-uteis/proximo?data='.$data)->assertUnprocessable()->assertJsonValidationErrors('data');
     }
 
+    public function test_data_mandada_como_lista_e_recusada_sem_erro_500(): void
+    {
+        $this->getJson('/cobrancas/dados?mes[]=x')->assertUnprocessable()->assertJsonValidationErrors('mes');
+        $this->getJson('/auditoria/dados?de[]=x')->assertUnprocessable()->assertJsonValidationErrors('de');
+        $this->getJson('/dias-uteis/proximo?data[]=x')->assertUnprocessable()->assertJsonValidationErrors('data');
+    }
+
     #[DataProvider('anosInvalidos')]
     public function test_filtros_das_listas(string $data, string $mes): void
     {

@@ -73,7 +73,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | Tarefa | O quê | Estado |
 |---|---|---|
 | T23.6 | Seção "Feriados" no perfil + aviso no formulário da cobrança | **concluída**: build ok, JS 50/50, PHP 419/419; conferência visual na T23.7 |
-| T23.7 | PORTÃO-BANCO da migração, conferência no navegador, validação do usuário | **migração aplicada** no dev (2026-10-11, "sim" do usuário; `207.180.205.211:1`, `recibos`, `recibos_app`, não é produção; 18 → 19 tabelas, 0 pendentes). Conferência no navegador: depois da fase D |
+| T23.7 | PORTÃO-BANCO da migração, conferência no navegador, validação do usuário | **migração aplicada** no dev (2026-10-11, "sim" do usuário; `207.180.205.211:1`, `recibos`, `recibos_app`, não é produção; 18 → 19 tabelas, 0 pendentes). **Conferência no navegador feita** (2026-10-11, "sim" do usuário, SMOKE id 2, browser-use no Chrome 9333; nada novo gravado: sessão reaproveitada, cobranças 9 → 9) — resultado no registro. **Falta: validação do usuário** |
 
 ### Fase D — pedidos do usuário depois da revisão final (2026-10-11)
 Palavras do usuário: "Aplicar revisão final (revisor independente). Corrigir agora os problemas menores que foram deixados
@@ -1504,4 +1504,24 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
     feriado local; (3) aviso da avulsa continua visível nos 400 ms depois de trocar a data — clicar "Usar…" nesse
     intervalo troca a data nova pela sugerida da antiga; (4) falha do "Ajustar" (mais de 1000 ids) não aparece na tela;
     (5) `role="status"` em bloco que nasce preenchido e a seta "→" lida pelo leitor de tela; (6) "Ajustar" faz 3–4
-    consultas por cobrança (`refazer`), aceitável numa ação pontual.
+    consultas por cobrança (`refazer`), aceitável numa ação pontual. **Todos corrigidos na T23.9** (pedido do usuário).
+- **Conferência no navegador (T23.7, 2026-10-11, SMOKE id 2, `http://recibos.test`, prints em scratchpad `smoke23/`):**
+  - Spinner: pílula "Carregando…" fixa no topo durante um pedido real de 5,1 s; some no fim. `fetch` embrulhado.
+  - Painel: "3 cobranças em aberto vencem em sábado, domingo ou feriado. Ver e ajustar" (avulsa de 10/10 corretamente
+    fora). O link leva a `/perfil#feriados` e **a página rola até a seção** (era [A VERIFICAR]).
+  - Perfil → Feriados: prévia com motivo e data nova (20/09 domingo → segunda 21/09; 10/10 sábado → terça 13/10, pulando
+    o feriado de 12/10), "Ajustar 3 cobranças", 12 nacionais; formulário na linha com foco no nome, campos certos por
+    tipo, Esc fecha; 390 px sem rolagem horizontal. Nada cadastrado nem ajustado.
+  - Avulsa: 10/10 → "Cai num sábado. Próximo dia útil: terça, 13/10." + "Usar terça, 13/10" (troca para 13/10 e o
+    aviso some); região viva com a frase. **Achado:** depois de trocar a data, o aviso velho ficava 180 ms na tela
+    (animação de saída `surgir`) **ainda clicável**. Corrigido no CSS: `.surgir/.lista/.modal-leave-active { pointer-events:
+    none }`; conferido no navegador (`pe=none` durante a saída).
+- **Segunda revisão (subagente opus, 2148a0f..ae3acf5):** sem Critical.
+  - **Important corrigido:** `AnoValido` com valor em lista (`?mes[]=x`) dava 500 ("Array to string conversion"; antes
+    era 422). Agora só olha texto que começa com 4 dígitos; o formato fica com o `date_format`. Teste
+    `test_data_mandada_como_lista_e_recusada_sem_erro_500` RED (500) → GREEN; PHP 433/433.
+  - **Minor (aguardam decisão do usuário):** (1) erro de rede/419 no "Ajustar" não aparece ao lado do botão (`onError`
+    só cobre 422; lacuna geral do projeto); (2) piso de zero só no lado do Inertia do contador do spinner; (3) leitor de
+    tela anuncia "Carregando…" a cada pedido e a pílula pisca em pedido rápido (sugestão: atrasar ~250 ms); (4) o Painel
+    monta a prévia inteira só para contar; (5) `refazerEmLote` não confere que o lote é de um usuário só; (6) limite de
+    100 feriados sem trava contra dois cliques simultâneos (inofensivo).

@@ -13,7 +13,12 @@ final class AnoValido implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $ano = (int) strtok((string) $value, '-');
+        // Formato (inclusive lista em `?mes[]=`, que viraria "Array to string conversion" = 500) é com o `date_format`.
+        if (! is_string($value) || preg_match('/^(\d{4})-/', $value, $partes) !== 1) {
+            return;
+        }
+
+        $ano = (int) $partes[1];
 
         if ($ano < 1900 || $ano > 2100) {
             $fail('Use um ano entre 1900 e 2100.');
