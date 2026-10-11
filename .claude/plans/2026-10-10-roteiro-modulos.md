@@ -7,9 +7,11 @@ sem depender do histórico.
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
 ### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
-- **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido"). Nada em andamento; árvore limpa.
-- **Próximo:** item 0 do backlog (seção 0.2): vencimento em dia útil, pedido do usuário em 2026-10-11, em
-  brainstorming. Depois: revisão final da branch + merge na `main`; desenho da T17.11.
+- **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido").
+- **Fase 23 (vencimento em dia útil): plano escrito** em `.claude/plans/2026-10-11-vencimento-em-dia-util.md`
+  (7 tarefas em 3 fases, código completo; nenhuma executada). **Aguarda revisão do usuário e a escolha da forma de
+  execução** (recomendada: nativa). Perguntas P1 (auditoria do ajuste) e P2 (aviso no Painel) no plano, com padrão "não".
+- Depois: Fase 24 (aviso pelo WhatsApp, spec aguardando revisão); revisão final da branch + merge na `main`; T17.11.
 
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, no remoto, árvore limpa. Último commit: `bf1a814` (iniciais do WebISS).
@@ -52,7 +54,8 @@ sem depender do histórico.
    cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
    cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**
    `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md` — **aprovada pelo usuário** (D1–D3 "CONCORDO": Sexta-feira
-   da Paixão automática; avulsas fora do ajuste em lote; boleto ajustado com aviso). **Próximo: plano (Fase 23)** e execução.
+   da Paixão automática; avulsas fora do ajuste em lote; boleto ajustado com aviso). **Plano escrito (2026-10-11):**
+   `.claude/plans/2026-10-11-vencimento-em-dia-util.md` — aguarda revisão do usuário; depois, execução.
    Migração `feriados`: "SIM" antecipado do usuário; no portão, mostrar conexão/contagem/comando e confirmar.
    Fontes legais conferidas no planalto.gov.br (Leis 662/1949, 6.802/1980, 9.093/1995, 14.759/2023).
    - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
