@@ -41,6 +41,15 @@ sem depender do histórico.
   transições, inclusões/remoções, inputs e selects — design curto aguardando aprovação. Depois: Fase 16 (importação
   de XML) e Contas a Pagar.
 
+### Atualização 2026-10-10 (Fase 17)
+- Fase 17 (facilidades de uso) e T17.8 (recibo lista os itens; descrição opcional) **mergeadas na `main`**
+  (último merge `2f30cef`). Suíte 271/271 (SQLite), JS 16/16.
+- **Próximo:** T17.9 (encerrar/recomeçar contrato com pro-rata) — desenho aprovado e detalhado em
+  `.claude/plans/2026-10-10-facilidades-de-uso.md`; nenhum código escrito. Branch `feat/modulo-cobranca-catalogo`.
+- Padrões de usabilidade obrigatórios: seção no topo da skill `recibos` + linha no `CLAUDE.md` do projeto.
+- `phpunit.xml` em SQLite; `recibos_teste` existe (esquema criado por engano numa execução, sem dados) — rodar a suíte
+  no PostgreSQL só com autorização. Servidor do smoke (`artisan serve` :8000) e Chrome 9333 podem estar abertos.
+
 ## 3. Pendências em aberto (de planos anteriores)
 
 | Item | Onde está | Estado |

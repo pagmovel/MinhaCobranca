@@ -32,6 +32,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | testada (navegador: 6 telas animadas sem erro no console; filtro preserva estado; build ok) |
 | T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | testada (revisão opus: 0 Critical, 2 Important + 1 Minor de segurança corrigidos; suíte 264/264; JS 16/16; navegador ok) — merge na main |
 | T17.8 | Descrição opcional; recibo lista os itens (`Nome: q unidade × R$ p = R$ t`) e a descrição complementar abaixo; limite de 25 linhas somando os dois (pedido do usuário, aprovado 2026-10-10) | testada (suíte 271/271; navegador ok) |
+| T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | pendente (nenhum código escrito ainda) |
 
 Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smoke) → `validada` (usuário confirmou).
 
@@ -51,3 +52,41 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smok
   (M5) `temClientes` removido; (M6) linha que sai de `ul` fica `absolute`; (M7) teste com cabeçalhos reais do Inertia.
 - Não julgados (decisão): durações das animações (regra 5), `color-mix()` (navegadores suportados não definidos),
   vários `Modal` por linha (só renderizam abertos), heurística CPF/CNPJ do cadastro rápido de cliente.
+
+## T17.9 — Encerrar e recomeçar contrato (desenho aprovado pelo usuário em 2026-10-10)
+**Problema relatado:** ao mudar a data de início de contrato com cobranças aparece "Este contrato já tem cobranças.
+Para mudar o início ou a periodicidade, encerre-o e crie outro." e não há nada na tela para encerrar (o encerramento
+hoje é a caixa "Contrato ativo (desmarque para encerrar)" no rodapé) nem para fazer a mudança.
+
+**Decisões do usuário:**
+1. Botão **"Encerrar contrato"** visível (`botao-perigo`, confirmação no 2º clique), com campo **data de fim**
+   (padrão hoje, ≥ início do contrato) e **prévia** do que acontece antes de confirmar.
+2. Na trava de início/periodicidade: aviso ao lado do campo + botão **"Encerrar este contrato e criar um novo a partir
+   de DD/MM/AAAA"** (recomeçar): encerra o atual com fim = véspera do novo início e cria outro copiando cliente, itens
+   (preços combinados), descrição, modalidade, dia de vencimento e forma de pagamento; muda só início/periodicidade;
+   leva ao contrato novo. Em contrato com cobranças, o campo de início avisa antes ("mudar cria um contrato novo").
+   Novo início anterior/igual ao atual: recusar com explicação (sobreporia períodos já cobrados).
+3. **Cobranças pendentes do contrato ao encerrar** (pagas e canceladas não mudam):
+   - vencida ou vencendo hoje → **continua em aberto** (é dívida; "só interessam as vencidas");
+   - período inteiro **até** a data de fim, ainda a vencer (ex.: pós-pago) → continua (serviço prestado);
+   - período que começa **depois** da data de fim → **cancelada**;
+   - período que **contém** a data de fim → o usuário escolhe **pro-rata** (padrão) ou **cancelar**.
+   - períodos até a data de fim **ainda não emitidos** (pós-pago emite perto do vencimento) → emitidos agora
+     (inteiros; o último proporcional ou não emitido, conforme a escolha).
+4. **Pro-rata:** dias usados = início do período até a data de fim (inclusive) ÷ dias do período (inclusive).
+   Quantidade de cada item × usados ÷ dias, 3 casas, meio-para-cima: `intdiv(2·q·usados + dias, 2·dias)` (mín. 1);
+   total pela conta de sempre (`ItensDeVenda::total`); cobrança antiga sem itens: valor × usados ÷ dias.
+   Descrição ganha a linha "Proporcional: 18 de 31 dias (01/10/2026 a 18/10/2026)"; `periodo_fim` = data de fim.
+   Exemplo aprovado: 1 mês × R$ 247,57, 18/31 → quantidade 0,581 → R$ 143,84.
+   Não enviada → ajusta e refaz o recibo (mesmo número). Já enviada → cancela a original e emite avulsa nova
+   (`contrato_id` nulo: o índice único `(contrato_id, periodo_inicio)` bloquearia a cópia).
+5. Fora do escopo: devolução de período já pago (pré-pago) quando o contrato termina antes.
+
+**Rascunho técnico (a confirmar no código):** serviço `App\Services\EncerradorDeContratos` com `plano()` (lista de
+ações manter/cancelar/ajustar/reemitir/emitir — a mesma usada na prévia e na execução) e `encerrar()`; helper
+`App\Support\ProRata`; extrair do `GeradorDeCobrancas` a criação de cobrança de um período para reaproveitar;
+rotas `GET /contratos/{contrato}/encerramento?fim=` (prévia JSON), `POST /contratos/{contrato}/encerrar`
+(`fim`, `em_curso`=proporcional|cancelar), `POST /contratos/{contrato}/recomecar` (`data_inicio`, `periodicidade`,
+`em_curso`); contrato encerrado: `ativo=false`, `data_fim=fim`. Calculadora: `devidos()` com `hoje` distante e
+`dataFim` lista todos os períodos até o fim. Sem migração. TDD; exemplo de teste: hoje 15/10/2026, contrato mensal
+pré-pago desde 01/08 — set/vencida mantém; out (01–31/10, vence 20/10) com fim 18/10 → 143,84; nov cancelada.
