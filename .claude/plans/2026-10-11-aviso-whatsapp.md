@@ -1576,7 +1576,7 @@ git commit -m "feat: ação \"Avisar no WhatsApp\" no menu de cada cobrança pen
 
 Sem arquivos novos. Checklist de fechamento (mesmo padrão da Fase 23):
 
-- [ ] **Step 1: Suíte completa**
+- [x] **Step 1: Suíte completa** — validada
 
 ```bash
 php artisan test --compact
@@ -1585,26 +1585,27 @@ npm run build
 ```
 Expected: tudo verde, sem avisos de risky test (saída com código 0).
 
-- [ ] **Step 2: Migração no banco de dev — PORTÃO-BANCO**
+- [x] **Step 2: Migração no banco de dev — PORTÃO-BANCO** — validada
 
 Antes de rodar, mostrar ao usuário: conexão (host/porta/banco/usuário), que são 3 migrações novas e aditivas
 (`modelos_mensagem`, `users.dias_aviso`, `cobrancas.avisado_em`), o comando literal
 (`php artisan migrate --no-interaction`), e esperar o "sim" — autorização específica para este comando, não
 herdada de autorizações anteriores.
 
-- [ ] **Step 3: Conferência no navegador (browser-agent, nunca Playwright)**
+- [x] **Step 3: Conferência no navegador (browser-agent, nunca Playwright)** — testada
 
 Roteiro mínimo: cadastrar um modelo com variáveis no perfil; abrir "Avisar no WhatsApp" numa cobrança pendente da
 lista (prévia confere, telefone pré-preenchido quando o cliente tem celular válido); abrir o bloco "Vencendo" no
 Painel com pelo menos um cliente agrupado; confirmar que o link `wa.me` abre numa aba nova com o texto certo
 (sem precisar realmente enviar); confirmar "Copiar mensagem"; confirmar que "avisado em" aparece depois.
 
-- [ ] **Step 4: Revisão final (fresh reviewer, opus) + documentação**
+- [x] **Step 4: Revisão final (fresh reviewer, opus) + documentação** — concluída
 
-Mesma disciplina da Fase 23: `review-package` do merge-base da branch `feat/aviso-whatsapp` até o HEAD, subagente
-opus, corrigir Critical/Important com TDD, Minor para decisão do usuário. Atualizar
-`.claude/skills/recibos/SKILL.md` (Acertos/Pegadinhas da Fase 24) e `.claude/plans/2026-10-10-roteiro-modulos.md`
-(seção 0) ao final, antes do merge na `main`.
+Revisor opus rodou a suíte (PHP 458/458, JS 73/73), leu os 30 arquivos do diff. Veredito: "Com correções".
+Nenhum Critical; 7 Important (todos corrigidos com TDD, commits a559a44/00dbdef/4bdbde9/2e8dbac/4f5238b); 12 Minor
+(deferred, ver ledger). Suite final: PHP 467/467, JS 74/74. Detalhe completo de cada achado, ruling e decisão no
+ledger (`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`). Falta: atualizar `.claude/skills/recibos/SKILL.md`
+e `.claude/plans/2026-10-10-roteiro-modulos.md`, e o merge na `main`.
 
 ## RETOMAR AQUI (2026-10-11, antes de compactar)
 
@@ -1653,36 +1654,33 @@ feitos; falta o Step 4.
 
 ### O que falta (retomar exatamente aqui)
 
-**Passo A — T24.9 Step 4: revisão final de branch inteira + merge.** Mesma disciplina da Fase 23:
-1. `git merge-base main HEAD` (branch `feat/aviso-whatsapp`) para achar o ponto de partida real.
-2. Gerar o pacote de revisão com o script `review-package` do plugin superpowers (mesmo usado nas revisões da
-   Fase 23 — caminho:
-   `C:\Users\marcossilva\.claude\plugins\cache\claude-plugins-official\superpowers\6.4.1\skills\subagent-driven-development\scripts\review-package`).
-3. Dispatch de um subagente em `opus` (Agent tool, `subagent_type: general-purpose`, `run_in_background: true`) com
-   o roteiro de `code-reviewer.md`: ler o plano (este arquivo) e a spec
-   (`docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md`), rodar a suíte, reportar Critical/Important/Minor
-   e "Declined to judge", apontar para o ledger
-   (`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`) pelas `Ruling:`/achados já registrados.
-4. Corrigir Critical/Important com TDD (RED→GREEN, suite inteira verde); Minor vira `Final: minor (deferred)` no
-   ledger e lista para o usuário decidir.
+**Passo A (T24.9 Step 4) — concluído.** Revisão final por subagente opus feita, 7 Important corrigidos com TDD
+(commits a559a44, 00dbdef, 4bdbde9, 2e8dbac, 4f5238b), 12 Minor ledgerados como deferred, 7 itens "declined to
+judge" do revisor viraram Ruling no ledger. Validação extra no navegador real (browser-use) dos 3 fixes sem
+cobertura automatizada (.vue): todos funcionaram — detalhe completo, incluindo o achado sobre `execCommand('copy')`
+falhar neste Chrome de automação ([A VERIFICAR] se também falha num Chrome desktop humano), no ledger
+(`.superpowers/sdd/2026-10-11-aviso-whatsapp/progress.md`). Suite final: PHP 467/467, JS 74/74.
 
 **Passo B — Merge na `main` + push** (memória `[[merge-e-push-por-fase]]`): `git checkout main`, `git merge --no-ff
-feat/aviso-whatsapp`, suíte completa de novo na `main`, `git push origin main`. Apagar depois o workspace
-`.superpowers/sdd/2026-10-11-aviso-whatsapp/` (git log já é o registro — regra da skill `executing-plans`).
+feat/aviso-whatsapp`, suíte completa de novo na `main`, pedir autorização e `git push origin main`. Apagar depois o
+workspace `.superpowers/sdd/2026-10-11-aviso-whatsapp/` (git log já é o registro — regra da skill `executing-plans`).
 
 **Passo C — Documentação:** atualizar `.claude/skills/recibos/SKILL.md` (seção "Acertos", um bloco "Fase 24" nos
-moldes do que já existe para a Fase 23 — citar os 3 achados do smoke como Pegadinhas, especialmente o travamento do
-Modal com `<Transition>` + `window.open`, que pode se repetir em qualquer feature futura que abra link externo a
-partir de um modal) e `.claude/plans/2026-10-10-roteiro-modulos.md` seção 0 (Fase 24 mergeada, próximo item do
-backlog: T17.11 ou outro que o usuário escolher).
+moldes do que já existe para a Fase 23 — citar os achados do smoke como Pegadinhas, especialmente o travamento do
+Modal com `<Transition>` + `window.open` e a descoberta de que `ref` dentro de `v-for` vira array no Vue 3.5) e
+`.claude/plans/2026-10-10-roteiro-modulos.md` seção 0 (Fase 24 mergeada, próximo item do backlog: T17.11 ou outro
+que o usuário escolher).
 
 **Passo D — Validação final do usuário:** pedir para o usuário confirmar que a integração ficou correta, igual ao
 que foi feito ao fim da Fase 23.
 
 **Fatos que não podem se perder:**
-- Branch de trabalho: `feat/aviso-whatsapp`, HEAD em `a200934` neste momento, árvore limpa.
+- Branch de trabalho: `feat/aviso-whatsapp`, HEAD em `4f5238b` neste momento, árvore limpa.
 - `main` ainda não tem nada da Fase 24 (não foi mergeada ainda).
-- Suíte: PHP 458/458 (exit 0), JS 73/73, build ok — conferir de novo antes do merge, depois de qualquer fix da
-  revisão final.
+- Suíte: PHP 467/467 (exit 0), JS 74/74, build ok (rodado `npm run build` manualmente durante o smoke — sem Vite
+  dev ativo neste ambiente, `public/build` fica desatualizado até alguém rodar o build).
 - Migração já aplicada no banco de dev — não repetir o PORTÃO-BANCO para essas 3 migrações.
-- Nenhuma revisão externa (subagente) rodou ainda nesta fase — a do Passo A será a primeira e única antes do merge.
+- Revisão externa (subagente opus) já rodou — não repetir antes do merge, a menos que novo código seja escrito.
+- Dado órfão no banco de dev: modelo "Aviso padrão" (id=1) ficou com `padrao=false` (criado antes do fix da regra
+  de padrão único) — não é bug de código, é dado pré-existente; não corrigido (fora do escopo dos achados do
+  revisor), usuário pode marcar como padrão manualmente se quiser.
