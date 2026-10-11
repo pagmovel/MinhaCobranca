@@ -1478,3 +1478,17 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
   6, exatamente a do experimento); nenhuma outra falha. As outras asserções do teste de previsão "sem fim" não mudaram
   (o 1º item é 21/10, quarta). O outro `travelTo('2026-11-10')` do `EncerramentoContratoTest` (linha ~215) é de outro
   teste e continua.
+- **Revisão final (subagente opus, 2026-10-11, diff 0bca21d..2148a0f):** sem Critical. Os 5 itens do foco OK; nenhum
+  chamador da calculadora ficou sem calendário.
+  - **Important 1 — a tabela `feriados` não existe no dev** (o revisor conferiu por SELECT). Sem a migração, Painel,
+    Cobranças, Perfil, relatórios e encerramento dão 500 no dev. É a T23.7: **não integrar antes do PORTÃO-BANCO.**
+  - **Important 2 — corrigido (`5a0116c`):** o teste do "Ajustar" usava uma cobrança alheia **avulsa** (a factory grava
+    `contrato_id` nulo), barrada pelo filtro de contrato e não pelo isolamento. Novo teste
+    `test_cobranca_de_contrato_de_outro_usuario_nao_aparece_na_previa_nem_muda`: RED com a consulta trocada por
+    `Cobranca::query()` (mutação temporária, desfeita), GREEN no código real; PHP 420/420.
+  - **Minor adiados:** (1) ano 0000 no feriado de data única passa no `date_format` e dá 500 no PostgreSQL (o mesmo buraco
+    já existe em `CobrancaRequest`/`ContratoRequest`); (2) `proximoDiaUtil` sem limite de laço se todos os dias virarem
+    feriado local; (3) aviso da avulsa continua visível nos 400 ms depois de trocar a data — clicar "Usar…" nesse
+    intervalo troca a data nova pela sugerida da antiga; (4) falha do "Ajustar" (mais de 1000 ids) não aparece na tela;
+    (5) `role="status"` em bloco que nasce preenchido e a seta "→" lida pelo leitor de tela; (6) "Ajustar" faz 3–4
+    consultas por cobrança (`refazer`), aceitável numa ação pontual.
