@@ -3,6 +3,11 @@ import { formatarCentavos } from './itens.js';
 /** Limite prático observado em clientes do WhatsApp: acima disso, alguns cortam a mensagem. */
 const LIMITE_PRATICO = 1000;
 
+/** Usado quando não há modelo cadastrado nem padrão. Em bloco (não numa frase), para não exigir concordância verbal
+ * com a quantidade de itens — "estám vencendo" era o bug corrigido (achado da revisão, T24.9). */
+export const MENSAGEM_SUGERIDA = 'Olá {cliente}! Segue o lembrete de vencimento ({vencimento}):\n{itens}\n\n'
+    + 'Total: {total}\n\nQualquer dúvida, estou à disposição.\n\n{prestador}';
+
 function linhaDoItem(item) {
     return `- ${item.nome}: R$ ${formatarCentavos(item.valorCentavos)}`;
 }

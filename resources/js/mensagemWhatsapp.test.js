@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mensagemMuitoLonga, montarLinkWaMe, montarMensagem, numeroWhatsapp } from './mensagemWhatsapp.js';
+import { MENSAGEM_SUGERIDA, mensagemMuitoLonga, montarLinkWaMe, montarMensagem, numeroWhatsapp } from './mensagemWhatsapp.js';
 
 const dados = (extra) => ({
     cliente: 'Padaria do João',
@@ -66,4 +66,18 @@ test('montarLinkWaMe: número com DDI e texto codificado', () => {
 test('mensagemMuitoLonga: true a partir de 1000 caracteres', () => {
     assert.equal(mensagemMuitoLonga('a'.repeat(999)), false);
     assert.equal(mensagemMuitoLonga('a'.repeat(1001)), true);
+});
+
+test('MENSAGEM_SUGERIDA: itens em bloco, sem concordância verbal (achado da revisão, T24.9)', () => {
+    const texto = montarMensagem(MENSAGEM_SUGERIDA, dados({
+        itens: [{ nome: 'Hospedagem', valorCentavos: 8990 }, { nome: 'Domínio', valorCentavos: 4000 }],
+        vencimentos: ['2026-10-15', '2026-10-20'],
+        totalCentavos: 12990,
+    }));
+    assert.equal(
+        texto,
+        'Olá Padaria do João! Segue o lembrete de vencimento (15/10 e 20/10/2026):\n'
+        + '- Hospedagem: R$ 89,90\n- Domínio: R$ 40,00\n\n'
+        + 'Total: R$ 129,90\n\nQualquer dúvida, estou à disposição.\n\nMarcos Ronaldo',
+    );
 });
