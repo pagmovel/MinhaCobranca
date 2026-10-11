@@ -35,7 +35,7 @@ class ContratoRequest extends FormRequest
     {
         return [
             'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
-            'descricao' => ['required', 'string', 'max:2000', new LinhasMaximas(25)],
+            'descricao' => ['nullable', 'string', 'max:2000', new LinhasMaximas(25)],
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
             'modalidade' => ['required', Rule::enum(Modalidade::class)],
             'dia_vencimento' => ['required', 'integer', 'between:1,31'],
@@ -51,7 +51,9 @@ class ContratoRequest extends FormRequest
     {
         $dados = $this->validated();
 
-        return Arr::except($dados, ['itens', 'forma_pagamento', 'chave_pix_id'])
+        // Descrição é complemento opcional (o recibo lista os itens); a coluna não aceita nulo.
+        return ['descricao' => (string) ($dados['descricao'] ?? '')]
+            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id'])
             + ['ativo' => $this->boolean('ativo', true)]
             + $this->resumoDosItens()
             + $this->dadosDePagamento($dados);

@@ -9,6 +9,7 @@ use App\Models\Contrato;
 use App\Models\ProdutoServico;
 use App\Models\User;
 use App\Services\GeradorDeCobrancas;
+use App\Services\RenderizadorDeRecibo;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -165,5 +166,67 @@ class ItensDaCobrancaTest extends TestCase
 
         $this->put("/cobrancas/{$propria->id}", $this->avulsa([$this->item($produto, '2', '10,00')]))->assertRedirect('/cobrancas');
         $this->put("/cobrancas/{$alheia->id}", $this->avulsa([]))->assertNotFound();
+    }
+
+    public function test_descricao_e_opcional_e_o_recibo_lista_os_itens_com_a_conta(): void
+    {
+        $suporte = $this->produto(['nome' => 'Suporte técnico', 'unidade' => 'hora']);
+        $hospedagem = $this->produto(['nome' => 'Hospedagem de site', 'unidade' => 'mês']);
+
+        $this->actingAs($this->usuario)->post('/cobrancas', ['descricao' => ''] + $this->avulsa([
+            $this->item($suporte, '1,5', '120,00', principal: true),
+            $this->item($hospedagem, '1', '247,57'),
+        ]))->assertRedirect('/cobrancas');
+
+        $cobranca = $this->usuario->cobrancas()->with('recibo')->sole();
+        $this->assertSame('', $cobranca->descricao);
+        $servico = app(RenderizadorDeRecibo::class)->dados($cobranca->recibo, CarbonImmutable::now())['servico'];
+        $this->assertSame([
+            'Suporte técnico: 1,5 hora × R$ 120,00 = R$ 180,00',
+            'Hospedagem de site: 1 mês × R$ 247,57 = R$ 247,57',
+        ], $servico['linhas']);
+        $this->assertSame('Suporte técnico: 1,5 hora × R$ 120,00 = R$ 180,00; Hospedagem de site: 1 mês × R$ 247,57 = R$ 247,57', $servico['descricao_em_linha']);
+    }
+
+    public function test_descricao_complementar_sai_depois_dos_itens(): void
+    {
+        $hospedagem = $this->produto(['nome' => 'Hospedagem de site', 'unidade' => 'mês']);
+
+        $this->actingAs($this->usuario)->post('/cobrancas', ['descricao' => "Domínio aplbaraci.com.br\nReferente a outubro"] + $this->avulsa([
+            $this->item($hospedagem, '1', '247,57'),
+        ]))->assertRedirect('/cobrancas');
+
+        $recibo = $this->usuario->cobrancas()->with('recibo')->sole()->recibo;
+        $this->assertSame(
+            ['Hospedagem de site: 1 mês × R$ 247,57 = R$ 247,57', '', 'Domínio aplbaraci.com.br', 'Referente a outubro'],
+            app(RenderizadorDeRecibo::class)->dados($recibo, CarbonImmutable::now())['servico']['linhas'],
+        );
+    }
+
+    public function test_cobranca_gerada_do_contrato_sem_descricao_lista_os_itens(): void
+    {
+        $hospedagem = $this->produto(['nome' => 'Hospedagem de site', 'unidade' => 'mês']);
+        $this->actingAs($this->usuario)->post('/contratos', ['descricao' => null] + $this->contrato([$this->item($hospedagem, '1', '89,90')]))
+            ->assertRedirect('/contratos');
+
+        app(GeradorDeCobrancas::class)->gerarPara($this->usuario->fresh(), CarbonImmutable::today());
+
+        $recibo = $this->usuario->contratos()->sole()->cobrancas()->sole()->recibo;
+        $this->assertSame(['Hospedagem de site: 1 mês × R$ 89,90 = R$ 89,90'], app(RenderizadorDeRecibo::class)->dados($recibo, CarbonImmutable::now())['servico']['linhas']);
+    }
+
+    public function test_itens_e_descricao_que_passam_de_25_linhas_sao_recusados(): void
+    {
+        $itens = [];
+        foreach (range(1, 23) as $numero) {
+            $itens[] = $this->item($this->produto(['nome' => "Item {$numero}"]), '1', '10,00');
+        }
+
+        // 23 itens + linha em branco + 2 linhas de descrição = 26
+        $this->actingAs($this->usuario)->post('/cobrancas', ['descricao' => "linha 1\nlinha 2"] + $this->avulsa($itens))
+            ->assertSessionHasErrors(['descricao' => 'Itens e descrição passam de 25 linhas no recibo. Encurte a descrição ou junte itens.']);
+        $this->assertSame(0, $this->usuario->cobrancas()->count());
+
+        $this->post('/cobrancas', ['descricao' => 'linha 1'] + $this->avulsa($itens))->assertRedirect('/cobrancas'); // 25: cabe
     }
 }

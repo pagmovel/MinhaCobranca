@@ -5,6 +5,8 @@ namespace App\Http\Requests\Concerns;
 use App\Rules\ValorEmReais;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
+use App\Support\LinhasDoRecibo;
+use App\Support\TextoDoRecibo;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -62,6 +64,12 @@ trait RegrasDeItens
 
                 if ($soma < 1 || $soma > ValorEmReais::MAXIMO_CENTAVOS) {
                     $validator->errors()->add('itens', 'O total dos itens deve ficar entre R$ 0,01 e R$ 99.999.999,99.');
+                }
+
+                // O recibo tem caixa para 25 linhas: itens (um por linha) + descrição complementar.
+                $texto = TextoDoRecibo::compor($this->itensCalculados(), $this->input('descricao'));
+                if (count(LinhasDoRecibo::quebrar($texto)) > 25) {
+                    $validator->errors()->add('descricao', 'Itens e descrição passam de 25 linhas no recibo. Encurte a descrição ou junte itens.');
                 }
             },
         ];

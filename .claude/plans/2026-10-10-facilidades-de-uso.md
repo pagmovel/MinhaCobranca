@@ -31,6 +31,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.5 | Chave PIX sem sair da tela: "Nova chave PIX" na forma de pagamento (modal → `POST /perfil/chaves-pix` JSON) | testada (suíte; navegador: modal na forma de pagamento, erro de chave inválida, 390 px) |
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | testada (navegador: 6 telas animadas sem erro no console; filtro preserva estado; build ok) |
 | T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | testada (revisão opus: 0 Critical, 2 Important + 1 Minor de segurança corrigidos; suíte 264/264; JS 16/16; navegador ok) — merge na main |
+| T17.8 | Descrição opcional; recibo lista os itens (`Nome: q unidade × R$ p = R$ t`) e a descrição complementar abaixo; limite de 25 linhas somando os dois (pedido do usuário, aprovado 2026-10-10) | testada (suíte 271/271; navegador ok) |
 
 Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smoke) → `validada` (usuário confirmou).
 

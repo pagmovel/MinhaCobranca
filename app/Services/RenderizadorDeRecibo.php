@@ -11,6 +11,7 @@ use App\Support\Documento;
 use App\Support\LinhasDoRecibo;
 use App\Support\PixCopiaECola;
 use App\Support\QrCodePix;
+use App\Support\TextoDoRecibo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +28,8 @@ final class RenderizadorDeRecibo
         $inicio = CarbonImmutable::parse($servico['periodo_inicio']);
         $periodo = $inicio->format('d/m/Y').' a '.CarbonImmutable::parse($servico['periodo_fim'])->format('d/m/Y');
         $extenso = ValorPorExtenso::converter($servico['valor_centavos']);
+        $itens = $servico['itens'] ?? [];
+        $texto = TextoDoRecibo::compor($itens, $servico['descricao']);
 
         return [
             'numero' => $recibo->numeroFormatado(),
@@ -47,9 +50,11 @@ final class RenderizadorDeRecibo
                     $servico['codigo_servico'] ?? null,
                     filled($servico['codigo_nbs'] ?? null) ? 'NBS: '.$servico['codigo_nbs'] : null,
                 ], '. ')),
-                'descricao' => $servico['descricao'],
-                'linhas' => LinhasDoRecibo::quebrar($servico['descricao']),
-                'descricao_em_linha' => (string) preg_replace('/\s*\R\s*/', ' ', trim($servico['descricao'])),
+                'descricao' => $texto,
+                'linhas' => LinhasDoRecibo::quebrar($texto),
+                'descricao_em_linha' => $itens === []
+                    ? (string) preg_replace('/\s*\R\s*/', ' ', trim($servico['descricao']))
+                    : TextoDoRecibo::emLinha($itens, $servico['descricao']),
                 'periodo' => $periodo,
                 'obs_periodo' => 'Obs.: Período de '.$periodo,
             ],

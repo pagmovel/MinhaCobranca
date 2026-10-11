@@ -33,7 +33,7 @@ class CobrancaRequest extends FormRequest
     {
         return [
             'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
-            'descricao' => ['required', 'string', 'max:2000', new LinhasMaximas(25)],
+            'descricao' => ['nullable', 'string', 'max:2000', new LinhasMaximas(25)],
             'periodo_inicio' => ['required', 'date'],
             'periodo_fim' => ['required', 'date', 'after_or_equal:periodo_inicio'],
             'vencimento' => ['required', 'date'],
@@ -46,7 +46,9 @@ class CobrancaRequest extends FormRequest
     {
         $dados = $this->validated();
 
-        return Arr::except($dados, ['itens', 'forma_pagamento', 'chave_pix_id', 'linha_digitavel'])
+        // Descrição é complemento opcional (o recibo lista os itens); a coluna não aceita nulo.
+        return ['descricao' => (string) ($dados['descricao'] ?? '')]
+            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id', 'linha_digitavel'])
             + $this->resumoDosItens()
             + $this->dadosDePagamento($dados);
     }

@@ -48,14 +48,15 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
                 <CampoCliente :form="form" :inicial="clienteAtual" :desativado="travado" :opcoes="cadastroRapido" />
             </Campo>
             <p v-if="travado" class="font-estreita text-xs text-grafite/70 sm:col-span-6">Cliente e período vêm do contrato.</p>
-            <Campo id="descricao" rotulo="Descrição dos serviços (até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
-                <textarea id="descricao" v-model="form.descricao" rows="5" class="entrada" required />
-            </Campo>
             <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
                 Esta cobrança é anterior ao catálogo (valor atual: R$ {{ cobranca.valor }}). Inclua pelo menos um item; ao salvar,
                 o valor passa a ser a soma dos itens.
             </p>
             <SecaoItens :form="form" />
+            <Campo id="descricao" rotulo="Descrição complementar (opcional)" :erro="form.errors.descricao" class="sm:col-span-6">
+                <textarea id="descricao" v-model="form.descricao" rows="3" class="entrada" placeholder="Ex.: domínio, mês de referência, número do contrato, observações" />
+                <p class="mt-1 text-xs text-grafite/70">No recibo, sai abaixo da lista de itens. Itens e descrição cabem em até 25 linhas.</p>
+            </Campo>
             <Campo id="vencimento" rotulo="Vencimento" :erro="form.errors.vencimento" class="sm:col-span-2">
                 <input id="vencimento" v-model="form.vencimento" type="date" class="entrada" required>
             </Campo>
