@@ -5,6 +5,7 @@ namespace Tests\Feature\Relatorios;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -57,11 +58,26 @@ class FaturamentoTest extends TestCase
                 ->component('Relatorios/Ver')
                 ->where('tipo', 'faturamento')
                 ->has('tabela.linhas', 4)
-                ->where('tabela.linhas.0', ['mes' => '08/2026', 'previsto' => 10000, 'recebido' => 0, 'inadimplencia' => 10000])
-                ->where('tabela.linhas.1', ['mes' => '09/2026', 'previsto' => 20000, 'recebido' => 10000, 'inadimplencia' => 20000])
-                ->where('tabela.linhas.2', ['mes' => '10/2026', 'previsto' => 30000, 'recebido' => 70000, 'inadimplencia' => 20000])
-                ->where('tabela.linhas.3', ['mes' => '11/2026', 'previsto' => 40000, 'recebido' => 0, 'inadimplencia' => 0])
-                ->where('tabela.totais', ['mes' => 'Total', 'previsto' => 100000, 'recebido' => 80000, 'inadimplencia' => null]));
+                ->where('tabela.linhas.0', ['mes' => '08/2026', 'previsto' => 10000, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 10000])
+                ->where('tabela.linhas.1', ['mes' => '09/2026', 'previsto' => 20000, 'nao_emitido' => 0, 'recebido' => 10000, 'inadimplencia' => 20000])
+                ->where('tabela.linhas.2', ['mes' => '10/2026', 'previsto' => 30000, 'nao_emitido' => 0, 'recebido' => 70000, 'inadimplencia' => 20000])
+                ->where('tabela.linhas.3', ['mes' => '11/2026', 'previsto' => 40000, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 0])
+                ->where('tabela.totais', ['mes' => 'Total', 'previsto' => 100000, 'nao_emitido' => 0, 'recebido' => 80000, 'inadimplencia' => null]));
+    }
+
+    public function test_previsto_inclui_o_que_os_contratos_ainda_vao_emitir(): void
+    {
+        // Desde 21/09, dia 21, R$ 260,60, nada gerado (o relatório não gera): 21/09 já passou e fica de fora.
+        Contrato::factory()->for($this->usuario)->for($this->cliente)->create();
+        $this->cobranca('2026-11-10', 10000);
+
+        $this->actingAs($this->usuario)->get('/relatorios/faturamento?de=2026-09&ate=2026-11')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('tabela.linhas.0', ['mes' => '09/2026', 'previsto' => 0, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 0])
+                ->where('tabela.linhas.1', ['mes' => '10/2026', 'previsto' => 26060, 'nao_emitido' => 26060, 'recebido' => 0, 'inadimplencia' => 0])
+                ->where('tabela.linhas.2', ['mes' => '11/2026', 'previsto' => 36060, 'nao_emitido' => 26060, 'recebido' => 0, 'inadimplencia' => 0])
+                ->where('tabela.totais.nao_emitido', 52120)
+                ->where('tabela.colunas.2.rotulo', 'Ainda não emitido'));
     }
 
     public function test_periodo_padrao_e_os_ultimos_12_meses(): void
@@ -96,9 +112,9 @@ class FaturamentoTest extends TestCase
             ->assertDownload('relatorio-faturamento-2026-10-a-2026-10.csv');
         $this->assertSame(
             "\xEF\xBB\xBF"
-            ."Mês;Previsto;Recebido;\"Em atraso no fim do mês\"\n"
-            ."10/2026;1.234,56;1.234,56;0,00\n"
-            ."Total;1.234,56;1.234,56;\n",
+            ."Mês;Previsto;\"Ainda não emitido\";Recebido;\"Em atraso no fim do mês\"\n"
+            ."10/2026;1.234,56;0,00;1.234,56;0,00\n"
+            ."Total;1.234,56;0,00;1.234,56;\n",
             $resposta->streamedContent(),
         );
     }

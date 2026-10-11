@@ -91,13 +91,29 @@ class ReceitaTest extends TestCase
         $this->actingAs($this->usuario)->get('/relatorios/produtos?de=2026-10&ate=2026-10')
             ->assertInertia(fn (Assert $page) => $page
                 ->has('tabela.linhas', 3)
-                ->where('tabela.linhas.0', ['item' => 'Hospedagem', 'recebido' => 10000, 'previsto' => 30000, 'contratos' => 2])
+                // Previsto: 30.000 emitidos + 2 previstas de 21/10 (contratos ativos, ainda não emitidas).
+                ->where('tabela.linhas.0', ['item' => 'Hospedagem', 'recebido' => 10000, 'previsto' => 50000, 'contratos' => 2])
                 ->where('tabela.linhas.1', ['item' => 'Suporte', 'recebido' => 5000, 'previsto' => 5000, 'contratos' => 0])
                 ->where('tabela.linhas.2', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 7000, 'previsto' => 7000, 'contratos' => 0])
                 ->where('tabela.totais.recebido', 22000));
 
         // Bate com a lista de cobranças: tudo o que foi pago no período.
         $this->assertSame(22000, (int) $this->usuario->cobrancas()->where('status', 'paga')->sum('valor_centavos'));
+    }
+
+    public function test_previsto_por_produto_inclui_as_previstas(): void
+    {
+        $hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem']);
+        Contrato::factory()->for($this->usuario)->create()->itens()->create([
+            'produto_servico_id' => $hospedagem->id, 'quantidade' => '2.000', 'preco_unitario_centavos' => 5000, 'principal' => true, 'ordem' => 0,
+        ]);
+        Contrato::factory()->for($this->usuario)->create(); // sem itens, R$ 260,60
+
+        $this->actingAs($this->usuario)->get('/relatorios/produtos?de=2026-11&ate=2026-11')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('tabela.linhas', 2)
+                ->where('tabela.linhas.0', ['item' => 'Hospedagem', 'recebido' => 0, 'previsto' => 10000, 'contratos' => 1])
+                ->where('tabela.linhas.1', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 0, 'previsto' => 26060, 'contratos' => 0]));
     }
 
     public function test_csv_neutraliza_formula_no_nome_do_cliente(): void

@@ -54,7 +54,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T18.2 | Serviço `PrevisaoDeCobrancas::entre()` + teste de igualdade com o gerador | testada (RED: classe inexistente nos 8 → GREEN 8/8, igualdade com o gerador inclusa) |
 | T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | testada (RED 0/7 pelos motivos esperados → GREEN; Cobrancas + Auditoria 67/67) |
 | T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | testada (JS RED: principal 'baixa' → GREEN 23/23; build ok); conferência no navegador pendente (T18.6) |
-| T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | pendente |
+| T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | testada (RED 4 falhas esperadas → GREEN; suíte inteira 332/332, JS 23/23) |
 | T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | pendente |
 
 ## Registro de execução (decisões tomadas durante a execução)
@@ -66,6 +66,9 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
   - T18.2 → T18.5: `vencimento` em `d/m/Y`; o mês sai de `substr(…, 3)`.
 
   Sem conflito.
+- **Decisão (T18.5):** o plano esqueceu o `test_csv_para_o_excel_em_portugues`, que compara o CSV do faturamento byte
+  a byte. A expectativa foi atualizada com a coluna `"Ainda não emitido"`, vindo depois de "Previsto". A especificação
+  diz "CSV acompanha". Se essa posição da coluna estiver errada, basta mudar a ordem das colunas.
 
 ---
 

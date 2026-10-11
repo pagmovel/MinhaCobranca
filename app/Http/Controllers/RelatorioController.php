@@ -44,7 +44,7 @@ class RelatorioController extends Controller
         $tabela = match ($tipo) {
             'faturamento' => $relatorios->faturamento($usuario, $de, $ate, $hoje),
             'clientes' => $relatorios->porCliente($usuario, $de, $ate, $hoje),
-            'produtos' => $relatorios->porProduto($usuario, $de, $ate),
+            'produtos' => $relatorios->porProduto($usuario, $de, $ate, $hoje),
             'a-receber' => $relatorios->aReceber($usuario, $hoje),
         };
 
