@@ -45,14 +45,15 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
                 <CampoCliente :form="form" :inicial="clienteAtual" :opcoes="cadastroRapido" />
             </Campo>
-            <Campo id="descricao" rotulo="Descrição dos serviços (como sai no recibo, até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
-                <textarea id="descricao" v-model="form.descricao" rows="6" class="entrada" required />
-            </Campo>
             <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
                 Este contrato ainda não tem itens (valor atual: R$ {{ contrato.valor }}). Inclua pelo menos um; ao salvar, o
                 valor passa a ser a soma dos itens.
             </p>
             <SecaoItens :form="form" />
+            <Campo id="descricao" rotulo="Descrição complementar (opcional)" :erro="form.errors.descricao" class="sm:col-span-6">
+                <textarea id="descricao" v-model="form.descricao" rows="3" class="entrada" placeholder="Ex.: domínio, mês de referência, número do contrato, observações" />
+                <p class="mt-1 text-xs text-grafite/70">No recibo, sai abaixo da lista de itens. Itens e descrição cabem em até 25 linhas.</p>
+            </Campo>
             <Campo id="periodicidade" rotulo="Periodicidade" :erro="form.errors.periodicidade" class="sm:col-span-3">
                 <select id="periodicidade" v-model="form.periodicidade" class="entrada">
                     <option v-for="p in periodicidades" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>

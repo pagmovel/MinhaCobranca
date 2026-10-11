@@ -483,6 +483,14 @@ o relatório mostra a parte que existe.
 - **Trava do banco de teste recusa `DB_URL` preenchida** (a URL manda no banco de verdade, por cima do nome).
 - **Pegadinha (smoke):** `element.focus()` por script num Chrome headless sem foco de janela **não dispara** o evento
   `focus` (parecia defeito da lista ao focar). Usar clique real: `Input.dispatchMouseEvent` (pressed/released).
+- **T17.8 — o recibo lista os itens (decisão do usuário, 2026-10-10):** a descrição do contrato/cobrança virou
+  **complemento opcional** (domínio, mês de referência, nº do contrato) e sai **abaixo** dos itens. `TextoDoRecibo::compor`
+  monta um item por linha (`Hospedagem de site: 1 mês × R$ 247,57 = R$ 247,57`), linha em branco, descrição; `emLinha`
+  (DANFSe) junta com "; ". O snapshot do recibo guarda `servico.itens` (cópia); **snapshot antigo sem `itens` sai igual a
+  antes** (os templates `webiss-v1`/`danfse-v1` não mudaram — só o texto que entra neles). A validação conta itens +
+  descrição com o mesmo `compor` + `LinhasDoRecibo::quebrar` (máx. 25). Descrição vazia é gravada como `''` (coluna
+  NOT NULL, sem migração). Cobranças emitidas antes desta mudança só mostram os itens no PDF depois de editadas (refazer).
+  Sugestão ao usuário: itens do catálogo genéricos; o específico do cliente (domínio) vai na descrição.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
