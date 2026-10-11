@@ -103,6 +103,7 @@ class Cobranca extends Model
             'vencimento' => $this->vencimento->format('d/m/Y'),
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),
+            'valor_centavos' => $this->valor_centavos,
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,

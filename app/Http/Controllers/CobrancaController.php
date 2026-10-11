@@ -11,15 +11,18 @@ use App\Models\Cobranca;
 use App\Models\CobrancaItem;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
+use App\Services\ListaDeCobrancas;
 use App\Services\PrevisaoDeCobrancas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -95,6 +98,66 @@ class CobrancaController extends Controller
             'formasPagamento' => FormaPagamento::opcoes(),
             'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
         ]);
+    }
+
+    /** Dados da lista (JSON, só leitura): um bloco de páginas e os totais do resultado inteiro. */
+    public function dados(Request $request, ListaDeCobrancas $lista): JsonResponse
+    {
+        $hoje = CarbonImmutable::today();
+        $filtros = $this->filtros($request, $hoje);
+
+        // Mesmas mensagens dos relatórios; 422 em JSON, e a tela mostra embaixo do "Até".
+        if ($filtros['mes']->gt($filtros['ate'])) {
+            throw ValidationException::withMessages(['ate' => 'O fim do período deve ser igual ou depois do início.']);
+        }
+        if ($filtros['mes']->diffInMonths($filtros['ate']) >= 36) {
+            throw ValidationException::withMessages(['ate' => 'Escolha um período de até 36 meses.']);
+        }
+
+        return response()->json($lista->montar($request->user(), $filtros, $hoje) + ['filtros' => $this->filtrosParaTela($filtros)]);
+    }
+
+    /**
+     * Filtros da lista validados só no formato (o período é conferido no JSON).
+     *
+     * @return array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, canceladas: bool, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request, CarbonImmutable $hoje): array
+    {
+        $validados = $request->validate([
+            'mes' => ['nullable', 'date_format:Y-m'],
+            'ate' => ['nullable', 'date_format:Y-m'],
+            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
+            'cliente_id' => ['nullable', 'integer'],
+            'canceladas' => ['nullable', 'boolean'],
+            'pagina' => ['nullable', 'integer', 'min:1'],
+            'por_pagina' => ['nullable', Rule::in([25, 50, 100])],
+        ]);
+        $mes = CarbonImmutable::createFromFormat('Y-m-d', ($validados['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
+
+        return [
+            'mes' => $mes,
+            'ate' => isset($validados['ate']) ? CarbonImmutable::createFromFormat('Y-m-d', $validados['ate'].'-01')->startOfDay() : $mes,
+            'status' => $validados['status'] ?? null,
+            'cliente_id' => empty($validados['cliente_id']) ? null : (int) $validados['cliente_id'],
+            'canceladas' => (bool) ($validados['canceladas'] ?? false),
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
+    }
+
+    /** @return array{mes: string, ate: string, status: string, cliente_id: int|string, canceladas: bool, pagina: int, por_pagina: int} */
+    private function filtrosParaTela(array $filtros): array
+    {
+        return [
+            'mes' => $filtros['mes']->format('Y-m'),
+            'ate' => $filtros['ate']->format('Y-m'),
+            'status' => $filtros['status'] ?? '',
+            'cliente_id' => $filtros['cliente_id'] ?? '',
+            'canceladas' => $filtros['canceladas'],
+            'pagina' => $filtros['pagina'],
+            'por_pagina' => $filtros['por_pagina'],
+        ];
     }
 
     public function create(Request $request): Response

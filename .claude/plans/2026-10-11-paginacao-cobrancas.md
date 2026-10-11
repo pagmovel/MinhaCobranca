@@ -53,7 +53,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T19.1 | `GET /cobrancas/dados` + serviço `ListaDeCobrancas` (lista leve, totais, bloco) + `valor_centavos` em `paraLista` | pendente |
+| T19.1 | `GET /cobrancas/dados` + serviço `ListaDeCobrancas` (lista leve, totais, bloco) + `valor_centavos` em `paraLista` | testada (RED 8× 404 → GREEN; Cobrancas 65/65; JSON sem sessão = 401) |
 | T19.2 | `GET /cobrancas` sem `cobrancas`; filtros com `pagina`/`por_pagina`; testes antigos lendo o JSON | pendente |
 | T19.3 | JS puro: `paginacao.js` (páginas visíveis, chave do cache, fatiar bloco) e `buscarJson` em `http.js` | pendente |
 | T19.4 | Tela: carga por ajax com cache, `Paginador.vue` acima/abaixo, rodapé de totais, carregando/erro, URL, recarga após ação | pendente |
