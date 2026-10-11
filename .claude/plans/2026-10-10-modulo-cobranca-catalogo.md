@@ -42,9 +42,9 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 13 | T13.1 Filtros e paginação de Clientes | testada (suíte 228/228; build ok) |
 | 13 | T13.2 Filtros e paginação de Contratos | testada (suíte 231/231; JS 10/10; build ok) |
 | 13 | T13.3 Fechamento da fase 13 | concluída (sem banco; merge na main) |
-| 14 | T14.1 Consulta de CNPJ e CEP no servidor | pendente |
-| 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | pendente |
-| 14 | T14.3 Fechamento da fase 14 | pendente |
+| 14 | T14.1 Consulta de CNPJ e CEP no servidor | testada (suíte 239/239) |
+| 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | testada (JS 13/13; build ok; suíte 239/239; navegador na T15.5) |
+| 14 | T14.3 Fechamento da fase 14 | concluída (sem banco; merge na main) |
 | 15 | T15.1 Painel: recebido = pago no mês | pendente |
 | 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | pendente |
 | 15 | T15.3 Relatórios: receita por cliente e por produto/serviço | pendente |
@@ -3620,7 +3620,7 @@ Respostas reais conferidas em 2026-10-10 (só leitura, CNPJ público `00.000.000
 
 ### Tarefa T14.1: Consulta de CNPJ e CEP no servidor
 
-**Estado:** pendente
+**Estado:** testada (suíte 239/239)
 
 **Arquivos:**
 - Criar: `app/Services/Consultas/BrasilApiCnpj.php`, `app/Services/Consultas/ViaCep.php`,
@@ -4035,7 +4035,7 @@ git commit -m "feat: consulta de CNPJ e CEP em serviços públicos gratuitos, co
 
 ### Tarefa T14.2: Botão "Buscar dados do CNPJ" e CEP automático
 
-**Estado:** pendente
+**Estado:** testada (JS 13/13; build ok; suíte 239/239; navegador na T15.5)
 
 **Arquivos:**
 - Criar: `resources/js/consultas.js`, `resources/js/consultas.test.js`, `resources/js/Components/BuscaCnpj.vue`
@@ -4279,7 +4279,7 @@ git commit -m "feat: preencher cliente e perfil pelo CNPJ e endereço pelo CEP"
 
 ### Tarefa T14.3: Fechamento da fase 14
 
-**Estado:** pendente
+**Estado:** concluída (sem banco; merge na main)
 
 - [ ] Suíte inteira, testes JS e `npm run build` verdes (sem banco).
 - [ ] Merge + push: `git checkout main; git merge --no-ff feat/modulo-cobranca-catalogo -m "merge: fase 14 — preenchimento
