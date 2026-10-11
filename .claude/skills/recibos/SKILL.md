@@ -597,6 +597,39 @@ o relatório mostra a parte que existe.
   cliente quebra; as demais têm `whitespace-nowrap`; a coluna de ações usa `xl:w-px` (encolhe ao conteúdo); o botão
   principal tem largura mínima comum (`botaoPrincipal = 'min-w-28 whitespace-nowrap'`) e o `Carimbo` tem
   `min-w-32 text-center whitespace-nowrap` (vale também no painel). Em tabela nova, aplicar o mesmo desde o início.
+- **Fase 18 — previsão de recebimentos (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-previsao-de-recebimentos-design.md`, plano
+  `.claude/plans/2026-10-11-previsao-de-recebimentos.md`)**
+  - **Problema.** A cobrança só nasce `dias_antecedencia` antes do vencimento. Por isso o usuário não via os
+    recebimentos futuros.
+  - **Decisão: calcular, não gravar.** As previstas saem de `App\Services\PrevisaoDeCobrancas::entre($usuario, $de,
+    $ate)`, na hora, a partir dos contratos ativos, com o preço atual. Nada vai para o banco. O caminho de gerar tudo
+    com recibo foi rejeitado com o usuário: queimaria numeração e o recibo leva o ano de emissão.
+  - **Uma regra só para os dois.** `GeradorDeCobrancas::cobravel()` responde se um período vira cobrança. Não vira se
+    já existe, mesmo cancelada; se é anterior ao `cobrar_a_partir_de`; ou se é o período que contém o fim com
+    `nao_cobrar`. Gerador e previsão usam a mesma regra, junto com `existentes()` e `contemOFim()`.
+  - **Períodos.** Saem de `CalculadoraDePeriodos::entre()`, que lista os vencimentos do intervalo sem passar do fim
+    do contrato.
+  - **Proporcional.** Usa a mesma conta de `ajustarProporcional`. Fora do proporcional, o valor é o `valor_centavos`
+    do contrato, como no gerador, e não a soma dos itens.
+  - **Teste-guarda.** `test_previsao_bate_com_o_que_o_gerador_cria` anda o relógio, gera as cobranças e compara
+    período, vencimento e valor com o que estava previsto. **Não apagar esse teste.**
+  - **Só depois de hoje, na tela e nos relatórios.** Até hoje, abrir a tela já gerou as cobranças de verdade. Com o
+    perfil incompleto não gera, e mostrar a cobrança como prevista "a vencer" seria enganoso.
+  - **Lista.** Filtro "Mês do vencimento" mais "Até" (`ate`, padrão igual ao mês). O "Até" acompanha o mês enquanto os
+    dois forem iguais e nunca fica antes dele. Os erros usam as mensagens dos relatórios: até antes do mês, ou 36
+    meses ou mais. As previstas entram mescladas por vencimento só em Todas, A vencer e Pendentes. Têm o carimbo
+    "Prevista" (cinza, tracejado), não têm ações (`acoesDaCobranca` → `{principal: null, menu: []}`) e vêm com uma
+    legenda.
+  - **Relatórios.** O faturamento ganha a coluna "Ainda não emitido", que soma no "Previsto". No relatório por
+    produto, as previstas somam pelos itens; contrato sem itens vai para "Sem item". Clientes e Contas a receber não
+    mudam.
+  - **Pegadinhas.**
+    1. O `test_csv_para_o_excel_em_portugues` compara o CSV byte a byte. Coluna nova no relatório exige atualizar
+       esse teste.
+    2. Teste de relatório com `Contrato::factory()` ativo passa a ter previstas, porque o relatório não gera
+       cobranças. O teste antigo de produto teve o previsto da Hospedagem corrigido de 30.000 para 50.000.
+  - **Painel fora.** O painel ainda não mostra previstas (fora do escopo).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
