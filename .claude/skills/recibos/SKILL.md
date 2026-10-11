@@ -948,6 +948,19 @@ o relatório mostra a parte que existe.
   - **"Avisado em" é um registro, não trava o fluxo:** gravado via `router.post` sem esperar resposta antes de
     fechar o modal (fire-and-forget) — avisar de novo é permitido, atualiza a data. Exibido tanto no bloco
     "Vencendo" do Painel quanto na lista de Cobranças (linha, ao lado do carimbo de situação).
+  - **Variáveis adicionadas depois, a partir de um exemplo real do usuário (2026-10-11):** `{item}` — nome(s) do(s)
+    item(ns) em texto corrido ("a, b e c", mesma função `juntarComE` de `{vencimento}`), sem "-" nem valor, pra frase
+    tipo "vence a hospedagem do domínio {item}". Reaproveita o fallback que já existia (cobrança sem itens de
+    catálogo usa a 1ª linha da descrição) — **colocar o domínio/serviço na descrição da cobrança já funciona com
+    `{item}`**, sem precisar de campo novo. `{chave_pix}` — chave PIX formatada da cobrança (`tipo->formatar(chave)`,
+    sem o rótulo do tipo na frente) quando a forma de pagamento é PIX; em aviso de várias cobranças do mesmo
+    cliente, usa a da primeira que tiver uma (decisão do usuário, não a "mais recente" nem bloqueia por divergência).
+    `{contato}` — campo novo `clientes.contato` (nulável, fora de `Cliente::CAMPOS`: não entra no recibo, mesmo
+    tratamento do `apelido`), pra mensagens menos formais com o primeiro nome da pessoa; **sem fallback pro nome do
+    cliente** (decisão do usuário) — fica vazia, nunca "{contato}" literal, se não cadastrada.
+  - **Prévia reativa no formulário de modelo** (`MensagensWhatsapp.vue`, pedido do usuário "preciso validar antes de
+    salvar"): `computed` que chama `montarMensagem(form.texto, EXEMPLO)` com dados fictícios fixos — não depende do
+    servidor, atualiza a cada tecla. Mesmo módulo puro usado na janela de envio real, então o comportamento bate.
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
