@@ -18,11 +18,11 @@ const SUGESTAO = 'Olá {cliente}! Passando para avisar que {itens} está{s} venc
 
 const carregando = ref(false);
 const erro = ref('');
+const erroCopia = ref('');
 const dados = ref(null);
 const modeloEscolhido = ref(null);
 const texto = ref('');
 const telefone = ref('');
-const enviando = ref(false);
 
 const padrao = computed(() => props.modelos.find((modelo) => modelo.padrao) ?? null);
 // Sem fallback para o padrão aqui: `modeloEscolhido === null` já cobre os dois casos (nenhum padrão existe, ou a
@@ -49,6 +49,7 @@ watch(() => props.aberto, async (aberto) => {
     }
     carregando.value = true;
     erro.value = '';
+    erroCopia.value = '';
     dados.value = null;
     try {
         const parametros = new URLSearchParams(props.ids.map((id) => ['ids[]', id]));
@@ -71,22 +72,31 @@ watch(modeloEscolhido, atualizarTexto);
 const numeroValido = computed(() => numeroWhatsapp(telefone.value));
 const avisoDeTamanho = computed(() => mensagemMuitoLonga(texto.value));
 
+/** Dispara em segundo plano, sem travar o fechamento: "avisado em" é só um registro, pode avisar de novo se falhar. */
 function marcarAvisadas() {
-    enviando.value = true;
-    router.post('/cobrancas/avisadas', { ids: props.ids }, {
-        preserveScroll: true,
-        onFinish: () => { enviando.value = false; emit('fechar'); },
-    });
+    router.post('/cobrancas/avisadas', { ids: props.ids }, { preserveScroll: true });
 }
 
 function abrirWhatsapp() {
-    window.open(montarLinkWaMe(numeroValido.value, texto.value), '_blank');
+    // Fecha ANTES de abrir a aba nova: window.open tira o foco desta aba, e o Chrome pausa a renderização de abas em
+    // segundo plano — a transição de saída do Modal travaria no meio para sempre, deixando o fundo escurecido preso
+    // na tela (achado no navegador real, T24.9). Fechando primeiro, a transição roda com a aba ainda em primeiro plano.
+    const link = montarLinkWaMe(numeroValido.value, texto.value);
+    emit('fechar');
+    window.open(link, '_blank');
     marcarAvisadas();
 }
 
 async function copiarMensagem() {
-    await navigator.clipboard.writeText(texto.value);
-    marcarAvisadas();
+    try {
+        await navigator.clipboard.writeText(texto.value);
+        erroCopia.value = '';
+        emit('fechar');
+        marcarAvisadas();
+    } catch {
+        // Ex.: página em http:// (sem contexto seguro) ou permissão de clipboard negada — a API fica indisponível.
+        erroCopia.value = 'Não foi possível copiar automaticamente. Selecione o texto acima e copie (Ctrl+C).';
+    }
 }
 </script>
 
@@ -118,9 +128,10 @@ async function copiarMensagem() {
                 <input id="aviso_telefone" v-model="telefone" @input="telefone = formatadores.telefone(telefone)" class="entrada" placeholder="(00) 00000-0000">
                 <p v-if="!numeroValido" class="mt-1 text-xs text-grafite/70">Sem número de celular válido: digite um, ou copie a mensagem.</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" class="botao" :disabled="!numeroValido || enviando" @click="abrirWhatsapp">Abrir WhatsApp</button>
-                <button type="button" class="botao-secundario" :disabled="enviando" @click="copiarMensagem">Copiar mensagem</button>
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button" class="botao" :disabled="!numeroValido" @click="abrirWhatsapp">Abrir WhatsApp</button>
+                <button type="button" class="botao-secundario" @click="copiarMensagem">Copiar mensagem</button>
+                <p v-if="erroCopia" role="alert" class="text-sm text-tinta-vermelha">{{ erroCopia }}</p>
             </div>
         </div>
     </Modal>

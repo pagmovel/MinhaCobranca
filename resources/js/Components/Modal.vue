@@ -16,6 +16,7 @@ const emit = defineEmits(['fechar']);
 const painel = ref(null);
 const idTitulo = `${useId()}-titulo`;
 let focoAnterior = null;
+let temporizadorDeTravamento = null;
 
 const focaveis = () => [...(painel.value?.querySelectorAll(
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -48,6 +49,7 @@ function teclado(evento) {
 }
 
 watch(() => props.aberto, async (aberto) => {
+    clearTimeout(temporizadorDeTravamento);
     if (aberto) {
         focoAnterior = document.activeElement;
         document.body.style.overflow = 'hidden';
@@ -59,10 +61,20 @@ watch(() => props.aberto, async (aberto) => {
         document.body.style.overflow = '';
         document.removeEventListener('keydown', teclado);
         focoAnterior?.focus?.();
+
+        // Rede de segurança: numa aba em segundo plano (ex.: "Abrir WhatsApp" tira o foco desta aba) o Chrome para de
+        // rodar requestAnimationFrame, do qual a transição de saída do Vue depende para aplicar as classes CSS — ela
+        // trava no meio pra sempre, com o fundo escurecido preso na tela (achado real, Fase 24, T24.9). Uma ligação
+        // reativa (`:style`/`:class`) não chega a esse elemento: o `<Transition>` mantém um retrato congelado do vnode
+        // durante a saída, sem reagir a mudanças de outros dados. Só a manipulação direta do DOM, fora do Vue, funciona.
+        temporizadorDeTravamento = setTimeout(() => {
+            document.getElementById(idTitulo)?.closest('.fixed.inset-0')?.style.setProperty('display', 'none');
+        }, 500);
     }
 });
 
 onBeforeUnmount(() => {
+    clearTimeout(temporizadorDeTravamento);
     document.body.style.overflow = '';
     document.removeEventListener('keydown', teclado);
 });
