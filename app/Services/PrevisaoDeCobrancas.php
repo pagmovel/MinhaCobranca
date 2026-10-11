@@ -29,7 +29,7 @@ final class PrevisaoDeCobrancas
     {
         $aPrever = [];
 
-        $contratos = $usuario->contratos()->where('ativo', true)->with(['itens', 'cliente:id,nome'])->get();
+        $contratos = $usuario->contratos()->where('ativo', true)->with(['itens', 'cliente:id,nome,apelido'])->get();
         $existentes = $this->gerador->existentes($contratos);
 
         foreach ($contratos as $contrato) {
@@ -83,7 +83,8 @@ final class PrevisaoDeCobrancas
             'id' => "prevista-{$contrato->id}-{$periodo->inicio->toDateString()}",
             'contrato_id' => $contrato->id,
             'cliente_id' => $contrato->cliente_id,
-            'cliente' => $contrato->cliente->nome,
+            'cliente' => $contrato->cliente->exibicao(),
+            'cliente_oficial' => $contrato->cliente->nomeOficial(),
             'periodo' => $periodo->inicio->format('d/m/Y').' a '.$fim->format('d/m/Y'),
             'vencimento' => $periodo->vencimento->format('d/m/Y'),
             'valor' => Dinheiro::formatar($valor),

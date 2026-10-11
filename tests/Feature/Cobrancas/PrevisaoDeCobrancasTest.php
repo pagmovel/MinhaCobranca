@@ -60,6 +60,7 @@ class PrevisaoDeCobrancasTest extends TestCase
             'contrato_id' => $contrato->id,
             'cliente_id' => $contrato->cliente_id,
             'cliente' => $contrato->cliente->nome,
+            'cliente_oficial' => null,
             'periodo' => '21/10/2026 a 20/11/2026',
             'vencimento' => '21/10/2026',
             'valor' => '260,60',

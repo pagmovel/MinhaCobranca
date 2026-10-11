@@ -57,8 +57,14 @@ class Cliente extends Model
         return $this->apelido ?: $this->nome;
     }
 
+    /** Nome oficial para mostrar embaixo, menor: só quando o apelido tomou o lugar dele. */
+    public function nomeOficial(): ?string
+    {
+        return $this->apelido ? $this->nome : null;
+    }
+
     /**
-     * Formato da autosugestão e dos filtros: o nome oficial vai embaixo, menor, só quando há apelido.
+     * Formato da autosugestão e dos filtros.
      *
      * @return array{id: int, nome: string, nome_oficial: ?string, documento: string}
      */
@@ -67,7 +73,7 @@ class Cliente extends Model
         return [
             'id' => $this->id,
             'nome' => $this->exibicao(),
-            'nome_oficial' => $this->apelido ? $this->nome : null,
+            'nome_oficial' => $this->nomeOficial(),
             'documento' => Documento::formatar($this->documento),
         ];
     }

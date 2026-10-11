@@ -183,6 +183,7 @@ async function fecharFaixa() {
                         <tr class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 xl:table-row xl:p-0">
                             <td class="basis-full xl:px-4 xl:py-3">
                                 <p class="font-semibold">{{ cobranca.cliente }}</p>
+                                <p v-if="cobranca.cliente_oficial" class="text-xs text-grafite/80">{{ cobranca.cliente_oficial }}</p>
                                 <ul v-if="cobranca.historico?.length" class="mt-1 font-estreita text-xs text-grafite/70">
                                     <li v-for="(linha, indice) in cobranca.historico" :key="indice">{{ linha }}</li>
                                 </ul>

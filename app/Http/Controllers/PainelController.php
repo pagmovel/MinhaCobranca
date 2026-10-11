@@ -71,7 +71,7 @@ class PainelController extends Controller
             $consulta->orderBy('vencimento')->orderBy('id');
         }
 
-        $bloco = BlocoDePaginas::de($consulta->with(['cliente:id,nome', 'recibo']), (int) ($filtros['pagina'] ?? 1), (int) ($filtros['por_pagina'] ?? 10));
+        $bloco = BlocoDePaginas::de($consulta->with(['cliente:id,nome,apelido', 'recibo']), (int) ($filtros['pagina'] ?? 1), (int) ($filtros['por_pagina'] ?? 10));
 
         return response()->json([
             'linhas' => $bloco['itens']->map(fn (Cobranca $cobranca) => $cobranca->paraLista($hoje))->all(),

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\StatusCobranca;
+use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
 use App\Models\ContratoItem;
@@ -86,7 +87,8 @@ final class Relatorios
 
         $ids = $pagas->keys()->merge($contratos->keys())->merge($vencidas->keys())->unique()->all();
 
-        $linhas = $usuario->clientes()->whereIn('id', $ids)->pluck('nome', 'id')
+        $linhas = $usuario->clientes()->whereIn('id', $ids)->get(['id', 'nome', 'apelido'])
+            ->mapWithKeys(fn (Cliente $cliente) => [$cliente->id => $cliente->exibicao()])
             ->map(function (string $nome, int $id) use ($pagas, $contratos, $vencidas, $hoje) {
                 $recebido = (int) ($pagas[$id]->recebido ?? 0);
                 $quantidade = (int) ($pagas[$id]->quantidade ?? 0);
@@ -189,11 +191,11 @@ final class Relatorios
     {
         $hoje = $hoje->startOfDay();
 
-        $linhas = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)->with('cliente:id,nome')
+        $linhas = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)->with('cliente:id,nome,apelido')
             ->get(['id', 'cliente_id', 'vencimento', 'valor_centavos'])
             ->groupBy('cliente_id')
             ->map(function (Collection $cobrancas) use ($hoje) {
-                $linha = ['cliente' => $cobrancas->first()->cliente->nome, 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0];
+                $linha = ['cliente' => $cobrancas->first()->cliente->exibicao(), 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0];
 
                 foreach ($cobrancas as $cobranca) {
                     $dias = (int) $hoje->diffInDays($cobranca->vencimento); // negativo = vencida

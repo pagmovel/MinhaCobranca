@@ -160,7 +160,7 @@ class ProdutoServicoController extends Controller
 
         $usos = $item->contratoItens()
             ->whereHas('contrato', fn ($contrato) => $contrato->where('user_id', $request->user()->id)->where('ativo', true))
-            ->with('contrato.cliente:id,nome')
+            ->with('contrato.cliente:id,nome,apelido')
             ->get();
 
         return Inertia::render('ProdutosServicos/Reajuste', [
@@ -172,7 +172,7 @@ class ProdutoServicoController extends Controller
             ],
             'contratos' => $usos->map(fn (ContratoItem $uso) => [
                 'id' => $uso->contrato_id,
-                'cliente' => $uso->contrato->cliente->nome,
+                'cliente' => $uso->contrato->cliente->exibicao(),
                 'resumo' => strtok($uso->contrato->descricao, "\n"),
                 'quantidade' => ItensDeVenda::formatarQuantidade(ItensDeVenda::milesimos($uso->quantidade)),
                 'preco' => Dinheiro::formatar($uso->preco_unitario_centavos),

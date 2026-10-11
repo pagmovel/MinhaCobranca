@@ -43,7 +43,7 @@ class CobrancaController extends Controller
             'padroes' => ['mes' => $hoje->format('Y-m'), 'ate' => $hoje->format('Y-m'), 'status' => '', 'cliente_id' => '', 'canceladas' => false],
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
-            'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'])?->paraBusca(),
         ]);
     }
 
@@ -146,7 +146,7 @@ class CobrancaController extends Controller
                 'chave_pix_id' => $cobranca->chave_pix_id ?? '',
                 'linha_digitavel' => $cobranca->linha_digitavel ?? '',
             ] : null,
-            'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
+            'clienteAtual' => $cobranca?->cliente?->paraBusca(),
             'chavesPix' => $request->user()->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
             'cadastroRapido' => $request->user()->opcoesDeCadastroRapido(),

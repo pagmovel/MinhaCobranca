@@ -38,7 +38,7 @@ class ContratoController extends Controller
         // A lista vem por ajax de /contratos/dados; a página só abre a tela com os filtros.
         return Inertia::render('Contratos/Index', [
             'filtros' => $filtros,
-            'clienteFiltro' => $filtros['cliente_id'] === '' ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            'clienteFiltro' => $filtros['cliente_id'] === '' ? null : $usuario->clientes()->find($filtros['cliente_id'])?->paraBusca(),
             // Em qualquer situação: o "Ver contratos" de um item inativo também mostra o nome no filtro.
             'produtoFiltro' => $filtros['produto_servico_id'] === '' ? null : $usuario->produtosServicos()->find($filtros['produto_servico_id'], ['id', 'nome']),
             'modalidades' => Modalidade::opcoes(),
@@ -53,7 +53,7 @@ class ContratoController extends Controller
         $filtrada = fn () => $this->filtrada($request->user(), $filtros);
 
         $bloco = BlocoDePaginas::de(
-            $filtrada()->with('cliente:id,nome')->orderByDesc('ativo')->orderBy('data_inicio')->orderBy('id'),
+            $filtrada()->with('cliente:id,nome,apelido')->orderByDesc('ativo')->orderBy('data_inicio')->orderBy('id'),
             $filtros['pagina'],
             $filtros['por_pagina'],
         );
@@ -66,7 +66,8 @@ class ContratoController extends Controller
             'linhas' => $bloco['itens']->map(fn (Contrato $contrato) => [
                 'id' => $contrato->id,
                 'cliente_id' => $contrato->cliente_id,
-                'cliente' => $contrato->cliente->nome,
+                'cliente' => $contrato->cliente->exibicao(),
+                'cliente_oficial' => $contrato->cliente->nomeOficial(),
                 'resumo' => (string) strtok($contrato->descricao, "\n"),
                 'periodicidade' => $contrato->periodicidade->rotulo(),
                 'modalidade' => $contrato->modalidade->rotulo(),
@@ -409,7 +410,7 @@ class ContratoController extends Controller
                 'forma_pagamento' => $contrato->forma_pagamento->value,
                 'chave_pix_id' => $contrato->chave_pix_id ?? '',
             ] : null,
-            'clienteAtual' => $contrato?->cliente()->first(['id', 'nome']),
+            'clienteAtual' => $contrato?->cliente?->paraBusca(),
             'periodicidades' => Periodicidade::opcoes(),
             'modalidades' => Modalidade::opcoes(),
             'chavesPix' => $request->user()->opcoesDeChavePix(),

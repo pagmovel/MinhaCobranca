@@ -99,7 +99,8 @@ class Cobranca extends Model
     {
         return [
             'id' => $this->id,
-            'cliente' => $this->cliente->nome,
+            'cliente' => $this->cliente->exibicao(),
+            'cliente_oficial' => $this->cliente->nomeOficial(),
             'vencimento' => $this->vencimento->format('d/m/Y'),
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),

@@ -81,7 +81,7 @@ final class ListaDeCobrancas
         $bloco = BlocoDePaginas::de($leves, $filtros['pagina'], $filtros['por_pagina']);
 
         // Só as linhas do bloco carregam recibo, cliente e histórico.
-        $completas = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo', 'auditorias'])
+        $completas = $usuario->cobrancas()->with(['cliente:id,nome,apelido', 'recibo', 'auditorias'])
             ->findMany($bloco['itens']->whereNull('prevista')->pluck('id'))
             ->keyBy('id');
 

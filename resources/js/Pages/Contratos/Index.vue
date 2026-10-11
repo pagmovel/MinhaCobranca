@@ -119,6 +119,7 @@ const cobrancasDo = (contrato) => `/cobrancas?${new URLSearchParams({ cliente_id
                         <tr class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 xl:table-row xl:p-0">
                             <td class="basis-full xl:px-4 xl:py-3">
                                 <p class="font-semibold">{{ contrato.cliente }}</p>
+                                <p v-if="contrato.cliente_oficial" class="text-xs text-grafite/80">{{ contrato.cliente_oficial }}</p>
                                 <p v-if="contrato.resumo" class="text-xs text-grafite/80">{{ contrato.resumo }}</p>
                             </td>
                             <td class="font-estreita text-xs whitespace-nowrap text-grafite/80 xl:px-3 xl:py-3 xl:text-sm">
