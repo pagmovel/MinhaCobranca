@@ -131,6 +131,19 @@ class User extends Authenticatable
         return $this->hasMany(Feriado::class)->orderBy('id');
     }
 
+    public function modelosMensagem(): HasMany
+    {
+        return $this->hasMany(ModeloMensagem::class)->orderBy('id');
+    }
+
+    /** @return list<array{id: int, nome: string, texto: string, padrao: bool}> */
+    public function opcoesDeModelosMensagem(): array
+    {
+        return $this->modelosMensagem()->get()
+            ->map(fn (ModeloMensagem $modelo) => ['id' => $modelo->id, 'nome' => $modelo->nome, 'texto' => $modelo->texto, 'padrao' => $modelo->padrao])
+            ->all();
+    }
+
     /** Calendário do prestador: nacionais + a lista local dele (uma consulta). */
     public function diasUteis(): DiasUteis
     {
