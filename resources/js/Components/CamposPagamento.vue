@@ -1,13 +1,29 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import Campo from './Campo.vue';
+import CadastroRapidoChavePix from './CadastroRapidoChavePix.vue';
 
-defineProps({
+const props = defineProps({
     form: { type: Object, required: true },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
     comLinhaDigitavel: { type: Boolean, default: false },
 });
+
+const page = usePage();
+// Cópia local: a chave cadastrada no modal aparece e já fica escolhida, sem recarregar a página.
+const chaves = ref([...props.chavesPix]);
+const cadastroAberto = ref(false);
+
+watch(() => props.chavesPix, (novas) => {
+    chaves.value = [...novas];
+});
+
+function chaveCriada(chave) {
+    chaves.value.push(chave);
+    props.form.chave_pix_id = chave.id;
+}
 </script>
 
 <template>
@@ -20,26 +36,38 @@ defineProps({
         </div>
         <p v-if="form.errors.forma_pagamento" class="text-xs text-tinta-vermelha sm:col-span-6">{{ form.errors.forma_pagamento }}</p>
 
-        <template v-if="form.forma_pagamento === 'pix'">
-            <Campo v-if="chavesPix.length" id="chave_pix_id" rotulo="Chave PIX para receber" :erro="form.errors.chave_pix_id" class="sm:col-span-6">
-                <select id="chave_pix_id" v-model="form.chave_pix_id" class="entrada" required>
-                    <option value="" disabled>Escolha a chave</option>
-                    <option v-for="chave in chavesPix" :key="chave.id" :value="chave.id">{{ chave.rotulo }}</option>
-                </select>
-            </Campo>
-            <p v-else class="border border-linha bg-white px-4 py-3 text-sm sm:col-span-6">
-                Você ainda não tem chave PIX. <Link href="/perfil#chaves-pix" class="font-semibold text-carbono underline">Cadastrar chave PIX</Link>
-            </p>
-        </template>
+        <Transition name="surgir">
+            <div v-if="form.forma_pagamento === 'pix'" class="grid gap-2 sm:col-span-6">
+                <Campo v-if="chaves.length" id="chave_pix_id" rotulo="Chave PIX para receber" :erro="form.errors.chave_pix_id">
+                    <select id="chave_pix_id" v-model="form.chave_pix_id" class="entrada" required>
+                        <option value="" disabled>Escolha a chave</option>
+                        <option v-for="chave in chaves" :key="chave.id" :value="chave.id">{{ chave.rotulo }}</option>
+                    </select>
+                </Campo>
+                <p v-else class="text-sm text-grafite/80">Você ainda não tem chave PIX cadastrada.</p>
+                <div>
+                    <button type="button" class="botao-secundario px-3 py-1" @click="cadastroAberto = true">+ Nova chave PIX</button>
+                </div>
+            </div>
+        </Transition>
 
-        <Campo
-            v-if="comLinhaDigitavel && form.forma_pagamento === 'boleto'"
-            id="linha_digitavel"
-            rotulo="Linha digitável do boleto (opcional)"
-            :erro="form.errors.linha_digitavel"
-            class="sm:col-span-6"
-        >
-            <input id="linha_digitavel" v-model="form.linha_digitavel" v-mascara="'linhaDigitavel'" inputmode="numeric" class="entrada">
-        </Campo>
+        <Transition name="surgir">
+            <Campo
+                v-if="comLinhaDigitavel && form.forma_pagamento === 'boleto'"
+                id="linha_digitavel"
+                rotulo="Linha digitável do boleto (opcional)"
+                :erro="form.errors.linha_digitavel"
+                class="sm:col-span-6"
+            >
+                <input id="linha_digitavel" v-model="form.linha_digitavel" v-mascara="'linhaDigitavel'" inputmode="numeric" class="entrada">
+            </Campo>
+        </Transition>
+
+        <CadastroRapidoChavePix
+            :aberto="cadastroAberto"
+            :tipos="page.props.tiposChavePix ?? []"
+            @fechar="cadastroAberto = false"
+            @criada="chaveCriada"
+        />
     </fieldset>
 </template>

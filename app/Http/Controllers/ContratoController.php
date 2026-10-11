@@ -157,6 +157,7 @@ class ContratoController extends Controller
             'modalidades' => Modalidade::opcoes(),
             'chavesPix' => $request->user()->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
+            'cadastroRapido' => $request->user()->opcoesDeCadastroRapido(),
         ]);
     }
 }

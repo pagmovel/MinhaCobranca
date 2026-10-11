@@ -80,18 +80,22 @@ class ClienteController extends Controller
     {
         $termo = trim((string) $request->query('q', ''));
 
-        if (mb_strlen($termo) < 2) {
+        // Vazio = o campo acabou de receber o foco: mostra os primeiros. Uma letra só ainda não busca.
+        if (mb_strlen($termo) === 1) {
             return response()->json([]);
         }
 
-        $clientes = $request->user()->clientes()->comTermo($termo)
+        $clientes = $request->user()->clientes()
+            ->when($termo !== '', fn ($consulta) => $consulta->comTermo($termo))
             ->orderBy('nome')->limit(10)->get(['id', 'nome', 'documento']);
 
-        return response()->json($clientes->map(fn (Cliente $cliente) => [
-            'id' => $cliente->id,
-            'nome' => $cliente->nome,
-            'documento' => Documento::formatar($cliente->documento),
-        ]));
+        return response()->json($clientes->map(fn (Cliente $cliente) => $this->paraBusca($cliente)));
+    }
+
+    /** @return array{id: int, nome: string, documento: string} */
+    private function paraBusca(Cliente $cliente): array
+    {
+        return ['id' => $cliente->id, 'nome' => $cliente->nome, 'documento' => Documento::formatar($cliente->documento)];
     }
 
     public function create(Request $request): Response
@@ -99,9 +103,14 @@ class ClienteController extends Controller
         return $this->formulario($request, null);
     }
 
-    public function store(ClienteRequest $request): RedirectResponse
+    public function store(ClienteRequest $request): RedirectResponse|JsonResponse
     {
-        $request->user()->clientes()->create($request->validated());
+        $cliente = $request->user()->clientes()->create($request->validated());
+
+        // Cadastro rápido (modal no contrato/cobrança): devolve o cliente pronto para ser escolhido.
+        if ($request->expectsJson()) {
+            return response()->json($this->paraBusca($cliente), 201);
+        }
 
         return redirect('/clientes')->with('sucesso', 'Cliente salvo.');
     }

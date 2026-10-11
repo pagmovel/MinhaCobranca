@@ -2,7 +2,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
-import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
+import CampoCliente from '../../Components/CampoCliente.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
@@ -14,6 +14,7 @@ const props = defineProps({
     modalidades: { type: Array, required: true },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
+    cadastroRapido: { type: Object, required: true },
 });
 
 const form = useForm(props.contrato ?? {
@@ -40,13 +41,10 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
         <Link href="/contratos" class="font-estreita text-sm text-carbono underline">Voltar para contratos</Link>
         <h1 class="mt-2 mb-6 text-2xl font-semibold">{{ contrato ? 'Editar contrato' : 'Novo contrato' }}</h1>
 
-        <p v-if="!temClientes" class="border border-linha bg-white px-4 py-3 text-sm">
-            Cadastre um cliente antes. <Link href="/clientes/create" class="font-semibold text-carbono underline">Novo cliente</Link>
-        </p>
 
-        <form v-else class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
+        <form class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <BuscaAutosugestao id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" obrigatorio />
+                <CampoCliente :form="form" :inicial="clienteAtual" :opcoes="cadastroRapido" />
             </Campo>
             <Campo id="descricao" rotulo="Descrição dos serviços (como sai no recibo, até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
                 <textarea id="descricao" v-model="form.descricao" rows="6" class="entrada" required />

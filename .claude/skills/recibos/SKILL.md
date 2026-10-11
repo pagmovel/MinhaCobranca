@@ -461,6 +461,23 @@ o relatório mostra a parte que existe.
   setembro aparece em outubro; o rótulo do mês avisa "buscando em todos os meses"). Trocar situação ou mês aplica o
   filtro na hora (`@change`), sem clicar em "Filtrar". **Campo de mês nunca fica bloqueado** (o usuário achou que era
   defeito): escolher um mês nesse estado volta a situação para "Todas" e mostra o mês escolhido. Teste: `tests/Feature/Cobrancas/FiltroSituacaoTest.php`.
+- **Fase 17 — cadastro rápido sem sair da tela (regra do usuário, 2026-10-10):** cliente (`CampoCliente.vue` +
+  `CadastroRapidoCliente.vue`), produto/serviço (`CadastroRapidoProduto.vue`, `CatalogoItens.vue` "Ver catálogo") e
+  chave PIX (`CadastroRapidoChavePix.vue` em `CamposPagamento`) em **modal**; o registro novo volta já escolhido e o
+  formulário de fundo fica intacto. Os `store` de sempre respondem **JSON 201** quando `expectsJson()` (formato da
+  autosugestão); validação e isolamento são os mesmos FormRequests (422 automático). `enviarJson()` (`resources/js/http.js`)
+  manda o `X-XSRF-TOKEN` do cookie e nunca lança. `Modal.vue`: foco preso, Esc fecha, devolve o foco, **clique fora
+  não fecha** (não perder o digitado). Contrato/cobrança **não bloqueiam mais** sem cliente cadastrado.
+  `tiposChavePix` é prop compartilhada (Inertia) — `PagamentoInline` também abre o modal.
+- **Autosugestão (`BuscaAutosugestao.vue`):** lista os 10 primeiros ao focar/clicar com o campo vazio (`q` vazio no
+  servidor; 1 letra continua sem busca), indicador girando no canto direito enquanto busca (`aria-busy` + "Buscando…"
+  para leitor de tela; pedido do usuário), opção "+ Cadastrar «texto»" como última opção (setas/Enter/clique).
+  Ao incluir item, o foco vai para o **preço combinado** (selecionado); preço 0 ganha borda laranja e aviso.
+- **Animações (pedido do usuário):** classes em `app.css` — `<Transition name="surgir">` (avisos, listas),
+  `<TransitionGroup name="lista">` (linhas), `modal`, `.aparecer`, `.destacar` (total que mudou), transição de
+  foco/hover/clique em `.entrada` e botões; tudo desligado por `prefers-reduced-motion`.
+- **Pegadinha (smoke):** `element.focus()` por script num Chrome headless sem foco de janela **não dispara** o evento
+  `focus` (parecia defeito da lista ao focar). Usar clique real: `Input.dispatchMouseEvent` (pressed/released).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

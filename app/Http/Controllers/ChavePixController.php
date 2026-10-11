@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ChavePixRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ChavePixController extends Controller
 {
-    public function store(ChavePixRequest $request): RedirectResponse
+    public function store(ChavePixRequest $request): RedirectResponse|JsonResponse
     {
-        $request->user()->chavesPix()->create($request->validated());
+        $chave = $request->user()->chavesPix()->create($request->validated());
+
+        // Cadastro rápido (modal na forma de pagamento): devolve a chave pronta para ser escolhida.
+        if ($request->expectsJson()) {
+            return response()->json(['id' => $chave->id, 'rotulo' => $chave->rotulo()], 201);
+        }
 
         return back()->with('sucesso', 'Chave PIX cadastrada.');
     }

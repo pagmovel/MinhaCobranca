@@ -113,6 +113,7 @@ class CobrancaController extends Controller
             'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
             'chavesPix' => $request->user()->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
+            'cadastroRapido' => $request->user()->opcoesDeCadastroRapido(),
         ]);
     }
 

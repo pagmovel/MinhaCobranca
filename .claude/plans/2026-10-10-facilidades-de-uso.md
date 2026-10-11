@@ -26,9 +26,9 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 |---|---|---|
 | T17.1 | Filtro de cobranças: Vencendo hoje, Vencidas (ignoram o mês), A vencer; aplica ao escolher | testada (suíte 255/255; navegador ok) — commit `4e7fb2d` |
 | T17.2 | Base: `enviarJson()` (CSRF, 422 → erros), `Modal.vue` acessível (foco preso, Esc, volta o foco), animações base em `app.css` | testada (JS 16/16; build ok) |
-| T17.3 | Itens: catálogo ao focar, "Ver catálogo" (modal com busca), "Cadastrar «texto»" (modal → `POST /produtos-servicos` JSON), foco no preço, "Incluir outro" | pendente |
-| T17.4 | Cliente sem sair da tela: "Cadastrar cliente «texto»" no contrato e na cobrança (modal com CNPJ/CEP → `POST /clientes` JSON) | pendente |
-| T17.5 | Chave PIX sem sair da tela: "Nova chave PIX" na forma de pagamento (modal → `POST /perfil/chaves-pix` JSON) | pendente |
+| T17.3 | Itens: catálogo ao focar, "Ver catálogo" (modal com busca), "Cadastrar «texto»" (modal → `POST /produtos-servicos` JSON), foco no preço, "Incluir outro" | testada (suíte 264/264; navegador: lista ao focar, indicador girando, catálogo em modal, foco no preço, erro 422 no modal) |
+| T17.4 | Cliente sem sair da tela: "Cadastrar cliente «texto»" no contrato e na cobrança (modal com CNPJ/CEP → `POST /clientes` JSON) | testada (suíte; navegador: modal abre com o texto digitado, Esc fecha sem perder o formulário) — gravação real não exercitada no smoke (sem autorização para criar dados) |
+| T17.5 | Chave PIX sem sair da tela: "Nova chave PIX" na forma de pagamento (modal → `POST /perfil/chaves-pix` JSON) | testada (suíte; navegador: modal na forma de pagamento, erro de chave inválida, 390 px) |
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | pendente |
 | T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | pendente |
 
