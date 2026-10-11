@@ -23,8 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->redirectUsersTo('/painel');
         // Em produção o app fica atrás do proxy do EasyPanel (Traefik), que termina o HTTPS: sem isso o Laravel gera
-        // links http:// para os assets do Vite e o navegador bloqueia como conteúdo misto.
-        $middleware->trustProxies(at: '*');
+        // links http:// para os assets do Vite e o navegador bloqueia como conteúdo misto. Só faixas privadas (rede
+        // Docker): '*' confiaria em qualquer IP e o cliente forjaria o X-Forwarded-For para furar o throttle do login.
+        $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
