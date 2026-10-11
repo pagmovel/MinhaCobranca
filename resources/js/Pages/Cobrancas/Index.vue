@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
@@ -19,6 +19,12 @@ const props = defineProps({
 });
 
 const filtro = reactive({ ...props.filtros });
+// Vencendo hoje e vencidas valem para qualquer mês (o servidor ignora o mês nesses dois).
+const todosOsMeses = computed(() => ['vence_hoje', 'vencida'].includes(filtro.status));
+const vazio = computed(() => ({
+    vence_hoje: 'Nenhuma cobrança vence hoje.',
+    vencida: 'Nenhuma cobrança vencida em aberto.',
+}[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste mês e filtros.'));
 
 const filtrar = () => router.get('/cobrancas', filtro, { preserveState: true, replace: true });
 const aberta = (cobranca) => ['a_vencer', 'vence_hoje', 'vencida'].includes(cobranca.situacao);
@@ -33,13 +39,16 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
         </div>
 
         <form class="mb-6 grid gap-4 sm:grid-cols-4" @submit.prevent="filtrar">
-            <Campo id="mes" rotulo="Mês do vencimento">
-                <input id="mes" v-model="filtro.mes" type="month" class="entrada">
+            <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (todos os meses)' : 'Mês do vencimento'">
+                <input id="mes" v-model="filtro.mes" type="month" class="entrada" :disabled="todosOsMeses" @change="filtrar">
             </Campo>
             <Campo id="status" rotulo="Situação">
-                <select id="status" v-model="filtro.status" class="entrada">
+                <select id="status" v-model="filtro.status" class="entrada" @change="filtrar">
                     <option value="">Todas</option>
-                    <option value="pendente">Pendentes</option>
+                    <option value="vence_hoje">Vencendo hoje</option>
+                    <option value="vencida">Vencidas</option>
+                    <option value="a_vencer">A vencer</option>
+                    <option value="pendente">Pendentes (todas em aberto)</option>
                     <option value="paga">Pagas</option>
                     <option value="cancelada">Canceladas</option>
                 </select>
@@ -53,7 +62,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
         </form>
 
         <p v-if="!cobrancas.length" class="border border-carbono bg-white px-4 py-3 text-sm">
-            Nenhuma cobrança com vencimento neste mês e filtros.
+            {{ vazio }}
         </p>
 
         <ul v-else class="divide-y divide-linha border border-linha bg-white">

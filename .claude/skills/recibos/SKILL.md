@@ -456,6 +456,10 @@ o relatório mostra a parte que existe.
   contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
 - **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
   disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
+- **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
+  "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
+  setembro aparece em outubro; o campo de mês fica desativado com "(todos os meses)"). Trocar situação ou mês aplica o
+  filtro na hora (`@change`), sem clicar em "Filtrar". Teste: `tests/Feature/Cobrancas/FiltroSituacaoTest.php`.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
