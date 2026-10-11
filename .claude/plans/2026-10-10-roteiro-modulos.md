@@ -6,46 +6,50 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
-### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da validação das Fases 20–22)
-- **Fases 20, 21 e 22 validadas pelo usuário em 2026-10-11 ("Tudo conferido").** Migração do apelido aplicada no dev.
-- Correção pós-validação: iniciais centralizadas no WebISS sem logo (no próprio `webiss-v1`, decisão do usuário).
-- **Próximo:** revisão final da branch e decisão do usuário sobre o merge na `main` das Fases 17 (resto) a 22;
-  pendências antigas na lista abaixo (T17.9, T17.12, T17.14, T17.11; sessões do SMOKE na tabela `sessions`).
+### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
+- **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido"). Nada em andamento; árvore limpa.
+- **Próximo:** o usuário escolhe no backlog da seção 0.2. Sugestão: (1) revisão final da branch + merge na `main`;
+  (2) desenho da T17.11 (renovar/prorrogar contrato).
 
 ### 0.2 Estado da branch
-**Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
-- Último commit: o da conferência visual da Fase 20 (2026-10-11), depois de `809544d`.
+**Branch:** `feat/modulo-cobranca-catalogo`, no remoto, árvore limpa. Último commit: `bf1a814` (iniciais do WebISS).
 - Suítes: PHP **399/399** (`php artisan test --compact`), JS **50/50** (`node --test resources/js/*.test.js`), build ok.
-- **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
-  do usuário.
-- O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste
-  (`b83f22d`).
+- **Banco de dev:** todas as migrações aplicadas (a do apelido em 2026-10-11, com o "sim" do usuário).
+- **Merge na `main` ainda não feito** das Fases 17 (resto) a 22. A memória "Merge e push por fase" autoriza merge por fase
+  concluída; antes, fazer a **revisão final da branch inteira** (`git merge-base main HEAD`..HEAD) e mostrar o resultado.
+- O usuário fez um commit dele na `main` (`761f6d0`, PHP ^8.4 no composer); a branch tem o mesmo ajuste (`b83f22d`).
 
-**Fases desta sessão**
+**Fases recentes**
 
 | Fase | O quê | Plano | Estado |
 |---|---|---|---|
-| 18 | Previsão de recebimentos: previstas calculadas pelos contratos, nada gravado | `.claude/plans/2026-10-11-previsao-de-recebimentos.md` | **validada** |
-| 19 | Lista de cobranças por ajax: blocos de 4 páginas, cache, paginador acima e abaixo, totais por situação, esqueleto | `.claude/plans/2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; revisão final feita e corrigida (`1a84e9a`) |
-| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | `.claude/plans/2026-10-11-listas-por-ajax.md` (especificação aprovada: "concordo") | T20.1–T20.10 **testadas**; revisão final e conferência visual feitas e corrigidas; **falta a validação do usuário** |
+| 18 | Previsão de recebimentos (previstas calculadas, nada gravado) | `2026-10-11-previsao-de-recebimentos.md` | **validada** |
+| 19 | Cobranças por ajax: blocos de 4 páginas, cache, paginador, totais, esqueleto | `2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; falta conferir "dar baixa e a lista recarregar" (grava pagamento: pede autorização) |
+| 20 | Todas as listas por ajax e em tabela (T17.18) | `2026-10-11-listas-por-ajax.md` | **validada** (2026-10-11); Minor 2–7 e o "Enviar" do Painel a 390 px adiados (motivos no plano) |
+| 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
+| 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
 
-Detalhes da Fase 19: as 5 Minor adiadas, a pegadinha do `<tfoot>` e as decisões estão no "Registro de execução" do
-plano.
+**Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
+1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
+2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
+   fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
+   data fica para a prorrogação.
+3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
+   Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
+4. **T17.17 — ordenar cobranças pelo cabeçalho** (vencimento, valor, cliente), modelo `tables-m01`.
+5. **T17.19 — seleção de várias cobranças e ação em lote com prévia** (padrão de usabilidade 9). Deixada para depois.
+6. **Minor adiados da Fase 20** (lista no "Registro de execução" do plano): 2 pedido a mais, 3 e-mail longo em Usuários a
+   390 px (só conferível com conta admin), 4 e 5 período inválido, 6 foco, 7 "Tentar de novo"; e o botão "Enviar" do
+   Painel a 390 px (`LinhaCobranca`). Minor adiados da Fase 19 no plano dela.
+7. **Validações antigas:** T17.9 (smoke do encerramento), T17.12 (corrigir/desfazer baixa), T17.14 (área mais larga).
+8. **Conferência pendente da Fase 19:** dar baixa e ver a lista recarregar (grava pagamento: pede autorização).
+9. **Sessões do SMOKE na tabela `sessions`** (deixadas por testes no navegador): apagar só com o "sim" do usuário.
+10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores (planejados).
+11. Segurança do PostgreSQL de dev (sem SSL, superusuário exposto): fora do repositório, ver Pegadinhas da skill.
 
-**Fase 20:** todas as listas (Clientes, Contratos, Produtos e serviços, Auditoria, Usuários, Painel, Relatórios) por
-ajax; especificação e plano aprovados pelo usuário em 2026-10-11 ("concordo"). Executada inline em 2026-10-11; detalhes,
-decisões e os 10 Minor adiados da revisão final no "Registro de execução" do plano; padrão na skill ("Fase 20").
-
-**Pendências que dependem do usuário**
-1. Fase 20: ~~conferência visual~~ **feita em 2026-10-11**; Minor decididos (ver 0.1); falta validar.
-2. ~~Conferência visual da lista de cobranças~~ **feita em 2026-10-11** (ver plano da Fase 19). Falta só "dar baixa e
-   ver a lista recarregar": **grava pagamento**, então pede autorização à parte. Usar o Chrome dedicado da porta 9333
-   (`BU_CDP_URL`), nunca o do usuário.
-3. Validações antigas: T17.9 (smoke), T17.12, T17.14.
-4. **T17.13 (apelido do cliente) — PRÓXIMO TRABALHO** (o usuário lembrou de novo em 2026-10-11). O usuário respondeu **"Sim"** em 2026-10-11 — **já existe recibo emitido em
-   produção.** Logo, mostrar o apelido no recibo exige criar `webiss-v2`/`danfse-v2`; os `-v1` não mudam.
-5. T17.11 (renovar ou prorrogar contrato): desenho a fazer com o usuário.
-6. ~~`MATERIAIS/lists-m05.html` vazio~~ — o usuário excluiu o arquivo (2026-10-11).
+**Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
+fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →
+plano em `.claude/plans/` com fases/tarefas e estado → execução com TDD); escrita no banco sempre pelo PORTÃO-BANCO.
 
 **Fatos desta sessão que não estão no código**
 - **419 ao excluir produto (relato do usuário):**
