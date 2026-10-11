@@ -16,7 +16,6 @@ const VARIAVEIS = [
 
 const editando = ref(null); // id do modelo em edição, 'novo' para inclusão
 const confirmando = ref(null);
-const textarea = ref(null);
 const form = useForm({ nome: '', texto: '', padrao: false });
 
 const linhas = () => (editando.value === 'novo' ? [...props.modelos, { id: 'novo' }] : props.modelos);
@@ -32,9 +31,14 @@ async function abrir(modelo = null) {
     document.getElementById('mensagem_nome')?.focus();
 }
 
-/** Insere o token na posição do cursor — o foco some ao clicar no botão, então guarda a posição antes. */
+/**
+ * Insere o token na posição do cursor — o foco some ao clicar no botão, então guarda a posição antes.
+ * Busca por id (como `abrir()` faz com "mensagem_nome"), não por `ref`: o textarea está dentro de um `v-for`
+ * (linha do modelo), e o Vue 3.5 guarda um `ref` em `v-for` como array — pegar `.value` direto dava
+ * `campo.focus is not a function` e o token sempre ia para o fim do texto (achado da revisão, T24.9).
+ */
 function inserir(token) {
-    const campo = textarea.value;
+    const campo = document.getElementById('mensagem_texto');
     const inicio = campo?.selectionStart ?? form.texto.length;
     const fim = campo?.selectionEnd ?? form.texto.length;
     form.texto = form.texto.slice(0, inicio) + token + form.texto.slice(fim);
@@ -83,7 +87,7 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
                     </div>
                     <div>
                         <label for="mensagem_texto" class="mb-1 block text-xs font-medium text-grafite/75">Texto</label>
-                        <textarea id="mensagem_texto" ref="textarea" v-model="form.texto" maxlength="2000" rows="5" class="entrada" required />
+                        <textarea id="mensagem_texto" v-model="form.texto" maxlength="2000" rows="5" class="entrada" required />
                         <p v-if="form.errors.texto" class="mt-1 text-xs text-tinta-vermelha">{{ form.errors.texto }}</p>
                         <div class="mt-2 flex flex-wrap gap-2">
                             <button v-for="variavel in VARIAVEIS" :key="variavel.token" type="button" class="botao-secundario text-xs" :title="variavel.legenda" @click="inserir(variavel.token)">
