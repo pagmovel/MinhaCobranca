@@ -961,6 +961,23 @@ o relatório mostra a parte que existe.
   - **Prévia reativa no formulário de modelo** (`MensagensWhatsapp.vue`, pedido do usuário "preciso validar antes de
     salvar"): `computed` que chama `montarMensagem(form.texto, EXEMPLO)` com dados fictícios fixos — não depende do
     servidor, atualiza a cada tecla. Mesmo módulo puro usado na janela de envio real, então o comportamento bate.
+  - **Cascata `{a|b|c}` nas variáveis (2026-10-11, pedido do usuário):** uma chave pode trazer várias variáveis
+    separadas por `|` — `{contato|apelido|razao_social}` usa a primeira da lista que não estiver vazia. Implementado
+    com um mapa `{nome: valor}` + um único `texto.replace(regex, callback)`, não mais `replaceAll` em cadeia —
+    variável nova = só mais uma entrada no mapa, entra na cascata de graça. Duas regras só fazem sentido lidas
+    juntas: se **qualquer** opção da cascata não existir no mapa (erro de digitação em uma das três), a chave
+    inteira fica literal — mesma regra de "variável desconhecida" de sempre, não dá pra aplicar só a parte boa; se
+    **todas** existem mas estão vazias, vira string nunca a chave literal (quem vê a mensagem final não é
+    programador, não pode sobrar `{a|b|c}` no meio do texto).
+  - **`{saudacao}` (Bom dia/Boa tarde/Boa noite) calculada no front-end**, não no servidor — é a hora de quem está
+    prestes a mandar a mensagem (o dono do negócio, lendo a prévia e decidindo a hora de tocar em enviar), não a
+    hora do servidor nem a hora de quando os dados foram buscados. `montarMensagem` aceita `agora` (um `Date`)
+    como parâmetro opcional, default `new Date()` — é o que torna a função testável com `node --test` sem mockar
+    relógio global: os testes passam uma data fixa.
+  - **`{apelido}` não é o mesmo que `{cliente}`:** `{cliente}` já resolvia sozinho para "apelido, senão nome" desde
+    o início da Fase 24 (não mudou). `{apelido}` é uma variável nova e independente — só o apelido, vazio se não
+    houver — para quem quer montar a própria cascata (`{apelido|razao_social}`) sem o comportamento combinado de
+    `{cliente}`. As duas convivem; nenhuma substitui a outra.
 
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
