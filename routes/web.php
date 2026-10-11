@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CobrancaController;
+use App\Http\Controllers\ConsultaController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
@@ -41,6 +42,10 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
         ->except('show')->parameters(['produtos-servicos' => 'produto']);
     Route::get('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajuste']);
     Route::post('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajustar']);
+    Route::middleware('throttle:30,1')->group(function () {
+        Route::get('/consultas/cnpj/{cnpj}', [ConsultaController::class, 'cnpj'])->where('cnpj', '[0-9A-Za-z]{1,20}');
+        Route::get('/consultas/cep/{cep}', [ConsultaController::class, 'cep'])->where('cep', '[0-9\-]{1,10}');
+    });
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);

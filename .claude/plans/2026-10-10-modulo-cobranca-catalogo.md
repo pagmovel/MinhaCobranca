@@ -42,7 +42,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 13 | T13.1 Filtros e paginação de Clientes | testada (suíte 228/228; build ok) |
 | 13 | T13.2 Filtros e paginação de Contratos | testada (suíte 231/231; JS 10/10; build ok) |
 | 13 | T13.3 Fechamento da fase 13 | concluída (sem banco; merge na main) |
-| 14 | T14.1 Consulta de CNPJ e CEP no servidor | pendente |
+| 14 | T14.1 Consulta de CNPJ e CEP no servidor | testada (suíte 239/239) |
 | 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | pendente |
 | 14 | T14.3 Fechamento da fase 14 | pendente |
 | 15 | T15.1 Painel: recebido = pago no mês | pendente |
@@ -3620,7 +3620,7 @@ Respostas reais conferidas em 2026-10-10 (só leitura, CNPJ público `00.000.000
 
 ### Tarefa T14.1: Consulta de CNPJ e CEP no servidor
 
-**Estado:** pendente
+**Estado:** testada (suíte 239/239)
 
 **Arquivos:**
 - Criar: `app/Services/Consultas/BrasilApiCnpj.php`, `app/Services/Consultas/ViaCep.php`,
