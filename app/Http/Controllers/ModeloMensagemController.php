@@ -18,6 +18,10 @@ class ModeloMensagemController extends Controller
             if ($dados['padrao']) {
                 $request->user()->modelosMensagem()->update(['padrao' => false]);
             }
+            // Só um modelo por tipo de situação (pedido do usuário, 2026-10-11): marcar desmarca o anterior do mesmo tipo.
+            if ($dados['tipo_situacao'] !== null) {
+                $request->user()->modelosMensagem()->where('tipo_situacao', $dados['tipo_situacao'])->update(['tipo_situacao' => null]);
+            }
             $request->user()->modelosMensagem()->create($dados);
         });
 
@@ -34,6 +38,10 @@ class ModeloMensagemController extends Controller
             $dados['padrao'] = $dados['padrao'] || (! $haOutroPadrao && $modelo->padrao);
             if ($dados['padrao']) {
                 $request->user()->modelosMensagem()->whereKeyNot($mensagem)->update(['padrao' => false]);
+            }
+            if ($dados['tipo_situacao'] !== null) {
+                $request->user()->modelosMensagem()->whereKeyNot($mensagem)
+                    ->where('tipo_situacao', $dados['tipo_situacao'])->update(['tipo_situacao' => null]);
             }
             $modelo->update($dados);
         });

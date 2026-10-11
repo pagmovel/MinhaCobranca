@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
+use App\Enums\TipoAvisoModelo;
 use App\Enums\TipoChavePix;
 use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\ModeloMensagem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -72,6 +74,43 @@ class AvisoWhatsappTest extends TestCase
 
         $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")
             ->assertJson(['itens' => [['nome' => 'Serviço', 'valor_centavos' => 5000]]]);
+    }
+
+    /** Pedido do usuário (2026-10-11): pré-selecionar o modelo cadastrado para a situação da cobrança. */
+    public function test_sugere_o_modelo_marcado_para_a_situacao_da_cobranca(): void
+    {
+        $modeloVencida = ModeloMensagem::factory()->for($this->usuario)->create(['tipo_situacao' => TipoAvisoModelo::Vencida]);
+        $cobranca = $this->cobranca(['vencimento' => '2026-10-05']); // antes de "hoje" (2026-10-11): vencida
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['modelo_sugerido_id' => $modeloVencida->id]);
+    }
+
+    public function test_sugere_o_modelo_de_vence_hoje(): void
+    {
+        $modeloHoje = ModeloMensagem::factory()->for($this->usuario)->create(['tipo_situacao' => TipoAvisoModelo::VenceHoje]);
+        $cobranca = $this->cobranca(['vencimento' => '2026-10-11']); // "hoje"
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['modelo_sugerido_id' => $modeloHoje->id]);
+    }
+
+    public function test_sem_modelo_cadastrado_para_a_situacao_nao_sugere_nada(): void
+    {
+        ModeloMensagem::factory()->for($this->usuario)->create(['tipo_situacao' => TipoAvisoModelo::AVencer]);
+        $cobranca = $this->cobranca(['vencimento' => '2026-10-05']); // vencida, sem modelo desse tipo
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['modelo_sugerido_id' => null]);
+    }
+
+    /** Lote misto (decisão do usuário): usa a flag mais urgente do grupo — vencida > vence hoje > a vencer. */
+    public function test_grupo_misto_usa_o_modelo_da_situacao_mais_urgente(): void
+    {
+        $modeloVencida = ModeloMensagem::factory()->for($this->usuario)->create(['tipo_situacao' => TipoAvisoModelo::Vencida]);
+        ModeloMensagem::factory()->for($this->usuario)->create(['nome' => 'A vencer', 'tipo_situacao' => TipoAvisoModelo::AVencer]);
+        $vencida = $this->cobranca(['vencimento' => '2026-10-05']);
+        $aVencer = $this->cobranca(['vencimento' => '2026-10-20']);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$vencida->id}&ids[]={$aVencer->id}")
+            ->assertJson(['modelo_sugerido_id' => $modeloVencida->id]);
     }
 
     public function test_inclui_apelido_e_razao_social_separados(): void

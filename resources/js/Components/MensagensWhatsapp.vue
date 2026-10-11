@@ -5,6 +5,7 @@ import { montarMensagem } from '../mensagemWhatsapp.js';
 
 const props = defineProps({
     modelos: { type: Array, required: true },
+    tiposAviso: { type: Array, required: true },
     prestador: { type: String, default: '' },
 });
 
@@ -40,7 +41,9 @@ const EXEMPLO = {
 
 const editando = ref(null); // id do modelo em edição, 'novo' para inclusão
 const confirmando = ref(null);
-const form = useForm({ nome: '', texto: '', padrao: false });
+const form = useForm({ nome: '', texto: '', padrao: false, tipo_situacao: '' });
+
+const rotuloDoTipo = (valor) => props.tiposAviso.find((tipo) => tipo.valor === valor)?.rotulo;
 
 const previa = computed(() => montarMensagem(form.texto, { ...EXEMPLO, prestador: props.prestador || 'Seu nome ou razão social' }));
 
@@ -51,6 +54,7 @@ async function abrir(modelo = null) {
     form.nome = modelo?.nome ?? '';
     form.texto = modelo?.texto ?? '';
     form.padrao = modelo?.padrao ?? false;
+    form.tipo_situacao = modelo?.tipo_situacao ?? '';
     confirmando.value = null;
     editando.value = modelo ? modelo.id : 'novo';
     await nextTick();
@@ -128,6 +132,19 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
                     <label class="flex items-center gap-2 text-sm">
                         <input v-model="form.padrao" type="checkbox"> Usar como modelo padrão
                     </label>
+                    <div>
+                        <label for="mensagem_tipo_situacao" class="mb-1 block text-xs font-medium text-grafite/75">
+                            Selecionar automaticamente quando a cobrança estiver
+                        </label>
+                        <select id="mensagem_tipo_situacao" v-model="form.tipo_situacao" class="entrada">
+                            <option value="">Nenhuma (escolher manualmente)</option>
+                            <option v-for="tipo in tiposAviso" :key="tipo.valor" :value="tipo.valor">{{ tipo.rotulo }}</option>
+                        </select>
+                        <p id="tipo-situacao-ajuda" class="mt-1 font-estreita text-xs text-grafite/70">
+                            Ao abrir a janela de aviso, este modelo já vem escolhido quando a cobrança estiver nessa
+                            situação — só um modelo por situação, marcar desmarca o anterior.
+                        </p>
+                    </div>
                     <div class="flex flex-wrap gap-2">
                         <button class="botao" :disabled="form.processing">{{ modelo.id === 'novo' ? 'Cadastrar modelo' : 'Salvar modelo' }}</button>
                         <button type="button" class="botao-secundario" @click="editando = null">Cancelar</button>
@@ -139,6 +156,7 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
                         <p class="font-semibold break-words">
                             {{ modelo.nome }}
                             <span v-if="modelo.padrao" class="ml-1 font-estreita text-xs text-grafite/70">(padrão)</span>
+                            <span v-if="modelo.tipo_situacao" class="ml-1 font-estreita text-xs text-grafite/70">({{ rotuloDoTipo(modelo.tipo_situacao) }})</span>
                         </p>
                         <p class="line-clamp-1 font-estreita text-sm text-grafite/80">{{ modelo.texto }}</p>
                     </div>

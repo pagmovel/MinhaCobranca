@@ -18,6 +18,7 @@ const props = defineProps({
     feriadosNacionais: { type: Array, required: true },
     vencimentosParaAjustar: { type: Array, required: true },
     modelosMensagem: { type: Array, required: true },
+    tiposAvisoModelo: { type: Array, required: true },
 });
 
 const form = useForm({ ...props.perfil, logo: null });
@@ -83,6 +84,6 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
 
         <ChavesPix class="mt-10" :chaves="chavesPix" :tipos="tiposChavePix" />
         <Feriados class="mt-10" :feriados="feriados" :nacionais="feriadosNacionais" :vencimentos="vencimentosParaAjustar" />
-        <MensagensWhatsapp class="mt-10" :modelos="modelosMensagem" :prestador="form.nome_fantasia || form.name" />
+        <MensagensWhatsapp class="mt-10" :modelos="modelosMensagem" :tipos-aviso="tiposAvisoModelo" :prestador="form.nome_fantasia || form.name" />
     </CamadaApp>
 </template>

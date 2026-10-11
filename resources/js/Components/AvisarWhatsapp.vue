@@ -63,7 +63,9 @@ watch(() => props.aberto, async (aberto) => {
             throw new Error('falhou');
         }
         dados.value = await resposta.json();
-        modeloEscolhido.value = padrao.value?.id ?? null;
+        // Pedido do usuário: o modelo marcado para a situação da cobrança (vencida/vence hoje/a vencer) tem
+        // prioridade sobre o padrão geral — o servidor já decide qual bate, considerando o lote inteiro.
+        modeloEscolhido.value = dados.value.modelo_sugerido_id ?? padrao.value?.id ?? null;
         telefone.value = numeroWhatsapp(dados.value.telefone) ? formatadores.telefone(dados.value.telefone) : '';
         atualizarTexto();
     } catch {

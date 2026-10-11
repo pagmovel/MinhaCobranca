@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\TipoAvisoModelo;
 use Database\Factories\ModeloMensagemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['nome', 'texto', 'padrao'])]
+#[Fillable(['nome', 'texto', 'padrao', 'tipo_situacao'])]
 class ModeloMensagem extends Model
 {
     /** @use HasFactory<ModeloMensagemFactory> */
@@ -18,7 +19,7 @@ class ModeloMensagem extends Model
 
     protected function casts(): array
     {
-        return ['padrao' => 'boolean'];
+        return ['padrao' => 'boolean', 'tipo_situacao' => TipoAvisoModelo::class];
     }
 
     public function user(): BelongsTo

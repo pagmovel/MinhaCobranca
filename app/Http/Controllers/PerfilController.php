@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\TipoAvisoModelo;
 use App\Enums\TipoChavePix;
 use App\Http\Requests\PerfilRequest;
 use App\Models\ChavePix;
@@ -60,6 +61,7 @@ class PerfilController extends Controller
             // Recalculada a cada abertura: cadastrar ou excluir feriado volta para cá e a prévia já vem atualizada.
             'vencimentosParaAjustar' => $ajuste->previa($usuario),
             'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
+            'tiposAvisoModelo' => TipoAvisoModelo::opcoes(),
             'ufs' => Ufs::TODAS,
         ]);
     }

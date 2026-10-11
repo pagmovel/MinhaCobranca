@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TipoAvisoModelo;
 use App\Models\ModeloMensagem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -107,6 +108,52 @@ class ModelosMensagemTest extends TestCase
         $this->assertTrue($um->fresh()->padrao);
     }
 
+    /** Pedido do usuário (2026-10-11): pré-selecionar o modelo certo pela situação da cobrança. Só um por tipo. */
+    public function test_marcar_tipo_situacao_desmarca_o_modelo_anterior_com_o_mesmo_tipo(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x', 'tipo_situacao' => 'vencida']);
+        $um = $this->usuario->modelosMensagem()->sole();
+
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y', 'tipo_situacao' => 'vencida']);
+        $dois = $this->usuario->modelosMensagem()->where('nome', 'Dois')->sole();
+
+        $this->assertNull($um->fresh()->tipo_situacao);
+        $this->assertSame(TipoAvisoModelo::Vencida, $dois->fresh()->tipo_situacao);
+    }
+
+    public function test_tipos_diferentes_convivem_sem_conflito(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x', 'tipo_situacao' => 'vencida']);
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y', 'tipo_situacao' => 'a_vencer']);
+
+        $this->assertSame(TipoAvisoModelo::Vencida, $this->usuario->modelosMensagem()->where('nome', 'Um')->sole()->tipo_situacao);
+        $this->assertSame(TipoAvisoModelo::AVencer, $this->usuario->modelosMensagem()->where('nome', 'Dois')->sole()->tipo_situacao);
+    }
+
+    public function test_varios_modelos_sem_tipo_situacao_nao_conflitam(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x'])->assertSessionHasNoErrors();
+        $this->post('/perfil/mensagens', ['nome' => 'Dois', 'texto' => 'y'])->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $this->usuario->modelosMensagem()->whereNull('tipo_situacao')->count());
+    }
+
+    public function test_desmarcar_o_tipo_situacao_mandando_vazio_funciona(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x', 'tipo_situacao' => 'vencida']);
+        $modelo = $this->usuario->modelosMensagem()->sole();
+
+        $this->put("/perfil/mensagens/{$modelo->id}", ['nome' => 'Um', 'texto' => 'x', 'tipo_situacao' => '']);
+
+        $this->assertNull($modelo->fresh()->tipo_situacao);
+    }
+
+    public function test_tipo_situacao_invalido_e_rejeitado(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Um', 'texto' => 'x', 'tipo_situacao' => 'vencidissima'])
+            ->assertSessionHasErrors('tipo_situacao');
+    }
+
     public function test_modelo_de_outro_usuario_da_404(): void
     {
         $alheio = ModeloMensagem::factory()->create();
@@ -118,12 +165,13 @@ class ModelosMensagemTest extends TestCase
 
     public function test_tela_do_perfil_traz_os_modelos_do_usuario(): void
     {
-        $this->post('/perfil/mensagens', ['nome' => 'Aviso', 'texto' => 'Olá {cliente}!', 'padrao' => true]);
+        $this->post('/perfil/mensagens', ['nome' => 'Aviso', 'texto' => 'Olá {cliente}!', 'padrao' => true, 'tipo_situacao' => 'vencida']);
 
         $this->get('/perfil')->assertInertia(fn (Assert $pagina) => $pagina
             ->has('modelosMensagem', 1)
             ->where('modelosMensagem.0.nome', 'Aviso')
-            ->where('modelosMensagem.0.padrao', true));
+            ->where('modelosMensagem.0.padrao', true)
+            ->where('modelosMensagem.0.tipo_situacao', 'vencida'));
     }
 
     public function test_nome_e_texto_obrigatorios_e_texto_ate_2000(): void

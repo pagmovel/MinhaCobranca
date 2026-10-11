@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,9 @@ use Illuminate\Support\Str;
 
 class AvisoWhatsappController extends Controller
 {
+    /** Da mais urgente para a menos: decide, no lote, qual situação escolhe o modelo sugerido (decisão do usuário). */
+    private const PRIORIDADE_SITUACAO = ['vencida' => 0, 'vence_hoje' => 1, 'a_vencer' => 2];
+
     /** Dados para montar a mensagem (servidor nunca manda itens de dois clientes juntos). */
     public function dados(Request $request): JsonResponse
     {
@@ -40,6 +44,13 @@ class AvisoWhatsappController extends Controller
         // Em lote (várias cobranças do grupo), usa a chave PIX da primeira que tiver uma — decisão do usuário.
         $comPix = $cobrancas->first(fn (Cobranca $cobranca) => $cobranca->forma_pagamento === FormaPagamento::Pix && $cobranca->chavePix !== null);
 
+        // Pré-seleciona o modelo marcado para a situação mais urgente do grupo (pedido do usuário, 2026-10-11):
+        // vencida > vence hoje > a vencer. Sem modelo cadastrado para essa situação, não sugere nada (cai no padrão).
+        $hoje = CarbonImmutable::today();
+        $situacaoDoGrupo = $cobrancas->map(fn (Cobranca $cobranca) => $cobranca->situacao($hoje))
+            ->sort(fn ($a, $b) => self::PRIORIDADE_SITUACAO[$a] <=> self::PRIORIDADE_SITUACAO[$b])->first();
+        $modeloSugerido = $request->user()->modelosMensagem()->where('tipo_situacao', $situacaoDoGrupo)->first();
+
         return response()->json([
             'cliente' => $cobrancas->first()->cliente->exibicao(),
             'telefone' => $cobrancas->first()->cliente->telefone ?? '',
@@ -50,6 +61,7 @@ class AvisoWhatsappController extends Controller
             'vencimentos' => $cobrancas->pluck('vencimento')->unique()->sort()->map(fn ($data) => $data->toDateString())->values(),
             'total_centavos' => $cobrancas->sum('valor_centavos'),
             'chave_pix' => $comPix ? $comPix->chavePix->tipo->formatar($comPix->chavePix->chave) : '',
+            'modelo_sugerido_id' => $modeloSugerido?->id,
         ]);
     }
 

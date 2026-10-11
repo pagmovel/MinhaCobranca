@@ -138,11 +138,14 @@ class User extends Authenticatable
         return $this->hasMany(ModeloMensagem::class)->orderBy('id');
     }
 
-    /** @return list<array{id: int, nome: string, texto: string, padrao: bool}> */
+    /** @return list<array{id: int, nome: string, texto: string, padrao: bool, tipo_situacao: ?string}> */
     public function opcoesDeModelosMensagem(): array
     {
         return $this->modelosMensagem()->get()
-            ->map(fn (ModeloMensagem $modelo) => ['id' => $modelo->id, 'nome' => $modelo->nome, 'texto' => $modelo->texto, 'padrao' => $modelo->padrao])
+            ->map(fn (ModeloMensagem $modelo) => [
+                'id' => $modelo->id, 'nome' => $modelo->nome, 'texto' => $modelo->texto, 'padrao' => $modelo->padrao,
+                'tipo_situacao' => $modelo->tipo_situacao?->value,
+            ])
             ->all();
     }
 
