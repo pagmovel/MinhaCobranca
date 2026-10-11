@@ -8,9 +8,11 @@ sem depender do histórico.
 
 ### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
 - **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido").
-- **Fase 23 (vencimento em dia útil): plano escrito** em `.claude/plans/2026-10-11-vencimento-em-dia-util.md`
-  (7 tarefas em 3 fases, código completo; nenhuma executada). **Aguarda revisão do usuário e a escolha da forma de
-  execução** (recomendada: nativa). Perguntas P1 (auditoria do ajuste) e P2 (aviso no Painel) no plano, com padrão "não".
+- **Fase 23 (vencimento em dia útil): executada** (nativa), plano `.claude/plans/2026-10-11-vencimento-em-dia-util.md`.
+  T23.1–T23.11 testadas; migração `feriados` aplicada no dev; P1/P2 = sim (feitas); spinner global "Carregando…" (pedido
+  do usuário); duas revisões opus (Important corrigidos); conferência no navegador feita. **Aguarda:** validação do
+  usuário, decisão sobre 6 Minor da 2ª revisão (lista no registro do plano) e o merge na `main` (antes, a revisão final
+  da branch inteira, Fases 17–23).
 - Depois: Fase 24 (aviso pelo WhatsApp, spec aguardando revisão); revisão final da branch + merge na `main`; T17.11.
 
 ### 0.2 Estado da branch
