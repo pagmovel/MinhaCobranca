@@ -411,6 +411,11 @@ o relatório mostra a parte que existe.
   copiado); `orderBy('id')` de desempate para a paginação não repetir nem pular registro; escopo `Cliente::comTermo`
   compartilhado entre lista e autosugestão; a prop da lista continua sendo array (testes antigos valem) e a paginação
   vai em `paginacao`.
+- T13.2: filtros de contratos (cliente por autosugestão, situação, modalidade, forma de pagamento, produto via
+  `whereHas('itens')`); `cliente_id` alheio não traz nada (a consulta parte sempre da relação do usuário).
+- **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
+  tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
+  método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
