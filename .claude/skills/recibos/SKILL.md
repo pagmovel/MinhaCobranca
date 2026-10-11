@@ -33,6 +33,15 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
    com cara própria** (`botao-perigo` / `botao-perigo-confirmar`, confirmação no segundo clique).
 9. **Ação em lote mostra a prévia antes** (o que muda, quanto, o que fica) e só então confirma.
 10. **390 px sem rolagem horizontal** (fieldset com `min-w-0`; contêiner de tabela `relative overflow-x-auto`).
+11. **Largura da área de conteúdo** (pedido do usuário em 2026-10-11, "está desperdiçando muito espaço à esquerda e à
+    direita"): o `<main>` do `CamadaApp.vue` fica encostado no menu, sem `mx-auto`, limitado a `max-w-[96rem]` e com
+    `min-w-0` (ele é item de grid `13rem_1fr`; sem `min-w-0` uma tabela larga estica a página). Listas e tabelas usam a
+    largura toda; **formulários e textos continuam em `max-w-3xl`** (linha de leitura). Não voltar a centralizar em
+    `max-w-5xl`.
+12. **Listas em tabela** (direção aprovada em 2026-10-11, modelos em `MATERIAIS/tables-m0*.html` — só a estrutura, nunca
+    a paleta azul, fotos externas ou ícones do Google): colunas alinhadas, valor à direita em `tabular-nums`, **uma
+    ação principal por linha conforme a situação** e as demais num menu "⋯", formulário da ação numa faixa abaixo da
+    linha, abas de situação com contagem e soma, ordenação pelo cabeçalho; em 390 px a tabela vira cartões.
 
 Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
 
