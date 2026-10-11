@@ -1525,3 +1525,92 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
     tela anuncia "Carregando…" a cada pedido e a pílula pisca em pedido rápido (sugestão: atrasar ~250 ms); (4) o Painel
     monta a prévia inteira só para contar; (5) `refazerEmLote` não confere que o lote é de um usuário só; (6) limite de
     100 feriados sem trava contra dois cliques simultâneos (inofensivo).
+
+## RETOMAR AQUI (2026-10-11, antes de compactar) — respostas do usuário e plano de execução
+
+**Respostas do usuário aos 3 pontos em aberto:**
+1. **Validação da conferência no navegador (T23.6/T23.7): "OK"** — aprovado.
+2. **Os 6 Minor da 2ª revisão: "Agora"** — corrigir todos nesta sessão, com TDD, antes de integrar.
+3. **Ordem merge × validação: "Integrar primeiro e depois validar"** — ler como: primeiro aplicar os 6 Minor e fazer a
+   revisão final de branch inteira + merge na `main` + push; a validação final do usuário vem depois disso (não é uma
+   segunda rodada do item 1, que já está OK; é a confirmação de que o merge/integração ficou certo).
+
+**Ordem de execução a seguir:**
+
+### Passo A — T23.12: corrigir os 6 Minor da 2ª revisão (TDD, um por um, commit por item)
+1. **Erro de rede/419 no "Ajustar" não aparece.** `resources/js/Components/Feriados.vue`, função `ajustar()`: hoje só
+   `onError` (cobre 422). Acrescentar `onNetworkError` e tratar exceção HTTP (419/500) — mensagem genérica
+   "Não foi possível ajustar agora. Tente de novo." no mesmo lugar que já existe para 422 (`erroAjuste`). Verificar se
+   `router.post` do Inertia 3.9 tem `onNetworkError`/`onHttpException` nas opções (conferir
+   `node_modules/@inertiajs/core/dist/index.js`). Teste: não há teste de JS fácil para erro de rede (sem mock de
+   fetch/XHR do Inertia no projeto) — se não der para testar em unidade, registrar no plano como verificado manualmente
+   ou cobrir com teste do componente, se houver infra; caso não haja, documentar a limitação e aplicar mesmo assim (é
+   fix de robustez, consistente com o padrão 2 da skill).
+2. **Piso de zero só do lado do Inertia.** `resources/js/carregando.js`, função `contarPedido`: trocar
+   `pendentes.value--` por `pendentes.value = Math.max(0, pendentes.value - 1)`, igual ao que `app.js` já faz no
+   `finish`. Teste: acrescentar caso em `carregando.test.js` que decrementa abaixo de 0 e confere que fica em 0.
+3. **Leitor de tela anuncia a cada pedido / pílula pisca.** `resources/js/Components/IndicadorDeCarregamento.vue`:
+   atrasar a exibição do indicador visual em ~250 ms (como a barra de progresso do Inertia) — só mostra se o pedido
+   ainda estiver em andamento depois do atraso. A região `aria-live` deve anunciar só quando o indicador realmente
+   aparece (não a cada início de pedido). Implementação: `computed`/`watch` com `setTimeout` de 250 ms armado quando
+   `pendentes.value` sobe de 0 para 1, cancelado se cair a 0 antes disso. Teste: criar `carregando.test.js` ou teste
+   próprio do atraso (função pura testável, ex. `criarIndicadorComAtraso(pendentesRef, ms)` em `carregando.js`, devolve
+   um `ref` booleano "mostrar"); manter a lógica fora do `.vue` para poder testar com `node --test` (padrão do projeto:
+   `avisoDiaUtil.js`, `listaPaginada.js`).
+4. **Painel monta a prévia inteira só para contar.** `app/Services/AjusteDeVencimentos.php`: acrescentar
+   `quantas(User $usuario): int` que roda a mesma consulta de `aAjustar()` mas sem os `with(['cliente:...', 'recibo'])`
+   (só precisa contar, não exibir) — ideal: extrair a query-base (filtros + reject por dia útil) num método privado
+   reaproveitado por `previa()`, `ajustar()` e `quantas()`, mantendo "a prévia e a execução usam a mesma consulta"
+   (regra do plano original) só que agora com um 3º consumidor "conta". Trocar em `PainelController::__invoke`
+   `count($ajuste->previa($usuario))` por `$ajuste->quantas($usuario)`. Teste: contar consultas (`DB::listen`) antes/depois
+   para provar que ficou mais leve, e um teste de valor igual a `previa()->count()` em cenário com cobranças.
+5. **`refazerEmLote` não confere que o lote é de um usuário só.** `app/Services/EmissorDeRecibos.php::refazerEmLote`:
+   acrescentar guarda `if ($cobrancas->pluck('user_id')->unique()->count() > 1) { throw new \LogicException(...); }`
+   logo no início (depois do `isEmpty()`). Teste: `EmissorDeRecibosTest` (criar se não existir, ou acrescentar a um
+   teste de feature existente) chamando `refazerEmLote` com cobranças de 2 usuários diferentes e esperando a exceção.
+6. **Limite de 100 feriados sem trava contra cliques simultâneos.** Decisão: **inofensivo por natureza** (o revisor já
+   classificou assim — o limite existe só para não deixar o calendário sem dia útil, e passar de 100 para 101 não
+   chega perto disso). Como o usuário pediu "corrigir agora" os 6, aplicar mesmo assim uma trava simples e barata:
+   mover a contagem para dentro de uma transação com `lockForUpdate()` na consulta de contagem (`FeriadoRequest::after`
+   já roda fora de transação — **avaliar se vale a pena**: o `store()` do controller não abre transação hoje). Alternativa
+   mais simples e suficiente: aceitar o risco e só documentar explicitamente na skill como decisão deliberada (ponytail:
+   risco aceito, não vale complexidade de lock para uma corrida de janela mínima e sem efeito prático). **Decisão a
+   tomar na hora**: provavelmente documentar como aceito (não há ganho real em travar), mas revisar o pedido do usuário
+   ("corrigir agora") antes de pular — se for pra aplicar mesmo assim, o jeito mais barato é um
+   `DB::transaction` com `lockForUpdate()` na contagem dentro do `FeriadoController::store`.
+
+   Depois de cada item: `vendor/bin/pint --dirty --format agent`, `php artisan test --compact`, `node --test
+   resources/js/*.test.js`, `npm run build` (só quando mexeu em JS/Vue), commit por item (mensagem `fix: ... (T23.12,
+   minor N)`), ledger (`Task 12 (T23.12): ...` ao final de todos, ou uma linha por commit).
+
+### Passo B — Revisão final de branch inteira (Fases 17–23, pré-merge)
+- `git merge-base main HEAD` para achar o ponto de partida real da branch `feat/modulo-cobranca-catalogo`.
+- Gerar o pacote de revisão com `review-package` (script do superpowers) para o diff `merge-base..HEAD`.
+- Dispatch de um subagente opus (como nas revisões anteriores desta fase) com o mesmo roteiro: ler plano(s) + spec(s) +
+  skill, rodar testes (só leitura/SQLite), reportar Critical/Important/Minor, "Declined to judge", veredito.
+- Esta é a revisão "de branch inteira" que o roteiro (`2026-10-10-roteiro-modulos.md`, item 1 do backlog) já pedia antes
+  do merge das Fases 17–22; agora cobre também a 23. Fixar Critical/Important encontrados (1 pass, TDD); Minor vai para
+  o ledger como `Final: minor (deferred)` e para a lista ao usuário.
+
+### Passo C — Merge na `main` + push
+- Memória `[[merge-e-push-por-fase]]`: fase concluída (testes/build passando) é mergeada com `git merge --no-ff` e
+  enviada com `git push origin main`, sem pedir de novo — mas como isto cobre várias fases de uma vez (17–23) e o
+  usuário pediu explicitamente "integrar", confirmar o abrangente antes (é mais que "uma fase").
+- Branch local principal é `main` (renomeada de `master`). Remoto: `git@github.com:pagmovel/MinhaCobranca.git`.
+- Depois do merge: apagar o workspace do plano (`.superpowers/sdd/2026-10-11-vencimento-em-dia-util/`), git log já é o
+  registro — regra da skill `executing-plans`.
+
+### Passo D — Validação final do usuário
+- Depois do merge, confirmar com o usuário que a integração ficou certa (branch na `main`, testes passando, nada
+  perdido) — esta é a "validação" que o item 3 da resposta do usuário pede depois da integração.
+- Atualizar `.claude/plans/2026-10-10-roteiro-modulos.md` seção 0 com o resultado final (Fase 23 mergeada, próximo
+  passo do backlog: T17.11 ou item seguinte).
+
+**Fatos que não podem se perder na compactação:**
+- HEAD antes deste trecho: `00b37cb` (branch `feat/modulo-cobranca-catalogo`, árvore limpa).
+- Migração `feriados` já aplicada no banco de dev (`207.180.205.211:1`, `recibos`, `recibos_app`) — não repetir.
+- Usuário SMOKE = id 2, usado nas conferências no navegador; nada gravado por elas até aqui.
+- Suíte no commit `00b37cb`: PHP 433/433, JS 56/56, build ok (checar de novo depois de cada mudança do Passo A).
+- Duas revisões externas (opus) já rodaram nesta fase: a primeira em `0bca21d..2148a0f` (Important corrigido — teste de
+  isolamento), a segunda em `2148a0f..ae3acf5` (Important corrigido — `AnoValido` com array). A revisão do Passo B é uma
+  terceira, de escopo maior (toda a branch desde `main`).
