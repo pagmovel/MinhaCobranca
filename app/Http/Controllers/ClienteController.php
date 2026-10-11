@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\StatusCobranca;
 use App\Http\Requests\ClienteRequest;
 use App\Models\Cliente;
+use App\Services\EmissorDeRecibos;
 use App\Support\BlocoDePaginas;
 use App\Support\Busca;
 use App\Support\Ufs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -121,7 +124,7 @@ class ClienteController extends Controller
 
     public function store(ClienteRequest $request): RedirectResponse|JsonResponse
     {
-        $cliente = $request->user()->clientes()->create($request->validated());
+        $cliente = $request->user()->clientes()->create($request->safe()->except('regerar_enviadas'));
 
         // Cadastro rápido (modal no contrato/cobrança): devolve o cliente pronto para ser escolhido.
         if ($request->expectsJson()) {
@@ -136,11 +139,23 @@ class ClienteController extends Controller
         return $this->formulario($request, $request->user()->clientes()->findOrFail($cliente));
     }
 
-    public function update(ClienteRequest $request, int $cliente): RedirectResponse
+    public function update(ClienteRequest $request, int $cliente, EmissorDeRecibos $emissor): RedirectResponse
     {
-        $request->user()->clientes()->findOrFail($cliente)->update($request->validated());
+        $registro = $request->user()->clientes()->findOrFail($cliente);
 
-        return redirect('/clientes')->with('sucesso', 'Cliente salvo.');
+        // Trocou o modelo do recibo: as cobranças em aberto passam a ele na mesma transação (Fase 22).
+        $refeitas = DB::transaction(function () use ($registro, $request, $emissor) {
+            $modeloAnterior = $registro->modelo;
+            $registro->update($request->safe()->except('regerar_enviadas'));
+
+            return $registro->modelo === $modeloAnterior ? 0 : $emissor->aplicarModeloDoCliente($registro, $request->boolean('regerar_enviadas'));
+        });
+
+        return redirect('/clientes')->with('sucesso', match ($refeitas) {
+            0 => 'Cliente salvo.',
+            1 => 'Cliente salvo. 1 recibo em aberto foi refeito no modelo novo.',
+            default => "Cliente salvo. {$refeitas} recibos em aberto foram refeitos no modelo novo.",
+        });
     }
 
     public function destroy(Request $request, int $cliente): RedirectResponse
@@ -163,6 +178,11 @@ class ClienteController extends Controller
                 ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value, 'apelido' => $cliente->apelido]
                     + array_map(fn ($valor) => $valor ?? '', $cliente->only(Cliente::CAMPOS))
                 : null,
+            // Prévia da troca de modelo: quantas cobranças em aberto seriam refeitas (Fase 22).
+            'emAberto' => $cliente ? [
+                'nao_enviadas' => $cliente->cobrancas()->where('status', StatusCobranca::Pendente)->whereNull('enviado_em')->count(),
+                'enviadas' => $cliente->cobrancas()->where('status', StatusCobranca::Pendente)->whereNotNull('enviado_em')->count(),
+            ] : null,
             'modeloPadrao' => $request->user()->modelo_padrao->value,
             'modelos' => FamiliaModelo::opcoes(),
             'ufs' => Ufs::TODAS,

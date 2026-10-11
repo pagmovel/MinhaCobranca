@@ -83,7 +83,10 @@ o relatório mostra a parte que existe.
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
 - Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).
   Situação, data de pagamento e NFS-e vinculada são lidas na hora de gerar o PDF.
-- Modelo é do cliente; trocar vale só para recibos futuros.
+- Modelo é do cliente. **Desde a Fase 22 (pedido do usuário, 2026-10-11):** trocar o modelo refaz na hora os recibos
+  das cobranças em aberto e não enviadas (mesmo número); as enviadas e não pagas só com a caixa "Gerar de novo" (e
+  voltam para "Para enviar"); pagas e canceladas nunca mudam. Editar uma cobrança continua sem trocar o modelo do
+  recibo, a não ser que troque o cliente.
 - Numeração por usuário e ano; número cancelado não volta.
 - Dinheiro em centavos (`integer`).
 
@@ -786,6 +789,10 @@ o relatório mostra a parte que existe.
     que foi desfeito). O snapshot do tomador não guarda o apelido (`Cliente::CAMPOS` sem ele). Opcional: botão "Incluir o
     apelido na descrição" no contrato e na cobrança (`DescricaoComplementar.vue` + `resources/js/apelido.js`), que põe o
     apelido na 1ª linha da descrição, editável. Não voltar a pôr o apelido no recibo sem falar com o usuário.
+- **Fase 22 — troca de modelo vale para as cobranças em aberto (plano `.claude/plans/2026-10-11-troca-de-modelo.md`).**
+  `EmissorDeRecibos::aplicarModeloDoCliente` dentro da transação do `ClienteController::update`, só quando o modelo
+  mudou; a tela de edição recebe `emAberto` e mostra a prévia (quantas mudam) com a caixa das enviadas. Teste:
+  `TrocaDeModeloTest`.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

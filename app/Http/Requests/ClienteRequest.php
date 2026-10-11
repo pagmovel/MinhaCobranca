@@ -57,6 +57,8 @@ class ClienteRequest extends FormRequest
             'uf' => ['nullable', Rule::in(Ufs::TODAS)],
             'cep' => ['nullable', 'digits:8'],
             'modelo' => ['required', Rule::enum(FamiliaModelo::class)],
+            // Troca de modelo: refazer também as cobranças já enviadas e não pagas (Fase 22).
+            'regerar_enviadas' => ['nullable', 'boolean'],
         ];
     }
 
