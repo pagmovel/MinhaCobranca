@@ -59,14 +59,14 @@ class PrevisaoNaListaTest extends TestCase
         $this->assertSame([
             ['21/10/2026', 'a_vencer'],
             ['10/11/2026', 'a_vencer'],
-            ['21/11/2026', 'prevista'],
+            ['23/11/2026', 'prevista'], // 21/11 é sábado (Fase 23)
             ['21/12/2026', 'prevista'],
         ], $this->linhas('?mes=2026-10&ate=2026-12'));
     }
 
     public function test_previstas_so_em_todas_a_vencer_e_pendentes(): void
     {
-        $comPrevistas = [['21/10/2026', 'a_vencer'], ['21/11/2026', 'prevista']];
+        $comPrevistas = [['21/10/2026', 'a_vencer'], ['23/11/2026', 'prevista']];
 
         $this->assertSame($comPrevistas, $this->linhas('?mes=2026-10&ate=2026-11&status=a_vencer'));
         $this->assertSame($comPrevistas, $this->linhas('?mes=2026-10&ate=2026-11&status=pendente'));
@@ -80,7 +80,7 @@ class PrevisaoNaListaTest extends TestCase
         $outro = Cliente::factory()->for($this->usuario)->create();
         Contrato::factory()->for($this->usuario)->for($outro)->create(['dia_vencimento' => 5, 'data_inicio' => '2026-09-05']);
 
-        $this->assertSame([['21/11/2026', 'prevista']], $this->linhas("?mes=2026-11&cliente_id={$this->contrato->cliente_id}"));
+        $this->assertSame([['23/11/2026', 'prevista']], $this->linhas("?mes=2026-11&cliente_id={$this->contrato->cliente_id}"));
         $this->assertSame([['05/11/2026', 'prevista']], $this->linhas("?mes=2026-11&cliente_id={$outro->id}"));
     }
 

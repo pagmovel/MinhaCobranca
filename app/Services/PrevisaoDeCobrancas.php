@@ -31,9 +31,10 @@ final class PrevisaoDeCobrancas
 
         $contratos = $usuario->contratos()->where('ativo', true)->with(['itens', 'cliente:id,nome,apelido'])->get();
         $existentes = $this->gerador->existentes($contratos);
+        $calculadora = $this->calculadora->comDiasUteis($usuario->diasUteis());
 
         foreach ($contratos as $contrato) {
-            $periodos = $this->calculadora->entre(
+            $periodos = $calculadora->entre(
                 $contrato->data_inicio,
                 $contrato->data_fim,
                 $contrato->periodicidade,

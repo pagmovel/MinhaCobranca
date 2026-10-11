@@ -54,7 +54,8 @@ class PrevisaoDeCobrancasTest extends TestCase
 
         $previstas = $this->prever('2026-10-01', '2027-01-31');
 
-        $this->assertSame(['21/10/2026', '21/11/2026', '21/12/2026', '21/01/2027'], array_column($previstas, 'vencimento'));
+        // 21/11/2026 é sábado (e a sexta, 20/11, é feriado): vence na segunda, 23/11 (Fase 23).
+        $this->assertSame(['21/10/2026', '23/11/2026', '21/12/2026', '21/01/2027'], array_column($previstas, 'vencimento'));
         $this->assertSame([
             'id' => "prevista-{$contrato->id}-2026-10-21",
             'contrato_id' => $contrato->id,
@@ -120,7 +121,8 @@ class PrevisaoDeCobrancasTest extends TestCase
         Contrato::factory()->for($this->usuario)->create(['modalidade' => Modalidade::Pospago, 'data_inicio' => '2026-09-01', 'dia_vencimento' => 10]);
 
         $this->assertSame(
-            [['01/09/2026 a 30/09/2026', '10/10/2026'], ['01/10/2026 a 31/10/2026', '10/11/2026']],
+            // 10/10/2026 é sábado, e a segunda (12/10) é feriado: terça, 13/10 (Fase 23).
+            [['01/09/2026 a 30/09/2026', '13/10/2026'], ['01/10/2026 a 31/10/2026', '10/11/2026']],
             array_map(fn (array $prevista) => [$prevista['periodo'], $prevista['vencimento']], $this->prever('2026-10-01', '2026-11-30')),
         );
     }

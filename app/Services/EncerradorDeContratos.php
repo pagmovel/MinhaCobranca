@@ -58,7 +58,7 @@ final class EncerradorDeContratos
         }
 
         // Hoje "distante": a calculadora lista todos os períodos que começam até o fim, devidos ou não.
-        $periodos = $this->calculadora->devidos(
+        $periodos = $this->calculadora->comDiasUteis($contrato->user->diasUteis())->devidos(
             $contrato->data_inicio, $fim, $contrato->periodicidade, $contrato->dia_vencimento, 0,
             $fim->addYears(10), $contrato->modalidade,
         );

@@ -123,14 +123,14 @@ class EncerramentoContratoTest extends TestCase
     public function test_pos_pago_encerrado_hoje_emite_os_periodos_ate_o_fim_que_ainda_nao_sairam(): void
     {
         $this->usuario->forceFill(['dias_antecedencia' => 0])->save();
-        // Pós-pago desde 01/08, dia 25: agosto (vence 25/09) já saiu; setembro (vence 25/10) ainda não.
+        // Pós-pago desde 01/08, dia 25: agosto (vence 25/09) já saiu; setembro (vence 26/10; 25/10 é domingo) ainda não.
         $contrato = $this->contratoComCobrancas(['modalidade' => 'pospago', 'dia_vencimento' => 25]);
         $this->assertSame(1, $contrato->cobrancas()->count());
 
         $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-15', 'em_curso' => 'proporcional'])->assertRedirect();
 
         $setembro = $this->cobrancaDe($contrato, '2026-09-01');
-        $this->assertSame([24757, '2026-09-30', '2026-10-25'], [$setembro->valor_centavos, $setembro->periodo_fim->toDateString(), $setembro->vencimento->toDateString()]);
+        $this->assertSame([24757, '2026-09-30', '2026-10-26'], [$setembro->valor_centavos, $setembro->periodo_fim->toDateString(), $setembro->vencimento->toDateString()]);
         $this->assertNotNull($setembro->recibo);
 
         // Outubro: 15 de 31 dias → 0,484 × 247,57 = 119,82.
@@ -179,9 +179,9 @@ class EncerramentoContratoTest extends TestCase
         $this->assertSame([true, '2026-12-15', 'proporcional'], [$contrato->ativo, $contrato->data_fim->toDateString(), $contrato->ultimo_periodo]);
         $this->assertSame(4, $contrato->cobrancas()->count());
 
-        // Dezembro sai no ritmo de sempre (vence 20/12, antecedência 40 → 10/11), proporcional: 15 de 31 dias
-        // → 0,484 × 247,57 = 119,82. Janeiro não sai.
-        $this->travelTo(CarbonImmutable::parse('2026-11-10 10:00:00'));
+        // Dezembro sai no ritmo de sempre (vence 20/12, domingo → 21/12; antecedência 40 → 11/11), proporcional: 15 de
+        // 31 dias → 0,484 × 247,57 = 119,82. Janeiro não sai.
+        $this->travelTo(CarbonImmutable::parse('2026-11-11 10:00:00'));
         app(GeradorDeCobrancas::class)->gerarPara($this->usuario->fresh(), CarbonImmutable::today());
         $dezembro = $this->cobrancaDe($contrato, '2026-12-01');
         $this->assertSame([11982, '2026-12-15', '0.484'], [$dezembro->valor_centavos, $dezembro->periodo_fim->toDateString(), $dezembro->itens()->sole()->quantidade]);

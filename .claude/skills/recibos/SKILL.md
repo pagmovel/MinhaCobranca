@@ -811,6 +811,14 @@ o relatório mostra a parte que existe.
     tudo como antes (testes unitários antigos intactos). **Não pôr `DiasUteis` no construtor:** o container injetaria um
     calendário vazio sozinho (a classe é instanciável) e os feriados locais seriam ignorados sem erro. Só o vencimento
     muda; início, fim e o índice único do contrato não.
+  - **Três pontos de ligação.** `GeradorDeCobrancas::gerarPara`, `PrevisaoDeCobrancas::entre` e
+    `EncerradorDeContratos::plano` pedem `comDiasUteis($usuario->diasUteis())` (feriados do próprio usuário: tabela
+    `feriados`, `User::feriados()` em ordem de id). `ContratoController::retroativos` não precisa (usa só início e fim).
+    Custo: uma consulta a mais por geração/previsão/encerramento. Contrato que nasce de agora em diante já sai com o
+    vencimento ajustado; cobranças antigas só mudam pelo ajuste com prévia (T23.4).
+  - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
+    10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
+    de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.
   - *Pegadinha (teste):* 29/02/2028 é **terça de Carnaval** (Páscoa em 16/04/2028). Ao escolher data de exemplo para
     feriado local, conferir se ela não cai em feriado nacional ou móvel.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da

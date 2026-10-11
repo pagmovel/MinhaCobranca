@@ -60,7 +60,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | Tarefa | O quê | Estado |
 |---|---|---|
 | T23.1 | `DiasUteis` (calendário puro) + `CalculadoraDePeriodos::comDiasUteis` | **testada**: `DiasUteisTest` (8) e 2 da calculadora RED → GREEN; unitários 91/91 |
-| T23.2 | Tabela `feriados` + `Feriado` + `User::diasUteis()`; gerador, previsão e encerrador com o calendário; 7 testes antigos com a data nova | pendente |
+| T23.2 | Tabela `feriados` + `Feriado` + `User::diasUteis()`; gerador, previsão e encerrador com o calendário; 7 testes antigos com a data nova | **testada**: `VencimentoEmDiaUtilTest` (2) RED → GREEN; PHP 411/411. Migração **não** aplicada no dev (T23.7) |
 
 ### Fase B — Feriados locais e cobranças já geradas
 | Tarefa | O quê | Estado |
@@ -1474,3 +1474,7 @@ watch(() => form.vencimento, conferirVencimento, { immediate: true });
 - **T23.1:** código do plano sem mudança. **Correção no teste do plano:** `test_29_de_fevereiro_anual_so_nos_anos_bissextos`
   usava 29/02/2028, que é **terça de Carnaval** (Páscoa de 2028 em 16/04): o nome nacional vence o local (regra do próprio
   plano) e o teste falhou com "Carnaval". Trocado para 29/02/2036 (sexta; Páscoa em 13/04/2036). O código estava certo.
+- **T23.2:** migração `2026_10_11_130417_create_feriados_table.php`. Os 7 testes antigos mudaram só a data (lista do passo
+  6, exatamente a do experimento); nenhuma outra falha. As outras asserções do teste de previsão "sem fim" não mudaram
+  (o 1º item é 21/10, quarta). O outro `travelTo('2026-11-10')` do `EncerramentoContratoTest` (linha ~215) é de outro
+  teste e continua.

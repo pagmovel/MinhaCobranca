@@ -32,9 +32,10 @@ final class GeradorDeCobrancas
 
         $contratos = $usuario->contratos()->where('ativo', true)->with('itens.produtoServico')->get();
         $existentes = $this->existentes($contratos);
+        $calculadora = $this->calculadora->comDiasUteis($usuario->diasUteis());
 
         foreach ($contratos as $contrato) {
-            $devidos = $this->calculadora->devidos(
+            $devidos = $calculadora->devidos(
                 $contrato->data_inicio,
                 $contrato->data_fim,
                 $contrato->periodicidade,
