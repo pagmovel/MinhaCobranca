@@ -35,7 +35,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | Fase | Tarefa | Estado |
 |---|---|---|
 | 12 | T12.1 Catálogo de produtos e serviços | testada (suíte 200/200; build ok) |
-| 12 | T12.2 Itens no contrato | pendente |
+| 12 | T12.2 Itens no contrato | testada (suíte 213/213; build ok) |
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | pendente |
 | 12 | T12.4 Reajustar contratos | pendente |
 | 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | pendente |
@@ -908,7 +908,7 @@ git commit -m "feat: catálogo de produtos e serviços com filtros e paginação
 ---
 ### Tarefa T12.2: Itens no contrato
 
-**Estado:** pendente
+**Estado:** testada (suíte 213/213; build ok)
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_10_110100_create_contrato_itens_table.php`, `app/Models/ContratoItem.php`,

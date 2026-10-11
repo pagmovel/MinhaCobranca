@@ -105,7 +105,13 @@ class ProdutoServicoController extends Controller
 
     public function destroy(Request $request, int $produto): RedirectResponse
     {
-        $request->user()->produtosServicos()->findOrFail($produto)->delete();
+        $registro = $request->user()->produtosServicos()->findOrFail($produto);
+
+        if ($registro->contratoItens()->exists()) {
+            return back()->with('erro', 'Este item está em contratos ou cobranças. Desative-o em vez de excluir.');
+        }
+
+        $registro->delete();
 
         return redirect('/produtos-servicos')->with('sucesso', 'Produto ou serviço excluído.');
     }

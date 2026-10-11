@@ -7,10 +7,13 @@ use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Http\Requests\ContratoRequest;
 use App\Models\Contrato;
+use App\Models\ContratoItem;
 use App\Support\Dinheiro;
+use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,7 +43,10 @@ class ContratoController extends Controller
 
     public function store(ContratoRequest $request): RedirectResponse
     {
-        $request->user()->contratos()->create($request->dadosContrato());
+        DB::transaction(function () use ($request) {
+            $contrato = $request->user()->contratos()->create($request->dadosContrato());
+            $contrato->itens()->createMany($request->itensDoContrato());
+        });
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As cobranças aparecem no painel quando chegar a hora.');
     }
@@ -71,7 +77,11 @@ class ContratoController extends Controller
             ]);
         }
 
-        $registro->update($dados);
+        DB::transaction(function () use ($registro, $dados, $request) {
+            $registro->update($dados);
+            $registro->itens()->delete();
+            $registro->itens()->createMany($request->itensDoContrato());
+        });
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As mudanças valem para as próximas cobranças.');
     }
@@ -83,10 +93,16 @@ class ContratoController extends Controller
                 'id' => $contrato->id,
                 'cliente_id' => $contrato->cliente_id,
                 'descricao' => $contrato->descricao,
-                'codigo_servico' => $contrato->codigo_servico ?? '',
-                'codigo_nbs' => $contrato->codigo_nbs ?? '',
-                'codigo_tributacao_nacional' => $contrato->codigo_tributacao_nacional ?? '',
                 'valor' => Dinheiro::formatar($contrato->valor_centavos),
+                'itens' => $contrato->itens()->with('produtoServico:id,nome,unidade')->get()
+                    ->map(fn (ContratoItem $item) => [
+                        'produto_servico_id' => $item->produto_servico_id,
+                        'nome' => $item->produtoServico->nome,
+                        'unidade' => $item->produtoServico->unidade,
+                        'quantidade' => ItensDeVenda::formatarQuantidade(ItensDeVenda::milesimos($item->quantidade)),
+                        'preco' => Dinheiro::formatar($item->preco_unitario_centavos),
+                        'principal' => $item->principal,
+                    ])->all(),
                 'periodicidade' => $contrato->periodicidade->value,
                 'modalidade' => $contrato->modalidade->value,
                 'dia_vencimento' => $contrato->dia_vencimento,

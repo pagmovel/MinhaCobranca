@@ -12,21 +12,19 @@ use App\Services\GeradorDeCobrancas;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Concerns\ComItens;
 use Tests\TestCase;
 
 class ContratosTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use ComItens, LazilyRefreshDatabase;
 
     private function dados(Cliente $cliente, array $extra = []): array
     {
         return array_merge([
             'cliente_id' => $cliente->id,
             'descricao' => "- Hospedagem do domínio exemplo.com.br\n- Servidor de Arquivos",
-            'codigo_servico' => '0102 - Programação',
-            'codigo_nbs' => '115061000',
-            'codigo_tributacao_nacional' => '01.02.01',
-            'valor' => '260,60',
+            'itens' => $this->itensPara($cliente),
             'periodicidade' => 'mensal',
             'modalidade' => 'prepago',
             'dia_vencimento' => 21,
@@ -102,8 +100,8 @@ class ContratosTest extends TestCase
         $this->post('/contratos', $this->dados($cliente, ['dia_vencimento' => 0]))
             ->assertSessionHasErrors(['dia_vencimento' => 'O campo dia do vencimento deve estar entre 1 e 31.']);
         $this->post('/contratos', $this->dados($cliente, ['dia_vencimento' => 32]))->assertSessionHasErrors('dia_vencimento');
-        $this->post('/contratos', $this->dados($cliente, ['valor' => '0']))
-            ->assertSessionHasErrors(['valor' => 'Informe um valor válido, como 260,60.']);
+        $this->post('/contratos', $this->dados($cliente, ['itens' => $this->itensPara($cliente, '0,00')]))
+            ->assertSessionHasErrors(['itens' => 'O total dos itens deve ficar entre R$ 0,01 e R$ 99.999.999,99.']);
     }
 
     public function test_encerra_contrato_e_isola_contrato_alheio(): void

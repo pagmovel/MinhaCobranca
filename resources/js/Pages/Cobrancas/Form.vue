@@ -2,7 +2,7 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
-import BuscaCliente from '../../Components/BuscaCliente.vue';
+import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
 
 const props = defineProps({
@@ -49,7 +49,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
 
         <form v-else class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <BuscaCliente id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" :desativado="travado" obrigatorio />
+                <BuscaAutosugestao id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" :desativado="travado" obrigatorio />
             </Campo>
             <p v-if="travado" class="font-estreita text-xs text-grafite/70 sm:col-span-6">Cliente e período vêm do contrato.</p>
             <Campo id="descricao" rotulo="Descrição dos serviços (até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">

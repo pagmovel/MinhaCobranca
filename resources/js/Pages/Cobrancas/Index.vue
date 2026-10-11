@@ -3,7 +3,7 @@ import { reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
-import BuscaCliente from '../../Components/BuscaCliente.vue';
+import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import LinhaCobranca from '../../Components/LinhaCobranca.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
@@ -45,7 +45,7 @@ const rotuloEnvio = (cobranca) => (cobranca.situacao === 'paga' ? 'Enviar recibo
                 </select>
             </Campo>
             <Campo id="cliente_id" rotulo="Cliente">
-                <BuscaCliente id="cliente_id" v-model="filtro.cliente_id" :inicial="clienteFiltro" vazio="Todos os clientes" />
+                <BuscaAutosugestao id="cliente_id" v-model="filtro.cliente_id" :inicial="clienteFiltro" vazio="Todos os clientes" />
             </Campo>
             <div class="flex items-end">
                 <button class="botao-secundario w-full">Filtrar</button>

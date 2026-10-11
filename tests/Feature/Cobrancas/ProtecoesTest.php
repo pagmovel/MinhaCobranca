@@ -7,11 +7,12 @@ use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Tests\Concerns\ComItens;
 use Tests\TestCase;
 
 class ProtecoesTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use ComItens, LazilyRefreshDatabase;
 
     public function test_cliente_com_contrato_ou_cobranca_nao_e_excluido(): void
     {
@@ -39,7 +40,7 @@ class ProtecoesTest extends TestCase
             'periodo_inicio' => '2026-09-21',
         ]);
         $dados = [
-            'cliente_id' => $contrato->cliente_id, 'descricao' => 'Hospedagem', 'valor' => '300,00',
+            'cliente_id' => $contrato->cliente_id, 'descricao' => 'Hospedagem', 'itens' => $this->itensPara($contrato->cliente, '300,00'),
             'periodicidade' => 'mensal', 'modalidade' => 'prepago', 'dia_vencimento' => 21, 'data_inicio' => '2026-09-21', 'ativo' => true,
         ];
 

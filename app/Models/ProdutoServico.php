@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'nome', 'tipo', 'unidade', 'preco_centavos', 'codigo_servico', 'codigo_nbs', 'codigo_tributacao_nacional', 'ativo',
@@ -34,5 +35,10 @@ class ProdutoServico extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function contratoItens(): HasMany
+    {
+        return $this->hasMany(ContratoItem::class);
     }
 }

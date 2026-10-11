@@ -2,8 +2,9 @@
 import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
-import BuscaCliente from '../../Components/BuscaCliente.vue';
+import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
+import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
     contrato: { type: Object, default: null },
@@ -18,10 +19,7 @@ const props = defineProps({
 const form = useForm(props.contrato ?? {
     cliente_id: '',
     descricao: '',
-    codigo_servico: '',
-    codigo_nbs: '',
-    codigo_tributacao_nacional: '',
-    valor: '',
+    itens: [],
     periodicidade: 'mensal',
     modalidade: 'prepago',
     dia_vencimento: 10,
@@ -31,6 +29,8 @@ const form = useForm(props.contrato ?? {
     forma_pagamento: 'nenhuma',
     chave_pix_id: '',
 });
+
+const semItens = Boolean(props.contrato && !props.contrato.itens.length);
 
 const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}`) : form.post('/contratos'));
 </script>
@@ -46,27 +46,23 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
 
         <form v-else class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <BuscaCliente id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" obrigatorio />
+                <BuscaAutosugestao id="cliente_id" v-model="form.cliente_id" :inicial="clienteAtual" obrigatorio />
             </Campo>
             <Campo id="descricao" rotulo="Descrição dos serviços (como sai no recibo, até 25 linhas)" :erro="form.errors.descricao" class="sm:col-span-6">
                 <textarea id="descricao" v-model="form.descricao" rows="6" class="entrada" required />
             </Campo>
-            <Campo id="codigo_servico" rotulo="Serviço prestado (ex.: 0102 - Programação)" :erro="form.errors.codigo_servico" class="sm:col-span-6">
-                <input id="codigo_servico" v-model="form.codigo_servico" class="entrada">
-            </Campo>
-            <Campo id="codigo_nbs" rotulo="Código NBS" :erro="form.errors.codigo_nbs" class="sm:col-span-3">
-                <input id="codigo_nbs" v-model="form.codigo_nbs" class="entrada">
-            </Campo>
-            <Campo id="codigo_tributacao_nacional" rotulo="Código de tributação nacional" :erro="form.errors.codigo_tributacao_nacional" class="sm:col-span-3">
-                <input id="codigo_tributacao_nacional" v-model="form.codigo_tributacao_nacional" class="entrada">
-            </Campo>
-            <Campo id="valor" rotulo="Valor (R$)" :erro="form.errors.valor" class="sm:col-span-2">
-                <input id="valor" v-mascara="'valor'" v-model="form.valor" inputmode="decimal" placeholder="260,60" class="entrada" required>
-            </Campo>
-            <Campo id="periodicidade" rotulo="Periodicidade" :erro="form.errors.periodicidade" class="sm:col-span-2">
+            <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+                Este contrato ainda não tem itens (valor atual: R$ {{ contrato.valor }}). Inclua pelo menos um; ao salvar, o
+                valor passa a ser a soma dos itens.
+            </p>
+            <SecaoItens :form="form" />
+            <Campo id="periodicidade" rotulo="Periodicidade" :erro="form.errors.periodicidade" class="sm:col-span-3">
                 <select id="periodicidade" v-model="form.periodicidade" class="entrada">
                     <option v-for="p in periodicidades" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>
                 </select>
+            </Campo>
+            <Campo id="dia_vencimento" rotulo="Dia do vencimento" :erro="form.errors.dia_vencimento" class="sm:col-span-3">
+                <input id="dia_vencimento" v-model="form.dia_vencimento" type="number" min="1" max="31" class="entrada" required>
             </Campo>
             <fieldset class="sm:col-span-6">
                 <legend class="mb-2 font-estreita text-xs font-medium text-grafite/75">Modalidade</legend>
@@ -82,9 +78,6 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
                 </p>
                 <p v-if="form.errors.modalidade" class="text-xs text-tinta-vermelha">{{ form.errors.modalidade }}</p>
             </fieldset>
-            <Campo id="dia_vencimento" rotulo="Dia do vencimento" :erro="form.errors.dia_vencimento" class="sm:col-span-2">
-                <input id="dia_vencimento" v-model="form.dia_vencimento" type="number" min="1" max="31" class="entrada" required>
-            </Campo>
             <Campo id="data_inicio" rotulo="Início do primeiro período" :erro="form.errors.data_inicio" class="sm:col-span-3">
                 <input id="data_inicio" v-model="form.data_inicio" type="date" class="entrada" required>
             </Campo>

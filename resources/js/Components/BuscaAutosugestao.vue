@@ -8,9 +8,12 @@ const props = defineProps({
     obrigatorio: { type: Boolean, default: false },
     desativado: { type: Boolean, default: false },
     vazio: { type: String, default: 'Digite parte do nome ou do CPF/CNPJ' },
+    url: { type: String, default: '/clientes/busca' },
+    nenhum: { type: String, default: 'Nenhum cliente encontrado.' },
+    limparAoEscolher: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'escolhido']);
 
 const texto = ref(props.inicial?.nome ?? '');
 const sugestoes = ref([]);
@@ -28,7 +31,7 @@ async function buscar(termo) {
     }
     controle = new AbortController();
     try {
-        const resposta = await fetch(`/clientes/busca?q=${encodeURIComponent(termo)}`, {
+        const resposta = await fetch(`${props.url}?q=${encodeURIComponent(termo)}`, {
             headers: { Accept: 'application/json' },
             credentials: 'same-origin',
             signal: controle.signal,
@@ -49,9 +52,10 @@ function digitou() {
     espera = setTimeout(() => buscar(texto.value), 250);
 }
 
-function escolher(cliente) {
-    texto.value = cliente.nome;
-    emit('update:modelValue', cliente.id);
+function escolher(opcao) {
+    texto.value = props.limparAoEscolher ? '' : opcao.nome;
+    emit('update:modelValue', opcao.id);
+    emit('escolhido', opcao);
     aberto.value = false;
 }
 
@@ -74,8 +78,8 @@ function teclado(evento) {
     }
 }
 
-watch(() => props.inicial, (cliente) => {
-    texto.value = cliente?.nome ?? '';
+watch(() => props.inicial, (opcao) => {
+    texto.value = opcao?.nome ?? '';
 });
 
 onBeforeUnmount(() => {
@@ -111,20 +115,22 @@ onBeforeUnmount(() => {
             class="absolute z-10 mt-1 max-h-72 w-full overflow-auto border border-linha bg-white"
         >
             <li
-                v-for="(cliente, indice) in sugestoes"
+                v-for="(opcao, indice) in sugestoes"
                 :id="`${id}-opcao-${indice}`"
-                :key="cliente.id"
+                :key="opcao.id"
                 role="option"
                 :aria-selected="indice === ativo"
                 class="cursor-pointer px-3 py-2 text-sm"
                 :class="indice === ativo ? 'bg-papel text-carbono' : ''"
-                @mousedown.prevent="escolher(cliente)"
+                @mousedown.prevent="escolher(opcao)"
                 @mouseenter="ativo = indice"
             >
-                <span class="font-semibold">{{ cliente.nome }}</span>
-                <span class="ml-2 font-estreita text-xs text-grafite/70">{{ cliente.documento }}</span>
+                <slot name="opcao" :opcao="opcao">
+                    <span class="font-semibold">{{ opcao.nome }}</span>
+                    <span class="ml-2 font-estreita text-xs text-grafite/70">{{ opcao.documento }}</span>
+                </slot>
             </li>
-            <li v-if="!sugestoes.length" class="px-3 py-2 text-sm text-grafite/70">Nenhum cliente encontrado.</li>
+            <li v-if="!sugestoes.length" class="px-3 py-2 text-sm text-grafite/70">{{ nenhum }}</li>
         </ul>
     </div>
 </template>

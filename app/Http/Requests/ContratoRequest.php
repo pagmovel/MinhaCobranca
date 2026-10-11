@@ -4,26 +4,31 @@ namespace App\Http\Requests;
 
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
+use App\Http\Requests\Concerns\RegrasDeItens;
 use App\Http\Requests\Concerns\RegrasDePagamento;
 use App\Rules\LinhasMaximas;
-use App\Rules\ValorEmReais;
-use App\Support\Dinheiro;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 class ContratoRequest extends FormRequest
 {
-    use RegrasDePagamento;
+    use RegrasDeItens, RegrasDePagamento;
 
+    /** Contrato de outro usuário vira 404 antes da validação (o erro não pode revelar que ele existe). */
     public function authorize(): bool
     {
+        $contrato = $this->route('contrato');
+
+        abort_if($contrato !== null && ! $this->user()->contratos()->whereKey($contrato)->exists(), 404);
+
         return true;
     }
 
     protected function prepareForValidation(): void
     {
         $this->prepararPagamento();
+        $this->prepararItens();
     }
 
     public function rules(): array
@@ -31,16 +36,13 @@ class ContratoRequest extends FormRequest
         return [
             'cliente_id' => ['required', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
             'descricao' => ['required', 'string', 'max:2000', new LinhasMaximas(25)],
-            'codigo_servico' => ['nullable', 'string', 'max:255'],
-            'codigo_nbs' => ['nullable', 'string', 'max:20'],
-            'codigo_tributacao_nacional' => ['nullable', 'string', 'max:20'],
-            'valor' => ['required', new ValorEmReais],
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
             'modalidade' => ['required', Rule::enum(Modalidade::class)],
             'dia_vencimento' => ['required', 'integer', 'between:1,31'],
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
             'ativo' => ['boolean'],
+            ...$this->regrasDeItens(),
             ...$this->regrasDePagamento(false),
         ];
     }
@@ -49,9 +51,9 @@ class ContratoRequest extends FormRequest
     {
         $dados = $this->validated();
 
-        return Arr::except($dados, ['valor', 'forma_pagamento', 'chave_pix_id']) + [
-            'valor_centavos' => Dinheiro::paraCentavos($dados['valor']),
-            'ativo' => $this->boolean('ativo', true),
-        ] + $this->dadosDePagamento($dados);
+        return Arr::except($dados, ['itens', 'forma_pagamento', 'chave_pix_id'])
+            + ['ativo' => $this->boolean('ativo', true)]
+            + $this->resumoDosItens()
+            + $this->dadosDePagamento($dados);
     }
 }

@@ -391,6 +391,14 @@ o relatório mostra a parte que existe.
   (`new ValorEmReais(aceitaZero: true)`; `ValorEmReais::MAXIMO_CENTAVOS` público); busca de autosugestão só traz ativos;
   `App\Support\Busca::contem()` (padrão `like` com `%`/`_` escapados) e `App\Support\Paginacao::dados()` + `Paginacao.vue`
   compartilhados pelas listas. Rota com `{produto}` numérico (`Route::pattern`). Resource com `->parameters(['produtos-servicos' => 'produto'])`.
+- T12.2: valor do contrato = soma dos itens **recalculada no servidor** (o `valor` enviado pela tela é ignorado;
+  `RegrasDeItens::after` recusa total 0 ou acima do máximo); quantidade em milésimos, total `intdiv(q×p+500, 1000)`
+  (`App\Support\ItensDeVenda`; `itens.js` faz a mesma conta com BigInt só para exibir); códigos fiscais do item principal
+  (o marcado ou, sem marcação, o de maior total); contrato antigo sem itens continua valendo e exige itens ao editar;
+  `ContratoRequest::authorize` dá 404 para contrato alheio; item usado em contrato não é excluído (só desativado);
+  `BuscaCliente` virou `BuscaAutosugestao` (props `url`, `nenhum`, `limparAoEscolher`; slot `opcao`; evento `escolhido`).
+  **Pegadinha:** a regra `numeric` aceita `+1` e `1e3`; a regex `^\d{1,5}(\.\d{1,3})?$` fecha o formato antes de
+  `ItensDeVenda::milesimos`.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
