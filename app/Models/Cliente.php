@@ -22,9 +22,9 @@ class Cliente extends Model
     /** @use HasFactory<ClienteFactory> */
     use HasFactory;
 
-    /** Dados do tomador que vão para o snapshot do recibo e para o formulário. */
+    /** Dados do tomador que vão para o snapshot do recibo e para o formulário. O apelido não entra: é só das telas. */
     public const CAMPOS = [
-        'nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+        'nome', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
         'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
     ];
 

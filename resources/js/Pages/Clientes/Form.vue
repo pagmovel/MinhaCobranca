@@ -46,7 +46,8 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                     <input id="apelido" v-model="form.apelido" maxlength="60" class="entrada" aria-describedby="apelido-ajuda">
                     <p id="apelido-ajuda" class="font-estreita text-xs text-grafite/70">
                         Nome curto que aparece nas telas e nas buscas (ex.: Regional Araci). Serve também para cadastrar outra
-                        unidade com o mesmo CPF/CNPJ. No recibo sai como "Unidade atendida".
+                        unidade com o mesmo CPF/CNPJ. Não sai no recibo; para pôr, use "Incluir o apelido na descrição" no
+                        contrato ou na cobrança.
                     </p>
                 </Campo>
                 <BuscaCnpj :form="form" />

@@ -80,8 +80,8 @@ class EmissaoReciboTest extends TestCase
         $cliente->update(['modelo' => FamiliaModelo::Danfse]);
         $danfse = $emissor->emitir($this->cobranca($usuario, $cliente));
 
-        $this->assertSame(ModeloRecibo::WebissV2, $webiss->fresh()->modelo, 'troca de modelo não altera recibo antigo');
-        $this->assertSame(ModeloRecibo::DanfseV2, $danfse->modelo);
+        $this->assertSame(ModeloRecibo::WebissV1, $webiss->fresh()->modelo, 'troca de modelo não altera recibo antigo');
+        $this->assertSame(ModeloRecibo::DanfseV1, $danfse->modelo);
     }
 
     public function test_snapshot_fica_congelado(): void
@@ -112,7 +112,7 @@ class EmissaoReciboTest extends TestCase
 
         $recibo->refresh();
         $this->assertSame(1, $recibo->numero);
-        $this->assertSame(ModeloRecibo::WebissV2, $recibo->modelo);
+        $this->assertSame(ModeloRecibo::WebissV1, $recibo->modelo);
         $this->assertSame(30000, $recibo->snapshot['servico']['valor_centavos']);
     }
 }

@@ -11,8 +11,8 @@ enum FamiliaModelo: string
     public function versaoAtual(): ModeloRecibo
     {
         return match ($this) {
-            self::Webiss => ModeloRecibo::WebissV2,
-            self::Danfse => ModeloRecibo::DanfseV2,
+            self::Webiss => ModeloRecibo::WebissV1,
+            self::Danfse => ModeloRecibo::DanfseV1,
         };
     }
 

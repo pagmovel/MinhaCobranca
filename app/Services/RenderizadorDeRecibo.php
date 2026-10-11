@@ -146,8 +146,6 @@ final class RenderizadorDeRecibo
 
         return [
             'nome' => $this->traco($nome),
-            // Sem traço: vazio = o modelo não desenha a linha "Unidade atendida". Snapshot antigo não tem a chave.
-            'apelido' => (string) $campo('apelido'),
             'nome_fantasia' => $this->traco($campo('nome_fantasia')),
             'documento' => Documento::formatar($campo('documento')),
             'inscricao_municipal' => $this->traco($campo('inscricao_municipal')),

@@ -49,7 +49,7 @@ class UsuarioModeloTest extends TestCase
 
     public function test_familia_do_modelo_aponta_para_a_versao_atual(): void
     {
-        $this->assertSame('recibos.pdf.webiss-v2', FamiliaModelo::Webiss->versaoAtual()->view());
-        $this->assertSame('recibos.pdf.danfse-v2', FamiliaModelo::Danfse->versaoAtual()->view());
+        $this->assertSame('recibos.pdf.webiss-v1', FamiliaModelo::Webiss->versaoAtual()->view());
+        $this->assertSame('recibos.pdf.danfse-v1', FamiliaModelo::Danfse->versaoAtual()->view());
     }
 }

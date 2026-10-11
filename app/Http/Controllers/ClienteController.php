@@ -160,7 +160,7 @@ class ClienteController extends Controller
     {
         return Inertia::render('Clientes/Form', [
             'cliente' => $cliente
-                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value]
+                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value, 'apelido' => $cliente->apelido]
                     + array_map(fn ($valor) => $valor ?? '', $cliente->only(Cliente::CAMPOS))
                 : null,
             'modeloPadrao' => $request->user()->modelo_padrao->value,
