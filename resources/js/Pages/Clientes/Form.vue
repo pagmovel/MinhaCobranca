@@ -13,7 +13,7 @@ const props = defineProps({
     ufs: { type: Array, required: true },
 });
 
-const campos = ['nome', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+const campos = ['nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
     'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep'];
 
 const form = useForm({
@@ -41,6 +41,13 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                 </Campo>
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
                     <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
+                </Campo>
+                <Campo id="apelido" rotulo="Apelido (opcional)" :erro="form.errors.apelido" class="sm:col-span-6">
+                    <input id="apelido" v-model="form.apelido" maxlength="60" class="entrada" aria-describedby="apelido-ajuda">
+                    <p id="apelido-ajuda" class="font-estreita text-xs text-grafite/70">
+                        Nome curto que aparece nas telas e nas buscas (ex.: Regional Araci). Serve também para cadastrar outra
+                        unidade com o mesmo CPF/CNPJ. No recibo sai como "Unidade atendida".
+                    </p>
                 </Campo>
                 <BuscaCnpj :form="form" />
                 <Campo id="inscricao_municipal" rotulo="Inscrição municipal" :erro="form.errors.inscricao_municipal" class="sm:col-span-2">

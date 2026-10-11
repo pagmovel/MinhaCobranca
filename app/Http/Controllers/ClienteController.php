@@ -7,7 +7,6 @@ use App\Http\Requests\ClienteRequest;
 use App\Models\Cliente;
 use App\Support\BlocoDePaginas;
 use App\Support\Busca;
-use App\Support\Documento;
 use App\Support\Ufs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

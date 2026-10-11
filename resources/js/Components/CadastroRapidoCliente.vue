@@ -17,7 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['fechar', 'criado']);
 
 const vazio = {
-    nome: '', documento: '', email: '', telefone: '', modelo: 'webiss',
+    nome: '', apelido: '', documento: '', email: '', telefone: '', modelo: 'webiss',
     cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
 };
 const form = useForm({ ...vazio });
@@ -65,6 +65,12 @@ async function salvar() {
             </Campo>
             <Campo id="rapido_cliente_nome" rotulo="Nome ou razão social" :erro="form.errors.nome" class="sm:col-span-3">
                 <input id="rapido_cliente_nome" v-model="form.nome" maxlength="255" class="entrada" required :autofocus="!form.nome">
+            </Campo>
+            <Campo id="rapido_cliente_apelido" rotulo="Apelido (opcional)" :erro="form.errors.apelido" class="sm:col-span-6">
+                <input id="rapido_cliente_apelido" v-model="form.apelido" maxlength="60" class="entrada" aria-describedby="rapido_cliente_apelido_ajuda">
+                <p id="rapido_cliente_apelido_ajuda" class="font-estreita text-xs text-grafite/70">
+                    Nome curto para as telas e buscas (ex.: Regional Araci); permite outra unidade com o mesmo CPF/CNPJ.
+                </p>
             </Campo>
             <BuscaCnpj :form="form" />
             <Campo id="rapido_cliente_email" rotulo="E-mail (opcional)" :erro="form.errors.email" class="sm:col-span-3">
