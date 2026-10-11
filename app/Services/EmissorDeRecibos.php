@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 final class EmissorDeRecibos
 {
@@ -97,6 +98,10 @@ final class EmissorDeRecibos
     {
         if ($cobrancas->isEmpty()) {
             return;
+        }
+
+        if ($cobrancas->pluck('user_id')->unique()->count() > 1) {
+            throw new LogicException('refazerEmLote só aceita cobranças do mesmo prestador.');
         }
 
         $prestador = User::query()->findOrFail($cobrancas->first()->user_id);
