@@ -35,8 +35,8 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | concluída; testada na suíte (293/293, JS 16/16, build ok) com as correções da revisão e o encerramento agendado; migração aplicada no dev (autorizada); smoke pendente (pede autorização: grava dados do SMOKE) |
 | T17.10 | Corrigir início errado de contrato sem cobrança paga + perguntar na hora se gera os períodos retroativos (também ao criar contrato com início no passado) | concluída; testada na suíte (303/303, JS 16/16, build ok; `tests/Feature/CorrecaoDoInicioTest.php`); migração aplicada no dev com autorização (contratos 6 linhas, migrations 14→15); **validada** pelo usuário em 2026-10-10 ("aqui funcionou"): contrato nº 6 corrigido para 17/01/2026, 10 cobranças geradas (jan–out, retroativas escolhidas), a antiga cancelada desvinculada |
 | T17.11 | Renovar ou prorrogar contrato perto do fim, com os mesmos dados e permitindo alterações antes de concluir | pendente (desenho a fazer com o usuário) |
-| T17.12 | Corrigir pagamento (data) e desfazer baixa, com senha + motivo; auditoria das ações sensíveis; histórico na cobrança e tela "Auditoria" | concluída; testada na suíte (313/313, JS 16/16, build ok; `tests/Feature/AuditoriaTest.php`); **migração `auditorias` pendente (PORTÃO-BANCO)** — até lá a lista de cobranças do dev dá erro |
-| T17.13 | Apelido (nome curto) opcional no cliente — ex.: sindicato com CNPJ/endereço da sede, serviço prestado à regional ARACI/BA | pendente (perguntas ao usuário: onde o apelido aparece; mesmo CNPJ em mais de um cadastro) |
+| T17.12 | Corrigir pagamento (data) e desfazer baixa, com senha + motivo; auditoria das ações sensíveis; histórico na cobrança e tela "Auditoria" | concluída; testada na suíte (313/313, JS 16/16, build ok; `tests/Feature/AuditoriaTest.php`); migração `auditorias` aplicada no dev com autorização em 2026-10-11 (migrations 15→16, tabela vazia); falta validação do usuário |
+| T17.13 | Apelido (nome curto) opcional no cliente — ex.: sindicato com CNPJ/endereço da sede, serviço prestado à regional ARACI/BA | pendente — desenho aprovado (ver seção T17.13) |
 
 ### Decisões de 2026-10-10, após a revisão da T17.9 (respostas do usuário)
 - **Relato:** contrato nº 6 (usuário 1) criado com início 10/10/2026 em vez de 17/01/2026; a única cobrança está
@@ -132,3 +132,17 @@ baixa (pedem senha) e, só registrando, cancelar e editar cobrança, encerrar, r
 (4) Histórico **na linha da cobrança** ("Pagamento corrigido em 10/10/2026 (antes: 17/06/2026)") e **tela
 "Auditoria"** no menu com filtro por período. (5) Recibo pago já enviado: a linha avisa que o cliente recebeu a data
 antiga. Efeito conhecido: o "recebido" (caixa, por `pago_em`) muda de mês ao corrigir — esperado.
+
+## T17.13 — Apelido do cliente (decisões do usuário em 2026-10-11)
+**Pedido:** campo opcional de apelido/nome curto. Ex.: sindicato com CNPJ e endereço da sede, mas o serviço é prestado
+à regional ARACI/BA.
+**Decisões:** (1) **Telas e recibo:** listas, filtros e autosugestão mostram o apelido no lugar do nome (nome oficial
+embaixo, menor) e a busca acha pelos dois; no recibo o tomador continua com nome e CNPJ oficiais e o apelido sai numa
+linha "Unidade atendida: …". (2) **Mesmo CNPJ em mais de um cadastro, se o apelido for diferente** (cada regional vira
+um cliente, com contratos e relatórios próprios).
+**Rascunho técnico (a confirmar no código):** `clientes.apelido` texto, vazio por padrão (`''`, não nulo — índice único
+`(user_id, documento, apelido)` funciona igual no PostgreSQL e no SQLite; com nulo, dois cadastros sem apelido passariam);
+trocar o único `(user_id, documento)`; regra de unicidade no request com o apelido; snapshot do tomador com o apelido
+(recibo antigo sem a chave sai igual); templates `webiss-v1`/`danfse-v1` ganham a linha — **[A VERIFICAR]** se já há
+recibo emitido em produção (skill: depois disso, mudança vira `-v2`) e se a linha cabe na página (`AmostrasVisuaisTest`).
+Migração: PORTÃO-BANCO.
