@@ -857,6 +857,15 @@ o relatório mostra a parte que existe.
     `<script>` cujo texto tem `"component"` (não há `data-page` no `#app`).
   - **Calendário sem dia útil:** `proximoDiaUtil` para com `LogicException` depois de 366 dias (antes girava até
     esgotar a memória) e o cadastro aceita no máximo 100 feriados locais (`FeriadoRequest::LIMITE`).
+  - **Ruling (2ª revisão, minor 6 — risco aceito deliberadamente):** o limite de 100 feriados é checado em
+    `FeriadoRequest::after()` (contagem) e só depois criado em `FeriadoController::store()`, sem transação/lock — dois
+    cliques simultâneos perto do limite podem passar de 100 por uma margem pequena. Não corrigido: (1) o botão "Cadastrar
+    feriado" já fica `:disabled="form.processing"` durante o próprio pedido, cobrindo o caso comum (clique duplo na
+    mesma aba); (2) o limite é só uma preferência de UX (não deixar a lista enorme), não a defesa contra calendário sem
+    dia útil — essa defesa é o `LogicException` do `proximoDiaUtil` acima, que não depende da contagem; (3) corrigir de
+    verdade pediria mover a regra para dentro de uma transação com `lockForUpdate()` no controller, mais complexidade do
+    que o risco (estourar o teto por 1-2 num cenário raro de duas abas) justifica. Custo se a decisão estiver errada:
+    usuário com pouco mais de 100 feriados locais até excluir um — sem crash, sem dado errado.
   - **Aviso da avulsa** em `resources/js/avisoDiaUtil.js` (testado): apaga o aviso na hora ao trocar a data — o
     "Usar…" da data anterior não pode ficar clicável durante a espera de 400 ms — e descarta resposta atrasada.
   - **Acessibilidade:** aviso que entra por `v-if` não anuncia; usar um `<p class="sr-only" aria-live="polite">` sempre
