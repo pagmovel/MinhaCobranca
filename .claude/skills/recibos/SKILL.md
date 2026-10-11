@@ -990,6 +990,42 @@ o relatório mostra a parte que existe.
     inteiro (lote do Painel pode juntar cobranças de situações diferentes do mesmo cliente) — usa a mais urgente
     (`vencida > vence_hoje > a_vencer`), não a mais comum nem a da primeira cobrança da lista.
 
+## Deploy no EasyPanel (validado pelo usuário em 2026-10-11)
+- **Onde:** VPS 207.180.205.211, projeto `meus_projetos`, serviço **Compose** `gerenciador_cobrancas` (fonte Git,
+  Build Path `/`, arquivo `docker-compose.easypanel.yml`). Banco = serviço `postgres_dev` do mesmo projeto, banco
+  `recibos`, usuário `recibos_app` — o mesmo que o projeto local usa (decisão do usuário).
+- **Arquivos:** `Dockerfile` (Node 22 compila o Vite → PHP 8.4 + Apache bookworm com `pdo_pgsql`, `gd`, `opcache`),
+  `.dockerignore`, `docker-compose.easypanel.yml` (`env_file: .env`, volume `storage-app` em `storage/app`).
+- **Variáveis:** aba Environment com "Create .env file" ligado. `APP_ENV=production` e `APP_DEBUG=false` ficam fixos
+  no compose (ganham do painel). Banco por host interno: `DB_HOST=meus_projetos_postgres_dev`, `DB_PORT=5432`.
+  `LOG_CHANNEL=stderr` para o erro aparecer no log do container.
+- **Subida do container:** `php artisan optimize` em runtime (as variáveis só existem ali); migração só com
+  `RODAR_MIGRACOES=1` — ligar no deploy que traz migração nova e voltar a 0.
+- **Domínio:** service `app`, porta 80, protocolo HTTP (o HTTPS é do EasyPanel).
+
+### Pegadinhas do deploy
+- O primeiro deploy era um **App com builder Nixpacks**: ignora o Dockerfile, usa Node 18 e o Vite 8 quebra
+  (`node:util` sem `styleText`). E o App passa **todas** as variáveis como `--build-arg` — senhas ficam no log do
+  build. Por isso Compose.
+- **Domínio com "Compose Service" vazio** = 502 "Service is not reachable", sem nenhuma requisição no log do Apache.
+- O container só entra na rede interna do EasyPanel (IP `10.11.x.x`) depois que o domínio aponta para ele; antes
+  ficava só na rede do compose (`172.20.x.x`).
+- Erro `could not translate host name` = `DB_HOST` errado no painel (aconteceu com um `1` sobrando). O `.env` local
+  não entra na imagem; a origem é sempre o painel. `DB_URL` preenchido tem prioridade sobre `DB_HOST`.
+- Variável trocada só vale depois de novo **Deploy** (o config é cacheado na subida).
+- `POST /entrar` → 302 de volta para `/entrar`, sem erro no log = login recusado (senha errada, conta pendente ou
+  bloqueada); a mensagem na tela diz qual. CSRF vencido seria 303 (tratamento em `bootstrap/app.php`).
+
+### Acertos do deploy
+- **`trustProxies` só em faixas privadas** (`10/8`, `172.16/12`, `192.168/16`), nunca `'*'`: no Laravel 13 `'*'`
+  vira `0.0.0.0/0` e o cliente forja o `X-Forwarded-For` para furar o throttle do login/cadastro. Sem `trustProxies`
+  os assets saem `http://` e o navegador bloqueia (conteúdo misto). Fixado em `tests/Feature/ProxyConfiavelTest.php`
+  (falha se voltar para `'*'`).
+- `.dockerignore` deixa fora `storage/`, `MATERIAIS/` e os JSON de dados pessoais da seed; o Dockerfile recria só o
+  esqueleto de `storage/`.
+- **Pendente (segurança):** as senhas do `recibos_app`, do superusuário `postgres` e o `APP_KEY` de dev apareceram
+  em texto puro nos logs do deploy com Nixpacks — trocar.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
