@@ -71,7 +71,7 @@ const sair = () => router.post('/sair');
             </ul>
         </nav>
 
-        <main class="w-full max-w-[96rem] min-w-0 px-4 py-6 md:px-8">
+        <main class="w-full min-w-0 px-4 py-6 md:px-8">
             <Transition name="surgir">
                 <p v-if="flash.sucesso" :key="flash.sucesso" role="status" class="mb-4 border-l-4 border-tinta-verde bg-white px-4 py-2 text-sm">
                     {{ flash.sucesso }}

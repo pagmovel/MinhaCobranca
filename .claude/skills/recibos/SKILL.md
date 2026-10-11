@@ -34,10 +34,11 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
 9. **Ação em lote mostra a prévia antes** (o que muda, quanto, o que fica) e só então confirma.
 10. **390 px sem rolagem horizontal** (fieldset com `min-w-0`; contêiner de tabela `relative overflow-x-auto`).
 11. **Largura da área de conteúdo** (pedido do usuário em 2026-10-11, "está desperdiçando muito espaço à esquerda e à
-    direita"): o `<main>` do `CamadaApp.vue` fica encostado no menu, sem `mx-auto`, limitado a `max-w-[96rem]` e com
+    direita"): o `<main>` do `CamadaApp.vue` ocupa toda a largura ao lado do menu, **sem `mx-auto` e sem `max-w`**, com
     `min-w-0` (ele é item de grid `13rem_1fr`; sem `min-w-0` uma tabela larga estica a página). Listas e tabelas usam a
     largura toda; **formulários e textos continuam em `max-w-3xl`** (linha de leitura). Não voltar a centralizar em
-    `max-w-5xl`.
+    `max-w-5xl`. *Pegadinha:* a primeira tentativa limitou a `max-w-[96rem]` (1536 px) e numa tela de 1920 px ainda
+    sobrava ~170 px à direita — o usuário recusou; nenhum limite.
 12. **Listas em tabela** (direção aprovada em 2026-10-11, modelos em `MATERIAIS/tables-m0*.html` — só a estrutura, nunca
     a paleta azul, fotos externas ou ícones do Google): colunas alinhadas, valor à direita em `tabular-nums`, **uma
     ação principal por linha conforme a situação** e as demais num menu "⋯", formulário da ação numa faixa abaixo da
