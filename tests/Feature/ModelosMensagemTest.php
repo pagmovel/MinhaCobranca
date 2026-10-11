@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\ModeloMensagem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ModelosMensagemTest extends TestCase
@@ -67,6 +68,16 @@ class ModelosMensagemTest extends TestCase
         $this->put("/perfil/mensagens/{$alheio->id}", ['nome' => 'x', 'texto' => 'y'])->assertNotFound();
         $this->delete("/perfil/mensagens/{$alheio->id}")->assertNotFound();
         $this->assertNotNull($alheio->fresh());
+    }
+
+    public function test_tela_do_perfil_traz_os_modelos_do_usuario(): void
+    {
+        $this->post('/perfil/mensagens', ['nome' => 'Aviso', 'texto' => 'Olá {cliente}!', 'padrao' => true]);
+
+        $this->get('/perfil')->assertInertia(fn (Assert $pagina) => $pagina
+            ->has('modelosMensagem', 1)
+            ->where('modelosMensagem.0.nome', 'Aviso')
+            ->where('modelosMensagem.0.padrao', true));
     }
 
     public function test_nome_e_texto_obrigatorios_e_texto_ate_2000(): void

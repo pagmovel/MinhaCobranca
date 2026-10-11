@@ -59,6 +59,7 @@ class PerfilController extends Controller
                 ->values(),
             // Recalculada a cada abertura: cadastrar ou excluir feriado volta para cá e a prévia já vem atualizada.
             'vencimentosParaAjustar' => $ajuste->previa($usuario),
+            'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
             'ufs' => Ufs::TODAS,
         ]);
     }
