@@ -68,7 +68,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T20.7 | Usuários (admin) em tabela por ajax, filtros, ação principal pela situação | testada (RED: módulo inexistente, 3 falhas PHP → GREEN; JS 44/44, suíte 358/358, build ok) |
 | T20.8 | Painel: três listas por ajax | testada (RED: 5 falhas → GREEN; suíte 360/360, build ok) |
 | T20.9 | Relatórios por ajax | testada (RED: 10 falhas → GREEN; CSV byte a byte igual; suíte 362/362, JS 44/44, build ok) |
-| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | concluída: teste "só lê" (22 casos, provado com defeito de propósito), limpeza, skill, revisão final (0 Critical; 1 Important + 1 subido corrigidos com TDD; 10 Minor adiados); suítes PHP 384/384, JS 46/46, build ok. **Testada:** conferência visual feita em 2026-10-11 (autorizada); 3 defeitos corrigidos, PHP 385/385, JS 46/46, build ok. **Falta:** validação do usuário e decisão sobre os Minor |
+| T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | concluída: teste "só lê" (22 casos, provado com defeito de propósito), limpeza, skill, revisão final (0 Critical; 1 Important + 1 subido corrigidos com TDD; 10 Minor adiados); suítes PHP 384/384, JS 46/46, build ok. **Testada:** conferência visual feita em 2026-10-11 (autorizada); 3 defeitos corrigidos, PHP 385/385, JS 46/46, build ok. Minor decididos. **Validada pelo usuário em 2026-10-11 ("Tudo conferido").** |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - **Decisões do plano (antes da execução):**

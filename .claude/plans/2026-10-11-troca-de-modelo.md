@@ -15,7 +15,7 @@ que ainda não foram enviadas e com opção para gerar novamente as que foram en
 |---|---|---|
 | T22.1 | Servidor: `EmissorDeRecibos::aplicarModeloDoCliente`, `ClienteController::update` (transação), contagens na tela de edição, `regerar_enviadas` no request | testada: `TrocaDeModeloTest` (4) RED → GREEN; PHP 398/398 |
 | T22.2 | Tela: aviso com a prévia e a caixa das enviadas no formulário do cliente | concluída (build ok); conferência visual na T22.3 |
-| T22.3 | Conferência visual e validação do usuário | pendente |
+| T22.3 | Conferência visual e validação do usuário | **Validada pelo usuário em 2026-10-11 ("Tudo conferido").** |
 
 ## Registro de execução
 - **T22.1:** `EmissorDeRecibos::aplicarModeloDoCliente(Cliente, bool $incluirEnviadas): int` (pendentes; sem a caixa, só
@@ -26,3 +26,9 @@ que ainda não foram enviadas e com opção para gerar novamente as que foram en
   guarda do comportamento antigo, não prova da mudança.
 - **Migração da Fase 21 aplicada no banco de dev** (2026-10-11, "sim" do usuário; `207.180.205.211:1`, `recibos`,
   `recibos_app`, não é produção): `clientes` com 4 linhas antes e depois, todas com apelido vazio; nenhuma pendente.
+- **Correção depois da validação (relato do usuário com print, 2026-10-11):** sem logo, as iniciais do WebISS ("MR")
+  ficavam na borda de baixo da caixa. Causa: `div.monograma` centralizado por `line-height: 56pt`, que o dompdf não aplica
+  (pegadinha T4.4). Agora `table.monograma` com `td { height: 56pt; vertical-align: middle }`. Medido com pypdf na
+  `amostra-webiss.pdf`: base das iniciais de 765,3pt (abaixo da caixa, ~768–824pt) para 785,4pt (centro ~794pt).
+  **Decisão do usuário:** corrigir no próprio `webiss-v1` (vale também para recibos já emitidos; só muda o alinhamento),
+  sem criar `-v2`.

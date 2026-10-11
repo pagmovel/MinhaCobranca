@@ -272,6 +272,9 @@ o relatório mostra a parte que existe.
 - T4.4 (pegadinhas do dompdf, medidas com `pypdf` nas amostras):
   - `table-layout: fixed` com largura só em parte das colunas deixou a coluna livre estreita
     (~170pt): nome e endereço do cabeçalho quebraram em 7 linhas. **Dar largura (%) a todas as colunas.**
+  - **Iniciais sem logo (WebISS):** `line-height` também não centraliza na vertical — "MR" caía na borda de baixo da
+    caixa (relato do usuário, 2026-10-11). Centralizar com célula de tabela (`vertical-align: middle` + `height`).
+    Corrigido no próprio `webiss-v1` **por decisão do usuário** (só alinhamento; exceção à regra do `-v2`).
   - `line-height` (sem unidade ou em pt) **não vale** para linhas quebradas por `<br>` (`nl2br`): saíram
     com 10,7pt em fonte de 7pt. Descrição do WebISS renderiza **uma `div` por linha com `height` fixa**.
   - Rodapé `position: fixed; bottom: 0` fica dentro da área do conteúdo e se sobrepõe a ele: usar margem

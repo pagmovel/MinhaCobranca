@@ -16,7 +16,9 @@
     .val-p { display: block; font-size: 7pt; font-weight: bold; }
     .num { text-align: right; }
     .centro { text-align: center; }
-    .monograma { width: 56pt; height: 56pt; border: 1pt solid #000; font-size: 20pt; font-weight: bold; text-align: center; line-height: 56pt; }
+    /* Iniciais sem logo: célula com vertical-align (o dompdf não centraliza por line-height; o texto caía na borda de baixo). */
+    .monograma { width: 56pt; border: 1pt solid #000; }
+    .monograma td { height: 56pt; padding: 0; vertical-align: middle; text-align: center; font-size: 20pt; font-weight: bold; }
     .carimbo { position: absolute; border: 3pt solid; padding: 4pt 12pt; font-weight: bold; text-align: center; }
     .carimbo-detalhe { font-size: 9pt; }
     .carimbo-pago { color: #2E7D4F; border-color: #2E7D4F; }
@@ -36,7 +38,7 @@
                 @if ($logo)
                     <img src="{{ $logo }}" alt="" style="max-width: 64pt; max-height: 76pt;">
                 @else
-                    <div class="monograma">{{ $prestador['iniciais'] }}</div>
+                    <table class="monograma"><tr><td>{{ $prestador['iniciais'] }}</td></tr></table>
                 @endif
             </td>
             <td style="width: 66%;">

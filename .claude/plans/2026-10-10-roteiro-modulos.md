@@ -6,14 +6,11 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
-### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da conferência visual da Fase 20)
-1. **Fase 20 — validação do usuário.** Conferência visual feita e corrigida em 2026-10-11; depois, com o "siga conforme achar melhor" do usuário, corrigidos os Minor 1, 8, 9 e 10 e as datas gravadas com ano de 5 dígitos (`date_format:Y-m-d`). Seguem adiados os Minor 2–7 e o botão "Enviar" do Painel a 390 px (motivos no "Registro de execução" do plano da Fase 20). Falta **só a validação do usuário** (Usuários não foi vista no navegador: o SMOKE não é admin).
-2. **Fase 21 — apelido do cliente (T17.13)**, plano `.claude/plans/2026-10-11-apelido-do-cliente.md`: T21.1–T21.4
-   **testadas**; o apelido **não sai no recibo** (decisão do usuário), só pelo botão "Incluir o apelido na descrição".
-   **Migração aplicada no banco de dev em 2026-10-11** ("sim" do usuário). Falta conferência visual (pede
-   autorização: grava cliente de teste) e validação.
-3. **Fase 22 — troca de modelo do recibo** (pedido do usuário, 2026-10-11), plano
-   `.claude/plans/2026-10-11-troca-de-modelo.md`: T22.1 testada, T22.2 concluída. Falta conferência visual e validação.
+### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da validação das Fases 20–22)
+- **Fases 20, 21 e 22 validadas pelo usuário em 2026-10-11 ("Tudo conferido").** Migração do apelido aplicada no dev.
+- Correção pós-validação: iniciais centralizadas no WebISS sem logo (no próprio `webiss-v1`, decisão do usuário).
+- **Próximo:** revisão final da branch e decisão do usuário sobre o merge na `main` das Fases 17 (resto) a 22;
+  pendências antigas na lista abaixo (T17.9, T17.12, T17.14, T17.11; sessões do SMOKE na tabela `sessions`).
 
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.

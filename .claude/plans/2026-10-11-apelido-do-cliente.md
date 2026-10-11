@@ -38,7 +38,7 @@ ARACI/BA.
 | T21.2 | Telas do cadastro: formulário, cadastro rápido, lista de clientes e opção da autosugestão com o nome oficial embaixo | concluída (só telas; build ok); conferência visual na T21.5 |
 | T21.3 | Apelido nas outras telas: cobranças, painel, previstas, contratos, filtros de cliente, reajuste, relatórios | testada: `ApelidoNasTelasTest` (painel, cobranças, previstas, contratos, filtros, edição, relatórios) RED → GREEN |
 | T21.4 | ~~Recibo -v2 com "Unidade atendida"~~ **desfeito** (decisão do usuário). No lugar: botão "Incluir o apelido na descrição" no contrato e na cobrança; o snapshot não guarda o apelido | testada: `RenderizadorDeReciboTest::test_apelido_do_cliente_nao_vai_para_o_recibo` RED → GREEN; `apelido.test.js` (3) RED → GREEN; PHP 394/394, JS 50/50 |
-| T21.5 | PORTÃO-BANCO (migração no dev, com "sim"), conferência visual (pede autorização) e validação do usuário | pendente |
+| T21.5 | PORTÃO-BANCO (migração no dev, com "sim"), conferência visual (pede autorização) e validação do usuário | migração aplicada ("sim"); **Validada pelo usuário em 2026-10-11 ("Tudo conferido").** |
 
 ## Registro de execução
 - **T21.1:** `Cliente::exibicao()`, `nomeOficial()` e `paraBusca()` (formato único da autosugestão, do cadastro rápido e
