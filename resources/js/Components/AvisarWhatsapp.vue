@@ -42,6 +42,8 @@ function atualizarTexto() {
         prestador: props.prestador,
         chavePix: dados.value.chave_pix,
         contato: dados.value.contato,
+        apelido: dados.value.apelido,
+        razaoSocial: dados.value.razao_social,
     });
 }
 

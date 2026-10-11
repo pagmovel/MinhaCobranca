@@ -38,22 +38,52 @@ function juntarVencimentos(vencimentos) {
     return juntarComE([...curtas, formatarData(vencimentos.at(-1), true)]);
 }
 
+/** "Bom dia" até 11h59, "Boa tarde" até 17h59, "Boa noite" daí em diante — hora de quem está montando a mensagem. */
+function saudacao(data) {
+    const hora = data.getHours();
+    if (hora < 12) {
+        return 'Bom dia';
+    }
+
+    return hora < 18 ? 'Boa tarde' : 'Boa noite';
+}
+
+/** Nome de uma variável, ou várias separadas por "|" numa cascata: {contato|apelido|razao_social}. */
+const PADRAO_VARIAVEL = /\{([a-z_]+(?:\|[a-z_]+)*)\}/gi;
+
 /**
  * Substitui as variáveis conhecidas por valores reais; o que não reconhece fica literal no texto (erro de
- * digitação no modelo não pode travar nem sumir pedaço da mensagem).
+ * digitação no modelo não pode travar nem sumir pedaço da mensagem). Uma chave pode trazer várias variáveis
+ * separadas por "|" (cascata): usa a primeira da lista que não estiver vazia — ex. {contato|apelido|razao_social}
+ * manda o nome mais informal disponível. Se QUALQUER uma das opções da cascata não for reconhecida, a chave
+ * inteira fica literal (mesma regra de erro de digitação); se todas forem reconhecidas mas vazias, vira "".
  */
-export function montarMensagem(texto, { cliente, itens, vencimentos, totalCentavos, prestador, chavePix, contato }) {
-    return texto
-        .replaceAll('{cliente}', cliente)
-        // Sem fallback para o nome do cliente (decisão do usuário): vazia quando não há pessoa de contato cadastrada.
-        .replaceAll('{contato}', contato ?? '')
+export function montarMensagem(texto, {
+    cliente, itens, vencimentos, totalCentavos, prestador, chavePix, contato, apelido, razaoSocial, agora,
+}) {
+    const valores = {
+        cliente,
+        contato: contato ?? '',
+        apelido: apelido ?? '',
+        razao_social: razaoSocial ?? '',
         // Nomes em frase corrida ("vence a hospedagem do domínio {item}"), sem "-" nem valor — diferente de {itens}.
-        .replaceAll('{item}', juntarComE(itens.map((item) => item.nome)))
-        .replaceAll('{itens}', itens.map(linhaDoItem).join('\n'))
-        .replaceAll('{vencimento}', juntarVencimentos(vencimentos))
-        .replaceAll('{total}', `R$ ${formatarCentavos(totalCentavos)}`)
-        .replaceAll('{chave_pix}', chavePix ?? '')
-        .replaceAll('{prestador}', prestador);
+        item: juntarComE(itens.map((item) => item.nome)),
+        itens: itens.map(linhaDoItem).join('\n'),
+        vencimento: juntarVencimentos(vencimentos),
+        total: `R$ ${formatarCentavos(totalCentavos)}`,
+        chave_pix: chavePix ?? '',
+        saudacao: saudacao(agora ?? new Date()),
+        prestador,
+    };
+
+    return texto.replace(PADRAO_VARIAVEL, (trecho, grupo) => {
+        const opcoes = grupo.split('|');
+        if (!opcoes.every((opcao) => opcao in valores)) {
+            return trecho;
+        }
+
+        return valores[opcoes.find((opcao) => valores[opcao] !== '') ?? opcoes.at(-1)];
+    });
 }
 
 /** Celular válido (DDI 55 + DDD + 9 dígitos começando em "9") para o link do WhatsApp; senão, null. */

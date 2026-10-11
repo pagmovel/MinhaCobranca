@@ -9,8 +9,15 @@ const props = defineProps({
 });
 
 const VARIAVEIS = [
-    { token: '{cliente}', legenda: 'nome do cliente' },
+    { token: '{saudacao}', legenda: 'Bom dia / Boa tarde / Boa noite, pela hora de quem envia' },
+    { token: '{cliente}', legenda: 'nome do cliente (apelido, senão o nome)' },
     { token: '{contato}', legenda: 'pessoa de contato (vazio se não houver uma cadastrada)' },
+    { token: '{apelido}', legenda: 'só o apelido (vazio se não houver um cadastrado)' },
+    { token: '{razao_social}', legenda: 'nome oficial do cliente' },
+    {
+        token: '{contato|apelido|razao_social}',
+        legenda: 'o nome mais informal disponível: contato, senão apelido, senão razão social',
+    },
     { token: '{item}', legenda: 'nome do(s) item(ns), em frase' },
     { token: '{itens}', legenda: 'lista dos itens vencendo' },
     { token: '{vencimento}', legenda: 'data(s) de vencimento' },
@@ -23,6 +30,8 @@ const VARIAVEIS = [
 const EXEMPLO = {
     cliente: 'Fulano da Silva',
     contato: 'Fulano',
+    apelido: 'Fulano da Silva',
+    razaoSocial: 'Fulano da Silva Comércio LTDA',
     itens: [{ nome: 'Hospedagem do domínio exemplo.com.br', valorCentavos: 8990 }],
     vencimentos: ['2026-10-15'],
     totalCentavos: 8990,

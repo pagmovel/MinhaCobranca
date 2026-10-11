@@ -109,6 +109,53 @@ test('{contato}: sem pessoa de contato cadastrada, fica vazia (decisão do usuá
     assert.equal(texto, 'Oi, !');
 });
 
+test('{apelido}: substitui pelo apelido quando cadastrado', () => {
+    assert.equal(montarMensagem('{apelido}', dados({ apelido: 'Padaria' })), 'Padaria');
+});
+
+test('{apelido}: sem apelido cadastrado, fica vazio', () => {
+    assert.equal(montarMensagem('[{apelido}]', dados()), '[]');
+});
+
+test('{razao_social}: substitui pelo nome oficial do cliente', () => {
+    assert.equal(montarMensagem('{razao_social}', dados({ razaoSocial: 'Padaria do João LTDA' })), 'Padaria do João LTDA');
+});
+
+test('cascata {a|b|c}: usa a primeira variável preenchida, na ordem escrita', () => {
+    const texto = montarMensagem('Oi, {contato|apelido|razao_social}!', dados({
+        contato: 'Wendel', apelido: 'Padaria', razaoSocial: 'Padaria do João LTDA',
+    }));
+    assert.equal(texto, 'Oi, Wendel!');
+});
+
+test('cascata {a|b|c}: pula as vazias até achar uma preenchida', () => {
+    const texto = montarMensagem('Oi, {contato|apelido|razao_social}!', dados({ razaoSocial: 'Padaria do João LTDA' }));
+    assert.equal(texto, 'Oi, Padaria do João LTDA!');
+});
+
+test('cascata {a|b|c}: todas vazias vira string vazia, nunca literal', () => {
+    assert.equal(montarMensagem('Oi, {contato|apelido}!', dados()), 'Oi, !');
+});
+
+test('cascata com uma variável desconhecida no meio fica literal (erro de digitação não quebra nem oculta)', () => {
+    const texto = montarMensagem('Oi, {contato|apelidoo}!', dados({ contato: 'Wendel' }));
+    assert.equal(texto, 'Oi, {contato|apelidoo}!');
+});
+
+test('{saudacao}: antes de 12h vira "Bom dia"', () => {
+    assert.equal(montarMensagem('{saudacao}', dados({ agora: new Date(2026, 9, 11, 8, 0) })), 'Bom dia');
+});
+
+test('{saudacao}: de 12h a 17h59 vira "Boa tarde"', () => {
+    assert.equal(montarMensagem('{saudacao}', dados({ agora: new Date(2026, 9, 11, 12, 0) })), 'Boa tarde');
+    assert.equal(montarMensagem('{saudacao}', dados({ agora: new Date(2026, 9, 11, 17, 59) })), 'Boa tarde');
+});
+
+test('{saudacao}: a partir de 18h vira "Boa noite"', () => {
+    assert.equal(montarMensagem('{saudacao}', dados({ agora: new Date(2026, 9, 11, 18, 0) })), 'Boa noite');
+    assert.equal(montarMensagem('{saudacao}', dados({ agora: new Date(2026, 9, 11, 23, 30) })), 'Boa noite');
+});
+
 test('MENSAGEM_SUGERIDA: itens em bloco, sem concordância verbal (achado da revisão, T24.9)', () => {
     const texto = montarMensagem(MENSAGEM_SUGERIDA, dados({
         itens: [{ nome: 'Hospedagem', valorCentavos: 8990 }, { nome: 'Domínio', valorCentavos: 4000 }],

@@ -74,6 +74,22 @@ class AvisoWhatsappTest extends TestCase
             ->assertJson(['itens' => [['nome' => 'Serviço', 'valor_centavos' => 5000]]]);
     }
 
+    public function test_inclui_apelido_e_razao_social_separados(): void
+    {
+        $this->cliente->forceFill(['nome' => 'Padaria do João LTDA', 'apelido' => 'Padaria'])->save();
+        $cobranca = $this->cobranca();
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")
+            ->assertJson(['apelido' => 'Padaria', 'razao_social' => 'Padaria do João LTDA']);
+    }
+
+    public function test_apelido_vazio_quando_o_cliente_nao_tem_um_cadastrado(): void
+    {
+        $cobranca = $this->cobranca();
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['apelido' => '']);
+    }
+
     public function test_inclui_o_contato_quando_o_cliente_tem_um_cadastrado(): void
     {
         $this->cliente->forceFill(['contato' => 'Wendel'])->save();
