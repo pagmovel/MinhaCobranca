@@ -25,6 +25,8 @@ const props = defineProps({
 const PADROES = { cliente_id: '', situacao: '', modalidade: '', forma_pagamento: '', produto_servico_id: '' };
 const filtro = reactive({ ...props.filtros });
 const filtrando = computed(() => filtrosAlterados(filtro, PADROES));
+// A mensagem de vazio segue os filtros do resultado na tela, não o que está sendo digitado (a busca espera 400 ms).
+const resultadoFiltrado = computed(() => filtrosAlterados(resumo.value?.filtros ?? {}, PADROES));
 const { linhas, resumo, carregando, falha, estado, irPara, filtrar, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/contratos/dados', filtro, componente: 'Contratos/Index', endereco: '/contratos',
 });
@@ -97,7 +99,7 @@ const cobrancasDo = (contrato) => `/cobrancas?${new URLSearchParams({ cliente_id
             :estado="estado"
             :falha="falha"
             carregando="Carregando contratos…"
-            :vazio="filtrando ? 'Nenhum contrato com estes filtros.' : 'Nenhum contrato ainda. Com um contrato, a cobrança e o recibo de cada período são gerados sozinhos.'"
+            :vazio="resultadoFiltrado ? 'Nenhum contrato com estes filtros.' : 'Nenhum contrato ainda. Com um contrato, a cobrança e o recibo de cada período são gerados sozinhos.'"
             @tentar="recarregar"
         >
             <Paginador id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />

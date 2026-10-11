@@ -5,6 +5,8 @@ import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
 import Paginador from '../../Components/Paginador.vue';
+import { anoCompleto } from '../../filtroPeriodo.js';
+import { adiar } from '../../listaPaginada.js';
 import { filtrosAlterados } from '../../paginacao.js';
 import { usarListaPaginada } from '../../usarListaPaginada.js';
 
@@ -18,6 +20,9 @@ const filtrando = computed(() => filtrosAlterados(filtro, props.padroes));
 const { linhas, resumo, carregando, falha, erros, estado, irPara, filtrar, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/auditoria/dados', filtro, componente: 'Auditoria/Index', endereco: '/auditoria',
 });
+// O campo de data muda a cada dígito e a cada parte (dia, mês, ano): o pedido sai 400 ms depois da última mudança, e
+// nunca com o ano pela metade (0002, 0020…).
+const escolheuData = adiar(() => anoCompleto(filtro.de) && anoCompleto(filtro.ate) && filtrar());
 </script>
 
 <template>
@@ -30,10 +35,10 @@ const { linhas, resumo, carregando, falha, erros, estado, irPara, filtrar, recar
 
         <form class="mb-6 flex flex-wrap items-end gap-4" @submit.prevent="filtrar">
             <Campo id="de" rotulo="De" :erro="erros.de">
-                <input id="de" v-model="filtro.de" type="date" class="entrada" @change="filtrar">
+                <input id="de" v-model="filtro.de" type="date" class="entrada" @change="escolheuData">
             </Campo>
             <Campo id="ate" rotulo="Até" :erro="erros.ate">
-                <input id="ate" v-model="filtro.ate" type="date" class="entrada" :min="filtro.de" @change="filtrar">
+                <input id="ate" v-model="filtro.ate" type="date" class="entrada" :min="filtro.de" @change="escolheuData">
             </Campo>
             <Link v-if="filtrando" href="/auditoria" class="pb-2 font-estreita text-sm text-carbono underline">Limpar filtros</Link>
         </form>

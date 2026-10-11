@@ -15,8 +15,9 @@ import PagamentoInline from '../../Components/PagamentoInline.vue';
 import Paginador from '../../Components/Paginador.vue';
 import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
 import { botaoPrincipal, itemMenu } from '../../estilosLista.js';
-import { ajustarAte } from '../../filtroPeriodo.js';
+import { ajustarAte, anoCompleto } from '../../filtroPeriodo.js';
 import { formatarCentavos } from '../../itens.js';
+import { adiar } from '../../listaPaginada.js';
 import { filtrosAlterados } from '../../paginacao.js';
 import { usarListaPaginada } from '../../usarListaPaginada.js';
 
@@ -37,14 +38,21 @@ const vazio = computed(() => ({
 }[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste período e filtros.'));
 
 // O "Até" se ajusta sozinho (filtroPeriodo.js): o servidor nunca recusa o período por um campo que a pessoa não mexeu.
+// Ano ainda pela metade (0002, 0020…) não filtra nem mexe no "Até".
 let mesAnterior = filtro.mes;
 function escolheuMes() {
+    if (!anoCompleto(filtro.mes)) {
+        return;
+    }
     filtro.ate = ajustarAte(mesAnterior, filtro.mes, filtro.ate);
     mesAnterior = filtro.mes;
     escolheuPeriodo();
 }
 // Mexeu no próprio "Até": vazio vira o mês; fora do limite, o erro do servidor aparece embaixo dele (é o campo certo).
 function escolheuAte() {
+    if (!anoCompleto(filtro.ate)) {
+        return;
+    }
     filtro.ate ||= filtro.mes;
     escolheuPeriodo();
 }
@@ -61,11 +69,13 @@ const erroAte = computed(() => erros.value.ate ?? '');
 watch(() => filtro.cliente_id, filtrar);
 const filtrando = computed(() => filtrosAlterados(filtro, props.padroes));
 
+// O campo de mês muda a cada dígito e a cada parte: o pedido sai 400 ms depois da última mudança.
+const filtrarPeriodo = adiar(() => filtrar());
 function escolheuPeriodo() {
     if (todosOsMeses.value) {
         filtro.status = '';
     }
-    filtrar();
+    filtrarPeriodo();
 }
 
 const linhas = computed(() => linhasDaPagina.value.map((cobranca) => ({ ...cobranca, acoes: acoesDaCobranca(cobranca) })));

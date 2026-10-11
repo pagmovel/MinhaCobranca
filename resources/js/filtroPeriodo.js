@@ -22,3 +22,14 @@ export function periodoAoRedor(hoje = new Date(), meses = 12) {
 
     return { mes: mes(-meses), ate: mes(meses) };
 }
+
+/**
+ * O ano do campo de data ou mês já foi digitado inteiro? O `change` do Chrome sai a cada dígito do ano (0002, 0020,
+ * 0202, 2026): sem esta guarda, cada dígito virava um pedido ao servidor. Vazio passa (o servidor usa o padrão).
+ */
+export function anoCompleto(valor) {
+    if (!valor) return true;
+    const ano = valor.split('-')[0];
+
+    return ano.length === 4 && ano >= '1900' && ano <= '2100';
+}

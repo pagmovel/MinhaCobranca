@@ -5,6 +5,8 @@ import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
 import Paginador from '../../Components/Paginador.vue';
+import { anoCompleto } from '../../filtroPeriodo.js';
+import { adiar } from '../../listaPaginada.js';
 import { formatarCentavos } from '../../itens.js';
 import { relatorio } from '../../relatorios.js';
 import { usarListaPaginada } from '../../usarListaPaginada.js';
@@ -23,6 +25,9 @@ const { linhas, resumo, carregando, falha, erros, estado, irPara, filtrar, recar
     url: `/relatorios/${props.tipo}/dados`, filtro, componente: 'Relatorios/Ver', endereco: `/relatorios/${props.tipo}`,
 });
 
+// O campo de mês muda a cada dígito e a cada parte: o pedido sai 400 ms depois da última mudança, e nunca com o ano
+// pela metade (0002, 0020…).
+const escolheuMes = adiar(() => anoCompleto(filtro.de) && anoCompleto(filtro.ate) && filtrar());
 const csv = computed(() => `/relatorios/${props.tipo}?${new URLSearchParams({ de: filtro.de, ate: filtro.ate, formato: 'csv' })}`);
 const maximo = computed(() => Math.max(1, ...linhas.value.flatMap((linha) => [linha.previsto ?? 0, linha.recebido ?? 0])));
 const largura = (centavos) => `${Math.round((centavos / maximo.value) * 100)}%`;
@@ -47,10 +52,10 @@ function valor(coluna, conteudo) {
         <div class="mb-6 flex flex-wrap items-end gap-4">
             <form v-if="comPeriodo" class="flex flex-wrap items-end gap-4" @submit.prevent="filtrar">
                 <Campo id="de" rotulo="De" :erro="erros.de">
-                    <input id="de" v-model="filtro.de" type="month" class="entrada" required @change="filtrar">
+                    <input id="de" v-model="filtro.de" type="month" class="entrada" required @change="escolheuMes">
                 </Campo>
                 <Campo id="ate" rotulo="Até" :erro="erros.ate">
-                    <input id="ate" v-model="filtro.ate" type="month" class="entrada" required :min="filtro.de" @change="filtrar">
+                    <input id="ate" v-model="filtro.ate" type="month" class="entrada" required :min="filtro.de" @change="escolheuMes">
                 </Campo>
             </form>
             <a :href="csv" class="botao-secundario">Baixar CSV</a>

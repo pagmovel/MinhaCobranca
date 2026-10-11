@@ -7,12 +7,7 @@ sem depender do histórico.
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
 ### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, depois da conferência visual da Fase 20)
-1. **Fase 20 — validação do usuário.** A conferência visual foi feita em 2026-10-11 (autorizada): 3 defeitos achados e
-   corrigidos ("2contratos", "R$" quebrado nos relatórios a 390 px, ano de 5 dígitos lido como outra data na
-   Auditoria). Resultado completo no "Registro de execução" do plano da Fase 20. Usuários **não** foi conferida (o SMOKE
-   não é admin). Falta: o usuário validar e decidir sobre os 10 Minor (o 9 foi **confirmado**: data digitada manda um
-   pedido por dígito do ano) e sobre os 2 achados novos (regra `date` nos formulários que gravam datas; botão "Enviar"
-   do Painel a 390 px).
+1. **Fase 20 — validação do usuário.** Conferência visual feita e corrigida em 2026-10-11; depois, com o "siga conforme achar melhor" do usuário, corrigidos os Minor 1, 8, 9 e 10 e as datas gravadas com ano de 5 dígitos (`date_format:Y-m-d`). Seguem adiados os Minor 2–7 e o botão "Enviar" do Painel a 390 px (motivos no "Registro de execução" do plano da Fase 20). Falta **só a validação do usuário** (Usuários não foi vista no navegador: o SMOKE não é admin).
 2. **Depois: T17.13, apelido do cliente** — o usuário **lembrou de novo em 2026-10-11** ("não esqueça de incluir o
    campo apelido no cadastro do cliente, para facilitar a identificação nas telas e nas buscas"). Desenho já aprovado
    na seção T17.13 de `.claude/plans/2026-10-10-facilidades-de-uso.md` (apelido no lugar do nome nas listas, filtros e
@@ -22,7 +17,7 @@ sem depender do histórico.
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
 - Último commit: o da conferência visual da Fase 20 (2026-10-11), depois de `809544d`.
-- Suítes: PHP **385/385** (`php artisan test --compact`), JS **46/46** (`node --test resources/js/*.test.js`), build ok.
+- Suítes: PHP **388/388** (`php artisan test --compact`), JS **47/47** (`node --test resources/js/*.test.js`), build ok.
 - **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
   do usuário.
 - O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste
@@ -44,8 +39,7 @@ ajax; especificação e plano aprovados pelo usuário em 2026-10-11 ("concordo")
 decisões e os 10 Minor adiados da revisão final no "Registro de execução" do plano; padrão na skill ("Fase 20").
 
 **Pendências que dependem do usuário**
-1. Fase 20: ~~conferência visual~~ **feita em 2026-10-11**; falta validar e decidir sobre os 10 Minor adiados e os 2
-   achados novos.
+1. Fase 20: ~~conferência visual~~ **feita em 2026-10-11**; Minor decididos (ver 0.1); falta validar.
 2. ~~Conferência visual da lista de cobranças~~ **feita em 2026-10-11** (ver plano da Fase 19). Falta só "dar baixa e
    ver a lista recarregar": **grava pagamento**, então pede autorização à parte. Usar o Chrome dedicado da porta 9333
    (`BU_CDP_URL`), nunca o do usuário.

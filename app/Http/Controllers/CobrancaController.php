@@ -235,7 +235,7 @@ class CobrancaController extends Controller
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
-        $dados = $request->validate(['pago_em' => ['required', 'date', 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
 
         if ($registro->status !== StatusCobranca::Paga) {
             return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
@@ -297,7 +297,7 @@ class CobrancaController extends Controller
     public function pagar(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
-        $dados = $request->validate(['pago_em' => ['required', 'date', 'before_or_equal:today']]);
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', 'before_or_equal:today']]);
 
         if ($registro->status !== StatusCobranca::Pendente) {
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');

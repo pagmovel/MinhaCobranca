@@ -52,6 +52,7 @@ const { linhas, resumo, carregando, falha, estado, irPara, recarregar, escolheuP
                 :total="resumo.pagina.total"
                 :carregando="carregando"
                 :opcoes="OPCOES"
+                :rotulo="`Páginas: ${titulo}`"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />

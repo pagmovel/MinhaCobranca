@@ -28,11 +28,11 @@ defineEmits(['tentar']);
             <span class="hidden h-8 w-28 rounded-sm bg-linha sm:block" />
         </div>
     </div>
-    <p v-else-if="estado === 'erro-filtro'" class="border border-carbono bg-white px-4 py-3 text-sm">{{ erroFiltro }}</p>
-    <div v-else-if="estado === 'falha'" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
+    <p v-else-if="estado === 'erro-filtro'" role="status" class="border border-carbono bg-white px-4 py-3 text-sm">{{ erroFiltro }}</p>
+    <div v-else-if="estado === 'falha'" role="alert" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
         <span>{{ falha }}</span>
         <button type="button" class="botao-secundario" @click="$emit('tentar')">Tentar de novo</button>
     </div>
-    <p v-else-if="estado === 'vazio'" class="border border-carbono bg-white px-4 py-3 text-sm">{{ vazio }}</p>
+    <p v-else-if="estado === 'vazio'" role="status" class="border border-carbono bg-white px-4 py-3 text-sm">{{ vazio }}</p>
     <slot v-else />
 </template>

@@ -143,10 +143,12 @@ final class GeradorDeCobrancas
      */
     public function existentes(Collection $contratos): array
     {
-        return Cobranca::query()->whereIn('contrato_id', $contratos->modelKeys())
+        // toBase: sem montar um model por cobrança (com 100 contratos de 10 anos, seriam ~12 mil por abertura do Painel).
+        // A data vem crua do banco ("Y-m-d" no PostgreSQL, "Y-m-d H:i:s" no SQLite dos testes): os 10 primeiros caracteres.
+        return Cobranca::query()->toBase()->whereIn('contrato_id', $contratos->modelKeys())
             ->get(['contrato_id', 'periodo_inicio'])
             ->groupBy('contrato_id')
-            ->map(fn (Collection $cobrancas) => $cobrancas->map(fn (Cobranca $cobranca) => $cobranca->periodo_inicio->toDateString())->all())
+            ->map(fn (Collection $linhas) => $linhas->map(fn (object $linha) => substr((string) $linha->periodo_inicio, 0, 10))->all())
             ->all();
     }
 

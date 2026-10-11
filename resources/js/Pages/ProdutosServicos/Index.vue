@@ -20,6 +20,8 @@ const props = defineProps({
 const PADROES = { nome: '', tipo: '', situacao: '' };
 const filtro = reactive({ ...props.filtros });
 const filtrando = computed(() => filtrosAlterados(filtro, PADROES));
+// A mensagem de vazio segue os filtros do resultado na tela, não o que está sendo digitado (a busca espera 400 ms).
+const resultadoFiltrado = computed(() => filtrosAlterados(resumo.value?.filtros ?? {}, PADROES));
 const { linhas, resumo, carregando, falha, estado, irPara, filtrar, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/produtos-servicos/dados', filtro, componente: 'ProdutosServicos/Index', endereco: '/produtos-servicos',
 });
@@ -60,7 +62,7 @@ const buscarAoDigitar = adiar(filtrar);
             :estado="estado"
             :falha="falha"
             carregando="Carregando produtos e serviços…"
-            :vazio="filtrando ? 'Nenhum produto ou serviço com estes filtros.' : 'Nenhum produto ou serviço ainda. Cadastre o que você vende para montar contratos por itens.'"
+            :vazio="resultadoFiltrado ? 'Nenhum produto ou serviço com estes filtros.' : 'Nenhum produto ou serviço ainda. Cadastre o que você vende para montar contratos por itens.'"
             @tentar="recarregar"
         >
             <Paginador id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />

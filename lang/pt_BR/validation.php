@@ -10,7 +10,7 @@ return [
     'boolean' => 'O campo :attribute deve ser verdadeiro ou falso.',
     'confirmed' => 'A confirmação de :attribute não confere.',
     'date' => 'O campo :attribute deve ser uma data válida.',
-    'date_format' => 'O campo :attribute deve estar no formato :format.',
+    'date_format' => 'O campo :attribute deve ser uma data válida.',
     'digits' => 'O campo :attribute deve ter :digits dígitos.',
     'distinct' => 'O campo :attribute tem um valor repetido.',
     'email' => 'Informe um e-mail válido.',

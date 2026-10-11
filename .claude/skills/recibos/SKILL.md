@@ -760,8 +760,11 @@ o relatório mostra a parte que existe.
        "2contratos". Pôr o espaço fora (`{{ n }} <span>…`). Texto puro (`<span> em contratos</span>`) mantém o espaço.
     5. **Regra `date` aceita ano de 5 dígitos** (o `<input type="date">` do Chrome deixa digitar até 6) e lê
        `72026-08-01` como 2006-08-01, sem erro. Filtro e formulário de data: `date_format:Y-m-d` (mês: `Y-m`).
-    6. **`@change` em campo de data/mês dispara a cada dígito do ano** (0001, 0015, 0150…): uma data digitada vira
-       ~8 pedidos (Minor 9 da revisão, confirmado na conferência).
+    6. **`@change` em campo de data/mês dispara a cada dígito do ano e a cada parte** (0001, 0015, 0150…; dia, mês;
+       o mês pela metade deixa o valor vazio por um instante): uma data digitada virava até 12 pedidos. **Acerto:**
+       filtro de data/mês = `adiar(() => anoCompleto(de) && anoCompleto(ate) && filtrar())` (400 ms, como a busca de
+       texto). Formulário que **grava** data não precisa (só envia no "Salvar"), mas a regra do servidor é
+       `date_format:Y-m-d` em todos (pegadinha 5).
     7. Valor em reais em coluna estreita quebra "R$" e o número em linhas diferentes: espaço inseparável
        (`R$ `). `grep -P '\xC2\xA0'` não acha o caractere no Git Bash; conferir com `od -c`.
   - **Conferência visual (2026-10-11, autorizada):** resultado e defeitos no "Registro de execução" do plano. Usuários

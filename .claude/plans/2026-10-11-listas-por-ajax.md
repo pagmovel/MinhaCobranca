@@ -152,6 +152,27 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
       Correção: `date_format:Y-m-d`, com teste em cada formulário.
     - Painel a 390 px: o botão "Enviar" ora fica ao lado do carimbo, ora desce para a linha de baixo, conforme a
       largura do valor (`LinhaCobranca`, anterior à fase).
+- **Depois da conferência (2026-10-11, o usuário: "você pode seguir conforme acha melhor"):** corrigidos os pontos que
+  mudam o que a pessoa vê ou o dado gravado; o resto segue adiado.
+  - **Minor 9 corrigido:** campos de data/mês da Auditoria, dos Relatórios e de Cobranças pedem **400 ms depois da
+    última mudança** (`adiar`) e nunca com o ano pela metade (`anoCompleto` em `filtroPeriodo.js`: ano de 4 dígitos
+    entre 1900 e 2100, ou vazio). Teste JS RED (export inexistente) → GREEN. No navegador: data digitada na Auditoria e
+    mês digitado em Cobranças = **1 pedido** cada (antes, 12 e 5). Em Cobranças o "Até" segue o mês na hora; só o
+    pedido espera.
+  - **Achado novo corrigido — datas gravadas:** `date` → `date_format:Y-m-d` em baixa, correção de pagamento, cobrança
+    avulsa/edição, contrato (início e fim), encerramento e retroativos. `tests/Feature/DatasComAnoInvalidoTest.php`
+    RED (a baixa com `72026-08-01` passava e gravaria 2006) → GREEN. Mensagem de `date_format` em pt-BR passou a ser
+    "deve ser uma data válida" (era "deve estar no formato Y-m-d").
+  - **Minor 1 corrigido:** a mensagem de vazio (Clientes, Contratos, Produtos) segue os filtros do resultado
+    (`resumo.filtros`), não o texto que ainda está sendo digitado.
+  - **Minor 8 corrigido:** vazio e filtro recusado com `role="status"`, falha com `role="alert"`; o paginador de baixo
+    se chama "Páginas (fim da lista)" e os do Painel "Páginas: <lista>".
+  - **Minor 10 corrigido:** `existentes()` com `toBase()` (sem um model por cobrança). Prova de cobertura: cortar a data
+    em 7 caracteres derruba 6 testes de cobranças.
+  - **Seguem adiados (custo maior que o efeito hoje):** 2 (pedido a mais, resultado certo), 3 (só com conta admin no
+    navegador), 4 e 5 (período inválido só por URL montada à mão ou depois de um 422), 6 (foco em "Confirmar bloqueio"
+    e depois da baixa no Painel), 7 ("Tentar de novo"), botão "Enviar" do Painel a 390 px.
+  - Suítes: PHP 388/388, JS 47/47, build ok.
 
 ---
 
