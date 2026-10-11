@@ -36,10 +36,19 @@ sem depender do histórico.
    - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
      encerramento e retroativos); ajustar ali mantém o teste-guarda `test_previsao_bate_com_o_que_o_gerador_cria`.
      Não há nada de feriado no código.
-   - Perguntas abertas: quais feriados contam (nacionais? Carnaval/bancários? estaduais/municipais de quem?); fonte
-     dos feriados (calculados no código — fixos + móveis pela Páscoa — sem serviço externo pago); vale para avulsa
-     (data digitada) ou só para cobrança de contrato; cobranças já geradas não mudam [a confirmar]; datas das leis de
-     feriado nacional **[A VERIFICAR]** em fonte oficial antes da spec.
+   - **Respostas do usuário:** (1) feriados = **nacionais + locais** (estaduais/municipais cadastrados por ele numa tela).
+     (2) locais = **da cidade/estado do prestador** (uma lista no perfil, vale para todas as cobranças).
+     (3) **Carnaval conta** (segunda e terça, pela Páscoa). (4) **Avulsa: avisar e sugerir** o próximo dia útil (a data
+     digitada é respeitada). (5) **Já geradas: ajustar as em aberto e não enviadas** (recibo refeito, mesmo número);
+     enviadas e pagas não mudam.
+   - **Rascunho do desenho (a apresentar ao usuário):** `DiasUteis` (puro, testável) com nacionais fixos + móveis pela
+     Páscoa + Carnaval + lista local do usuário; `CalculadoraDePeriodos::periodo()` passa o vencimento por ele (o período
+     não muda, só o vencimento; antecedência conta do vencimento ajustado; previsão igual ao gerador). Tela "Feriados"
+     no perfil: lista local (dia/mês todo ano, ou data móvel como Corpus Christi) e **prévia** das cobranças em aberto
+     não enviadas que caem em dia não útil, com "Ajustar" (padrão 9) — serve também para o ajuste inicial. Avulsa: aviso
+     com botão "Usar <data>". **[A VERIFICAR] antes da spec:** status legal de Sexta-feira Santa e Corpus Christi
+     (Lei 9.093/1995: feriados religiosos são municipais?) e a lista de feriados nacionais (Leis 662/1949, 6.802/1980,
+     14.759/2023) no planalto.gov.br.
 1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
 2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
    fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
