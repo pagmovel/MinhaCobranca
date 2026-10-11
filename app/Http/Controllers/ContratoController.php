@@ -339,6 +339,13 @@ class ContratoController extends Controller
         $novo = DB::transaction(function () use ($request, $registro, $dados, $inicio, $encerrador) {
             $encerrador->encerrar($registro, $inicio->subDay(), $request->input('em_curso') !== 'cancelar', CarbonImmutable::today());
             $this->registrarEncerramento($request, $registro, $inicio->subDay());
+
+            // O contrato antigo pode ter período pago (ou pendente, ainda não cancelado) depois do início escolhido
+            // para o novo — cobrar de novo duplicaria. `encerrar()` já cancelou os pendentes fora do fim; o que
+            // restar sem ser cancelado é cobertura real, e o novo contrato só cobra a partir de onde ela termina.
+            $fimJaCobrado = $registro->cobrancas()->where('status', '!=', StatusCobranca::Cancelada)->max('periodo_fim');
+            $dados['cobrar_a_partir_de'] = $fimJaCobrado ? CarbonImmutable::parse($fimJaCobrado)->addDay() : null;
+
             $novo = $request->user()->contratos()->create(array_merge($dados, ['ativo' => true]));
             $novo->itens()->createMany($request->itensDoContrato());
             Auditoria::registrar($request, 'contrato.recomecado', $registro,

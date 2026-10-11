@@ -346,6 +346,30 @@ class EncerramentoContratoTest extends TestCase
         $this->assertSame(14384, $this->cobrancaDe($contrato, '2026-10-01')->valor_centavos);
     }
 
+    /**
+     * Recomeçar com início antes de um período já pago no contrato antigo não pode cobrá-lo de novo no novo contrato
+     * — a página pediria para "não cancelar" o em curso, mas setembro já estava fechado (pago), não em curso.
+     */
+    public function test_recomecar_nao_cobra_de_novo_um_periodo_ja_pago_no_contrato_antigo(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $setembro = $this->cobrancaDe($contrato, '2026-09-01');
+        $setembro->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-09-18'])->save();
+
+        $this->post("/contratos/{$contrato->id}/recomecar", $this->dadosDoContrato(['data_inicio' => '2026-09-01', 'em_curso' => 'cancelar']))
+            ->assertRedirect();
+        $novo = $this->usuario->contratos()->whereKeyNot($contrato->id)->sole();
+
+        app(GeradorDeCobrancas::class)->gerarPara($this->usuario->fresh(), CarbonImmutable::today());
+
+        $this->assertSame(0, $novo->cobrancas()->whereDate('periodo_inicio', '2026-09-01')->count(),
+            'setembro já foi pago no contrato antigo: o novo não pode cobrar de novo');
+        $this->assertSame(StatusCobranca::Paga, $setembro->fresh()->status);
+        // Outubro e novembro foram cancelados no contrato antigo (começam depois do fim em 31/08): o novo cobra os dois.
+        $this->assertSame(['2026-10-01', '2026-11-01'], $novo->cobrancas()->orderBy('periodo_inicio')->get()
+            ->map(fn ($cobranca) => $cobranca->periodo_inicio->toDateString())->all());
+    }
+
     public function test_recomecar_com_inicio_igual_ou_anterior_e_recusado(): void
     {
         $contrato = $this->contratoComCobrancas();
