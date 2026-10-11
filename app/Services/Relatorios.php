@@ -9,6 +9,7 @@ use App\Models\ContratoItem;
 use App\Models\ProdutoServico;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /** Relatórios do módulo Cobrança: cada método devolve uma tabela (colunas, linhas e totais) para a tela e para o CSV. */
 final class Relatorios
@@ -159,6 +160,49 @@ final class Relatorios
                 self::coluna('recebido', 'Recebido'),
                 self::coluna('previsto', 'Previsto'),
                 self::coluna('contratos', 'Contratos ativos', 'numero', soma: false),
+            ],
+            $linhas,
+        );
+    }
+
+    public function aReceber(User $usuario, CarbonImmutable $hoje): array
+    {
+        $hoje = $hoje->startOfDay();
+
+        $linhas = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)->with('cliente:id,nome')
+            ->get(['id', 'cliente_id', 'vencimento', 'valor_centavos'])
+            ->groupBy('cliente_id')
+            ->map(function (Collection $cobrancas) use ($hoje) {
+                $linha = ['cliente' => $cobrancas->first()->cliente->nome, 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0];
+
+                foreach ($cobrancas as $cobranca) {
+                    $dias = (int) $hoje->diffInDays($cobranca->vencimento); // negativo = vencida
+                    $faixa = match (true) {
+                        $dias < 0 => 'vencidas',
+                        $dias <= 30 => 'ate30',
+                        $dias <= 60 => 'ate60',
+                        $dias <= 90 => 'ate90',
+                        default => 'depois',
+                    };
+                    $linha[$faixa] += $cobranca->valor_centavos;
+                    $linha['atraso'] = max($linha['atraso'], -$dias);
+                }
+
+                return $linha;
+            })
+            ->sortBy('cliente')->values()->all();
+
+        return $this->tabela(
+            'Contas a receber',
+            'Cobranças pendentes hoje, por cliente: vencidas (com o maior atraso) e o que vence em até 30, 60, 90 dias ou depois.',
+            [
+                self::coluna('cliente', 'Cliente', 'texto'),
+                self::coluna('vencidas', 'Vencidas'),
+                self::coluna('atraso', 'Maior atraso (dias)', 'dias', soma: false),
+                self::coluna('ate30', 'Vence em até 30 dias'),
+                self::coluna('ate60', 'De 31 a 60 dias'),
+                self::coluna('ate90', 'De 61 a 90 dias'),
+                self::coluna('depois', 'Depois de 90 dias'),
             ],
             $linhas,
         );

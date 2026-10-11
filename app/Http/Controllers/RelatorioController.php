@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RelatorioController extends Controller
 {
-    public const TIPOS = ['faturamento', 'clientes', 'produtos'];
+    public const TIPOS = ['faturamento', 'clientes', 'produtos', 'a-receber'];
 
     public function index(): Response
     {
@@ -45,6 +45,7 @@ class RelatorioController extends Controller
             'faturamento' => $relatorios->faturamento($usuario, $de, $ate, $hoje),
             'clientes' => $relatorios->porCliente($usuario, $de, $ate, $hoje),
             'produtos' => $relatorios->porProduto($usuario, $de, $ate),
+            'a-receber' => $relatorios->aReceber($usuario, $hoje),
         };
 
         if (($filtros['formato'] ?? null) === 'csv') {

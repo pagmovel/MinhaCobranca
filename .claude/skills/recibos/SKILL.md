@@ -434,6 +434,8 @@ o relatório mostra a parte que existe.
   valor = soma dos itens; cobranças anteriores ao catálogo entram na linha "Sem item"; "contratos ativos" não soma
   (um contrato com dois itens contaria duas vezes); receita por cliente agrupa no SQL (`selectRaw` + `groupBy`) e
   calcula dias de atraso em PHP (`diffInDays` do Carbon 3 tem sinal).
+- T15.4: contas a receber é a situação de **hoje** (sem período); faixas 0–30 (vence hoje inclusive), 31–60, 61–90 e
+  depois de 90; a soma das faixas é o total pendente; "maior atraso" não soma.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

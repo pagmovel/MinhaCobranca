@@ -48,7 +48,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 15 | T15.1 Painel: recebido = pago no mês | testada (suíte 240/240) |
 | 15 | T15.2 Relatórios: estrutura, faturamento por período e CSV | testada (suíte 245/245; build ok) |
 | 15 | T15.3 Relatórios: receita por cliente e por produto/serviço | testada (suíte 248/248) |
-| 15 | T15.4 Relatório: contas a receber | pendente |
+| 15 | T15.4 Relatório: contas a receber | testada (suíte 249/249; JS 13/13; build ok) |
 | 15 | T15.5 Smoke test, revisão final e fechamento | pendente |
 
 ### Pendências para o final
@@ -5129,7 +5129,7 @@ git commit -m "feat: relatórios de receita por cliente e por produto ou serviç
 
 ### Tarefa T15.4: Relatório: contas a receber
 
-**Estado:** pendente
+**Estado:** testada (suíte 249/249; JS 13/13; build ok)
 
 **Arquivos:**
 - Modificar: `app/Services/Relatorios.php`, `app/Http/Controllers/RelatorioController.php`
