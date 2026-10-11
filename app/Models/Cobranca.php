@@ -35,6 +35,7 @@ class Cobranca extends Model
             'vencimento' => 'immutable_date',
             'pago_em' => 'immutable_date',
             'enviado_em' => 'immutable_datetime',
+            'avisado_em' => 'immutable_datetime',
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
@@ -108,6 +109,7 @@ class Cobranca extends Model
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,
+            'avisado_em' => $this->avisado_em?->format('d/m'),
             'editavel' => $this->editavel(),
             // Só quando a lista carregou as auditorias (evita uma consulta por linha).
             'historico' => $this->relationLoaded('auditorias')

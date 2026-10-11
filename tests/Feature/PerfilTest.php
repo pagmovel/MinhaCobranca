@@ -35,6 +35,7 @@ class PerfilTest extends TestCase
             'cep' => '49160-000',
             'modelo_padrao' => 'danfse',
             'dias_antecedencia' => 7,
+            'dias_aviso' => 8,
         ], $extra);
     }
 
@@ -65,7 +66,15 @@ class PerfilTest extends TestCase
         $this->assertSame('SE', $usuario->uf);
         $this->assertSame(FamiliaModelo::Danfse, $usuario->modelo_padrao);
         $this->assertSame(7, $usuario->dias_antecedencia);
+        $this->assertSame(8, $usuario->dias_aviso);
         $this->assertTrue($usuario->perfilCompleto());
+    }
+
+    public function test_dias_aviso_fora_de_1_a_30_e_recusado(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post('/perfil', $this->dados(['dias_aviso' => 0]))->assertSessionHasErrors('dias_aviso');
+        $this->post('/perfil', $this->dados(['dias_aviso' => 31]))->assertSessionHasErrors('dias_aviso');
     }
 
     public function test_recusa_documento_uf_e_cep_invalidos(): void

@@ -23,7 +23,7 @@ class PerfilController extends Controller
     private const CAMPOS = [
         'name', 'email', 'documento', 'nome_fantasia', 'inscricao_municipal', 'inscricao_estadual',
         'telefone', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
-        'dias_antecedencia',
+        'dias_antecedencia', 'dias_aviso',
     ];
 
     public function edit(Request $request, AjusteDeVencimentos $ajuste): Response
@@ -59,6 +59,7 @@ class PerfilController extends Controller
                 ->values(),
             // Recalculada a cada abertura: cadastrar ou excluir feriado volta para cá e a prévia já vem atualizada.
             'vencimentosParaAjustar' => $ajuste->previa($usuario),
+            'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
             'ufs' => Ufs::TODAS,
         ]);
     }

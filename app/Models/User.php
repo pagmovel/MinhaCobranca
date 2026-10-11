@@ -17,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'name', 'email', 'password', 'documento', 'nome_fantasia', 'inscricao_municipal',
     'inscricao_estadual', 'telefone', 'logradouro', 'numero', 'complemento', 'bairro',
-    'cidade', 'uf', 'cep', 'modelo_padrao', 'dias_antecedencia',
+    'cidade', 'uf', 'cep', 'modelo_padrao', 'dias_antecedencia', 'dias_aviso',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -31,6 +31,7 @@ class User extends Authenticatable
         'status' => 'pendente',
         'modelo_padrao' => 'webiss',
         'dias_antecedencia' => 10,
+        'dias_aviso' => 5,
     ];
 
     /** Campos sem os quais o recibo sairia com o prestador em branco. */
@@ -50,6 +51,7 @@ class User extends Authenticatable
             'status' => StatusUsuario::class,
             'modelo_padrao' => FamiliaModelo::class,
             'dias_antecedencia' => 'integer',
+            'dias_aviso' => 'integer',
         ];
     }
 
@@ -129,6 +131,19 @@ class User extends Authenticatable
     public function feriados(): HasMany
     {
         return $this->hasMany(Feriado::class)->orderBy('id');
+    }
+
+    public function modelosMensagem(): HasMany
+    {
+        return $this->hasMany(ModeloMensagem::class)->orderBy('id');
+    }
+
+    /** @return list<array{id: int, nome: string, texto: string, padrao: bool}> */
+    public function opcoesDeModelosMensagem(): array
+    {
+        return $this->modelosMensagem()->get()
+            ->map(fn (ModeloMensagem $modelo) => ['id' => $modelo->id, 'nome' => $modelo->nome, 'texto' => $modelo->texto, 'padrao' => $modelo->padrao])
+            ->all();
     }
 
     /** Calendário do prestador: nacionais + a lista local dele (uma consulta). */

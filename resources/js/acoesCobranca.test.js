@@ -8,14 +8,14 @@ const cobranca = (extra) => ({ situacao: 'a_vencer', enviado: false, editavel: t
 test('em aberto e não enviada: enviar é a principal', () => {
     assert.deepEqual(acoesDaCobranca(cobranca()), {
         principal: 'enviar',
-        menu: ['baixa', 'pdf', 'pagamento', 'editar', 'cancelar'],
+        menu: ['baixa', 'pdf', 'avisar', 'pagamento', 'editar', 'cancelar'],
     });
 });
 
 test('em aberto e já enviada: dar baixa é a principal, sem editar', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'vencida', enviado: true, editavel: false })), {
         principal: 'baixa',
-        menu: ['enviar', 'pdf', 'pagamento', 'cancelar'],
+        menu: ['enviar', 'pdf', 'avisar', 'pagamento', 'cancelar'],
     });
 });
 
@@ -31,10 +31,10 @@ test('cancelada: só o PDF; sem recibo, nada', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'cancelada', recibo: null })), { principal: null, menu: [] });
 });
 
-test('sem recibo não oferece PDF nem envio', () => {
+test('sem recibo não oferece PDF nem envio, mas avisar continua disponível', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ recibo: null })), {
         principal: 'baixa',
-        menu: ['pagamento', 'editar', 'cancelar'],
+        menu: ['avisar', 'pagamento', 'editar', 'cancelar'],
     });
 });
 
@@ -47,4 +47,14 @@ test('rótulo do envio depende da situação', () => {
 
 test('prevista: sem ações (a cobrança ainda não existe)', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'prevista', recibo: null, editavel: false })), { principal: null, menu: [] });
+});
+
+test('paga, cancelada e prevista não oferecem avisar', () => {
+    assert.ok(!acoesDaCobranca(cobranca({ situacao: 'paga', enviado: true })).menu.includes('avisar'));
+    assert.ok(!acoesDaCobranca(cobranca({ situacao: 'cancelada' })).menu.includes('avisar'));
+    assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'prevista', recibo: null, editavel: false })), { principal: null, menu: [] });
+});
+
+test('rótulo de avisar', () => {
+    assert.equal(rotuloDaAcao('avisar', cobranca()), 'Avisar no WhatsApp');
 });

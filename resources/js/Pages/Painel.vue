@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import CamadaApp from '../Layouts/CamadaApp.vue';
 import ListaDoPainel from '../Components/ListaDoPainel.vue';
+import BlocoVencendo from '../Components/BlocoVencendo.vue';
 import BotaoEnviar from '../Components/BotaoEnviar.vue';
 import BaixaInline from '../Components/BaixaInline.vue';
 import PagamentoInline from '../Components/PagamentoInline.vue';
@@ -11,6 +12,9 @@ defineProps({
     perfilCompleto: { type: Boolean, required: true },
     vencimentosEmDiaNaoUtil: { type: Number, required: true },
     diasAntecedencia: { type: Number, required: true },
+    diasAviso: { type: Number, required: true },
+    modelosMensagem: { type: Array, required: true },
+    prestadorNome: { type: String, required: true },
     resumo: { type: Object, required: true },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
@@ -31,6 +35,8 @@ defineProps({
             em sábado, domingo ou feriado.
             <Link href="/perfil#feriados" class="font-semibold text-carbono underline">Ver e ajustar</Link>
         </p>
+
+        <BlocoVencendo :dias-aviso="diasAviso" :modelos="modelosMensagem" :prestador="prestadorNome" />
 
         <!-- Cada lista carrega por conta própria (/painel/dados); depois de uma ação, as três recarregam. -->
         <ListaDoPainel

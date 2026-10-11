@@ -17,8 +17,13 @@ sem depender do histórico.
   encerramento já agendado sem passar pelo plano; "Recomeçar" cobrava de novo período já pago; suíte saía com código 1.
   1 Minor ficou deferido (N+1 em `GeradorDeCobrancas::gerarPara`, ~580 ms/contrato — otimização, não bug).
 - **Validação final do usuário: "validado" (2026-10-11).** Fase 23 encerrada — integração confirmada pelo usuário.
-  Próximo item do backlog é a **T17.11** (item 2 da lista abaixo) ou a Fase 24 (WhatsApp, spec aguardando revisão do
-  usuário) — escolha do usuário quando ele indicar.
+- **Fase 24 (aviso de vencimento pelo WhatsApp) implementada, revisada e pronta para merge** (branch
+  `feat/aviso-whatsapp`, ainda não mergeada na `main`). T24.1–T24.9 completas e testadas. Revisão final por
+  subagente opus (branch inteira): nenhum Critical, 7 Important corrigidos com TDD, 12 Minor deferidos. Smoke test
+  no navegador (browser-use) confirmou os 3 fixes sem cobertura automatizada (.vue) funcionando de ponta a ponta.
+  Suíte na branch: PHP 467/467, JS 74/74. Falta: merge na `main` + push + validação final do usuário. Detalhe
+  completo no plano `.claude/plans/2026-10-11-aviso-whatsapp.md` (seção "RETOMAR AQUI").
+  Próximo item do backlog depois do merge: **T17.11** (item 2 da lista abaixo) ou outro que o usuário escolher.
 
 ### 0.2 Estado da branch
 **Branch de trabalho `feat/modulo-cobranca-catalogo`:** mergeada na `main` (`da2d53f`), segue existindo no remoto (não
@@ -38,26 +43,9 @@ apagada — decisão de não apagar branches sem pedido explícito).
 | 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
 | 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
 | 23 | Vencimento em dia útil: calendário de feriados, ajuste em lote, aviso na avulsa e no Painel, spinner global | `2026-10-11-vencimento-em-dia-util.md` | **validada** (2026-10-11, merge `da2d53f`) |
+| 24 | Aviso de vencimento pelo WhatsApp: modelos de mensagem, bloco "Vencendo" no Painel, ação no menu de cobranças, link wa.me | `2026-10-11-aviso-whatsapp.md` · spec `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` | **revisada, pronta para merge** (branch `feat/aviso-whatsapp`, ainda não mergeada; falta push + validação do usuário) |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
-0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:
-   "Adicione também uma forma de compartilhar mensagens via whatsapp avisando sobre vencimento. Um campo para que possamos
-   digitar modelos de mensagens a serem utilizadas por whatsapp que contenham os serviços ou produtos que estão vencendo
-   nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." Desenho aprovado ("sim").
-   **Spec escrita:** `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` — **aguarda revisão do usuário**.
-   - Fatos: o cliente tem `telefone`; o envio de PDF hoje é `BotaoEnviar` (Web Share/download). Envio automático pela API
-     do WhatsApp é pago → fora (regra: serviço externo só se gratuito); caminho gratuito: link `https://wa.me/<número>?text=`
-     que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial (faq.whatsapp.com é montada por JS: o `curl` e o Chrome de teste não
-     trouxeram o texto em 2026-10-11).
-   - **Respostas do usuário (2026-10-11):** (1) **bloco no Painel** "Vencendo nos próximos N dias", agrupado por cliente
-     (uma mensagem por cliente com as cobranças dele e o total) + ação no menu "⋯" de cada cobrança em aberto; (2) **vários
-     modelos, um padrão**, escolhido na hora com prévia; (3) prazo **configurável, padrão 5 dias**; (4) **marcar "avisado em"**
-     (pode avisar de novo).
-   - **Rascunho do desenho (a apresentar):** perfil com "Mensagens de WhatsApp" (modelos: nome, texto, padrão) e "Avisar
-     com N dias"; variáveis `{cliente}` (apelido ou nome), `{itens}`, `{vencimento}`, `{total}`, `{prestador}`; modal com
-     modelo + prévia editável + "Abrir WhatsApp" (link com o telefone do cliente; sem celular: digitar ou "Copiar
-     mensagem"); ao abrir, grava `avisado_em` nas cobranças do grupo. Só cobranças já geradas (previstas não entram).
-     Banco: `modelos_mensagem`, `users.dias_aviso`, `cobrancas.avisado_em` → PORTÃO-BANCO.
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
    cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
    cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**

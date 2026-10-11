@@ -4,12 +4,14 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AvisoWhatsappController;
 use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\ConsultaController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\FeriadoController;
+use App\Http\Controllers\ModeloMensagemController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\ProdutoServicoController;
@@ -42,6 +44,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::put('/perfil/feriados/{feriado}', [FeriadoController::class, 'update']);
     Route::delete('/perfil/feriados/{feriado}', [FeriadoController::class, 'destroy']);
     Route::get('/dias-uteis/proximo', [FeriadoController::class, 'proximoDiaUtil']);
+    Route::post('/perfil/mensagens', [ModeloMensagemController::class, 'store']);
+    Route::put('/perfil/mensagens/{mensagem}', [ModeloMensagemController::class, 'update']);
+    Route::delete('/perfil/mensagens/{mensagem}', [ModeloMensagemController::class, 'destroy']);
 
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::get('/clientes/dados', [ClienteController::class, 'dados']);
@@ -69,6 +74,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/dados', [CobrancaController::class, 'dados']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);
+    Route::get('/cobrancas/aviso', [AvisoWhatsappController::class, 'dados']);
+    Route::post('/cobrancas/avisadas', [AvisoWhatsappController::class, 'avisadas']);
     Route::get('/cobrancas/{cobranca}/edit', [CobrancaController::class, 'edit']);
     Route::post('/cobrancas', [CobrancaController::class, 'store']);
     Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);
