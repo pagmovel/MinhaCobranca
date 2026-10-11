@@ -67,7 +67,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 |---|---|---|
 | T23.3 | Cadastro de feriados locais (rotas, request, controller, props do perfil) | **testada**: `FeriadosTest` (3) RED → GREEN; com `PerfilTest`, 9/9 |
 | T23.4 | Ajuste em lote com prévia (`AjusteDeVencimentos`) | **testada**: `AjusteDeVencimentosTest` (4) RED → GREEN; com feriados e perfil, 13/13 |
-| T23.5 | `GET /dias-uteis/proximo` (aviso da avulsa) | pendente |
+| T23.5 | `GET /dias-uteis/proximo` (aviso da avulsa) | **testada**: `test_proximo_dia_util_para_o_aviso_da_avulsa` RED (404) → GREEN; PHP 419/419 |
 
 ### Fase C — Telas, banco de dev e validação
 | Tarefa | O quê | Estado |

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FeriadoRequest;
 use App\Services\AjusteDeVencimentos;
+use App\Support\DiasUteis;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -40,5 +43,26 @@ class FeriadoController extends Controller
             1 => '1 cobrança ajustada.',
             default => "{$quantas} cobranças ajustadas.",
         });
+    }
+
+    /** Aviso da cobrança avulsa (spec seção 5): só leitura; a data digitada continua valendo. */
+    public function proximoDiaUtil(Request $request): JsonResponse
+    {
+        $dados = $request->validate(['data' => ['required', 'date_format:Y-m-d']]);
+        $data = CarbonImmutable::createFromFormat('Y-m-d', $dados['data'])->startOfDay();
+        $diasUteis = $request->user()->diasUteis();
+        $motivo = $diasUteis->motivo($data);
+        $proximo = $diasUteis->proximoDiaUtil($data);
+
+        return response()->json([
+            'util' => $motivo === null,
+            'aviso' => match (true) {
+                $motivo === null => null,
+                in_array($motivo, ['sábado', 'domingo'], true) => "Cai num {$motivo}.",
+                default => "É feriado: {$motivo}.",
+            },
+            'proximo' => $proximo->toDateString(),
+            'proximo_rotulo' => DiasUteis::DIAS_DA_SEMANA[$proximo->dayOfWeek].', '.$proximo->format('d/m'),
+        ]);
     }
 }

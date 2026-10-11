@@ -828,6 +828,9 @@ o relatório mostra a parte que existe.
     Ajustar = vencimento novo + `EmissorDeRecibos::refazer` (mesmo número), numa transação. Boleto: ajusta e avisa
     "Tem boleto: confira a data no banco" (D3). A prévia é prop do perfil (`vencimentosParaAjustar`), recalculada a cada
     abertura — cadastrar feriado volta ao perfil com ela atualizada. Sem auditoria (P1 do plano, padrão "não").
+  - **Aviso da avulsa:** `GET /dias-uteis/proximo?data=Y-m-d` (só leitura, 401 sem sessão, 422 com ano inválido) devolve
+    `{util, aviso, proximo, proximo_rotulo}` com o calendário do usuário — a regra fica no servidor, o JS não duplica o
+    calendário. A data digitada é respeitada; o aviso só sugere.
   - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
     10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
     de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.

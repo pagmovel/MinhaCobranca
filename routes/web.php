@@ -41,6 +41,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/perfil/feriados', [FeriadoController::class, 'store']);
     Route::put('/perfil/feriados/{feriado}', [FeriadoController::class, 'update']);
     Route::delete('/perfil/feriados/{feriado}', [FeriadoController::class, 'destroy']);
+    Route::get('/dias-uteis/proximo', [FeriadoController::class, 'proximoDiaUtil']);
 
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::get('/clientes/dados', [ClienteController::class, 'dados']);

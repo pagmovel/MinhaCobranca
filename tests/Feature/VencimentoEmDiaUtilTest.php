@@ -44,4 +44,21 @@ class VencimentoEmDiaUtilTest extends TestCase
         // 21/12/2026 (segunda) é feriado local → terça, 22/12; 21/01/2027 (quinta) continua.
         $this->assertSame(['22/12/2026', '21/01/2027'], array_column($previstas, 'vencimento'));
     }
+
+    public function test_proximo_dia_util_para_o_aviso_da_avulsa(): void
+    {
+        $usuario = User::factory()->create();
+        Feriado::factory()->for($usuario)->create(['descricao' => 'Padroeira', 'dia' => 14, 'mes' => 10]);
+
+        $this->getJson('/dias-uteis/proximo?data=2026-10-10')->assertUnauthorized();
+
+        $this->actingAs($usuario);
+        $this->getJson('/dias-uteis/proximo?data=2026-10-10')
+            ->assertExactJson(['util' => false, 'aviso' => 'Cai num sábado.', 'proximo' => '2026-10-13', 'proximo_rotulo' => 'terça, 13/10']);
+        $this->getJson('/dias-uteis/proximo?data=2026-10-14')
+            ->assertJson(['util' => false, 'aviso' => 'É feriado: Padroeira.', 'proximo' => '2026-10-15']);
+        $this->getJson('/dias-uteis/proximo?data=2026-10-15')
+            ->assertJson(['util' => true, 'aviso' => null, 'proximo' => '2026-10-15']);
+        $this->getJson('/dias-uteis/proximo?data=72026-10-15')->assertUnprocessable()->assertJsonValidationErrors('data');
+    }
 }
