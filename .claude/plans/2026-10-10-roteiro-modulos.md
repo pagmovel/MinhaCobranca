@@ -6,10 +6,40 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
 
+### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, segunda compactação)
+**Conferência visual da Fase 20 — AUTORIZADA pelo usuário em 2026-10-11 ("Sim, autorizo").** A autorização vale só
+para esta conferência e foi dada para o escopo abaixo; não estende a outras escritas.
+- **Escopo autorizado:** abrir as telas no Chrome de teste com o usuário SMOKE (id 2). Isso grava sessões no banco de
+  dev (PostgreSQL `207.180.205.211:1`, banco `recibos`, usuário `recibos_app`; **não é produção**) e roda a geração
+  preguiçosa ao abrir Painel e Cobranças (uso normal). **Não dar baixa, não bloquear, não editar nada** — qualquer ação
+  que grave dado de negócio pede autorização à parte.
+- **Telas:** Clientes, Contratos, Produtos e serviços, Auditoria, Usuários (o SMOKE não é admin: [A VERIFICAR] se dá
+  para abrir `/admin/usuarios`; se não, registrar como não conferido), Painel, Relatórios (os 4), e Cobranças de novo
+  (migrou para `usarListaPaginada`).
+- **Em cada tela:** esqueleto na 1ª carga; paginador acima/abaixo (Painel: só embaixo, só com total > 10); troca de
+  página dentro do bloco **sem pedido novo** (contar com `performance.getEntriesByType('resource')` filtrando
+  `/dados`); busca ao digitar = 1 pedido depois de parar (Clientes `q`, Produtos `nome`); "Limpar filtros" aparece e
+  volta ao padrão; F5 reabre igual; `scrollWidth === clientWidth` em 1264 px e em 390 px
+  (`Emulation.setDeviceMetricsOverride`). Conferir os Minor marcados [A VERIFICAR] no plano da Fase 20 (e-mail longo
+  em Usuários a 390 px; campo de data pedindo a cada dígito).
+- **Como (pegadinhas já registradas na skill):** browser-use com `BU_CDP_URL=http://127.0.0.1:9333` (Chrome 114
+  dedicado, `--user-data-dir` no scratchpad; nunca o Chrome do usuário). URL: `http://recibos.test/...` (Laragon; já
+  havia sessão do SMOKE na aba). `goto_url`/`new_tab` estouram 5 s com o PostgreSQL remoto: esperar e ler depois.
+  Antes do print, `cdp("Target.activateTarget", targetId=…)` + `cdp("Page.bringToFront")`; nunca print de página
+  inteira (trava a aba). `js()` não pode devolver promessa. Senha do SMOKE em `scratchpad\smoke-senha.txt` (ler sem
+  imprimir), só se a sessão tiver caído.
+- **Processos de fundo da sessão anterior** (podem ter morrido com a compactação; conferir com `curl`):
+  `php artisan serve --port=8000` e o Chrome headless na 9333. Se o Chrome não responder em
+  `http://127.0.0.1:9333/json/version`, subir de novo como na skill (linha "browser-use (browser-harness)").
+- **Depois:** registrar o resultado no plano da Fase 20 (T20.10, "Registro de execução") e na skill; corrigir o que
+  aparecer (com teste quando houver lógica); pedir a validação do usuário (só ele marca **validada**); perguntar sobre
+  os 10 Minor adiados.
+
+### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
-- Último commit: ver `git log` (conferência visual da Fase 19 feita em 2026-10-11).
-- Suítes: PHP **342/342** (`php artisan test --compact`), JS **38/38** (`node --test resources/js/*.test.js`), build ok.
-- **Ainda não foi feito merge na `main` das Fases 17 (resto), 18 e 19:** falta a revisão final da branch e a decisão
+- Último commit: `36510fb` (correções da revisão final da Fase 20; árvore limpa).
+- Suítes: PHP **384/384** (`php artisan test --compact`), JS **46/46** (`node --test resources/js/*.test.js`), build ok.
+- **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
   do usuário.
 - O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste
   (`b83f22d`).
