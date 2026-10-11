@@ -39,9 +39,9 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | testada (suíte 219/219; build ok) |
 | 12 | T12.4 Reajustar contratos | testada (suíte 224/224; build ok) |
 | 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | concluída (migrações no lote 4 com autorização; merge na main) |
-| 13 | T13.1 Filtros e paginação de Clientes | pendente |
-| 13 | T13.2 Filtros e paginação de Contratos | pendente |
-| 13 | T13.3 Fechamento da fase 13 | pendente |
+| 13 | T13.1 Filtros e paginação de Clientes | testada (suíte 228/228; build ok) |
+| 13 | T13.2 Filtros e paginação de Contratos | testada (suíte 231/231; JS 10/10; build ok) |
+| 13 | T13.3 Fechamento da fase 13 | concluída (sem banco; merge na main) |
 | 14 | T14.1 Consulta de CNPJ e CEP no servidor | pendente |
 | 14 | T14.2 Botão "Buscar dados do CNPJ" e CEP automático | pendente |
 | 14 | T14.3 Fechamento da fase 14 | pendente |
@@ -3015,7 +3015,7 @@ git commit -m "feat: reajuste de preço do item nos contratos escolhidos"
 
 ### Tarefa T13.1: Filtros e paginação de Clientes
 
-**Estado:** pendente
+**Estado:** testada (suíte 228/228; build ok)
 
 **Arquivos:**
 - Modificar: `app/Models/Cliente.php` (escopo `comTermo`), `app/Http/Controllers/ClienteController.php` (`index`, `busca`),
@@ -3330,7 +3330,7 @@ git commit -m "feat: filtros e paginação na lista de clientes"
 
 ### Tarefa T13.2: Filtros e paginação de Contratos
 
-**Estado:** pendente
+**Estado:** testada (suíte 231/231; JS 10/10; build ok)
 
 **Arquivos:**
 - Modificar: `app/Http/Controllers/ContratoController.php` (`index`), `resources/js/Pages/Contratos/Index.vue`, `lang/pt_BR/validation.php`
@@ -3599,7 +3599,7 @@ git commit -m "feat: filtros e paginação na lista de contratos"
 
 ### Tarefa T13.3: Fechamento da fase 13
 
-**Estado:** pendente
+**Estado:** concluída (sem banco; merge na main)
 
 - [ ] Suíte inteira, testes JS e `npm run build` verdes (sem banco: nenhuma migração nesta fase).
 - [ ] Merge + push: `git checkout main; git merge --no-ff feat/modulo-cobranca-catalogo -m "merge: fase 13 — filtros e

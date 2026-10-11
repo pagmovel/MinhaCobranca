@@ -10,10 +10,12 @@ use App\Models\Contrato;
 use App\Models\ContratoItem;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
+use App\Support\Paginacao;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,19 +23,56 @@ class ContratoController extends Controller
 {
     public function index(Request $request): Response
     {
-        $contratos = $request->user()->contratos()->with('cliente:id,nome')
-            ->orderByDesc('ativo')->orderBy('data_inicio')->get()
-            ->map(fn (Contrato $contrato) => [
+        $usuario = $request->user();
+        $filtros = $request->validate([
+            'cliente_id' => ['nullable', 'integer'],
+            'situacao' => ['nullable', Rule::in(['ativos', 'encerrados'])],
+            'modalidade' => ['nullable', Rule::enum(Modalidade::class)],
+            'forma_pagamento' => ['nullable', Rule::enum(FormaPagamento::class)],
+            'produto_servico_id' => ['nullable', 'integer'],
+        ]);
+
+        $consulta = $usuario->contratos()->with('cliente:id,nome')
+            ->orderByDesc('ativo')->orderBy('data_inicio')->orderBy('id');
+
+        foreach (['cliente_id', 'modalidade', 'forma_pagamento'] as $campo) {
+            if (filled($filtros[$campo] ?? null)) {
+                $consulta->where($campo, $filtros[$campo]);
+            }
+        }
+        if (filled($filtros['situacao'] ?? null)) {
+            $consulta->where('ativo', $filtros['situacao'] === 'ativos');
+        }
+        if (filled($filtros['produto_servico_id'] ?? null)) {
+            $consulta->whereHas('itens', fn ($itens) => $itens->where('produto_servico_id', $filtros['produto_servico_id']));
+        }
+
+        $pagina = $consulta->paginate(25)->withQueryString();
+
+        return Inertia::render('Contratos/Index', [
+            'contratos' => collect($pagina->items())->map(fn (Contrato $contrato) => [
                 'id' => $contrato->id,
                 'cliente' => $contrato->cliente->nome,
                 'resumo' => strtok($contrato->descricao, "\n"),
                 'valor' => Dinheiro::formatar($contrato->valor_centavos),
                 'periodicidade' => $contrato->periodicidade->rotulo(),
+                'modalidade' => $contrato->modalidade->rotulo(),
                 'dia_vencimento' => $contrato->dia_vencimento,
                 'ativo' => $contrato->ativo,
-            ]);
-
-        return Inertia::render('Contratos/Index', ['contratos' => $contratos]);
+            ]),
+            'paginacao' => Paginacao::dados($pagina),
+            'filtros' => [
+                'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
+                'situacao' => $filtros['situacao'] ?? '',
+                'modalidade' => $filtros['modalidade'] ?? '',
+                'forma_pagamento' => $filtros['forma_pagamento'] ?? '',
+                'produto_servico_id' => isset($filtros['produto_servico_id']) ? (int) $filtros['produto_servico_id'] : '',
+            ],
+            'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            'modalidades' => Modalidade::opcoes(),
+            'formasPagamento' => FormaPagamento::opcoes(),
+            'produtos' => $usuario->produtosServicos()->orderBy('nome')->get(['id', 'nome']),
+        ]);
     }
 
     public function create(Request $request): Response
