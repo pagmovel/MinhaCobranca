@@ -23,7 +23,20 @@ const form = useForm({ descricao: '', tipo: 'anual', dia: '', mes: '', data: '' 
 
 /** O feriado novo entra como uma linha a mais no fim da lista: o formulário aparece onde a pessoa clicou. */
 const linhas = computed(() => (editando.value === 'novo' ? [...props.feriados, { id: 'novo' }] : props.feriados));
-const rotuloAjuste = computed(() => (props.vencimentos.length === 1 ? 'Ajustar 1 cobrança' : `Ajustar ${props.vencimentos.length} cobranças`));
+// O servidor aceita até 1000 por pedido: acima disso, ajusta em partes (a prévia volta com as que faltam).
+const POR_PEDIDO = 1000;
+const erroAjuste = ref('');
+const resumoAjuste = computed(() => (props.vencimentos.length === 1
+    ? '1 cobrança em aberto vence em dia não útil'
+    : `${props.vencimentos.length} cobranças em aberto vencem em dia não útil`));
+const rotuloAjuste = computed(() => {
+    const total = props.vencimentos.length;
+    if (total > POR_PEDIDO) {
+        return `Ajustar ${POR_PEDIDO} de ${total} cobranças`;
+    }
+
+    return total === 1 ? 'Ajustar 1 cobrança' : `Ajustar ${total} cobranças`;
+});
 
 async function abrir(feriado = null) {
     form.clearErrors();
@@ -54,9 +67,16 @@ const excluir = (id) => router.delete(`/perfil/feriados/${id}`, {
     onFinish: () => { confirmando.value = null; },
 });
 
-const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.vencimentos.map((item) => item.id) }, {
+const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.vencimentos.slice(0, POR_PEDIDO).map((item) => item.id) }, {
     preserveScroll: true,
-    onStart: () => { ajustando.value = true; },
+    onStart: () => {
+        ajustando.value = true;
+        erroAjuste.value = '';
+    },
+    // Erro sempre na tela, com o botão de tentar de novo ao lado (padrão 2).
+    onError: (erros) => {
+        erroAjuste.value = Object.values(erros)[0] ?? 'Não foi possível ajustar agora. Tente de novo.';
+    },
     onFinish: () => { ajustando.value = false; },
 });
 </script>
@@ -69,23 +89,28 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
             nacionais, o Carnaval e a Sexta-feira da Paixão já contam; cadastre aqui os do seu estado e da sua cidade.
         </p>
 
+        <!-- Região viva sempre presente, só com a frase-resumo (lista e botão ficam fora do anúncio). -->
+        <p class="sr-only" aria-live="polite">{{ vencimentos.length ? `${resumoAjuste}.` : '' }}</p>
         <Transition name="surgir">
-            <div v-if="vencimentos.length" role="status" class="flex flex-col gap-3 border border-carbono/40 bg-white px-4 py-3">
-                <p class="text-sm font-semibold">
-                    {{ vencimentos.length === 1 ? '1 cobrança em aberto vence' : `${vencimentos.length} cobranças em aberto vencem` }} em dia não útil
-                </p>
+            <div v-if="vencimentos.length" class="flex flex-col gap-3 border border-carbono/40 bg-white px-4 py-3">
+                <p class="text-sm font-semibold">{{ resumoAjuste }}</p>
                 <p class="text-sm text-grafite/80">
                     Ainda não foram enviadas. Ajustar muda o vencimento para o próximo dia útil e refaz o recibo com o mesmo número.
                 </p>
                 <TransitionGroup tag="ul" name="lista" class="relative divide-y divide-linha border border-linha">
                     <li v-for="item in vencimentos" :key="item.id" class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm">
                         <span class="min-w-0 font-semibold break-words">{{ item.cliente }}</span>
-                        <span class="tabular-nums">{{ item.vencimento }} ({{ item.motivo }}) → {{ item.novo_vencimento }}</span>
+                        <span class="tabular-nums">
+                            {{ item.vencimento }} ({{ item.motivo }})
+                            <span aria-hidden="true">→</span><span class="sr-only">passa para</span>
+                            {{ item.novo_vencimento }}
+                        </span>
                         <span v-if="item.tem_boleto" class="w-full font-estreita text-xs font-semibold">Tem boleto: confira a data no banco.</span>
                     </li>
                 </TransitionGroup>
-                <div>
+                <div class="flex flex-wrap items-center gap-3">
                     <button type="button" class="botao" :disabled="ajustando" @click="ajustar">{{ rotuloAjuste }}</button>
+                    <p v-if="erroAjuste" role="alert" class="text-sm text-tinta-vermelha">{{ erroAjuste }}</p>
                 </div>
             </div>
         </Transition>

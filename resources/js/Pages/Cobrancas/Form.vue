@@ -2,8 +2,7 @@
 import { ref, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { buscarJson } from '../../http.js';
-import { adiar } from '../../listaPaginada.js';
-import { anoCompleto } from '../../filtroPeriodo.js';
+import { criarAvisoDeDiaUtil } from '../../avisoDiaUtil.js';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
@@ -38,20 +37,10 @@ const form = useForm(props.cobranca ?? {
 
 // Vencimento em dia não útil (Fase 23): a data digitada vale; o aviso só sugere o próximo dia útil (regra no servidor).
 const diaUtil = ref(null);
-let ultimoPedido = 0;
-const conferirVencimento = adiar(async () => {
-    const pedido = ++ultimoPedido;
-    const data = form.vencimento;
-    if (!data || !anoCompleto(data)) {
-        diaUtil.value = null;
-        return;
-    }
-    const { dados } = await buscarJson(`/dias-uteis/proximo?data=${encodeURIComponent(data)}`);
-    // Resposta atrasada de uma data já trocada é descartada; falha não mostra aviso (o formulário segue normal).
-    if (pedido === ultimoPedido) {
-        diaUtil.value = dados && !dados.util ? dados : null;
-    }
-});
+const conferirVencimento = criarAvisoDeDiaUtil(
+    (data) => buscarJson(`/dias-uteis/proximo?data=${encodeURIComponent(data)}`),
+    (aviso) => { diaUtil.value = aviso; },
+);
 watch(() => form.vencimento, conferirVencimento, { immediate: true });
 
 const travado = Boolean(props.cobranca?.de_contrato);
@@ -89,8 +78,10 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
             <Campo id="periodo_fim" rotulo="Fim do período" :erro="form.errors.periodo_fim" class="sm:col-span-2">
                 <input id="periodo_fim" v-model="form.periodo_fim" type="date" class="entrada" :disabled="travado" required>
             </Campo>
+            <!-- Região viva sempre presente: o leitor de tela só anuncia mudança numa região que já existia. -->
+            <p class="sr-only" aria-live="polite">{{ diaUtil ? `${diaUtil.aviso} Próximo dia útil: ${diaUtil.proximo_rotulo}.` : '' }}</p>
             <Transition name="surgir">
-                <p v-if="diaUtil" role="status" class="flex flex-wrap items-center gap-2 border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+                <p v-if="diaUtil" class="flex flex-wrap items-center gap-2 border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
                     <span>{{ diaUtil.aviso }} Próximo dia útil: {{ diaUtil.proximo_rotulo }}.</span>
                     <button type="button" class="botao-secundario" @click="form.vencimento = diaUtil.proximo">Usar {{ diaUtil.proximo_rotulo }}</button>
                 </p>
