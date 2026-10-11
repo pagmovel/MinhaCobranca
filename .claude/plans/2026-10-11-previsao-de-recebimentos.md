@@ -52,7 +52,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 |---|---|---|
 | T18.1 | `CalculadoraDePeriodos::entre()` + regra comum do gerador (`existentes`, `cobravel`, `contemOFim` público) | testada (RED: método inexistente → GREEN; gerador, encerramento, correção do início e Unit 117/117) |
 | T18.2 | Serviço `PrevisaoDeCobrancas::entre()` + teste de igualdade com o gerador | testada (RED: classe inexistente nos 8 → GREEN 8/8, igualdade com o gerador inclusa) |
-| T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | pendente |
+| T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | testada (RED 0/7 pelos motivos esperados → GREEN; Cobrancas + Auditoria 67/67) |
 | T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | pendente |
 | T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | pendente |
 | T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | pendente |
