@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\User;
+use App\Services\AjusteDeVencimentos;
 use App\Services\EmissorDeRecibos;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -159,6 +160,30 @@ class AjusteDeVencimentosTest extends TestCase
         $this->cobranca('2026-10-31');
 
         $this->get('/painel')->assertInertia(fn (Assert $page) => $page->where('vencimentosEmDiaNaoUtil', 2));
+    }
+
+    public function test_quantas_bate_com_a_previa_sem_montar_cliente_e_recibo(): void
+    {
+        $this->cobranca('2026-10-24', ['forma_pagamento' => 'boleto', 'linha_digitavel' => str_repeat('1', 47)]);
+        $this->cobranca('2026-10-31');
+        $this->cobranca('2026-10-26'); // segunda: dia útil, não entra
+
+        $ajuste = app(AjusteDeVencimentos::class);
+
+        $consultas = 0;
+        DB::listen(function () use (&$consultas) {
+            $consultas++;
+        });
+        $quantas = $ajuste->quantas($this->usuario);
+        $consultasDeQuantas = $consultas;
+
+        $consultas = 0;
+        $previa = $ajuste->previa($this->usuario);
+        $consultasDaPrevia = $consultas;
+
+        $this->assertSame(2, $quantas);
+        $this->assertSame(count($previa), $quantas);
+        $this->assertLessThan($consultasDaPrevia, $consultasDeQuantas, 'quantas() não deve montar cliente/recibo só para contar');
     }
 
     public function test_pedido_sem_ids_ou_com_id_nao_numerico_e_recusado(): void

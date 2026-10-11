@@ -8,6 +8,7 @@ use App\Models\Cobranca;
 use App\Models\User;
 use App\Support\DiasUteis;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -60,15 +61,23 @@ final class AjusteDeVencimentos
         });
     }
 
+    /** Quantas cobranças vencem em dia não útil, sem montar cliente/recibo — o Painel só precisa do número. */
+    public function quantas(User $usuario): int
+    {
+        $diasUteis = $usuario->diasUteis();
+
+        return $this->baseQuery($usuario)
+            ->get(['id', 'vencimento'])
+            ->reject(fn (Cobranca $cobranca) => $diasUteis->ehDiaUtil($cobranca->vencimento))
+            ->count();
+    }
+
     /** @return Collection<int, array{cobranca: Cobranca, novo: CarbonImmutable, motivo: string}> */
     private function aAjustar(User $usuario): Collection
     {
         $diasUteis = $usuario->diasUteis();
 
-        return $usuario->cobrancas()
-            ->where('status', StatusCobranca::Pendente)
-            ->whereNull('enviado_em')
-            ->whereNotNull('contrato_id')
+        return $this->baseQuery($usuario)
             ->with(['cliente:id,nome,apelido', 'recibo'])
             ->orderBy('vencimento')->orderBy('id')
             ->get()
@@ -79,5 +88,13 @@ final class AjusteDeVencimentos
                 'motivo' => $diasUteis->motivo($cobranca->vencimento),
             ])
             ->values();
+    }
+
+    private function baseQuery(User $usuario): HasMany
+    {
+        return $usuario->cobrancas()
+            ->where('status', StatusCobranca::Pendente)
+            ->whereNull('enviado_em')
+            ->whereNotNull('contrato_id');
     }
 }

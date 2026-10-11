@@ -38,7 +38,7 @@ class PainelController extends Controller
             'mes' => Str::ucfirst($hoje->locale('pt_BR')->translatedFormat('F \d\e Y')),
             'perfilCompleto' => $usuario->perfilCompleto(),
             // P2 (decisão do usuário, 2026-10-11): o aviso leva à prévia do ajuste, na seção Feriados do perfil.
-            'vencimentosEmDiaNaoUtil' => count($ajuste->previa($usuario)),
+            'vencimentosEmDiaNaoUtil' => $ajuste->quantas($usuario),
             'diasAntecedencia' => $usuario->dias_antecedencia,
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
