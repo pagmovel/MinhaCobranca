@@ -37,7 +37,7 @@ class FeriadoController extends Controller
     public function ajustar(Request $request, AjusteDeVencimentos $ajuste): RedirectResponse
     {
         $dados = $request->validate(['ids' => ['required', 'array', 'max:1000'], 'ids.*' => ['integer']]);
-        $quantas = $ajuste->ajustar($request->user(), array_map('intval', $dados['ids']));
+        $quantas = $ajuste->ajustar($request, array_map('intval', $dados['ids']));
 
         return back()->with('sucesso', match ($quantas) {
             0 => 'Nenhuma cobrança precisava de ajuste.',

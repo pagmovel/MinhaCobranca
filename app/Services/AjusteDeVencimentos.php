@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Enums\StatusCobranca;
+use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\User;
 use App\Support\DiasUteis;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -33,23 +35,26 @@ final class AjusteDeVencimentos
     }
 
     /**
-     * Ajusta, numa transação, as escolhidas na prévia que ainda precisam (a prévia pode ter ficado velha): vencimento novo
-     * e recibo refeito com o mesmo número. Id alheio, enviado ou já ajustado é ignorado. Devolve quantas mudaram.
+     * Ajusta, numa transação, as escolhidas na prévia que ainda precisam (a prévia pode ter ficado velha): vencimento novo,
+     * uma linha na auditoria por cobrança (P1, decisão do usuário) e recibo refeito com o mesmo número. Id alheio, enviado
+     * ou já ajustado é ignorado. Devolve quantas mudaram.
      *
      * @param  list<int>  $ids
      */
-    public function ajustar(User $usuario, array $ids): int
+    public function ajustar(Request $request, array $ids): int
     {
-        return DB::transaction(function () use ($usuario, $ids) {
-            $aAjustar = $this->aAjustar($usuario)->filter(fn (array $linha) => in_array($linha['cobranca']->id, $ids, true));
+        return DB::transaction(function () use ($request, $ids) {
+            $aAjustar = $this->aAjustar($request->user())->filter(fn (array $linha) => in_array($linha['cobranca']->id, $ids, true));
 
-            foreach ($aAjustar as $linha) {
-                $linha['cobranca']->update(['vencimento' => $linha['novo']]);
-
-                if ($linha['cobranca']->recibo) {
-                    $this->emissor->refazer($linha['cobranca']->recibo);
-                }
+            foreach ($aAjustar as ['cobranca' => $cobranca, 'novo' => $novo, 'motivo' => $motivo]) {
+                $antes = $cobranca->vencimento;
+                $cobranca->update(['vencimento' => $novo]);
+                Auditoria::registrar($request, 'cobranca.vencimento_ajustado', $cobranca,
+                    "Vencimento ajustado de {$antes->format('d/m/Y')} ({$motivo}) para {$novo->format('d/m/Y')}",
+                    ['vencimento' => $antes->toDateString()], ['vencimento' => $novo->toDateString()]);
             }
+
+            $this->emissor->refazerEmLote($aAjustar->pluck('cobranca'));
 
             return $aAjustar->count();
         });

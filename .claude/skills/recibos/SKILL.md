@@ -834,7 +834,21 @@ o relatório mostra a parte que existe.
     é ignorado (prévia velha e clique duplo seguros; o 2º clique responde "Nenhuma cobrança precisava de ajuste.").
     Ajustar = vencimento novo + `EmissorDeRecibos::refazer` (mesmo número), numa transação. Boleto: ajusta e avisa
     "Tem boleto: confira a data no banco" (D3). A prévia é prop do perfil (`vencimentosParaAjustar`), recalculada a cada
-    abertura — cadastrar feriado volta ao perfil com ela atualizada. Sem auditoria (P1 do plano, padrão "não").
+    abertura — cadastrar feriado volta ao perfil com ela atualizada. **Auditoria (P1 = sim, 2026-10-11):** uma linha
+    `cobranca.vencimento_ajustado` por cobrança ("Vencimento ajustado de 24/10/2026 (sábado) para 26/10/2026"), na
+    mesma transação; o serviço recebe o `Request` (é o que `Auditoria::registrar` pede). Recibos refeitos por
+    `EmissorDeRecibos::refazerEmLote` (prestador e clientes lidos uma vez por lote, itens por cobrança: no máximo 4
+    consultas por cobrança, teste conta). A tela manda no máximo 1000 ids por clique ("Ajustar 1000 de N") e mostra o
+    erro ao lado do botão.
+  - **Datas: ano entre 1900 e 2100 em toda regra** (`App\Rules\AnoValido`, junto de cada `date_format` — 18 lugares,
+    inclusive filtros `Y-m`). *Pegadinha:* o ano **0000** passa no `date_format` e o PostgreSQL recusa a data (500); o
+    SQLite dos testes aceita, então só o teste com a regra pega. Campo de data novo: `'date_format:Y-m-d', new AnoValido`.
+  - **Calendário sem dia útil:** `proximoDiaUtil` para com `LogicException` depois de 366 dias (antes girava até
+    esgotar a memória) e o cadastro aceita no máximo 100 feriados locais (`FeriadoRequest::LIMITE`).
+  - **Aviso da avulsa** em `resources/js/avisoDiaUtil.js` (testado): apaga o aviso na hora ao trocar a data — o
+    "Usar…" da data anterior não pode ficar clicável durante a espera de 400 ms — e descarta resposta atrasada.
+  - **Acessibilidade:** aviso que entra por `v-if` não anuncia; usar um `<p class="sr-only" aria-live="polite">` sempre
+    presente com a frase, e o bloco visível sem `role="status"`. Seta "→" com `aria-hidden` + "passa para" em `sr-only`.
   - **Aviso da avulsa:** `GET /dias-uteis/proximo?data=Y-m-d` (só leitura, 401 sem sessão, 422 com ano inválido) devolve
     `{util, aviso, proximo, proximo_rotulo}` com o calendário do usuário — a regra fica no servidor, o JS não duplica o
     calendário. A data digitada é respeitada; o aviso só sugere.

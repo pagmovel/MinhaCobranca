@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -113,6 +114,41 @@ class AjusteDeVencimentosTest extends TestCase
             ->assertSessionHas('sucesso', 'Nenhuma cobrança precisava de ajuste.');
 
         $this->assertSame('2026-10-24', $alheia->fresh()->vencimento->toDateString());
+    }
+
+    public function test_ajuste_registra_cada_cobranca_na_auditoria(): void
+    {
+        $sabado = $this->cobranca('2026-10-24');
+
+        $this->actingAs($this->usuario)->post('/perfil/feriados/ajustar', ['ids' => [$sabado->id]])->assertSessionHas('sucesso');
+
+        $registro = $this->usuario->auditorias()->sole();
+        $this->assertSame(
+            ['cobranca.vencimento_ajustado', 'cobranca', $sabado->id, 'Vencimento ajustado de 24/10/2026 (sábado) para 26/10/2026', ['vencimento' => '2026-10-24'], ['vencimento' => '2026-10-26']],
+            [$registro->acao, $registro->alvo_tipo, $registro->alvo_id, $registro->resumo, $registro->antes, $registro->depois],
+        );
+    }
+
+    public function test_cada_cobranca_a_mais_no_ajuste_custa_no_maximo_quatro_consultas(): void
+    {
+        $consultas = 0;
+        DB::listen(function () use (&$consultas) {
+            $consultas++;
+        });
+        $this->actingAs($this->usuario);
+
+        $uma = $this->cobranca('2026-10-24');
+        $consultas = 0;
+        $this->post('/perfil/feriados/ajustar', ['ids' => [$uma->id]])->assertSessionHas('sucesso', '1 cobrança ajustada.');
+        $comUma = $consultas;
+
+        $tres = [$this->cobranca('2026-10-31'), $this->cobranca('2026-11-07'), $this->cobranca('2026-11-14')];
+        $consultas = 0;
+        $this->post('/perfil/feriados/ajustar', ['ids' => array_map(fn (Cobranca $cobranca) => $cobranca->id, $tres)])
+            ->assertSessionHas('sucesso', '3 cobranças ajustadas.');
+
+        // Atualizar a cobrança, gravar a auditoria, ler os itens e gravar o recibo; prestador e cliente uma vez por lote.
+        $this->assertLessThanOrEqual(2 * 4, $consultas - $comUma);
     }
 
     public function test_pedido_sem_ids_ou_com_id_nao_numerico_e_recusado(): void
