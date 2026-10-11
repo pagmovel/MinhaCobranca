@@ -61,7 +61,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 |---|---|---|
 | T20.1 | Servidor: `BlocoDePaginas`; `ListaDeCobrancas` com ele; cobranças existentes numa consulta só | testada (RED: classe inexistente; 3 consultas em vez de 1 → GREEN; suíte 349/349) |
 | T20.2 | Navegador: `chaveDoFiltro` genérica, `adiar`, `filtrosAlterados`, `periodoAoRedor`, `usarListaPaginada`, `EstadoDaLista`, `Etiqueta`, `Paginador` com opções; cobranças migradas | testada (RED: 3 exports inexistentes, chave genérica, prop `padroes` → GREEN; JS 43/43, Cobrancas 67/67, build ok) |
-| T20.3 | Clientes em tabela por ajax | pendente |
+| T20.3 | Clientes em tabela por ajax | testada (RED: 7 falhas, 404 e prop antiga → GREEN; suíte 351/351, build ok) |
 | T20.4 | Produtos e serviços em tabela por ajax | pendente |
 | T20.5 | Contratos em tabela por ajax, totais por periodicidade, produto por autosugestão | pendente |
 | T20.6 | Auditoria por ajax | pendente |

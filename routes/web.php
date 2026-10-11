@@ -37,6 +37,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::delete('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'destroy']);
 
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
+    Route::get('/clientes/dados', [ClienteController::class, 'dados']);
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::get('/contratos/retroativos', [ContratoController::class, 'retroativos']);
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);

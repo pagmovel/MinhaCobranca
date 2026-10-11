@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Enums\FamiliaModelo;
 use App\Http\Requests\ClienteRequest;
 use App\Models\Cliente;
+use App\Support\BlocoDePaginas;
 use App\Support\Busca;
 use App\Support\Documento;
-use App\Support\Paginacao;
 use App\Support\Ufs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,29 +20,34 @@ class ClienteController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filtros = $request->validate([
-            'q' => ['nullable', 'string', 'max:255'],
-            'cidade' => ['nullable', 'string', 'max:255'],
-            'uf' => ['nullable', Rule::in(Ufs::TODAS)],
-            'modelo' => ['nullable', Rule::enum(FamiliaModelo::class)],
-            'contrato' => ['nullable', Rule::in(['com', 'sem'])],
+        // A lista vem por ajax de /clientes/dados; a página só abre a tela com os filtros.
+        return Inertia::render('Clientes/Index', [
+            'filtros' => $this->filtros($request),
+            'ufs' => Ufs::TODAS,
+            'modelos' => FamiliaModelo::opcoes(),
         ]);
+    }
 
-        $consulta = $request->user()->clientes()->orderBy('nome')->orderBy('id');
+    /** Dados da lista (JSON, só leitura): um bloco de páginas. */
+    public function dados(Request $request): JsonResponse
+    {
+        $filtros = $this->filtros($request);
+        $consulta = $request->user()->clientes()->orderBy('nome')->orderBy('id')
+            ->withCount(['contratos as contratos_ativos' => fn ($contratos) => $contratos->where('ativo', true)]);
 
-        if (filled($filtros['q'] ?? null)) {
+        if ($filtros['q'] !== '') {
             $consulta->comTermo($filtros['q']);
         }
-        if (filled($filtros['cidade'] ?? null)) {
+        if ($filtros['cidade'] !== '') {
             $consulta->whereRaw("lower(cidade) like ? escape '\\'", [Busca::contem($filtros['cidade'])]);
         }
-        if (filled($filtros['uf'] ?? null)) {
+        if ($filtros['uf'] !== '') {
             $consulta->where('uf', $filtros['uf']);
         }
-        if (filled($filtros['modelo'] ?? null)) {
+        if ($filtros['modelo'] !== '') {
             $consulta->where('modelo', $filtros['modelo']);
         }
-        if (filled($filtros['contrato'] ?? null)) {
+        if ($filtros['contrato'] !== '') {
             $ativo = fn ($contratos) => $contratos->where('ativo', true);
 
             if ($filtros['contrato'] === 'com') {
@@ -52,27 +57,47 @@ class ClienteController extends Controller
             }
         }
 
-        $pagina = $consulta->paginate(25)->withQueryString();
+        $bloco = BlocoDePaginas::de($consulta, $filtros['pagina'], $filtros['por_pagina']);
 
-        return Inertia::render('Clientes/Index', [
-            'clientes' => collect($pagina->items())->map(fn (Cliente $cliente) => [
+        return response()->json([
+            'linhas' => $bloco['itens']->map(fn (Cliente $cliente) => [
                 'id' => $cliente->id,
                 'nome' => $cliente->nome,
                 'documento' => Documento::formatar($cliente->documento),
                 'cidade' => collect([$cliente->cidade, $cliente->uf])->filter()->implode(' / '),
                 'modelo' => $cliente->modelo->rotulo(),
-            ]),
-            'paginacao' => Paginacao::dados($pagina),
-            'filtros' => [
-                'q' => $filtros['q'] ?? '',
-                'cidade' => $filtros['cidade'] ?? '',
-                'uf' => $filtros['uf'] ?? '',
-                'modelo' => $filtros['modelo'] ?? '',
-                'contrato' => $filtros['contrato'] ?? '',
-            ],
-            'ufs' => Ufs::TODAS,
-            'modelos' => FamiliaModelo::opcoes(),
+                'contratos_ativos' => $cliente->contratos_ativos,
+            ])->all(),
+            'pagina' => $bloco['pagina'],
+            'filtros' => $filtros,
         ]);
+    }
+
+    /**
+     * Filtros da lista, já no formato da tela ('' = sem filtro).
+     *
+     * @return array{q: string, cidade: string, uf: string, modelo: string, contrato: string, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request): array
+    {
+        $validados = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'cidade' => ['nullable', 'string', 'max:255'],
+            'uf' => ['nullable', Rule::in(Ufs::TODAS)],
+            'modelo' => ['nullable', Rule::enum(FamiliaModelo::class)],
+            'contrato' => ['nullable', Rule::in(['com', 'sem'])],
+            ...BlocoDePaginas::regras(),
+        ]);
+
+        return [
+            'q' => trim($validados['q'] ?? ''),
+            'cidade' => trim($validados['cidade'] ?? ''),
+            'uf' => $validados['uf'] ?? '',
+            'modelo' => $validados['modelo'] ?? '',
+            'contrato' => $validados['contrato'] ?? '',
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
     }
 
     /** Autosugestão: nome (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */

@@ -40,10 +40,10 @@ class ClientesTest extends TestCase
         Cliente::factory()->create(['nome' => 'Cliente de outro']);
 
         $this->actingAs($usuario)->get('/clientes')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Clientes/Index')
-                ->has('clientes', 1)
-                ->where('clientes.0.nome', 'Meu cliente'));
+            ->assertInertia(fn (Assert $page) => $page->component('Clientes/Index'));
+        $this->getJson('/clientes/dados')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.nome', 'Meu cliente');
     }
 
     public function test_formulario_novo_sugere_o_modelo_padrao_do_usuario(): void
