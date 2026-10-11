@@ -61,6 +61,7 @@ const excluir = () => router.delete(`/produtos-servicos/${props.item.id}`);
             <div class="flex flex-wrap gap-3 sm:col-span-6">
                 <button class="botao" :disabled="form.processing">Salvar</button>
                 <template v-if="item">
+                    <Link :href="`/produtos-servicos/${item.id}/reajuste`" class="botao-secundario">Reajustar contratos</Link>
                     <button v-if="!confirmandoExclusao" type="button" class="botao-perigo" @click="confirmandoExclusao = true">Excluir</button>
                     <template v-else>
                         <button type="button" class="botao-perigo-confirmar" @click="excluir">Confirmar exclusão</button>

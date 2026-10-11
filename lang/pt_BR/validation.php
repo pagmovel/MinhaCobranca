@@ -44,6 +44,10 @@ return [
     'custom' => [
         'chave_pix_id' => ['required_if' => 'Escolha a chave PIX.'],
         'linha_digitavel' => ['regex' => 'A linha digitável tem 47 ou 48 números.'],
+        'contratos' => [
+            'required' => 'Escolha pelo menos um contrato.',
+            'min' => 'Escolha pelo menos um contrato.',
+        ],
         'itens' => [
             'required' => 'Inclua pelo menos um produto ou serviço.',
             'array' => 'Inclua pelo menos um produto ou serviço.',

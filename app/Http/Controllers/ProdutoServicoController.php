@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Enums\TipoItem;
 use App\Http\Requests\ProdutoServicoRequest;
+use App\Models\ContratoItem;
 use App\Models\ProdutoServico;
+use App\Rules\ValorEmReais;
 use App\Support\Busca;
 use App\Support\Dinheiro;
+use App\Support\ItensDeVenda;
 use App\Support\Paginacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -114,6 +119,71 @@ class ProdutoServicoController extends Controller
         $registro->delete();
 
         return redirect('/produtos-servicos')->with('sucesso', 'Produto ou serviço excluído.');
+    }
+
+    public function reajuste(Request $request, int $produto): Response
+    {
+        $item = $request->user()->produtosServicos()->findOrFail($produto);
+
+        $usos = $item->contratoItens()
+            ->whereHas('contrato', fn ($contrato) => $contrato->where('user_id', $request->user()->id)->where('ativo', true))
+            ->with('contrato.cliente:id,nome')
+            ->get();
+
+        return Inertia::render('ProdutosServicos/Reajuste', [
+            'item' => [
+                'id' => $item->id,
+                'nome' => $item->nome,
+                'unidade' => $item->unidade,
+                'preco' => Dinheiro::formatar($item->preco_centavos),
+            ],
+            'contratos' => $usos->map(fn (ContratoItem $uso) => [
+                'id' => $uso->contrato_id,
+                'cliente' => $uso->contrato->cliente->nome,
+                'resumo' => strtok($uso->contrato->descricao, "\n"),
+                'quantidade' => ItensDeVenda::formatarQuantidade(ItensDeVenda::milesimos($uso->quantidade)),
+                'preco' => Dinheiro::formatar($uso->preco_unitario_centavos),
+            ])->sortBy('cliente')->values(),
+        ]);
+    }
+
+    /** Novo preço só nos contratos escolhidos (ativos e que usam o item); cobranças já geradas não mudam. */
+    public function reajustar(Request $request, int $produto): RedirectResponse
+    {
+        $item = $request->user()->produtosServicos()->findOrFail($produto);
+        $dados = $request->validate([
+            'contratos' => ['required', 'array', 'min:1'],
+            'contratos.*' => ['integer'],
+            'preco' => ['required', new ValorEmReais(aceitaZero: true)],
+        ]);
+        $preco = Dinheiro::paraCentavos($dados['preco']);
+
+        $contratos = $request->user()->contratos()->where('ativo', true)->whereIn('id', $dados['contratos'])
+            ->whereHas('itens', fn ($itens) => $itens->where('produto_servico_id', $item->id))
+            ->with('itens')->orderBy('id')->get();
+
+        if ($contratos->isEmpty()) {
+            throw ValidationException::withMessages(['contratos' => 'Escolha pelo menos um contrato ativo que usa este item.']);
+        }
+
+        DB::transaction(function () use ($contratos, $item, $preco) {
+            foreach ($contratos as $contrato) {
+                $contrato->itens->where('produto_servico_id', $item->id)
+                    ->each->update(['preco_unitario_centavos' => $preco]);
+                $soma = $contrato->itens->sum(fn (ContratoItem $linha) => $linha->total());
+
+                if ($soma < 1 || $soma > ValorEmReais::MAXIMO_CENTAVOS) {
+                    throw ValidationException::withMessages([
+                        'preco' => 'Com este preço, o total de algum contrato ficaria fora do limite (R$ 0,01 a R$ 99.999.999,99).',
+                    ]);
+                }
+
+                $contrato->update(['valor_centavos' => $soma]);
+            }
+        });
+
+        return redirect('/produtos-servicos')
+            ->with('sucesso', "Preço reajustado em {$contratos->count()} contrato(s). Vale para as próximas cobranças.");
     }
 
     private function formulario(?ProdutoServico $item): Response

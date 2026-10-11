@@ -37,7 +37,7 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (verificaç�
 | 12 | T12.1 Catálogo de produtos e serviços | testada (suíte 200/200; build ok) |
 | 12 | T12.2 Itens no contrato | testada (suíte 213/213; build ok) |
 | 12 | T12.3 Itens na cobrança (avulsa, edição e geração) | testada (suíte 219/219; build ok) |
-| 12 | T12.4 Reajustar contratos | pendente |
+| 12 | T12.4 Reajustar contratos | testada (suíte 224/224; build ok) |
 | 12 | T12.5 PORTÃO-BANCO + fechamento da fase 12 | pendente |
 | 13 | T13.1 Filtros e paginação de Clientes | pendente |
 | 13 | T13.2 Filtros e paginação de Contratos | pendente |
@@ -2689,7 +2689,7 @@ git commit -m "feat: cobranças guardam cópia dos itens (avulsa, edição e ger
 
 ### Tarefa T12.4: Reajustar contratos
 
-**Estado:** pendente
+**Estado:** testada (suíte 224/224; build ok)
 
 **Arquivos:**
 - Criar: `resources/js/Pages/ProdutosServicos/Reajuste.vue`

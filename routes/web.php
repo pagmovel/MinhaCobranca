@@ -39,6 +39,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
     Route::resource('produtos-servicos', ProdutoServicoController::class)
         ->except('show')->parameters(['produtos-servicos' => 'produto']);
+    Route::get('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajuste']);
+    Route::post('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajustar']);
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/create', [CobrancaController::class, 'create']);

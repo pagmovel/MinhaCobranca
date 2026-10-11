@@ -403,6 +403,10 @@ o relatório mostra a parte que existe.
   `produto_servico_id` só como referência, `nullOnDelete`); a geração copia do contrato, avulsa/edição gravam os
   escolhidos; mudar contrato ou catálogo depois **não** altera cobrança existente; cobrança antiga sem itens continua
   valendo; `CobrancaRequest::authorize` dá 404 para cobrança alheia; item usado em contrato **ou** cobrança não é excluído.
+- T12.4: reajuste (`/produtos-servicos/{produto}/reajuste`) só nos contratos **ativos escolhidos** que usam o item;
+  recalcula `valor_centavos`; total fora do limite desfaz a transação inteira (`ValidationException` lançada dentro de
+  `DB::transaction`); cobranças já geradas não mudam; o preço do catálogo não muda (é só sugestão). Sem FormRequest: o
+  `findOrFail` do item vem antes do `$request->validate()`, então item alheio dá 404 antes da validação.
 - **Consulta de dados públicos (só se gratuita — condição do usuário):** ViaCEP ("Webservice gratuito"; bloqueia uso
   massivo) para CEP; BrasilAPI (sem chave; README: "em beta", termos em elaboração, sem crawling) para CNPJ e reserva do
   CEP. Uso só sob demanda, com cache de 30 dias e limite por usuário; nunca consultar CPF.
