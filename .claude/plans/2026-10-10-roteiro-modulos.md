@@ -1,8 +1,68 @@
 # Roteiro do produto — onde estamos e o que vem (handoff entre sessões)
 
-**Atualizado:** 2026-10-10 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
+**Atualizado:** 2026-10-11 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
+
+## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
+
+**Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
+- Último commit: `0907d4d`.
+- Suítes: PHP **342/342** (`php artisan test --compact`), JS **38/38** (`node --test resources/js/*.test.js`), build ok.
+- **Ainda não foi feito merge na `main` das Fases 17 (resto), 18 e 19:** falta a revisão final da branch e a decisão
+  do usuário.
+- O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste
+  (`b83f22d`).
+
+**Fases desta sessão**
+
+| Fase | O quê | Plano | Estado |
+|---|---|---|---|
+| 18 | Previsão de recebimentos: previstas calculadas pelos contratos, nada gravado | `.claude/plans/2026-10-11-previsao-de-recebimentos.md` | **validada** |
+| 19 | Lista de cobranças por ajax: blocos de 4 páginas, cache, paginador acima e abaixo, totais por situação, esqueleto | `.claude/plans/2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; revisão final feita e corrigida (`1a84e9a`) |
+| 20 | Levar o padrão da 19 a todas as listas, mais tabelas (a antiga T17.18) | especificação `docs/superpowers/specs/2026-10-11-listas-por-ajax-design.md` | **aguardando a revisão da especificação pelo usuário** |
+
+Detalhes da Fase 19: as 5 Minor adiadas, a pegadinha do `<tfoot>` e as decisões estão no "Registro de execução" do
+plano.
+
+**Fase 20:** as listas são Clientes, Contratos, Produtos e serviços, Auditoria, Usuários (admin), Painel e
+Relatórios. Escolhas do usuário: **"Juntas"** (tabelas de clientes, contratos e produtos no mesmo trabalho) e
+**Painel e Relatórios entram**. Na revisão, destacar as escolhas que foram minhas:
+- Painel com paginador **só embaixo** de cada lista, 10 por página;
+- totais de Contratos **por periodicidade**;
+- busca nos campos de texto 400 ms depois de parar de digitar.
+
+Depois da aprovação: plano com fases e tarefas (superpowers:writing-plans), executado inline. A base já existe:
+`resources/js/listaPaginada.js` (`criarListaPaginada`, com teste) e `Paginador.vue`.
+
+**Pendências que dependem do usuário**
+1. Revisar a especificação da Fase 20.
+2. **Conferência visual completa da lista de cobranças** (paginadores, cache 1→4 sem pedido, rodapé, dar baixa e
+   ver a lista atualizar, F5). **Pede autorização nova**, porque grava sessões no banco de dev. Usar o Chrome dedicado
+   da porta 9333 (`BU_CDP_URL`), nunca o do usuário.
+3. Validações antigas: T17.9 (smoke), T17.12, T17.14.
+4. **T17.13 (apelido do cliente):** espera a resposta "Já existe algum recibo emitido em produção?" (regra do `-v2`
+   do modelo de recibo).
+5. T17.11 (renovar ou prorrogar contrato): desenho a fazer com o usuário.
+6. Avisar o usuário: `MATERIAIS/lists-m05.html` está **vazio**.
+
+**Fatos desta sessão que não estão no código**
+- **419 ao excluir produto (relato do usuário):**
+  - Causa observada: com a sessão vencida e o "lembrar de mim" válido, cada pedido simultâneo cria uma sessão nova.
+  - Correção: `bootstrap/app.php` → `respond()` (419 fora de JSON volta para a página com "A página expirou. Tente
+    de novo.").
+  - O 419 em si não foi reproduzido: **[INCONCLUSIVO]**. Detalhes nas Pegadinhas da skill.
+  - O teste no navegador deixou **5 sessões do usuário 2 (SMOKE)** na tabela `sessions` (18 linhas). Não foram
+    apagadas: apagar é escrita e exige o "sim" do usuário.
+- **Processos que podem ter ficado rodando:**
+  - `php artisan serve` na porta 8000;
+  - Chrome headless de teste na porta 9333 (`--user-data-dir` no scratchpad).
+
+  O usuário usa `http://recibos.test` (Laragon).
+- **Regras reforçadas nesta sessão:**
+  - autorização de escrita no banco vale para um comando só;
+  - sonda de CSRF segura: `DELETE /produtos-servicos/999999` (404 = token ok);
+  - no browser-use, `js()` não pode devolver promessa (usar `setTimeout(async…, 0); 1`).
 
 ## 1. Estado agora
 
