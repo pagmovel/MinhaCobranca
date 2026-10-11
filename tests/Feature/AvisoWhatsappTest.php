@@ -137,6 +137,52 @@ class AvisoWhatsappTest extends TestCase
         ]);
     }
 
+    /** Achado da revisão (T24.9): o teste anterior tinha 1 cliente e 1 cobrança — não provava o agrupamento. */
+    public function test_painel_vencendo_agrupa_duas_cobrancas_do_mesmo_cliente(): void
+    {
+        $this->usuario->forceFill(['dias_aviso' => 5])->save();
+        $uma = $this->cobranca(['vencimento' => '2026-10-13', 'valor_centavos' => 3000]);
+        $outra = $this->cobranca(['vencimento' => '2026-10-14', 'valor_centavos' => 4000]);
+
+        $this->getJson('/painel/dados?lista=vencendo')->assertJson(['linhas' => [[
+            'cliente' => $this->cliente->exibicao(),
+            'quantidade' => 2,
+            'vencimentos' => ['13/10/2026', '14/10/2026'],
+            'total_centavos' => 7000,
+        ]]])->assertJsonCount(1, 'linhas');
+        $this->assertEqualsCanonicalizing([$uma->id, $outra->id], $this->getJson('/painel/dados?lista=vencendo')->json('linhas.0.ids'));
+    }
+
+    public function test_painel_vencendo_separa_grupos_por_cliente_diferente(): void
+    {
+        $this->usuario->forceFill(['dias_aviso' => 5])->save();
+        $outroCliente = Cliente::factory()->for($this->usuario)->create();
+        $this->cobranca(['vencimento' => '2026-10-15']);
+        Cobranca::factory()->for($this->usuario)->for($outroCliente)->create(['status' => StatusCobranca::Pendente, 'vencimento' => '2026-10-12']);
+
+        $this->getJson('/painel/dados?lista=vencendo')->assertJsonCount(2, 'linhas');
+    }
+
+    public function test_painel_vencendo_inclui_as_bordas_hoje_e_hoje_mais_dias_aviso(): void
+    {
+        $this->usuario->forceFill(['dias_aviso' => 5])->save();
+        $hoje = $this->cobranca(['vencimento' => '2026-10-11']);
+        $limite = $this->cobranca(['vencimento' => '2026-10-16']); // hoje + 5, borda inclusiva
+
+        // Mesmo cliente: as duas caem no mesmo grupo — o que importa aqui é que as DUAS bordas entram na janela.
+        $ids = $this->getJson('/painel/dados?lista=vencendo')->json('linhas.0.ids');
+        $this->assertEqualsCanonicalizing([$hoje->id, $limite->id], $ids);
+    }
+
+    public function test_painel_vencendo_exclui_cobranca_vencida_e_de_outro_usuario(): void
+    {
+        $this->usuario->forceFill(['dias_aviso' => 5])->save();
+        $this->cobranca(['vencimento' => '2026-10-10']); // ontem, vencida — fora da janela "de hoje até hoje+N"
+        Cobranca::factory()->create(['status' => StatusCobranca::Pendente, 'vencimento' => '2026-10-12']); // outro usuário
+
+        $this->getJson('/painel/dados?lista=vencendo')->assertJsonCount(0, 'linhas');
+    }
+
     public function test_painel_vencendo_mostra_avisado_em_mais_recente_do_grupo(): void
     {
         $this->cobranca(['vencimento' => '2026-10-13', 'avisado_em' => '2026-10-05 10:00:00']);
