@@ -32,7 +32,10 @@ sem depender do histórico.
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
    cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
-   cobrança para o primeiro dia útil seguinte". **Em brainstorming** (ainda sem spec nem código).
+   cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**
+   `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md` — **aguarda revisão do usuário** (decisões D1–D3:
+   Sexta-feira da Paixão automática?, avulsas fora do ajuste em lote?, boleto). Depois: plano (writing-plans) e execução.
+   Fontes legais conferidas no planalto.gov.br (Leis 662/1949, 6.802/1980, 9.093/1995, 14.759/2023).
    - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
      encerramento e retroativos); ajustar ali mantém o teste-guarda `test_previsao_bate_com_o_que_o_gerador_cria`.
      Não há nada de feriado no código.
@@ -46,9 +49,7 @@ sem depender do histórico.
      não muda, só o vencimento; antecedência conta do vencimento ajustado; previsão igual ao gerador). Tela "Feriados"
      no perfil: lista local (dia/mês todo ano, ou data móvel como Corpus Christi) e **prévia** das cobranças em aberto
      não enviadas que caem em dia não útil, com "Ajustar" (padrão 9) — serve também para o ajuste inicial. Avulsa: aviso
-     com botão "Usar <data>". **[A VERIFICAR] antes da spec:** status legal de Sexta-feira Santa e Corpus Christi
-     (Lei 9.093/1995: feriados religiosos são municipais?) e a lista de feriados nacionais (Leis 662/1949, 6.802/1980,
-     14.759/2023) no planalto.gov.br.
+     com botão "Usar <data>". Verificação feita (ver spec, seção 2).
 1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
 2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
    fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
