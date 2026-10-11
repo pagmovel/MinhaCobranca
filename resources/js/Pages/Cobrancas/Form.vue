@@ -1,9 +1,11 @@
 <script setup>
+import { ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
+import DescricaoComplementar from '../../Components/DescricaoComplementar.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
@@ -13,6 +15,9 @@ const props = defineProps({
     formasPagamento: { type: Array, required: true },
     cadastroRapido: { type: Object, required: true },
 });
+
+// Cliente escolhido (formato da autosugestão): a descrição oferece incluir o apelido.
+const cliente = ref(props.clienteAtual);
 
 const hoje = new Date().toLocaleDateString('sv-SE');
 
@@ -45,7 +50,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
 
         <form class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <CampoCliente :form="form" :inicial="clienteAtual" :desativado="travado" :opcoes="cadastroRapido" />
+                <CampoCliente :form="form" :inicial="clienteAtual" :desativado="travado" :opcoes="cadastroRapido" @escolhido="cliente = $event" />
             </Campo>
             <p v-if="travado" class="font-estreita text-xs text-grafite/70 sm:col-span-6">Cliente e período vêm do contrato.</p>
             <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
@@ -53,10 +58,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
                 o valor passa a ser a soma dos itens.
             </p>
             <SecaoItens :form="form" />
-            <Campo id="descricao" rotulo="Descrição complementar (opcional)" :erro="form.errors.descricao" class="sm:col-span-6">
-                <textarea id="descricao" v-model="form.descricao" rows="3" class="entrada" placeholder="Ex.: domínio, mês de referência, número do contrato, observações" />
-                <p class="mt-1 text-xs text-grafite/70">No recibo, sai abaixo da lista de itens. Itens e descrição cabem em até 25 linhas.</p>
-            </Campo>
+            <DescricaoComplementar :form="form" :cliente="cliente" />
             <Campo id="vencimento" rotulo="Vencimento" :erro="form.errors.vencimento" class="sm:col-span-2">
                 <input id="vencimento" v-model="form.vencimento" type="date" class="entrada" required>
             </Campo>

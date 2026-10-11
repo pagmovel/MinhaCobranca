@@ -5,6 +5,7 @@ import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
+import DescricaoComplementar from '../../Components/DescricaoComplementar.vue';
 import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
 import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
@@ -18,6 +19,9 @@ const props = defineProps({
     formasPagamento: { type: Array, required: true },
     cadastroRapido: { type: Object, required: true },
 });
+
+// Cliente escolhido (formato da autosugestão): a descrição oferece incluir o apelido.
+const cliente = ref(props.clienteAtual);
 
 // `reativar` só existe para contrato encerrado: sem ele marcado, salvar não desfaz o encerramento.
 const form = useForm(props.contrato ? { ...props.contrato, reativar: false, gerar_retroativas: null } : {
@@ -105,17 +109,14 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
 
         <form class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
-                <CampoCliente :form="form" :inicial="clienteAtual" :opcoes="cadastroRapido" />
+                <CampoCliente :form="form" :inicial="clienteAtual" :opcoes="cadastroRapido" @escolhido="cliente = $event" />
             </Campo>
             <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
                 Este contrato ainda não tem itens (valor atual: R$ {{ contrato.valor }}). Inclua pelo menos um; ao salvar, o
                 valor passa a ser a soma dos itens.
             </p>
             <SecaoItens :form="form" />
-            <Campo id="descricao" rotulo="Descrição complementar (opcional)" :erro="form.errors.descricao" class="sm:col-span-6">
-                <textarea id="descricao" v-model="form.descricao" rows="3" class="entrada" placeholder="Ex.: domínio, mês de referência, número do contrato, observações" />
-                <p class="mt-1 text-xs text-grafite/70">No recibo, sai abaixo da lista de itens. Itens e descrição cabem em até 25 linhas.</p>
-            </Campo>
+            <DescricaoComplementar :form="form" :cliente="cliente" />
             <Campo id="periodicidade" rotulo="Periodicidade" :erro="form.errors.periodicidade" class="sm:col-span-3">
                 <select id="periodicidade" v-model="form.periodicidade" class="entrada">
                     <option v-for="p in periodicidades" :key="p.valor" :value="p.valor">{{ p.rotulo }}</option>
