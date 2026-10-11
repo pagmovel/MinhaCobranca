@@ -1,13 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
-
-const relatorios = [
-    { tipo: 'faturamento', titulo: 'Faturamento por período', descricao: 'Mês a mês: previsto, recebido e o que ficou em atraso.' },
-    { tipo: 'clientes', titulo: 'Receita por cliente', descricao: 'Quanto cada cliente pagou, contratos ativos, valor médio e atrasos.' },
-    { tipo: 'produtos', titulo: 'Receita por produto ou serviço', descricao: 'O que mais fatura, pelos itens das cobranças.' },
-    { tipo: 'a-receber', titulo: 'Contas a receber', descricao: 'Pendentes por cliente: vencidas e o que vence em 30, 60 e 90 dias.' },
-];
+import { RELATORIOS as relatorios } from '../../relatorios.js';
 </script>
 
 <template>

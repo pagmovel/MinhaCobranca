@@ -58,6 +58,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     });
     Route::get('/relatorios', [RelatorioController::class, 'index']);
     Route::get('/relatorios/{tipo}', [RelatorioController::class, 'show'])->whereIn('tipo', RelatorioController::TIPOS);
+    Route::get('/relatorios/{tipo}/dados', [RelatorioController::class, 'dados'])->whereIn('tipo', RelatorioController::TIPOS);
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/dados', [CobrancaController::class, 'dados']);

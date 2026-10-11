@@ -67,7 +67,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T20.6 | Auditoria por ajax | testada (RED → GREEN; suíte 356/356, build ok) |
 | T20.7 | Usuários (admin) em tabela por ajax, filtros, ação principal pela situação | testada (RED: módulo inexistente, 3 falhas PHP → GREEN; JS 44/44, suíte 358/358, build ok) |
 | T20.8 | Painel: três listas por ajax | testada (RED: 5 falhas → GREEN; suíte 360/360, build ok) |
-| T20.9 | Relatórios por ajax | pendente |
+| T20.9 | Relatórios por ajax | testada (RED: 10 falhas → GREEN; CSV byte a byte igual; suíte 362/362, JS 44/44, build ok) |
 | T20.10 | Limpeza (`Paginacao.vue`, `App\Support\Paginacao`), teste "só lê" de todos os `/dados`, skill, revisão final, conferência visual, validação | pendente |
 
 ## Registro de execução (decisões tomadas durante a execução)
