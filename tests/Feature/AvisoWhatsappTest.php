@@ -74,6 +74,21 @@ class AvisoWhatsappTest extends TestCase
             ->assertJson(['itens' => [['nome' => 'Serviço', 'valor_centavos' => 5000]]]);
     }
 
+    public function test_inclui_o_contato_quando_o_cliente_tem_um_cadastrado(): void
+    {
+        $this->cliente->forceFill(['contato' => 'Wendel'])->save();
+        $cobranca = $this->cobranca();
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['contato' => 'Wendel']);
+    }
+
+    public function test_contato_vazio_quando_o_cliente_nao_tem_um_cadastrado(): void
+    {
+        $cobranca = $this->cobranca();
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertJson(['contato' => '']);
+    }
+
     public function test_inclui_a_chave_pix_quando_a_forma_de_pagamento_e_pix(): void
     {
         $chave = ChavePix::factory()->for($this->usuario)->create(['tipo' => TipoChavePix::Email, 'chave' => 'cobranca@paguemovel.net.br']);

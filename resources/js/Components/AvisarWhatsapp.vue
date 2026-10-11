@@ -41,6 +41,7 @@ function atualizarTexto() {
         totalCentavos: dados.value.total_centavos,
         prestador: props.prestador,
         chavePix: dados.value.chave_pix,
+        contato: dados.value.contato,
     });
 }
 

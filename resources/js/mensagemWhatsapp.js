@@ -42,9 +42,11 @@ function juntarVencimentos(vencimentos) {
  * Substitui as variáveis conhecidas por valores reais; o que não reconhece fica literal no texto (erro de
  * digitação no modelo não pode travar nem sumir pedaço da mensagem).
  */
-export function montarMensagem(texto, { cliente, itens, vencimentos, totalCentavos, prestador, chavePix }) {
+export function montarMensagem(texto, { cliente, itens, vencimentos, totalCentavos, prestador, chavePix, contato }) {
     return texto
         .replaceAll('{cliente}', cliente)
+        // Sem fallback para o nome do cliente (decisão do usuário): vazia quando não há pessoa de contato cadastrada.
+        .replaceAll('{contato}', contato ?? '')
         // Nomes em frase corrida ("vence a hospedagem do domínio {item}"), sem "-" nem valor — diferente de {itens}.
         .replaceAll('{item}', juntarComE(itens.map((item) => item.nome)))
         .replaceAll('{itens}', itens.map(linhaDoItem).join('\n'))

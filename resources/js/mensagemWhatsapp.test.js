@@ -99,6 +99,16 @@ test('{chave_pix}: sem chave fornecida, fica vazia (não trava nem mostra undefi
     assert.equal(texto, 'Chave: .');
 });
 
+test('{contato}: substitui pela pessoa de contato quando cadastrada', () => {
+    const texto = montarMensagem('Oi, {contato}!', dados({ contato: 'Wendel' }));
+    assert.equal(texto, 'Oi, Wendel!');
+});
+
+test('{contato}: sem pessoa de contato cadastrada, fica vazia (decisão do usuário: não cai no nome do cliente)', () => {
+    const texto = montarMensagem('Oi, {contato}!', dados());
+    assert.equal(texto, 'Oi, !');
+});
+
 test('MENSAGEM_SUGERIDA: itens em bloco, sem concordância verbal (achado da revisão, T24.9)', () => {
     const texto = montarMensagem(MENSAGEM_SUGERIDA, dados({
         itens: [{ nome: 'Hospedagem', valorCentavos: 8990 }, { nome: 'Domínio', valorCentavos: 4000 }],

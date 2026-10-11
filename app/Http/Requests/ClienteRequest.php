@@ -36,6 +36,7 @@ class ClienteRequest extends FormRequest
         return [
             'nome' => ['required', 'string', 'max:255'],
             'apelido' => ['string', 'max:60'],
+            'contato' => ['nullable', 'string', 'max:100'],
             // O mesmo CPF/CNPJ pode repetir com outro apelido (cada regional é um cliente).
             'documento' => [
                 'required',

@@ -43,6 +43,7 @@ class AvisoWhatsappController extends Controller
         return response()->json([
             'cliente' => $cobrancas->first()->cliente->exibicao(),
             'telefone' => $cobrancas->first()->cliente->telefone ?? '',
+            'contato' => $cobrancas->first()->cliente->contato ?? '',
             'itens' => $itens->values(),
             'vencimentos' => $cobrancas->pluck('vencimento')->unique()->sort()->map(fn ($data) => $data->toDateString())->values(),
             'total_centavos' => $cobrancas->sum('valor_centavos'),

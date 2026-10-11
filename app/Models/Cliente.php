@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+    'nome', 'apelido', 'contato', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
     'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep', 'modelo',
 ])]
 class Cliente extends Model

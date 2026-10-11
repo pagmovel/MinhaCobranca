@@ -14,7 +14,7 @@ const props = defineProps({
     ufs: { type: Array, required: true },
 });
 
-const campos = ['nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+const campos = ['nome', 'apelido', 'contato', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
     'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep'];
 
 const form = useForm({
@@ -54,6 +54,13 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                         Nome curto que aparece nas telas e nas buscas (ex.: Regional Araci). Serve também para cadastrar outra
                         unidade com o mesmo CPF/CNPJ. Não sai no recibo; para pôr, use "Incluir o apelido na descrição" no
                         contrato ou na cobrança.
+                    </p>
+                </Campo>
+                <Campo id="contato" rotulo="Pessoa de contato (opcional)" :erro="form.errors.contato" class="sm:col-span-6">
+                    <input id="contato" v-model="form.contato" maxlength="100" class="entrada" aria-describedby="contato-ajuda">
+                    <p id="contato-ajuda" class="font-estreita text-xs text-grafite/70">
+                        Nome de quem você fala com no dia a dia (ex.: Wendel). Usado só nas mensagens de WhatsApp, pela
+                        variável <code>{contato}</code>.
                     </p>
                 </Campo>
                 <BuscaCnpj :form="form" />

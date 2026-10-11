@@ -104,6 +104,27 @@ class ClientesTest extends TestCase
         $this->assertSame(2, $usuario->clientes()->count());
     }
 
+    public function test_salva_e_mostra_a_pessoa_de_contato(): void
+    {
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario);
+
+        $this->post('/clientes', $this->dados(['contato' => 'Wendel']))->assertSessionHasNoErrors();
+        $cliente = $usuario->clientes()->sole();
+        $this->assertSame('Wendel', $cliente->contato);
+
+        $this->get("/clientes/{$cliente->id}/edit")->assertInertia(fn (Assert $page) => $page->where('cliente.contato', 'Wendel'));
+    }
+
+    public function test_pessoa_de_contato_e_opcional(): void
+    {
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario);
+
+        $this->post('/clientes', $this->dados())->assertSessionHasNoErrors();
+        $this->assertNull($usuario->clientes()->sole()->contato);
+    }
+
     public function test_lista_e_busca_mostram_o_apelido_no_lugar_do_nome_e_acham_pelos_dois(): void
     {
         $usuario = User::factory()->create();

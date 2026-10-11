@@ -10,6 +10,7 @@ const props = defineProps({
 
 const VARIAVEIS = [
     { token: '{cliente}', legenda: 'nome do cliente' },
+    { token: '{contato}', legenda: 'pessoa de contato (vazio se não houver uma cadastrada)' },
     { token: '{item}', legenda: 'nome do(s) item(ns), em frase' },
     { token: '{itens}', legenda: 'lista dos itens vencendo' },
     { token: '{vencimento}', legenda: 'data(s) de vencimento' },
@@ -21,6 +22,7 @@ const VARIAVEIS = [
 // Dados fictícios só para a prévia — a janela de envio real usa os dados da cobrança.
 const EXEMPLO = {
     cliente: 'Fulano da Silva',
+    contato: 'Fulano',
     itens: [{ nome: 'Hospedagem do domínio exemplo.com.br', valorCentavos: 8990 }],
     vencimentos: ['2026-10-15'],
     totalCentavos: 8990,

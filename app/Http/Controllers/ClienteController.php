@@ -175,7 +175,7 @@ class ClienteController extends Controller
     {
         return Inertia::render('Clientes/Form', [
             'cliente' => $cliente
-                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value, 'apelido' => $cliente->apelido]
+                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value, 'apelido' => $cliente->apelido, 'contato' => $cliente->contato ?? '']
                     + array_map(fn ($valor) => $valor ?? '', $cliente->only(Cliente::CAMPOS))
                 : null,
             // Prévia da troca de modelo: quantas cobranças em aberto seriam refeitas (Fase 22).
