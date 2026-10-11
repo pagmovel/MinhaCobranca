@@ -13,6 +13,40 @@ export function contarPedido(promessa) {
 }
 
 /**
+ * Atraso antes de mostrar o indicador (como a barra nativa do Inertia): pedido mais rápido que `ms` nem chega a aparecer,
+ * então a pílula não pisca e o leitor de tela não anuncia a cada clique. `contador` é algo com `.value` (o `pendentes`
+ * acima, ou um objeto simples em teste); chamar a função devolvida a cada mudança dele. Esconder é sempre na hora.
+ */
+export function criarIndicadorComAtraso(contador, mostrar, ms = 250) {
+    let temporizador = null;
+    let visivel = false;
+
+    return () => {
+        if (contador.value > 0) {
+            if (temporizador === null && !visivel) {
+                temporizador = setTimeout(() => {
+                    temporizador = null;
+                    if (contador.value > 0) {
+                        visivel = true;
+                        mostrar(true);
+                    }
+                }, ms);
+            }
+            return;
+        }
+
+        if (temporizador !== null) {
+            clearTimeout(temporizador);
+            temporizador = null;
+        }
+        if (visivel) {
+            visivel = false;
+            mostrar(false);
+        }
+    };
+}
+
+/**
  * Embrulha o `fetch` uma vez só: todo pedido da aplicação (listas, autosugestão, prévias, PDF) passa a contar, inclusive
  * os componentes que chamam `fetch` direto. A promessa resolve na chegada dos cabeçalhos — a espera é o servidor.
  */

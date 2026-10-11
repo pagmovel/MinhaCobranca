@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue';
-import { pendentes } from '../carregando.js';
+import { ref, watch } from 'vue';
+import { criarIndicadorComAtraso, pendentes } from '../carregando.js';
 
-const ativo = computed(() => pendentes.value > 0);
+const ativo = ref(false);
+watch(pendentes, criarIndicadorComAtraso(pendentes, (visivel) => { ativo.value = visivel; }), { immediate: true });
 </script>
 
 <template>
