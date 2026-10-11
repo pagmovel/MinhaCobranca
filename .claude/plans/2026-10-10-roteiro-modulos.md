@@ -18,7 +18,7 @@ sem depender do histórico.
 ### 0.2 Estado da branch
 **Branch:** `feat/modulo-cobranca-catalogo`, já no remoto.
 - Último commit: o da conferência visual da Fase 20 (2026-10-11), depois de `809544d`.
-- Suítes: PHP **398/398**, JS **50/50** (`php artisan test --compact`),  (`node --test resources/js/*.test.js`), build ok.
+- Suítes: PHP **399/399** (`php artisan test --compact`), JS **50/50** (`node --test resources/js/*.test.js`), build ok.
 - **Ainda não foi feito merge na `main` das Fases 17 (resto), 18, 19 e 20:** falta a revisão final da branch e a decisão
   do usuário.
 - O usuário fez um commit dele na `main` (`761f6d0`, requisito de PHP ^8.4 no composer); a branch tem o mesmo ajuste

@@ -121,7 +121,7 @@ class Cobranca extends Model
             'recibo' => $this->recibo ? [
                 'numero' => $this->recibo->numeroFormatado(),
                 'pdf_url' => "/recibos/{$this->recibo->id}/pdf",
-                'pdf_nome' => $this->recibo->nomeArquivo(),
+                'pdf_nome' => $this->recibo->nomeArquivo($this->cliente->apelido),
             ] : null,
         ];
     }

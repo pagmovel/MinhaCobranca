@@ -63,6 +63,21 @@ class ApelidoNasTelasTest extends TestCase
             ->assertInertia(fn (Assert $pagina) => $pagina->where('clienteAtual.nome', 'Regional Araci')->etc());
     }
 
+    /** Pedido do usuário (2026-10-11): nome de arquivo curto quando a razão social é extensa. O conteúdo não muda. */
+    public function test_nome_do_arquivo_do_pdf_usa_o_apelido(): void
+    {
+        $this->get('/painel');
+        $linha = $this->getJson('/painel/dados?lista=para_enviar')->json('linhas.0');
+        $this->assertSame('recibo-2026-000001-regional-araci.pdf', $linha['recibo']['pdf_nome']);
+
+        $this->get($linha['recibo']['pdf_url'])->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=recibo-2026-000001-regional-araci.pdf');
+
+        // Sem apelido, continua o nome oficial.
+        $this->cliente->update(['apelido' => '']);
+        $this->assertSame('recibo-2026-000001-zeta-sindicato.pdf', $this->getJson('/painel/dados?lista=para_enviar')->json('linhas.0.recibo.pdf_nome'));
+    }
+
     public function test_relatorios_mostram_o_apelido(): void
     {
         $this->get('/painel');

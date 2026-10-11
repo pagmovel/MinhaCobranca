@@ -64,3 +64,8 @@ ARACI/BA.
   botão "Incluir o apelido na descrição (…)" que põe o apelido como primeira linha (`resources/js/apelido.js`: só com
   cliente de apelido escolhido; some quando a 1ª linha já é o apelido). `CampoCliente` emite `escolhido`. Como vira texto
   da descrição, conta nas 25 linhas pela validação de sempre. O ruling de layout do `-v2` deixou de valer.
+- **Nome do arquivo do PDF com o apelido (pedido do usuário, 2026-10-11):** "o apelido pode ser usado pro nome do arquivo
+  pdf com o recibo gerado". `Recibo::nomeArquivo(?string $apelido)` usa o apelido **atual** do cliente (não o snapshot: o
+  nome do arquivo não é conteúdo do recibo) e cai no nome oficial do snapshot sem apelido. Passado por `Cobranca::paraLista`
+  (cliente já carregado com `apelido`) e pelo `ReciboPdfController` (`with('cobranca.cliente:id,apelido')`; o renderizador
+  não lê o cliente). Teste `ApelidoNasTelasTest::test_nome_do_arquivo_do_pdf_usa_o_apelido` RED → GREEN; PHP 399/399.

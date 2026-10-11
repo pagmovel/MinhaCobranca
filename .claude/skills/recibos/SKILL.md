@@ -789,6 +789,8 @@ o relatório mostra a parte que existe.
     que foi desfeito). O snapshot do tomador não guarda o apelido (`Cliente::CAMPOS` sem ele). Opcional: botão "Incluir o
     apelido na descrição" no contrato e na cobrança (`DescricaoComplementar.vue` + `resources/js/apelido.js`), que põe o
     apelido na 1ª linha da descrição, editável. Não voltar a pôr o apelido no recibo sem falar com o usuário.
+  - **Nome do arquivo do PDF usa o apelido** (pedido do usuário): `Recibo::nomeArquivo($apelido)` com o apelido atual
+    do cliente; sem apelido, o nome oficial do snapshot. Quem chama passa o apelido já carregado (sem consulta por linha).
 - **Fase 22 — troca de modelo vale para as cobranças em aberto (plano `.claude/plans/2026-10-11-troca-de-modelo.md`).**
   `EmissorDeRecibos::aplicarModeloDoCliente` dentro da transação do `ClienteController::update`, só quando o modelo
   mudou; a tela de edição recebe `emAberto` e mostra a prévia (quantas mudam) com a caixa das enviadas. Teste:
