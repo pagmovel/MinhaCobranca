@@ -42,6 +42,8 @@ function escolheuMes() {
 const linhas = computed(() => props.cobrancas.map((cobranca) => ({ ...cobranca, acoes: acoesDaCobranca(cobranca) })));
 const naFaixa = ['baixa', 'pagamento', 'cancelar', 'corrigir', 'desfazer'];
 const perigosa = (acao) => ['cancelar', 'desfazer'].includes(acao);
+// Mesma largura mínima em todas as linhas: os botões principais ficam alinhados e numa linha só.
+const botaoPrincipal = 'min-w-28 whitespace-nowrap';
 const itemMenu = 'w-full px-4 py-2 text-left text-sm hover:bg-papel focus-visible:bg-papel focus-visible:outline-none';
 
 // Formulário da ação numa faixa logo abaixo da linha (uma por vez); o foco vai para o primeiro campo e volta ao fechar.
@@ -131,24 +133,25 @@ async function fecharFaixa() {
                         <td class="order-1 text-lg font-semibold whitespace-nowrap tabular-nums xl:px-3 xl:py-3 xl:text-right xl:text-base">
                             R$ {{ cobranca.valor }}
                         </td>
-                        <td class="order-2 xl:px-3 xl:py-3">
+                        <td class="order-2 whitespace-nowrap xl:px-3 xl:py-3">
                             <Carimbo :situacao="cobranca.situacao" />
                             <p v-if="cobranca.pago_em" class="mt-1 font-estreita text-xs text-grafite/80">em {{ cobranca.pago_em }}</p>
                         </td>
                         <td class="order-3 font-estreita text-xs whitespace-nowrap text-grafite/80 xl:px-3 xl:py-3 xl:text-sm">
                             <template v-if="cobranca.recibo"><span class="xl:hidden">Recibo </span>{{ cobranca.recibo.numero }}</template>
                         </td>
-                        <td :id="`acoes-${cobranca.id}`" class="order-4 basis-full pt-2 xl:px-4 xl:py-3">
+                        <td :id="`acoes-${cobranca.id}`" class="order-4 basis-full pt-2 xl:w-px xl:px-4 xl:py-3 xl:whitespace-nowrap">
                             <div class="flex items-center gap-2 xl:justify-end">
-                                <a v-if="cobranca.acoes.principal === 'pdf'" :href="cobranca.recibo.pdf_url" target="_blank" rel="noopener" class="botao-secundario">Ver PDF</a>
+                                <a v-if="cobranca.acoes.principal === 'pdf'" :href="cobranca.recibo.pdf_url" target="_blank" rel="noopener" :class="['botao-secundario', botaoPrincipal]">Ver PDF</a>
                                 <BotaoEnviar
                                     v-else-if="cobranca.acoes.principal === 'enviar'"
+                                    :classe-botao="`botao ${botaoPrincipal}`"
                                     :rotulo="rotuloDaAcao('enviar', cobranca)"
                                     :cobranca-id="cobranca.id"
                                     :pdf-url="cobranca.recibo.pdf_url"
                                     :nome-arquivo="cobranca.recibo.pdf_nome"
                                 />
-                                <button v-else-if="cobranca.acoes.principal" type="button" class="botao" @click="abrirFaixa(cobranca, cobranca.acoes.principal)">
+                                <button v-else-if="cobranca.acoes.principal" type="button" :class="['botao', botaoPrincipal]" @click="abrirFaixa(cobranca, cobranca.acoes.principal)">
                                     {{ rotuloDaAcao(cobranca.acoes.principal, cobranca) }}
                                 </button>
                                 <MenuAcoes v-if="cobranca.acoes.menu.length" v-slot="{ fechar }" :rotulo="`Mais ações: ${cobranca.cliente}`">

@@ -592,6 +592,11 @@ o relatório mostra a parte que existe.
   **Filtro "Incluir canceladas" (pedido do usuário, 2026-10-11):** "Todas" deixa as canceladas de fora; o checkbox
   (`canceladas=1`) as inclui; só aparece com "Todas" (nas outras situações não muda nada); "Canceladas" continua no
   select. A regra `boolean` do Laravel recusa `true`/`false` na URL: a tela manda `1` ou vazio.
+  **Uniformidade (relato do usuário com print, 2026-10-11):** nome de cliente longo espremia as outras colunas e
+  quebrava "Dar baixa" e "A VENCER" em duas linhas, e os botões ficavam de larguras diferentes. Acerto: só a coluna do
+  cliente quebra; as demais têm `whitespace-nowrap`; a coluna de ações usa `xl:w-px` (encolhe ao conteúdo); o botão
+  principal tem largura mínima comum (`botaoPrincipal = 'min-w-28 whitespace-nowrap'`) e o `Carimbo` tem
+  `min-w-32 text-center whitespace-nowrap` (vale também no painel). Em tabela nova, aplicar o mesmo desde o início.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
