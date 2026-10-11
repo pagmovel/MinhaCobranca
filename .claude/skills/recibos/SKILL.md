@@ -519,6 +519,34 @@ o relatório mostra a parte que existe.
   descrição com o mesmo `compor` + `LinhasDoRecibo::quebrar` (máx. 25). Descrição vazia é gravada como `''` (coluna
   NOT NULL, sem migração). Cobranças emitidas antes desta mudança só mostram os itens no PDF depois de editadas (refazer).
   Sugestão ao usuário: itens do catálogo genéricos; o específico do cliente (domínio) vai na descrição.
+- **T17.9 — encerrar e recomeçar contrato (desenho do usuário, 2026-10-10):** `App\Services\EncerradorDeContratos`:
+  `plano()` monta a lista de ações (`manter`, `cancelar`, `proporcional`, `emitir`, `nao_emitir`) usada **pela prévia e
+  pela execução** (`encerrar()`, uma transação). Regras para as pendentes: vencida/vencendo hoje continua; período até o
+  fim continua; período depois do fim é cancelado; período que contém o fim vira proporcional ou é cancelado (escolha
+  da tela); períodos até o fim ainda não emitidos (pós-pago) saem agora — a lista vem de `CalculadoraDePeriodos::devidos`
+  com antecedência 0 e "hoje" distante. Pro-rata em `App\Support\ProRata` (quantidade de cada item × usados ÷ dias,
+  meio para cima, mínimo 1 milésimo; sem itens, o valor). Não enviada: ajusta e refaz o recibo (mesmo número); enviada:
+  cancela e emite avulsa (`contrato_id` nulo). `GeradorDeCobrancas::criar()` (extraído) cria cobrança + recibo de um
+  período. Rotas: `GET /contratos/{id}/encerramento?fim=&em_curso=` (prévia JSON), `POST .../encerrar`,
+  `POST .../recomecar` (formulário inteiro + `em_curso`; encerra na véspera do novo início, cria o novo e leva a ele;
+  início igual/anterior é recusado). Tela: `EncerramentoContrato.vue` (prévia ao vivo, escolha do período em curso só
+  quando existe); o checkbox "ativo" só aparece para **reativar** contrato encerrado; com campos alterados, encerrar pede
+  para salvar antes. Teste: `tests/Feature/EncerramentoContratoTest.php` (exemplo aprovado: 18/31 × R$ 247,57 = R$ 143,84).
+- **Pegadinhas (T17.9):** (1) pro-rata por item arredonda a quantidade a 3 casas: 18/31 de 1 × 247,57 dá **143,84**
+  (0,581 × 247,57), enquanto 247,57 × 18 ÷ 31 dá 143,75 — o desenho aprovado é por item (a quantidade aparece no recibo).
+  (2) `Model::replicate()` usa `setRawAttributes` e **perde os defaults de `$attributes`** (conferido em `Eloquent/Model.php:2214-2221`; também
+  copia as relações carregadas) (ex.: `status`): definir o
+  status explicitamente na cópia. (3) `users.dias_antecedencia` não é fillable: nos testes, `forceFill`. (4) Em helper de
+  teste, `[...] + $extra` deixa a base vencer — usar `array_merge($base, $extra)`.
+- **T17.9 — ajustes depois da revisão e das decisões do usuário (2026-10-10):** fim **no futuro = encerramento agendado,
+  sem limite de data** (o usuário recusou limitar a 1 ano): contrato continua ativo com `data_fim` e
+  `contratos.ultimo_periodo` (`inteiro` padrão, `proporcional`, `nao_cobrar`); `GeradorDeCobrancas::criar()` deixa
+  proporcional (`ajustarProporcional()`) o período que contém o fim, e `gerarPara` pula esse período com `nao_cobrar`.
+  Já emitidas são acertadas na hora. Fim até hoje encerra na hora (inativo). Período que começa **depois** do fim é
+  cancelado **mesmo vencido** (pré-pago vence antes de começar; manter cobraria o mês duas vezes no recomeço). Recibo
+  proporcional sai **sem linha digitável** (o valor do boleto está no código). Contrato encerrado só volta com `reativar`
+  marcado (aba antiga não desfaz encerramento). Encerramento agendado não é reagendado (reduziria de novo a quantidade
+  já reduzida) — mudar a data fica para a prorrogação (T17.11).
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

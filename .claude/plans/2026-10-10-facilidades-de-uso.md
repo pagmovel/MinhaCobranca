@@ -32,7 +32,35 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | testada (navegador: 6 telas animadas sem erro no console; filtro preserva estado; build ok) |
 | T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | testada (revisão opus: 0 Critical, 2 Important + 1 Minor de segurança corrigidos; suíte 264/264; JS 16/16; navegador ok) — merge na main |
 | T17.8 | Descrição opcional; recibo lista os itens (`Nome: q unidade × R$ p = R$ t`) e a descrição complementar abaixo; limite de 25 linhas somando os dois (pedido do usuário, aprovado 2026-10-10) | testada (suíte 271/271; navegador ok) |
-| T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | pendente (nenhum código escrito ainda) |
+| T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | concluída; testada na suíte (293/293, JS 16/16, build ok) com as correções da revisão e o encerramento agendado; **migração pendente (PORTÃO-BANCO)**; smoke pendente (pede autorização: grava dados do SMOKE) |
+| T17.10 | Corrigir início errado de contrato sem cobrança paga + perguntar na hora se gera os períodos retroativos (também ao criar contrato com início no passado) | pendente (migração precisa de PORTÃO-BANCO) |
+| T17.11 | Renovar ou prorrogar contrato perto do fim, com os mesmos dados e permitindo alterações antes de concluir | pendente (desenho a fazer com o usuário) |
+
+### Decisões de 2026-10-10, após a revisão da T17.9 (respostas do usuário)
+- **Relato:** contrato nº 6 (usuário 1) criado com início 10/10/2026 em vez de 17/01/2026; a única cobrança está
+  cancelada, mas a trava e o recomeço (só aceita início posterior) não deixavam corrigir.
+- **Corrigir direto:** sem cobrança **paga**, o início/periodicidade/modalidade podem mudar; a prévia mostra as pendentes
+  que serão canceladas (número do recibo não volta) e as canceladas são desvinculadas do contrato (`contrato_id` nulo)
+  para não bloquear períodos novos no índice único. Com cobrança paga: só recomeçar (início posterior).
+- **Retroativos — perguntar na hora:** quando o início fica no passado, a tela pergunta se gera os períodos anteriores ao
+  atual; a escolha é guardada no contrato (coluna nova `cobrar_a_partir_de`, data, nula = desde o início) e respeitada
+  pelo gerador. Vale ao corrigir e ao criar contrato.
+- **Vencida de período que começa depois do fim → cancelada** ("vencida continua" só para períodos até o fim).
+- ~~Data de fim ao encerrar: até 1 ano à frente~~ — o usuário reconsiderou ("não sei se é uma boa ideia limitar").
+  **Decisão final: fim no futuro = encerramento agendado, sem limite.** O contrato continua ativo com `data_fim`; as
+  cobranças saem no ritmo de sempre (sem recibos adiantados); o último período sai proporcional ou não sai, conforme a
+  escolha guardada na coluna nova `contratos.ultimo_periodo` (`inteiro` padrão — contratos antigos e o campo "Fim do
+  contrato" do formulário não mudam —, `proporcional`, `nao_cobrar`), respeitada pelo `GeradorDeCobrancas::criar`.
+  Já emitidas são acertadas na hora (depois do fim: canceladas; em curso: proporcional/cancelada). Fim até hoje encerra
+  na hora, como antes. Mesma migração da T17.10 (PORTÃO-BANCO).
+- **Revisão — demais correções:** recibo proporcional sai **sem a linha digitável** do boleto antigo (o valor mudou; a
+  prévia avisa); aba antiga não reativa contrato encerrado (reativar só com o campo explícito `reativar`); botão de
+  confirmar travado enquanto a prévia se atualiza; escolha do período em curso só quando muda algo; sem prévia com
+  início vazio. Adiado (menor): linha "Proporcional" pode passar das 25 linhas do recibo.
+- **Encerramento agendado não é reagendado** (`ultimo_periodo` ≠ `inteiro` → erro): a cobrança em curso já ficou
+  proporcional e reagendar reduziria a quantidade já reduzida. Mudar a data entra na prorrogação (T17.11).
+- Pendência para a T17.11: contrato com fim já passado continua `ativo` na lista e no filtro (já acontecia com o campo
+  "Fim do contrato"); tratar junto com renovar/prorrogar.
 
 Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smoke) → `validada` (usuário confirmou).
 

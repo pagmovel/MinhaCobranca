@@ -1,9 +1,11 @@
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
+import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
@@ -16,7 +18,8 @@ const props = defineProps({
     cadastroRapido: { type: Object, required: true },
 });
 
-const form = useForm(props.contrato ?? {
+// `reativar` só existe para contrato encerrado: sem ele marcado, salvar não desfaz o encerramento.
+const form = useForm(props.contrato ? { ...props.contrato, reativar: false } : {
     cliente_id: '',
     descricao: '',
     itens: [],
@@ -33,6 +36,42 @@ const form = useForm(props.contrato ?? {
 const semItens = Boolean(props.contrato && !props.contrato.itens.length);
 
 const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}`) : form.post('/contratos'));
+
+const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
+const hoje = new Date().toLocaleDateString('sv-SE');
+
+/** Contrato com cobranças não muda a âncora dos períodos: a saída é encerrar e criar outro (recomeçar). */
+const mudaPeriodos = computed(() => Boolean(props.contrato?.tem_cobrancas) && (
+    form.data_inicio !== props.contrato.data_inicio
+    || form.periodicidade !== props.contrato.periodicidade
+    || form.modalidade !== props.contrato.modalidade
+));
+const inicioSemRecomeco = computed(() => Boolean(form.data_inicio) && form.data_inicio <= props.contrato.data_inicio);
+const vespera = computed(() => {
+    const data = new Date(`${form.data_inicio}T12:00:00`);
+    data.setDate(data.getDate() - 1);
+
+    return data.toLocaleDateString('sv-SE');
+});
+
+const desfazerMudancaDePeriodos = () => {
+    form.data_inicio = props.contrato.data_inicio;
+    form.periodicidade = props.contrato.periodicidade;
+    form.modalidade = props.contrato.modalidade;
+};
+
+const recomecar = ({ em_curso }) => form
+    .transform((dados) => ({ ...dados, em_curso }))
+    .post(`/contratos/${props.contrato.id}/recomecar`, { onFinish: () => form.transform((dados) => dados) });
+
+const encerrando = ref(false);
+const enviandoEncerramento = ref(false);
+const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerrar`, dados, {
+    preserveScroll: true,
+    onStart: () => { enviandoEncerramento.value = true; },
+    onFinish: () => { enviandoEncerramento.value = false; },
+    onSuccess: () => { encerrando.value = false; },
+});
 </script>
 
 <template>
@@ -78,17 +117,80 @@ const salvar = () => (props.contrato ? form.put(`/contratos/${props.contrato.id}
             </fieldset>
             <Campo id="data_inicio" rotulo="Início do primeiro período" :erro="form.errors.data_inicio" class="sm:col-span-3">
                 <input id="data_inicio" v-model="form.data_inicio" type="date" class="entrada" required>
+                <p v-if="contrato?.tem_cobrancas" class="mt-1 text-xs" :class="mudaPeriodos ? 'text-tinta-vermelha' : 'text-grafite/70'">
+                    Este contrato já tem cobranças: mudar o início, a periodicidade ou a modalidade encerra este contrato e
+                    cria um novo{{ mudaPeriodos ? ' (veja abaixo).' : '.' }}
+                </p>
             </Campo>
             <Campo id="data_fim" rotulo="Fim do contrato (opcional)" :erro="form.errors.data_fim" class="sm:col-span-3">
                 <input id="data_fim" v-model="form.data_fim" type="date" class="entrada">
             </Campo>
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
-            <label class="flex items-center gap-2 text-sm sm:col-span-6">
-                <input v-model="form.ativo" type="checkbox"> Contrato ativo (desmarque para encerrar)
+            <label v-if="contrato && !contrato.ativo" class="flex items-center gap-2 text-sm sm:col-span-6">
+                <input v-model="form.reativar" type="checkbox"> Reativar contrato
             </label>
-            <div class="sm:col-span-6">
-                <button class="botao" :disabled="form.processing">Salvar contrato</button>
-            </div>
+            <Transition name="surgir" mode="out-in">
+                <section v-if="mudaPeriodos" key="recomecar" class="grid gap-3 sm:col-span-6">
+                    <h2 class="text-lg font-semibold">Recomeçar o contrato</h2>
+                    <template v-if="inicioSemRecomeco">
+                        <p class="text-sm">
+                            O contrato novo precisa começar depois de {{ dataBr(contrato.data_inicio) }} — antes disso, os
+                            períodos se sobreporiam aos já cobrados. Escolha um início posterior ou desfaça a mudança.
+                        </p>
+                    </template>
+                    <template v-else-if="form.data_inicio">
+                        <p class="text-sm">
+                            Este contrato termina em {{ dataBr(vespera) }} e um novo começa em {{ dataBr(form.data_inicio) }}
+                            com os dados deste formulário (cliente, itens, preços, descrição e pagamento).
+                        </p>
+                        <EncerramentoContrato
+                            :contrato-id="contrato.id"
+                            :fim="vespera"
+                            :rotulo-confirmar="`Encerrar este contrato e criar um novo a partir de ${dataBr(form.data_inicio)}`"
+                            :processando="form.processing"
+                            @confirmar="recomecar"
+                            @voltar="desfazerMudancaDePeriodos"
+                        />
+                    </template>
+                    <div v-if="inicioSemRecomeco">
+                        <button type="button" class="botao-secundario" @click="desfazerMudancaDePeriodos">Desfazer a mudança</button>
+                    </div>
+                </section>
+                <div v-else key="salvar" class="sm:col-span-6">
+                    <button class="botao" :disabled="form.processing">Salvar contrato</button>
+                </div>
+            </Transition>
         </form>
+
+        <section v-if="contrato?.ativo && !mudaPeriodos" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
+            <h2 class="text-lg font-semibold">Encerrar contrato</h2>
+            <p v-if="contrato.encerramento_agendado" class="text-sm">
+                Encerramento agendado para {{ dataBr(contrato.data_fim) }}: o contrato gera cobranças até lá.
+            </p>
+            <p v-else class="text-sm text-grafite/80">
+                Para de gerar cobranças a partir da data de fim. Antes de confirmar, você vê o que acontece com cada cobrança.
+            </p>
+            <template v-if="contrato.encerramento_agendado" />
+            <p v-else-if="form.isDirty" class="text-sm">
+                Você mudou campos acima: salve o contrato antes de encerrar, para não perder as mudanças.
+            </p>
+            <div v-else-if="!encerrando">
+                <button type="button" class="botao-perigo" @click="encerrando = true">Encerrar contrato…</button>
+            </div>
+            <EncerramentoContrato
+                v-else
+                :contrato-id="contrato.id"
+                :fim="hoje < contrato.data_inicio ? contrato.data_inicio : hoje"
+                :minimo="contrato.data_inicio"
+                editavel
+                rotulo-confirmar="Confirmar encerramento"
+                :processando="enviandoEncerramento"
+                @confirmar="encerrar"
+                @voltar="encerrando = false"
+            />
+        </section>
+        <p v-else-if="contrato && !contrato.ativo" class="mt-6 max-w-3xl text-sm text-grafite/80">
+            Contrato encerrado{{ contrato.data_fim ? ` em ${dataBr(contrato.data_fim)}` : '' }}: não gera novas cobranças.
+        </p>
     </CamadaApp>
 </template>

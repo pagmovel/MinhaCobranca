@@ -38,6 +38,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::resource('clientes', ClienteController::class)->except('show');
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
+    Route::get('/contratos/{contrato}/encerramento', [ContratoController::class, 'encerramento']);
+    Route::post('/contratos/{contrato}/encerrar', [ContratoController::class, 'encerrar']);
+    Route::post('/contratos/{contrato}/recomecar', [ContratoController::class, 'recomecar']);
     Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
     Route::resource('produtos-servicos', ProdutoServicoController::class)
         ->except('show')->parameters(['produtos-servicos' => 'produto']);
