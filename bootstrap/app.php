@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'conta.aprovada' => GarantirContaAprovada::class,
         ]);
         $middleware->redirectUsersTo('/painel');
+        // Em produção o app fica atrás do proxy do EasyPanel (Traefik), que termina o HTTPS: sem isso o Laravel gera
+        // links http:// para os assets do Vite e o navegador bloqueia como conteúdo misto.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

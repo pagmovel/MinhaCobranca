@@ -1,0 +1,24 @@
+# Compose da VPS com Easypanel (servidor 207.180.205.211; serviço Compose, fonte Git, Build Path "/").
+# Sem `ports` nem `container_name` (o Easypanel acusa conflito entre serviços): o acesso externo é um domínio
+# configurado no painel apontando para o serviço `app`, porta 80, com HTTPS do próprio Easypanel.
+#
+# Variáveis: aba Environment do serviço, com "Create .env file" ligado — o Easypanel grava o .env na raiz no
+# deploy e o env_file abaixo entrega tudo ao container em runtime. O .env nunca entra na imagem (.dockerignore)
+# nem no git.
+
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      # Fixos aqui de propósito: o Easypanel pré-preenche o painel com o .env.example (APP_ENV=local,
+      # APP_DEBUG=true), e debug ligado em produção mostra variáveis e senhas na tela de erro.
+      APP_ENV: production
+      APP_DEBUG: "false"
+    volumes:
+      # Logos do perfil (disco local); sem volume, cada deploy apaga e os recibos ficam sem logo.
+      - storage-app:/var/www/html/storage/app
+    restart: unless-stopped
+
+volumes:
+  storage-app:
