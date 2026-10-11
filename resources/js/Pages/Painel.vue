@@ -9,6 +9,7 @@ import PagamentoInline from '../Components/PagamentoInline.vue';
 defineProps({
     mes: { type: String, required: true },
     perfilCompleto: { type: Boolean, required: true },
+    vencimentosEmDiaNaoUtil: { type: Number, required: true },
     diasAntecedencia: { type: Number, required: true },
     resumo: { type: Object, required: true },
     chavesPix: { type: Array, required: true },
@@ -24,6 +25,11 @@ defineProps({
         <p v-if="!perfilCompleto" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
             Complete seu perfil para emitir recibos.
             <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
+        </p>
+        <p v-if="vencimentosEmDiaNaoUtil" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
+            {{ vencimentosEmDiaNaoUtil === 1 ? '1 cobrança em aberto vence' : `${vencimentosEmDiaNaoUtil} cobranças em aberto vencem` }}
+            em sábado, domingo ou feriado.
+            <Link href="/perfil#feriados" class="font-semibold text-carbono underline">Ver e ajustar</Link>
         </p>
 
         <!-- Cada lista carrega por conta própria (/painel/dados); depois de uma ação, as três recarregam. -->

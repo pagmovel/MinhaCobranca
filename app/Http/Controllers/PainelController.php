@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
+use App\Services\AjusteDeVencimentos;
 use App\Services\GeradorDeCobrancas;
 use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
@@ -18,7 +19,7 @@ use Inertia\Response;
 
 class PainelController extends Controller
 {
-    public function __invoke(Request $request, GeradorDeCobrancas $gerador): Response
+    public function __invoke(Request $request, GeradorDeCobrancas $gerador, AjusteDeVencimentos $ajuste): Response
     {
         $usuario = $request->user();
         $hoje = CarbonImmutable::today();
@@ -36,6 +37,8 @@ class PainelController extends Controller
         return Inertia::render('Painel', [
             'mes' => Str::ucfirst($hoje->locale('pt_BR')->translatedFormat('F \d\e Y')),
             'perfilCompleto' => $usuario->perfilCompleto(),
+            // P2 (decisão do usuário, 2026-10-11): o aviso leva à prévia do ajuste, na seção Feriados do perfil.
+            'vencimentosEmDiaNaoUtil' => count($ajuste->previa($usuario)),
             'diasAntecedencia' => $usuario->dias_antecedencia,
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),

@@ -151,6 +151,16 @@ class AjusteDeVencimentosTest extends TestCase
         $this->assertLessThanOrEqual(2 * 4, $consultas - $comUma);
     }
 
+    public function test_painel_avisa_quantas_cobrancas_em_aberto_vencem_em_dia_nao_util(): void
+    {
+        $this->actingAs($this->usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page->where('vencimentosEmDiaNaoUtil', 0));
+
+        $this->cobranca('2026-10-24');
+        $this->cobranca('2026-10-31');
+
+        $this->get('/painel')->assertInertia(fn (Assert $page) => $page->where('vencimentosEmDiaNaoUtil', 2));
+    }
+
     public function test_pedido_sem_ids_ou_com_id_nao_numerico_e_recusado(): void
     {
         $this->actingAs($this->usuario)->post('/perfil/feriados/ajustar', [])->assertSessionHasErrors('ids');

@@ -840,6 +840,8 @@ o relatório mostra a parte que existe.
     `EmissorDeRecibos::refazerEmLote` (prestador e clientes lidos uma vez por lote, itens por cobrança: no máximo 4
     consultas por cobrança, teste conta). A tela manda no máximo 1000 ids por clique ("Ajustar 1000 de N") e mostra o
     erro ao lado do botão.
+  - **Aviso no Painel (P2 = sim, 2026-10-11):** prop `vencimentosEmDiaNaoUtil` (contagem da mesma prévia) e aviso no
+    formato do de perfil incompleto, com o link "Ver e ajustar" para `/perfil#feriados` (padrão 2: o aviso traz a saída).
   - **Datas: ano entre 1900 e 2100 em toda regra** (`App\Rules\AnoValido`, junto de cada `date_format` — 18 lugares,
     inclusive filtros `Y-m`). *Pegadinha:* o ano **0000** passa no `date_format` e o PostgreSQL recusa a data (500); o
     SQLite dos testes aceita, então só o teste com a regra pega. Campo de data novo: `'date_format:Y-m-d', new AnoValido`.
