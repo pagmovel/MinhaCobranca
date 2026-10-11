@@ -43,6 +43,7 @@ class PerfilRequest extends FormRequest
             'cep' => ['required', 'digits:8'],
             'modelo_padrao' => ['required', Rule::enum(FamiliaModelo::class)],
             'dias_antecedencia' => ['required', 'integer', 'between:0,60'],
+            'dias_aviso' => ['required', 'integer', 'between:1,30'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:1024'],
         ];
     }

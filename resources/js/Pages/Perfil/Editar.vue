@@ -65,6 +65,9 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
                 <Campo id="dias_antecedencia" rotulo="Gerar a cobrança quantos dias antes do vencimento" :erro="form.errors.dias_antecedencia" class="sm:col-span-3">
                     <input id="dias_antecedencia" v-model="form.dias_antecedencia" type="number" min="0" max="60" class="entrada">
                 </Campo>
+                <Campo id="dias_aviso" rotulo="Avisar sobre vencimento com quantos dias de antecedência" :erro="form.errors.dias_aviso" class="sm:col-span-3">
+                    <input id="dias_aviso" v-model="form.dias_aviso" type="number" min="1" max="30" class="entrada">
+                </Campo>
                 <Campo id="logo" rotulo="Logo nos recibos (PNG ou JPG, até 1 MB)" :erro="form.errors.logo" class="sm:col-span-6">
                     <img v-if="perfil.tem_logo" src="/perfil/logo" alt="Logo atual" class="mb-2 h-16 w-auto">
                     <input id="logo" type="file" accept="image/png,image/jpeg" @input="form.logo = $event.target.files[0]">

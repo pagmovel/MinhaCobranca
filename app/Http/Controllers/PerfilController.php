@@ -23,7 +23,7 @@ class PerfilController extends Controller
     private const CAMPOS = [
         'name', 'email', 'documento', 'nome_fantasia', 'inscricao_municipal', 'inscricao_estadual',
         'telefone', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep',
-        'dias_antecedencia',
+        'dias_antecedencia', 'dias_aviso',
     ];
 
     public function edit(Request $request, AjusteDeVencimentos $ajuste): Response
