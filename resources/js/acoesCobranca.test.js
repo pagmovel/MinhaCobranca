@@ -44,3 +44,7 @@ test('rótulo do envio depende da situação', () => {
     assert.equal(rotuloDaAcao('enviar', cobranca({ situacao: 'paga' })), 'Enviar recibo pago');
     assert.equal(rotuloDaAcao('cancelar', cobranca()), 'Cancelar cobrança');
 });
+
+test('prevista: sem ações (a cobrança ainda não existe)', () => {
+    assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'prevista', recibo: null, editavel: false })), { principal: null, menu: [] });
+});

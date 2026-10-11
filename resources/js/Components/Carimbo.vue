@@ -9,6 +9,8 @@ const estilos = {
     vencida: ['Vencido', 'border-tinta-vermelha text-tinta-vermelha'],
     paga: ['Pago', 'border-tinta-verde text-tinta-verde'],
     cancelada: ['Cancelado', 'border-grafite/50 text-grafite/60'],
+    // Ainda não é cobrança: cinza e tracejado, para não se confundir com "A vencer".
+    prevista: ['Prevista', 'border-dashed border-grafite/50 text-grafite/70'],
 };
 
 const atual = computed(() => estilos[props.situacao]);

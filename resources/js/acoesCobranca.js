@@ -3,6 +3,8 @@
  * vão para o menu "⋯" (skill recibos, padrão 12).
  */
 function emOrdem(cobranca) {
+    // Prevista é calculada pelo contrato: ainda não existe cobrança para agir sobre ela.
+    if (cobranca.situacao === 'prevista') return [];
     const pdf = cobranca.recibo ? ['pdf'] : [];
     const enviar = cobranca.recibo ? ['enviar'] : [];
 

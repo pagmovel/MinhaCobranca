@@ -27,16 +27,26 @@ const todosOsMeses = computed(() => ['vence_hoje', 'vencida'].includes(filtro.st
 const vazio = computed(() => ({
     vence_hoje: 'Nenhuma cobrança vence hoje.',
     vencida: 'Nenhuma cobrança vencida em aberto.',
-}[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste mês e filtros.'));
+}[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste período e filtros.'));
+const temPrevistas = computed(() => props.cobrancas.some((cobranca) => cobranca.situacao === 'prevista'));
 
 // A regra "boolean" do Laravel não aceita "true"/"false" na URL: vai 1 ou nada.
 const filtrar = () => router.get('/cobrancas', { ...filtro, canceladas: filtro.canceladas ? 1 : '' }, { preserveState: true, replace: true });
-// Escolher um mês é pedir para ver aquele mês: sai de "Vencendo hoje"/"Vencidas", que buscam em todos os meses.
-function escolheuMes() {
+// Escolher um mês é pedir para ver aquele período: sai de "Vencendo hoje"/"Vencidas", que buscam em todos os meses.
+function escolheuPeriodo() {
     if (todosOsMeses.value) {
         filtro.status = '';
     }
     filtrar();
+}
+// "Até" acompanha o mês enquanto os dois forem iguais (um mês só) e nunca fica antes dele.
+let mesAnterior = filtro.mes;
+function escolheuMes() {
+    if (filtro.ate === mesAnterior || filtro.ate < filtro.mes) {
+        filtro.ate = filtro.mes;
+    }
+    mesAnterior = filtro.mes;
+    escolheuPeriodo();
 }
 
 const linhas = computed(() => props.cobrancas.map((cobranca) => ({ ...cobranca, acoes: acoesDaCobranca(cobranca) })));
@@ -68,9 +78,12 @@ async function fecharFaixa() {
             <Link href="/cobrancas/create" class="botao">Nova cobrança avulsa</Link>
         </div>
 
-        <form class="mb-6 grid gap-4 sm:grid-cols-4" @submit.prevent="filtrar">
+        <form class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5" @submit.prevent="filtrar">
             <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (buscando em todos os meses)' : 'Mês do vencimento'">
                 <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
+            </Campo>
+            <Campo id="ate" rotulo="Até" :erro="$page.props.errors?.ate">
+                <input id="ate" v-model="filtro.ate" type="month" :min="filtro.mes" class="entrada" @change="escolheuPeriodo">
             </Campo>
             <Campo id="status" rotulo="Situação">
                 <select id="status" v-model="filtro.status" class="entrada" @change="filtrar">
@@ -97,6 +110,12 @@ async function fecharFaixa() {
                 <button class="botao-secundario w-full">Filtrar</button>
             </div>
         </form>
+
+        <Transition name="surgir">
+            <p v-if="temPrevistas" class="mb-3 font-estreita text-xs text-grafite/75">
+                Previstas: calculadas pelos contratos; viram cobrança com recibo perto do vencimento.
+            </p>
+        </Transition>
 
         <p v-if="!cobrancas.length" class="border border-carbono bg-white px-4 py-3 text-sm">
             {{ vazio }}
