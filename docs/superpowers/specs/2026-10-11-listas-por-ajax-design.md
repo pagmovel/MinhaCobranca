@@ -1,6 +1,6 @@
 # Fase 20 — o padrão de lista por ajax em todas as telas com lista — desenho
 
-Data: 2026-10-11 · Situação: escopo aprovado em conversa pelo usuário, aguardando revisão deste documento.
+Data: 2026-10-11 · Situação: **aprovada pelo usuário em 2026-10-11** ("concordo"), inclusive as escolhas marcadas como minhas na revisão.
 
 ## Pedido (palavras e escolhas do usuário)
 - "Se ficar bom, vamos implementar isto em todas as telas que contêm listas de dados." O usuário aprovou o
