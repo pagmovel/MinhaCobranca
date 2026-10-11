@@ -10,6 +10,8 @@ const props = defineProps({
     desativado: { type: Boolean, default: false },
     opcoes: { type: Object, required: true },
 });
+// Avisa a página do cliente escolhido (formato da autosugestão): a descrição oferece incluir o apelido.
+const emit = defineEmits(['escolhido']);
 
 const escolhido = ref(props.inicial);
 const cadastroAberto = ref(false);
@@ -27,6 +29,7 @@ function abrirCadastro(texto) {
 function criado(cliente) {
     escolhido.value = cliente;
     props.form.cliente_id = cliente.id;
+    emit('escolhido', cliente);
 }
 </script>
 
@@ -40,6 +43,7 @@ function criado(cliente) {
         cadastrar="Cadastrar cliente"
         obrigatorio
         @cadastrar="abrirCadastro"
+        @escolhido="emit('escolhido', $event)"
     />
     <CadastroRapidoCliente
         :aberto="cadastroAberto"

@@ -81,6 +81,12 @@
     opacity: 0;
     transform: translateY(-4px);
 }
+/* O que está saindo não recebe clique: durante os 180 ms o "Usar…" de um aviso velho continuava clicável (Fase 23). */
+.surgir-leave-active,
+.lista-leave-active,
+.modal-leave-active {
+    pointer-events: none;
+}
 
 /* Linhas que entram, saem ou mudam de lugar (itens, chaves PIX). */
 .lista-enter-active,

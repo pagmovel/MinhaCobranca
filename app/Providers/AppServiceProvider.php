@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', fn (User $user) => $user->is_admin);
 
         // IDs não numéricos viram 404 antes de chegar aos controllers (que recebem int).
-        foreach (['cliente', 'contrato', 'cobranca', 'recibo', 'usuario', 'nota', 'chave', 'produto'] as $parametro) {
+        foreach (['cliente', 'contrato', 'cobranca', 'recibo', 'usuario', 'nota', 'chave', 'produto', 'feriado'] as $parametro) {
             Route::pattern($parametro, '[0-9]+');
         }
 

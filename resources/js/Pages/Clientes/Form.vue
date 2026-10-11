@@ -8,20 +8,26 @@ import CamposEndereco from '../../Components/CamposEndereco.vue';
 
 const props = defineProps({
     cliente: { type: Object, default: null },
+    emAberto: { type: Object, default: null },
     modeloPadrao: { type: String, required: true },
     modelos: { type: Array, required: true },
     ufs: { type: Array, required: true },
 });
 
-const campos = ['nome', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
+const campos = ['nome', 'apelido', 'documento', 'inscricao_municipal', 'inscricao_estadual', 'telefone', 'email',
     'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'cep'];
 
 const form = useForm({
     ...Object.fromEntries(campos.map((campo) => [campo, props.cliente?.[campo] ?? ''])),
     modelo: props.cliente?.modelo ?? props.modeloPadrao,
+    regerar_enviadas: false,
 });
 
+// Trocar o modelo refaz os recibos das cobranças em aberto (Fase 22): a prévia diz quantas, antes de salvar.
 const modeloMudou = computed(() => props.cliente && form.modelo !== props.cliente.modelo);
+const naoEnviadas = props.emAberto?.nao_enviadas ?? 0;
+const enviadas = props.emAberto?.enviadas ?? 0;
+const cobrancas = (quantidade) => (quantidade === 1 ? '1 cobrança' : `${quantidade} cobranças`);
 const confirmandoExclusao = ref(false);
 
 const salvar = () => (props.cliente ? form.put(`/clientes/${props.cliente.id}`) : form.post('/clientes'));
@@ -41,6 +47,14 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                 </Campo>
                 <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
                     <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
+                </Campo>
+                <Campo id="apelido" rotulo="Apelido (opcional)" :erro="form.errors.apelido" class="sm:col-span-6">
+                    <input id="apelido" v-model="form.apelido" maxlength="60" class="entrada" aria-describedby="apelido-ajuda">
+                    <p id="apelido-ajuda" class="font-estreita text-xs text-grafite/70">
+                        Nome curto que aparece nas telas e nas buscas (ex.: Regional Araci). Serve também para cadastrar outra
+                        unidade com o mesmo CPF/CNPJ. Não sai no recibo; para pôr, use "Incluir o apelido na descrição" no
+                        contrato ou na cobrança.
+                    </p>
                 </Campo>
                 <BuscaCnpj :form="form" />
                 <Campo id="inscricao_municipal" rotulo="Inscrição municipal" :erro="form.errors.inscricao_municipal" class="sm:col-span-2">
@@ -65,9 +79,23 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                     <input v-model="form.modelo" type="radio" name="modelo" :value="modelo.valor"> {{ modelo.rotulo }}
                 </label>
                 <p v-if="form.errors.modelo" class="text-xs text-tinta-vermelha">{{ form.errors.modelo }}</p>
-                <p v-if="modeloMudou" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm">
-                    Recibos já emitidos para este cliente mantêm o modelo anterior. Só os próximos usam o novo.
-                </p>
+                <Transition name="surgir">
+                    <div v-if="modeloMudou" role="status" class="flex flex-col gap-2 border border-carbono/40 bg-white px-4 py-3 text-sm">
+                        <p v-if="naoEnviadas">
+                            {{ cobrancas(naoEnviadas) }} em aberto e ainda não {{ naoEnviadas === 1 ? 'enviada passa' : 'enviadas passam' }}
+                            para o modelo novo ao salvar (mesmo número de recibo).
+                        </p>
+                        <label v-if="enviadas" class="flex items-start gap-2">
+                            <input v-model="form.regerar_enviadas" type="checkbox" class="mt-1">
+                            <span>
+                                Gerar de novo também {{ enviadas === 1 ? 'a cobrança já enviada' : `as ${enviadas} cobranças já enviadas` }}
+                                e ainda não {{ enviadas === 1 ? 'paga' : 'pagas' }}. {{ enviadas === 1 ? 'Ela volta' : 'Elas voltam' }} para
+                                "Para enviar" no painel, para você mandar o PDF novo.
+                            </span>
+                        </label>
+                        <p class="font-estreita text-xs text-grafite/70">Recibos pagos e cancelados não mudam. As próximas cobranças já saem no modelo novo.</p>
+                    </div>
+                </Transition>
             </fieldset>
 
             <div class="flex flex-wrap gap-3">

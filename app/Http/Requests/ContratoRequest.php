@@ -6,6 +6,7 @@ use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Http\Requests\Concerns\RegrasDeItens;
 use App\Http\Requests\Concerns\RegrasDePagamento;
+use App\Rules\AnoValido;
 use App\Rules\LinhasMaximas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -39,9 +40,12 @@ class ContratoRequest extends FormRequest
             'periodicidade' => ['required', Rule::enum(Periodicidade::class)],
             'modalidade' => ['required', Rule::enum(Modalidade::class)],
             'dia_vencimento' => ['required', 'integer', 'between:1,31'],
-            'data_inicio' => ['required', 'date'],
-            'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
+            'data_inicio' => ['required', 'date_format:Y-m-d', new AnoValido],
+            'data_fim' => ['nullable', 'date_format:Y-m-d', new AnoValido, 'after_or_equal:data_inicio'],
             'ativo' => ['boolean'],
+            'reativar' => ['nullable', 'boolean'],
+            'corrigir' => ['nullable', 'boolean'],
+            'gerar_retroativas' => ['nullable', 'boolean'],
             ...$this->regrasDeItens(),
             ...$this->regrasDePagamento(false),
         ];
@@ -53,7 +57,7 @@ class ContratoRequest extends FormRequest
 
         // Descrição é complemento opcional (o recibo lista os itens); a coluna não aceita nulo.
         return ['descricao' => (string) ($dados['descricao'] ?? '')]
-            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id'])
+            + Arr::except($dados, ['descricao', 'itens', 'forma_pagamento', 'chave_pix_id', 'reativar', 'corrigir', 'gerar_retroativas'])
             + ['ativo' => $this->boolean('ativo', true)]
             + $this->resumoDosItens()
             + $this->dadosDePagamento($dados);

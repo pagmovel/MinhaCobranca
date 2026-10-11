@@ -40,10 +40,10 @@ class ClientesTest extends TestCase
         Cliente::factory()->create(['nome' => 'Cliente de outro']);
 
         $this->actingAs($usuario)->get('/clientes')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Clientes/Index')
-                ->has('clientes', 1)
-                ->where('clientes.0.nome', 'Meu cliente'));
+            ->assertInertia(fn (Assert $page) => $page->component('Clientes/Index'));
+        $this->getJson('/clientes/dados')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.nome', 'Meu cliente');
     }
 
     public function test_formulario_novo_sugere_o_modelo_padrao_do_usuario(): void
@@ -88,7 +88,41 @@ class ClientesTest extends TestCase
         $this->actingAs($usuario)->post('/clientes', $this->dados(['documento' => '123']))
             ->assertSessionHasErrors(['documento' => 'Informe um CPF ou CNPJ válido.']);
         $this->post('/clientes', $this->dados())
-            ->assertSessionHasErrors(['documento' => 'Este CPF/CNPJ já está cadastrado.']);
+            ->assertSessionHasErrors(['documento' => 'Este CPF/CNPJ já está cadastrado. Para outra unidade do mesmo cliente, preencha um apelido diferente.']);
+    }
+
+    public function test_mesmo_documento_em_outra_unidade_com_apelido_diferente(): void
+    {
+        $usuario = User::factory()->create();
+        Cliente::factory()->for($usuario)->create(['documento' => '11222333000181']);
+        $this->actingAs($usuario);
+
+        $this->post('/clientes', $this->dados(['apelido' => '  Regional Araci  ']))->assertSessionHasNoErrors();
+        $this->assertSame(['', 'Regional Araci'], $usuario->clientes()->orderBy('id')->pluck('apelido')->all());
+
+        $this->post('/clientes', $this->dados(['apelido' => 'Regional Araci']))->assertSessionHasErrors('documento');
+        $this->assertSame(2, $usuario->clientes()->count());
+    }
+
+    public function test_lista_e_busca_mostram_o_apelido_no_lugar_do_nome_e_acham_pelos_dois(): void
+    {
+        $usuario = User::factory()->create();
+        $regional = Cliente::factory()->for($usuario)->create(['nome' => 'Zeta Sindicato', 'apelido' => 'Araci', 'documento' => '11222333000181']);
+        Cliente::factory()->for($usuario)->create(['nome' => 'Bruno Lima']);
+        $this->actingAs($usuario);
+
+        // Ordem pelo que aparece: "Araci" antes de "Bruno Lima", embora o nome oficial comece com Z.
+        $this->getJson('/clientes/dados')
+            ->assertJsonPath('linhas.0.nome', 'Araci')
+            ->assertJsonPath('linhas.0.nome_oficial', 'Zeta Sindicato')
+            ->assertJsonPath('linhas.1.nome', 'Bruno Lima')
+            ->assertJsonPath('linhas.1.nome_oficial', null);
+        $this->getJson('/clientes/dados?q=zeta')->assertJsonCount(1, 'linhas');
+
+        $esperado = [['id' => $regional->id, 'nome' => 'Araci', 'nome_oficial' => 'Zeta Sindicato', 'documento' => '11.222.333/0001-81']];
+        $this->getJson('/clientes/busca?q=araci')->assertExactJson($esperado);
+        $this->getJson('/clientes/busca?q=zeta')->assertExactJson($esperado);
+        $this->get("/clientes/{$regional->id}/edit")->assertInertia(fn (Assert $page) => $page->where('cliente.apelido', 'Araci'));
     }
 
     public function test_mesmo_documento_em_usuarios_diferentes_e_permitido(): void
@@ -137,7 +171,7 @@ class ClientesTest extends TestCase
         $this->actingAs($usuario);
 
         $this->getJson('/clientes/busca?q=ANA')->assertOk()->assertExactJson([
-            ['id' => $ana->id, 'nome' => 'Ana Martins Comércio', 'documento' => '11.222.333/0001-81'],
+            ['id' => $ana->id, 'nome' => 'Ana Martins Comércio', 'nome_oficial' => null, 'documento' => '11.222.333/0001-81'],
         ]);
         $this->getJson('/clientes/busca?q=11.222')->assertJsonCount(1)->assertJsonPath('0.id', $ana->id);
         $this->getJson('/clientes/busca?q=a')->assertExactJson([]);

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\RegrasDeItens;
 use App\Http\Requests\Concerns\RegrasDePagamento;
+use App\Rules\AnoValido;
 use App\Rules\LinhasMaximas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
@@ -34,9 +35,9 @@ class CobrancaRequest extends FormRequest
         return [
             'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'id')->where('user_id', $this->user()->id)],
             'descricao' => ['nullable', 'string', 'max:2000', new LinhasMaximas(25)],
-            'periodo_inicio' => ['required', 'date'],
-            'periodo_fim' => ['required', 'date', 'after_or_equal:periodo_inicio'],
-            'vencimento' => ['required', 'date'],
+            'periodo_inicio' => ['required', 'date_format:Y-m-d', new AnoValido],
+            'periodo_fim' => ['required', 'date_format:Y-m-d', new AnoValido, 'after_or_equal:periodo_inicio'],
+            'vencimento' => ['required', 'date_format:Y-m-d', new AnoValido],
             ...$this->regrasDeItens(),
             ...$this->regrasDePagamento(true),
         ];

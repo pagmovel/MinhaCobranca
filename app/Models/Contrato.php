@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'cliente_id', 'descricao', 'codigo_servico', 'codigo_nbs', 'codigo_tributacao_nacional',
     'valor_centavos', 'periodicidade', 'modalidade', 'dia_vencimento', 'data_inicio', 'data_fim', 'ativo', 'forma_pagamento', 'chave_pix_id',
+    'ultimo_periodo', 'cobrar_a_partir_de',
 ])]
 class Contrato extends Model
 {
@@ -22,7 +23,7 @@ class Contrato extends Model
     use HasFactory;
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['modalidade' => 'prepago', 'forma_pagamento' => 'nenhuma'];
+    protected $attributes = ['modalidade' => 'prepago', 'forma_pagamento' => 'nenhuma', 'ultimo_periodo' => 'inteiro'];
 
     protected function casts(): array
     {
@@ -33,6 +34,7 @@ class Contrato extends Model
             'dia_vencimento' => 'integer',
             'data_inicio' => 'immutable_date',
             'data_fim' => 'immutable_date',
+            'cobrar_a_partir_de' => 'immutable_date',
             'ativo' => 'boolean',
             'forma_pagamento' => FormaPagamento::class,
         ];

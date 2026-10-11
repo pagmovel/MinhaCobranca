@@ -6,18 +6,24 @@ use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\CobrancaRequest;
 use App\Http\Requests\PagamentoRequest;
+use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
+use App\Rules\AnoValido;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
+use App\Services\ListaDeCobrancas;
+use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,44 +35,76 @@ class CobrancaController extends Controller
         $hoje = CarbonImmutable::today();
         $gerador->gerarPara($usuario, $hoje);
 
-        $filtros = $request->validate([
-            'mes' => ['nullable', 'date_format:Y-m'],
-            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
-            'cliente_id' => ['nullable', 'integer'],
-        ]);
-
-        $mes = CarbonImmutable::createFromFormat('Y-m-d', ($filtros['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
-
-        $status = $filtros['status'] ?? null;
-        $consulta = $usuario->cobrancas()->with(['cliente:id,nome', 'recibo'])->orderBy('vencimento')->orderBy('id');
-
-        // "Vencendo hoje" e "Vencidas" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
-        if (! in_array($status, ['vence_hoje', 'vencida'], true)) {
-            $consulta->whereBetween('vencimento', [$mes, $mes->endOfMonth()]);
-        }
-
-        match ($status) {
-            null => null,
-            'vence_hoje' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]),
-            'vencida' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '<', $hoje),
-            'a_vencer' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay()),
-            default => $consulta->where('status', $status),
-        };
-        if (! empty($filtros['cliente_id'])) {
-            $consulta->where('cliente_id', $filtros['cliente_id']);
-        }
+        // A lista vem por ajax de /cobrancas/dados; a página só abre a tela com os filtros (o período é conferido lá).
+        $filtros = $this->filtros($request, $hoje);
 
         return Inertia::render('Cobrancas/Index', [
-            'cobrancas' => $consulta->get()->map(fn (Cobranca $cobranca) => $cobranca->paraLista($hoje)),
-            'filtros' => [
-                'mes' => $mes->format('Y-m'),
-                'status' => $filtros['status'] ?? '',
-                'cliente_id' => isset($filtros['cliente_id']) ? (int) $filtros['cliente_id'] : '',
-            ],
+            'filtros' => $this->filtrosParaTela($filtros),
+            // Para o "Limpar filtros" aparecer só quando algum filtro difere do que a tela abre sem parâmetros.
+            'padroes' => ['mes' => $hoje->format('Y-m'), 'ate' => $hoje->format('Y-m'), 'status' => '', 'cliente_id' => '', 'canceladas' => false],
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
-            'clienteFiltro' => empty($filtros['cliente_id']) ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),
+            'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'])?->paraBusca(),
         ]);
+    }
+
+    /** Dados da lista (JSON, só leitura): um bloco de páginas e os totais do resultado inteiro. */
+    public function dados(Request $request, ListaDeCobrancas $lista): JsonResponse
+    {
+        $hoje = CarbonImmutable::today();
+        $filtros = $this->filtros($request, $hoje);
+
+        // Mesmas mensagens dos relatórios; 422 em JSON, e a tela mostra embaixo do "Até".
+        if ($filtros['mes']->gt($filtros['ate'])) {
+            throw ValidationException::withMessages(['ate' => 'O fim do período deve ser igual ou depois do início.']);
+        }
+        if ($filtros['mes']->diffInMonths($filtros['ate']) >= 36) {
+            throw ValidationException::withMessages(['ate' => 'Escolha um período de até 36 meses.']);
+        }
+
+        return response()->json($lista->montar($request->user(), $filtros, $hoje) + ['filtros' => $this->filtrosParaTela($filtros)]);
+    }
+
+    /**
+     * Filtros da lista validados só no formato (o período é conferido no JSON).
+     *
+     * @return array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, canceladas: bool, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request, CarbonImmutable $hoje): array
+    {
+        $validados = $request->validate([
+            'mes' => ['nullable', 'date_format:Y-m', new AnoValido],
+            'ate' => ['nullable', 'date_format:Y-m', new AnoValido],
+            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
+            'cliente_id' => ['nullable', 'integer'],
+            'canceladas' => ['nullable', 'boolean'],
+            ...BlocoDePaginas::regras(),
+        ]);
+        $mes = CarbonImmutable::createFromFormat('Y-m-d', ($validados['mes'] ?? $hoje->format('Y-m')).'-01')->startOfDay();
+
+        return [
+            'mes' => $mes,
+            'ate' => isset($validados['ate']) ? CarbonImmutable::createFromFormat('Y-m-d', $validados['ate'].'-01')->startOfDay() : $mes,
+            'status' => $validados['status'] ?? null,
+            'cliente_id' => empty($validados['cliente_id']) ? null : (int) $validados['cliente_id'],
+            'canceladas' => (bool) ($validados['canceladas'] ?? false),
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
+    }
+
+    /** @return array{mes: string, ate: string, status: string, cliente_id: int|string, canceladas: bool, pagina: int, por_pagina: int} */
+    private function filtrosParaTela(array $filtros): array
+    {
+        return [
+            'mes' => $filtros['mes']->format('Y-m'),
+            'ate' => $filtros['ate']->format('Y-m'),
+            'status' => $filtros['status'] ?? '',
+            'cliente_id' => $filtros['cliente_id'] ?? '',
+            'canceladas' => $filtros['canceladas'],
+            'pagina' => $filtros['pagina'],
+            'por_pagina' => $filtros['por_pagina'],
+        ];
     }
 
     public function create(Request $request): Response
@@ -109,7 +147,7 @@ class CobrancaController extends Controller
                 'chave_pix_id' => $cobranca->chave_pix_id ?? '',
                 'linha_digitavel' => $cobranca->linha_digitavel ?? '',
             ] : null,
-            'clienteAtual' => $cobranca?->cliente()->first(['id', 'nome']),
+            'clienteAtual' => $cobranca?->cliente?->paraBusca(),
             'chavesPix' => $request->user()->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
             'cadastroRapido' => $request->user()->opcoesDeCadastroRapido(),
@@ -147,8 +185,13 @@ class CobrancaController extends Controller
             $dados = Arr::except($dados, ['cliente_id', 'periodo_inicio', 'periodo_fim']);
         }
 
-        DB::transaction(function () use ($registro, $dados, $emissor, $request) {
+        $antes = ['valor_centavos' => $registro->valor_centavos, 'vencimento' => $registro->vencimento->toDateString()];
+        $resumo = 'Cobrança editada (antes: R$ '.Dinheiro::formatar($registro->valor_centavos).', vence '.$registro->vencimento->format('d/m/Y').')';
+
+        DB::transaction(function () use ($registro, $dados, $emissor, $request, $antes, $resumo) {
             $registro->update($dados);
+            Auditoria::registrar($request, 'cobranca.editada', $registro, $resumo, $antes,
+                ['valor_centavos' => $registro->valor_centavos, 'vencimento' => $registro->vencimento->toDateString()]);
             $registro->itens()->delete();
             $registro->itens()->createMany($request->itensDaCobranca());
             $emissor->refazer($registro->recibo, $registro->wasChanged('cliente_id'));
@@ -179,16 +222,83 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pendentes podem ser canceladas.');
         }
 
-        $registro->status = StatusCobranca::Cancelada;
-        $registro->save();
+        DB::transaction(function () use ($registro, $request) {
+            $registro->status = StatusCobranca::Cancelada;
+            $registro->save();
+            Auditoria::registrar($request, 'cobranca.cancelada', $registro, 'Cobrança cancelada (R$ '
+                .Dinheiro::formatar($registro->valor_centavos).', vence '.$registro->vencimento->format('d/m/Y').')');
+        });
 
         return back()->with('sucesso', 'Cobrança cancelada. O recibo passa a sair como cancelado.');
+    }
+
+    /** Baixa com a data errada: troca a data do pagamento (senha + motivo, registrado na auditoria). */
+    public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
+
+        if ($registro->status !== StatusCobranca::Paga) {
+            return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
+        }
+
+        $antes = $registro->pago_em;
+
+        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+            $registro->pago_em = $dados['pago_em'];
+            $registro->save();
+            Auditoria::registrar($request, 'pagamento.corrigido', $registro, 'Pagamento corrigido (antes: '.$antes->format('d/m/Y').')',
+                ['pago_em' => $antes->toDateString()], ['pago_em' => $registro->pago_em->toDateString()], trim($dados['motivo']));
+        });
+
+        return back()->with('sucesso', 'Data do pagamento corrigida. Se o recibo pago já foi enviado, envie de novo: ele sai com a data nova.');
+    }
+
+    /** Baixa na cobrança errada: volta a pendente (senha + motivo, registrado na auditoria). */
+    public function desfazerBaixa(Request $request, int $cobranca): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $dados = $request->validate($this->confirmacao(), $this->mensagensDeConfirmacao());
+
+        if ($registro->status !== StatusCobranca::Paga) {
+            return back()->with('erro', 'Só cobranças pagas têm a baixa desfeita.');
+        }
+
+        $antes = $registro->pago_em;
+
+        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+            $registro->status = StatusCobranca::Pendente;
+            $registro->pago_em = null;
+            $registro->save();
+            Auditoria::registrar($request, 'baixa.desfeita', $registro, 'Baixa desfeita (estava paga em '.$antes->format('d/m/Y').')',
+                ['status' => 'paga', 'pago_em' => $antes->toDateString()], ['status' => 'pendente', 'pago_em' => null], trim($dados['motivo']));
+        });
+
+        return back()->with('sucesso', 'Baixa desfeita: a cobrança voltou a ficar em aberto.');
+    }
+
+    /** Senha de quem está logado + motivo: a mudança fica registrada em nome da pessoa e explicada. */
+    private function confirmacao(): array
+    {
+        return [
+            'senha' => ['required', 'string', 'current_password'],
+            'motivo' => ['required', 'string', 'max:500'],
+        ];
+    }
+
+    private function mensagensDeConfirmacao(): array
+    {
+        return [
+            'senha.required' => 'Digite sua senha para confirmar.',
+            'senha.current_password' => 'Senha incorreta.',
+            'motivo.required' => 'Escreva o motivo da correção.',
+        ];
     }
 
     public function pagar(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
-        $dados = $request->validate(['pago_em' => ['required', 'date', 'before_or_equal:today']]);
+        $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']]);
 
         if ($registro->status !== StatusCobranca::Pendente) {
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');

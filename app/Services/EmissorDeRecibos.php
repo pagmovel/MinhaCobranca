@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
 use App\Models\Recibo;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 final class EmissorDeRecibos
 {
@@ -45,8 +49,31 @@ final class EmissorDeRecibos
     }
 
     /**
-     * Cobrança ainda não enviada foi editada: mesmo número, dados novos. O layout só muda se o cliente
-     * mudou (o modelo é do cliente); trocar o modelo do mesmo cliente não altera recibo já emitido.
+     * Cliente trocou o modelo do recibo (Fase 22): refaz, no modelo novo e com o mesmo número, os recibos das cobranças
+     * em aberto e não enviadas; com `$incluirEnviadas`, também as enviadas e não pagas, que voltam para "Para enviar"
+     * (o cliente precisa receber o PDF novo). Pagas e canceladas nunca mudam: o comprovante já entregue vale.
+     */
+    public function aplicarModeloDoCliente(Cliente $cliente, bool $incluirEnviadas): int
+    {
+        $cobrancas = $cliente->cobrancas()->where('status', StatusCobranca::Pendente)
+            ->when(! $incluirEnviadas, fn ($consulta) => $consulta->whereNull('enviado_em'))
+            ->with('recibo')->get();
+
+        foreach ($cobrancas as $cobranca) {
+            if ($cobranca->recibo) {
+                $this->refazer($cobranca->recibo, trocouCliente: true);
+            }
+            if ($cobranca->enviado_em !== null) {
+                $cobranca->forceFill(['enviado_em' => null])->save();
+            }
+        }
+
+        return $cobrancas->count();
+    }
+
+    /**
+     * Cobrança ainda não enviada foi editada: mesmo número, dados novos. O layout só muda aqui se o cliente mudou (o
+     * modelo é do cliente); a troca de modelo no próprio cliente passa por `aplicarModeloDoCliente`.
      */
     public function refazer(Recibo $recibo, bool $trocouCliente = false): void
     {
@@ -60,10 +87,36 @@ final class EmissorDeRecibos
         $recibo->update($dados);
     }
 
-    public function snapshot(Cobranca $cobranca): array
+    /**
+     * Ajuste em lote (Fase 23): refaz, com o mesmo número, os recibos de cobranças do mesmo prestador. Prestador e clientes
+     * são lidos do banco uma vez para o lote (dentro da transação de quem chama), não uma vez por recibo; os itens
+     * continuam lidos por cobrança. As cobranças vêm com `recibo` carregado e os dados novos já gravados.
+     *
+     * @param  Collection<int, Cobranca>  $cobrancas
+     */
+    public function refazerEmLote(Collection $cobrancas): void
     {
-        $prestador = $cobranca->user()->firstOrFail();
-        $tomador = $cobranca->cliente()->firstOrFail();
+        if ($cobrancas->isEmpty()) {
+            return;
+        }
+
+        if ($cobrancas->pluck('user_id')->unique()->count() > 1) {
+            throw new LogicException('refazerEmLote só aceita cobranças do mesmo prestador.');
+        }
+
+        $prestador = User::query()->findOrFail($cobrancas->first()->user_id);
+        $tomadores = Cliente::query()->whereKey($cobrancas->pluck('cliente_id')->unique()->all())->get()->keyBy('id');
+
+        foreach ($cobrancas as $cobranca) {
+            $cobranca->recibo?->update(['snapshot' => $this->snapshot($cobranca, $prestador, $tomadores[$cobranca->cliente_id])]);
+        }
+    }
+
+    /** Sem `$prestador`/`$tomador`, lê os dois do banco agora (nunca da relação em cache: `refazer` usaria dado velho). */
+    public function snapshot(Cobranca $cobranca, ?User $prestador = null, ?Cliente $tomador = null): array
+    {
+        $prestador ??= $cobranca->user()->firstOrFail();
+        $tomador ??= $cobranca->cliente()->firstOrFail();
 
         return [
             'prestador' => ['nome' => $prestador->name, 'email' => $prestador->email]

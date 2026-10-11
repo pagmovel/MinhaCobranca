@@ -8,6 +8,65 @@ description: Use ao trabalhar no sistema de cobranças e recibos (Laravel 13 + I
 Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 Plano: `.claude/plans/2026-10-09-sistema-recibos.md`
 
+## Padrões de usabilidade (obrigatórios — prioridade do usuário)
+**Foco principal do produto (palavras do usuário, 2026-10-10): facilidades de uso.** "Não é legal quando estamos numa
+tela de lançamentos e precisamos sair perdendo tudo que já fizemos porque faltou cadastrar outra coisa em outra tela."
+O usuário espera que eu **antecipe** esses atritos e **padronize** a solução em todas as telas parecidas — não esperar
+ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
+
+1. **Nunca mandar sair da tela para cadastrar o que falta.** Cadastro rápido em modal, o registro volta já escolhido e
+   o formulário de fundo fica intacto (cliente, produto/serviço, chave PIX já fazem isso — `CampoCliente`,
+   `CadastroRapido*.vue`, `Modal.vue`, `enviarJson`). Formulário não bloqueia por falta de cadastro prévio.
+2. **Mensagem de erro/trava sempre oferece a saída** (o botão que resolve, ali mesmo). Nunca "faça X" sem X na tela.
+   Ação escondida (ex.: encerrar por checkbox no rodapé) é defeito.
+3. **Autosugestão:** lista os primeiros ao focar/clicar, indicador girando no canto direito enquanto busca, opção
+   "+ Cadastrar «texto»", teclado (setas/Enter/Esc), não reabre depois de sair do campo (`BuscaAutosugestao.vue`).
+4. **Máscaras em todo campo com formato** (diretiva `v-mascara`, `resources/js/mascaras.js`: valor, documento
+   CPF/CNPJ, cpf, telefone, cep, linhaDigitavel, minusculas; colar valor usa `valorColado`). Servidor continua
+   normalizando e validando.
+5. **Animações** (o usuário pediu: "encanta os usuários"): transições curtas em inputs/selects/botões, listas
+   (`TransitionGroup name="lista"`), avisos e listas de sugestão (`surgir`), modais (`modal`), troca de tela
+   (`.aparecer`), número que mudou (`.destacar`). Só CSS/Vue, sem biblioteca; `prefers-reduced-motion` desliga.
+6. **Valor negociado:** preço do catálogo é sugestão; o foco vai para o preço ao incluir item.
+7. **Filtros aplicam ao escolher** (select/mês), campo nunca fica bloqueado sem explicação.
+8. **Edição na própria linha** (lista com edição rápida abre o formulário dentro da linha clicada) e **ação destrutiva
+   com cara própria** (`botao-perigo` / `botao-perigo-confirmar`, confirmação no segundo clique).
+9. **Ação em lote mostra a prévia antes** (o que muda, quanto, o que fica) e só então confirma.
+10. **390 px sem rolagem horizontal** (fieldset com `min-w-0`; contêiner de tabela `relative overflow-x-auto`).
+11. **Largura da área de conteúdo** (pedido do usuário em 2026-10-11, "está desperdiçando muito espaço à esquerda e à
+    direita"): o `<main>` do `CamadaApp.vue` ocupa toda a largura ao lado do menu, **sem `mx-auto` e sem `max-w`**, com
+    `min-w-0` (ele é item de grid `13rem_1fr`; sem `min-w-0` uma tabela larga estica a página). Listas e tabelas usam a
+    largura toda; **formulários e textos continuam em `max-w-3xl`** (linha de leitura). Não voltar a centralizar em
+    `max-w-5xl`. *Pegadinha:* a primeira tentativa limitou a `max-w-[96rem]` (1536 px) e numa tela de 1920 px ainda
+    sobrava ~170 px à direita — o usuário recusou; nenhum limite.
+12. **Listas em tabela** (direção aprovada em 2026-10-11, modelos em `MATERIAIS/tables-m0*.html` — só a estrutura, nunca
+    a paleta azul, fotos externas ou ícones do Google): colunas alinhadas, valor à direita em `tabular-nums`, **uma
+    ação principal por linha conforme a situação** e as demais num menu "⋯", formulário da ação numa faixa abaixo da
+    linha, abas de situação com contagem e soma, ordenação pelo cabeçalho; em 390 px a tabela vira cartões.
+    **Lista longa carrega por ajax, com paginação e totais** (Fase 19, aprovado em 2026-10-11):
+    - endpoint JSON só de leitura que devolve um **bloco de 4 páginas** e os totais do resultado inteiro;
+    - o navegador guarda as páginas por filtro e desenha só a atual;
+    - paginador acima e abaixo da tabela;
+    - rodapé de totais;
+    - esqueleto de linhas na primeira carga.
+
+    **Desde a Fase 20, vale para todas as listas** (cobranças, clientes, contratos, produtos e serviços, auditoria,
+    usuários, painel e relatórios). Filtros: selects, datas e autosugestão aplicam na hora; texto 400 ms depois de
+    parar de digitar ou no Enter (`adiar`); "Limpar filtros" é um link para a tela sem parâmetros e só aparece quando
+    algum filtro difere do padrão (`filtrosAlterados`). Tela nova com lista: usar `usarListaPaginada` +
+    `EstadoDaLista` + `Paginador` + `BlocoDePaginas`.
+
+    Ver "Fase 19" e "Fase 20" nos Acertos.
+13. **Todo pedido ao servidor mostra o indicador global "Carregando…"** (pedido do usuário, 2026-10-11: "toda requisição
+    ajax seja sinalizada ... para que o cliente não pense que está tudo parado"). Já é automático: `resources/js/carregando.js`
+    embrulha o `fetch` global uma vez (`vigiarFetch`) e conta as visitas do Inertia (`router.on('start'/'finish')` em
+    `app.js`); `IndicadorDeCarregamento.vue` (renderizado ao lado do `App` na raiz, vale em todas as telas, inclusive
+    login) mostra uma pílula fixa no topo com spinner, acima dos modais (`z-[60]`), sem bloquear cliques, com região
+    `aria-live` sempre presente. **Tela nova não precisa fazer nada** — mas não usar `XMLHttpRequest` nem outra biblioteca
+    HTTP (escaparia do contador). O spinner local da lista/autosugestão continua (mostra *onde* está carregando).
+
+Detalhes, pegadinhas e testes de cada item estão nos "Acertos" abaixo (Fase 17 e anteriores).
+
 ## Módulos do produto (SaaS por planos de assinatura — definição do usuário em 2026-10-10)
 Cada módulo é **vendável sozinho**: não depende de outro para funcionar; integrações entre módulos são opcionais e
 degradam com elegância. Liberação de módulos por plano ainda **não existe** (não construir sem pedido).
@@ -31,7 +90,10 @@ o relatório mostra a parte que existe.
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
 - Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).
   Situação, data de pagamento e NFS-e vinculada são lidas na hora de gerar o PDF.
-- Modelo é do cliente; trocar vale só para recibos futuros.
+- Modelo é do cliente. **Desde a Fase 22 (pedido do usuário, 2026-10-11):** trocar o modelo refaz na hora os recibos
+  das cobranças em aberto e não enviadas (mesmo número); as enviadas e não pagas só com a caixa "Gerar de novo" (e
+  voltam para "Para enviar"); pagas e canceladas nunca mudam. Editar uma cobrança continua sem trocar o modelo do
+  recibo, a não ser que troque o cliente.
 - Numeração por usuário e ano; número cancelado não volta.
 - Dinheiro em centavos (`integer`).
 
@@ -217,6 +279,9 @@ o relatório mostra a parte que existe.
 - T4.4 (pegadinhas do dompdf, medidas com `pypdf` nas amostras):
   - `table-layout: fixed` com largura só em parte das colunas deixou a coluna livre estreita
     (~170pt): nome e endereço do cabeçalho quebraram em 7 linhas. **Dar largura (%) a todas as colunas.**
+  - **Iniciais sem logo (WebISS):** `line-height` também não centraliza na vertical — "MR" caía na borda de baixo da
+    caixa (relato do usuário, 2026-10-11). Centralizar com célula de tabela (`vertical-align: middle` + `height`).
+    Corrigido no próprio `webiss-v1` **por decisão do usuário** (só alinhamento; exceção à regra do `-v2`).
   - `line-height` (sem unidade ou em pt) **não vale** para linhas quebradas por `<br>` (`nl2br`): saíram
     com 10,7pt em fonte de 7pt. Descrição do WebISS renderiza **uma `div` por linha com `height` fixa**.
   - Rodapé `position: fixed; bottom: 0` fica dentro da área do conteúdo e se sobrepõe a ele: usar margem
@@ -455,7 +520,19 @@ o relatório mostra a parte que existe.
 - **Pegadinha (390 px): `sr-only` é `position: absolute`** — dentro de tabela com rolagem, escapa do recorte se o
   contêiner `overflow-x-auto` não for `relative`, e alarga a página. Contêiner de tabela rolável: `relative overflow-x-auto`.
 - **Pegadinha (smoke):** `fetch` dentro de `js()` do browser-use estoura o canal em 5 s com o PostgreSQL remoto:
-  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço.
+  disparar o `fetch` guardando o resultado em `window.__x` e consultar em laço. **E** não deixar a expressão devolver
+  a promessa: `js()` espera `awaitPromise`. Usar `(async () => …)()` no fim estourou de novo; `setTimeout(async () =>
+  …, 0); 1` funciona.
+- **Pegadinha (sessão, 2026-10-11, relato de 419 ao excluir produto):** com a sessão vencida (120 min) e o cookie
+  "lembrar de mim" válido, **cada pedido que chega junto refaz o login e cria uma sessão própria**. Reproduzido no
+  Chrome de teste: 3 `fetch` em paralelo sem cookie de sessão viraram 3 sessões novas, de 184 bytes cada. O usuário
+  teve 9 sessões em 2 minutos. Uma página que guardou o token de uma delas leva 419 na próxima ação.
+  - **Correção para quem usa:** `bootstrap/app.php` → `respond()`. Com 419 fora de JSON, volta para a página com
+    "A página expirou. Tente de novo.", e o segundo clique funciona. Teste: `PaginaExpiradaTest`.
+  - **O que não foi reproduzido:** o 419 em si. No teste os cookies chegaram consistentes e a sonda deu 404.
+    **[INCONCLUSIVO]**.
+  - **Sonda segura de CSRF:** `DELETE /produtos-servicos/999999` com `X-XSRF-TOKEN`. Token válido → 404; token
+    vencido → 419 ou redirect. Não muda dado.
 - **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
   "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
   setembro aparece em outubro; o rótulo do mês avisa "buscando em todos os meses"). Trocar situação ou mês aplica o
@@ -491,6 +568,324 @@ o relatório mostra a parte que existe.
   descrição com o mesmo `compor` + `LinhasDoRecibo::quebrar` (máx. 25). Descrição vazia é gravada como `''` (coluna
   NOT NULL, sem migração). Cobranças emitidas antes desta mudança só mostram os itens no PDF depois de editadas (refazer).
   Sugestão ao usuário: itens do catálogo genéricos; o específico do cliente (domínio) vai na descrição.
+- **T17.9 — encerrar e recomeçar contrato (desenho do usuário, 2026-10-10):** `App\Services\EncerradorDeContratos`:
+  `plano()` monta a lista de ações (`manter`, `cancelar`, `proporcional`, `emitir`, `nao_emitir`) usada **pela prévia e
+  pela execução** (`encerrar()`, uma transação). Regras para as pendentes: vencida/vencendo hoje continua; período até o
+  fim continua; período depois do fim é cancelado; período que contém o fim vira proporcional ou é cancelado (escolha
+  da tela); períodos até o fim ainda não emitidos (pós-pago) saem agora — a lista vem de `CalculadoraDePeriodos::devidos`
+  com antecedência 0 e "hoje" distante. Pro-rata em `App\Support\ProRata` (quantidade de cada item × usados ÷ dias,
+  meio para cima, mínimo 1 milésimo; sem itens, o valor). Não enviada: ajusta e refaz o recibo (mesmo número); enviada:
+  cancela e emite avulsa (`contrato_id` nulo). `GeradorDeCobrancas::criar()` (extraído) cria cobrança + recibo de um
+  período. Rotas: `GET /contratos/{id}/encerramento?fim=&em_curso=` (prévia JSON), `POST .../encerrar`,
+  `POST .../recomecar` (formulário inteiro + `em_curso`; encerra na véspera do novo início, cria o novo e leva a ele;
+  início igual/anterior é recusado). Tela: `EncerramentoContrato.vue` (prévia ao vivo, escolha do período em curso só
+  quando existe); o checkbox "ativo" só aparece para **reativar** contrato encerrado; com campos alterados, encerrar pede
+  para salvar antes. Teste: `tests/Feature/EncerramentoContratoTest.php` (exemplo aprovado: 18/31 × R$ 247,57 = R$ 143,84).
+- **Pegadinhas (T17.9):** (1) pro-rata por item arredonda a quantidade a 3 casas: 18/31 de 1 × 247,57 dá **143,84**
+  (0,581 × 247,57), enquanto 247,57 × 18 ÷ 31 dá 143,75 — o desenho aprovado é por item (a quantidade aparece no recibo).
+  (2) `Model::replicate()` usa `setRawAttributes` e **perde os defaults de `$attributes`** (conferido em `Eloquent/Model.php:2214-2221`; também
+  copia as relações carregadas) (ex.: `status`): definir o
+  status explicitamente na cópia. (3) `users.dias_antecedencia` não é fillable: nos testes, `forceFill`. (4) Em helper de
+  teste, `[...] + $extra` deixa a base vencer — usar `array_merge($base, $extra)`.
+- **T17.9 — ajustes depois da revisão e das decisões do usuário (2026-10-10):** fim **no futuro = encerramento agendado,
+  sem limite de data** (o usuário recusou limitar a 1 ano): contrato continua ativo com `data_fim` e
+  `contratos.ultimo_periodo` (`inteiro` padrão, `proporcional`, `nao_cobrar`); `GeradorDeCobrancas::criar()` deixa
+  proporcional (`ajustarProporcional()`) o período que contém o fim, e `gerarPara` pula esse período com `nao_cobrar`.
+  Já emitidas são acertadas na hora. Fim até hoje encerra na hora (inativo). Período que começa **depois** do fim é
+  cancelado **mesmo vencido** (pré-pago vence antes de começar; manter cobraria o mês duas vezes no recomeço). Recibo
+  proporcional sai **sem linha digitável** (o valor do boleto está no código). Contrato encerrado só volta com `reativar`
+  marcado (aba antiga não desfaz encerramento). Encerramento agendado não é reagendado (reduziria de novo a quantidade
+  já reduzida) — mudar a data fica para a prorrogação (T17.11).
+- **T17.10 — corrigir início errado (relato do usuário, contrato nº 6, 2026-10-10):** contrato com cobranças e **sem
+  cobrança paga** pode mudar início/periodicidade/modalidade com `corrigir=1` (a tela "Corrigir o contrato" mostra antes
+  as pendentes que serão canceladas): pendentes viram canceladas e **todas** as cobranças saem do contrato
+  (`contrato_id` nulo) — senão o índice único e o `$existentes` do gerador pulariam um período novo que comece no mesmo
+  dia. Com cobrança paga: só recomeçar (início posterior). Sem `corrigir`, a mudança é recusada ("Confirme a correção").
+  **Retroativos — perguntar na hora** (`PerguntaRetroativos.vue` + `GET /contratos/retroativos`, ao criar e ao mudar o
+  início): `gerar_retroativas=0` grava `cobrar_a_partir_de` = início do período atual (o primeiro que não terminou,
+  `CalculadoraDePeriodos::anteriores`); gerador e encerramento pulam períodos anteriores. Sem o campo, gera desde o
+  início (como antes). A pergunta usa rádios `required` dentro do `<form>`: a validação nativa do navegador obriga a
+  escolher. **Pegadinha:** a tela que o usuário via era o build anterior — depois de `npm run build`, recarregar a página.
+- **T17.12 — corrigir/desfazer baixa e auditoria (pedido do usuário, 2026-10-10):** `POST /cobrancas/{id}/corrigir-pagamento`
+  (`pago_em` até hoje) e `/desfazer-baixa` (volta a pendente) exigem **senha** (`current_password`,
+  `ValidatesAttributes.php:602`) e **motivo**; rotas em `throttle:6,1`; `findOrFail` antes do `validate` (alheia = 404
+  antes de checar senha). Tabela `auditorias` só de inclusão (`UPDATED_AT = null`): `Auditoria::registrar($request, acao,
+  alvo, resumo, antes, depois, motivo)` grava usuário e IP. Ações registradas: `pagamento.corrigido`, `baixa.desfeita`,
+  `cobranca.cancelada`, `cobranca.editada`, `contrato.encerrado`, `contrato.recomecado`, `contrato.corrigido` (sempre na
+  mesma transação da mudança). Histórico na linha (`Cobranca::auditorias()` carregado com `with` na lista; `paraLista`
+  só lê se a relação estiver carregada — sem N+1) e tela `/auditoria` (30 dias por padrão, link para a cobrança no mês do
+  vencimento ou para o contrato). `CorrecaoPagamentoInline.vue` na lista de cobranças pagas. Efeito esperado: o
+  "recebido" (caixa) muda de mês quando a data muda; recibo pago já enviado sai com a data nova se reenviado.
+- **T17.15 — cobranças em tabela (2026-10-11):** `Cobrancas/Index.vue` é uma tabela a partir de `xl` (1280 px) e
+  cartões abaixo, **com o mesmo HTML** (`block`/`flex` no celular, `xl:table`/`xl:table-row`/`xl:table-cell`; a ordem do
+  cartão vem de `order-*`). Ações: `resources/js/acoesCobranca.js` (`acoesDaCobranca` → `{ principal, menu }`, testado
+  com `node --test`): em aberto e não enviada → **Enviar**; em aberto e enviada → **Dar baixa**; paga/cancelada → **Ver
+  PDF**; o resto no `MenuAcoes.vue` ("⋯", fecha no Esc e ao sair com foco/clique). Ações com formulário abrem numa **faixa
+  abaixo da linha** (`tr` extra, uma por vez, foco no primeiro campo e de volta à linha ao fechar); `BaixaInline`,
+  `PagamentoInline`, `CancelarInline` (`na-faixa`) e `CorrecaoPagamentoInline` (`modo-inicial`) emitem `fechar` — o
+  painel continua usando os mesmos componentes sem essas props. `BotaoEnviar` no menu usa `classe-botao`, e o menu
+  **não fecha** enquanto prepara o PDF (senão o erro some); ao marcar "enviada" a página recarrega.
+  **Pegadinhas:** (1) `TransitionGroup` exige chave em todo filho e `<template v-for>` não aceita chave nos filhos: a
+  linha e a faixa ficam num **`<tbody>` por cobrança** (`TransitionGroup tag="table"`, `thead` com `key`). (2) Menu
+  absoluto dentro de `overflow-x-auto` fica cortado: a tabela só aparece onde cabe (xl), sem contêiner rolável.
+  **Filtro "Incluir canceladas" (pedido do usuário, 2026-10-11):** "Todas" deixa as canceladas de fora; o checkbox
+  (`canceladas=1`) as inclui; só aparece com "Todas" (nas outras situações não muda nada); "Canceladas" continua no
+  select. A regra `boolean` do Laravel recusa `true`/`false` na URL: a tela manda `1` ou vazio.
+  **Uniformidade (relato do usuário com print, 2026-10-11):** nome de cliente longo espremia as outras colunas e
+  quebrava "Dar baixa" e "A VENCER" em duas linhas, e os botões ficavam de larguras diferentes. Acerto: só a coluna do
+  cliente quebra; as demais têm `whitespace-nowrap`; a coluna de ações usa `xl:w-px` (encolhe ao conteúdo); o botão
+  principal tem largura mínima comum (`botaoPrincipal = 'min-w-28 whitespace-nowrap'`) e o `Carimbo` tem
+  `min-w-32 text-center whitespace-nowrap` (vale também no painel). Em tabela nova, aplicar o mesmo desde o início.
+- **Fase 18 — previsão de recebimentos (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-previsao-de-recebimentos-design.md`, plano
+  `.claude/plans/2026-10-11-previsao-de-recebimentos.md`)**
+  - **Problema.** A cobrança só nasce `dias_antecedencia` antes do vencimento. Por isso o usuário não via os
+    recebimentos futuros.
+  - **Decisão: calcular, não gravar.** As previstas saem de `App\Services\PrevisaoDeCobrancas::entre($usuario, $de,
+    $ate)`, na hora, a partir dos contratos ativos, com o preço atual. Nada vai para o banco. O caminho de gerar tudo
+    com recibo foi rejeitado com o usuário: queimaria numeração e o recibo leva o ano de emissão.
+  - **Uma regra só para os dois.** `GeradorDeCobrancas::cobravel()` responde se um período vira cobrança. Não vira se
+    já existe, mesmo cancelada; se é anterior ao `cobrar_a_partir_de`; ou se é o período que contém o fim com
+    `nao_cobrar`. Gerador e previsão usam a mesma regra, junto com `existentes()` e `contemOFim()`.
+  - **Períodos.** Saem de `CalculadoraDePeriodos::entre()`, que lista os vencimentos do intervalo sem passar do fim
+    do contrato.
+  - **Proporcional.** Usa a mesma conta de `ajustarProporcional`. Fora do proporcional, o valor é o `valor_centavos`
+    do contrato, como no gerador, e não a soma dos itens.
+  - **Teste-guarda.** `test_previsao_bate_com_o_que_o_gerador_cria` anda o relógio, gera as cobranças e compara
+    período, vencimento e valor com o que estava previsto. **Não apagar esse teste.**
+  - **Só depois de hoje, na tela e nos relatórios.** Até hoje, abrir a tela já gerou as cobranças de verdade. Com o
+    perfil incompleto não gera, e mostrar a cobrança como prevista "a vencer" seria enganoso.
+  - **Lista.** Filtro "Mês do vencimento" mais "Até" (`ate`, padrão igual ao mês). O "Até" acompanha o mês enquanto os
+    dois forem iguais e nunca fica antes dele. Os erros usam as mensagens dos relatórios: até antes do mês, ou 36
+    meses ou mais. As previstas entram mescladas por vencimento só em Todas, A vencer e Pendentes. Têm o carimbo
+    "Prevista" (cinza, tracejado), não têm ações (`acoesDaCobranca` → `{principal: null, menu: []}`) e vêm com uma
+    legenda.
+  - **Relatórios.** O faturamento ganha a coluna "Ainda não emitido", que soma no "Previsto". No relatório por
+    produto, as previstas somam pelos itens; contrato sem itens vai para "Sem item". Clientes e Contas a receber não
+    mudam.
+  - **Pegadinhas.**
+    1. O `test_csv_para_o_excel_em_portugues` compara o CSV byte a byte. Coluna nova no relatório exige atualizar
+       esse teste.
+    2. Teste de relatório com `Contrato::factory()` ativo passa a ter previstas, porque o relatório não gera
+       cobranças. O teste antigo de produto teve o previsto da Hospedagem corrigido de 30.000 para 50.000.
+  - **Painel fora.** O painel ainda não mostra previstas (fora do escopo).
+  - **Limitação aceita (decisão do usuário, 2026-10-11).** Os relatórios **não geram** cobranças ao abrir. A cobrança
+    que já venceu (hoje ou antes) e ainda não foi gerada fica de fora do "Previsto": ela não é real ainda e já não é
+    prevista, porque a previsão começa amanhã. Isso acontece quando a pessoa passa dias sem abrir o painel ou a lista e
+    entra direto nos relatórios. O usuário escolheu **deixar como está**: gerar ao abrir seria uma escrita disparada
+    por um GET. Não "corrigir" sem falar com ele.
+  - **"Até" que se ajusta sozinho.** `resources/js/filtroPeriodo.js` (`ajustarAte`) tem teste no `node --test`. Ao
+    mudar o **mês**:
+    - o "Até" acompanha o mês enquanto os dois eram iguais;
+    - nunca fica antes do mês;
+    - se ficar a 36 meses ou mais, volta para um mês só;
+    - mês apagado leva o "Até" junto.
+
+    Ao mudar o **próprio "Até"**, só o vazio vira o mês. Fora do limite, o erro do servidor aparece embaixo dele, que é
+    o campo que a pessoa mexeu.
+
+    *Pegadinha (revisão final):* com a regra dentro do `.vue`, mudar o mês para trás deixava o erro de 36 meses
+    embaixo do "Até", campo que a pessoa não tinha mexido. E um campo apagado ficava em branco, porque o
+    `preserveState` não ressincroniza o `filtro` com o `props.filtros`. Regra de filtro com casos de borda vai para um
+    módulo `.js` com teste, como o `acoesCobranca.js`.
+- **Fase 19 — cobranças paginadas por ajax (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-paginacao-cobrancas-design.md`, plano `.claude/plans/2026-10-11-paginacao-cobrancas.md`;
+  carregamento validado pelo usuário: "Aprovo o carregamento da lista de cobranças")**
+  - **Rotas.**
+    - `GET /cobrancas` (Inertia) só abre a tela e roda a geração preguiçosa.
+    - `GET /cobrancas/dados` (JSON, **nunca grava**) monta a resposta em `App\Services\ListaDeCobrancas::montar`:
+      1. lista leve: só `id`, `vencimento`, `status` e `valor_centavos`, mais as previstas;
+      2. totais por situação nesta ordem: vencida, vence_hoje, a_vencer, prevista, paga, cancelada;
+      3. `total_geral` sem as canceladas;
+      4. fatia de `PAGINAS_POR_BLOCO = 4` páginas;
+      5. só as linhas do bloco carregam cliente, recibo e histórico.
+    - Página além da última → devolve a última (`pagina.inicio` diz qual).
+    - "Até antes do mês" e "36 meses" voltam como 422 no JSON. A página não recusa o período: link ruim abre a tela
+      com o erro embaixo do campo.
+  - **Navegador** (`Cobrancas/Index.vue`).
+    - Cache por `chaveDoFiltro` (os filtros mais o "por página"); `fatiarBloco` reparte o bloco em páginas;
+      `paginasVisiveis` monta o paginador (`resources/js/paginacao.js`, com teste).
+    - Contador de pedidos: resposta atrasada é descartada.
+    - `router.replace({ url, props })` põe filtros e página na URL sem pedir nada ao servidor.
+    - `buscarJson` em `http.js` (mesmo retorno de `enviarJson`).
+  - **Recarga depois de uma ação.** `post`, `put` e `delete` do Inertia preservam o estado, então a página **não
+    remonta**. A lista é buscada de novo no evento global `router.on('success')` quando
+    `page.component === 'Cobrancas/Index'` e não está carregando. Confirmado no `@inertiajs/core` 3.9.0: o `success`
+    só sai de resposta do servidor (`dist/index.js:2715`), nunca de `router.replace`.
+  - **Componentes.** `Paginador.vue`: "Mostrando X–Y de N", Anterior/números/Próxima, "Por página" (25/50/100),
+    `aria-current="page"`. Trocar de página leva o foco ao paginador de cima.
+  - **Telas de espera.**
+    - Primeira carga: texto com o indicador girando e 6 linhas-esqueleto (`motion-safe:animate-pulse`), pedido do
+      usuário "como no YouTube".
+    - Carga seguinte: a tabela fica esmaecida.
+    - Falha: mensagem e "Tentar de novo".
+  - **Pegadinhas.**
+    1. Os testes que liam a prop `cobrancas` passaram a abrir a página (que gera) e ler o JSON.
+    2. Ao colar trechos do plano por script, `'<tfoot' in bloco` pegou o bloco errado: escolher pelo começo do bloco e
+       contar as ocorrências.
+    3. **Rolagem horizontal em ~1260 px** (achada na conferência visual de 2026-10-11): na 5ª coluna da grade de
+       filtros, "Incluir canceladas" (`shrink-0`) mais o botão "Filtrar" passavam da largura da coluna em 9 px.
+       Correção: `flex-wrap` no contêiner, e o botão desce para a linha de baixo. Ao montar filtros em grade, conferir
+       `scrollWidth === clientWidth` em 1264 px, não só em 390 px.
+       **Ajuste (pedido do usuário com print, 2026-10-11):** o botão "Filtrar" tinha `w-full` e sempre descia para baixo da
+       caixa. Agora a grade em `lg` é `[11rem_11rem_minmax(0,1fr)_minmax(0,1.4fr)_auto]` (datas com largura fixa; a última
+       coluna do tamanho da caixa + botão) e o botão é `px-4` sem `w-full`: caixa e botão na mesma linha em 1024–1700 px.
+    4. **Lentidão no dev não é defeito da lista:** 12 consultas × ~580 ms de ida e volta ao PostgreSQL remoto dão ~7 s
+       no `/cobrancas/dados` (medido com `DB::enableQueryLog`). Mesmo assim há uma consulta por contrato ativo:
+       `GeradorDeCobrancas::existentes()` (`$contrato->cobrancas()->pluck(...)`), chamada pela previsão. Com 100
+       contratos seriam 100 consultas — ver a Fase 20.
+  - **Conferência visual (2026-10-11, autorizada, usuário SMOKE, 64 cobranças em 3 páginas):** paginador acima e
+    abaixo, página 3 tirada do cache sem pedido novo (contado em `performance.getEntriesByType('resource')`), URL com a
+    página, foco no paginador de cima, F5 e link direto para a página 3, rodapé com as somas certas, 390 px sem
+    rolagem. **Não conferido:** dar baixa e ver a lista recarregar (grava pagamento; pede autorização à parte).
+  - **Pegadinha (browser-use):** o print (`browser_screenshot` ou `Page.captureScreenshot`) de uma aba aberta com
+    `new_tab` estoura o tempo no Chrome sem janela até chamar `cdp("Target.activateTarget", targetId=...)` e
+    `cdp("Page.bringToFront")`. Print de página inteira (`captureBeyondViewport`) trava a aba: rolar e tirar por partes.
+- **Fase 20 — todas as listas por ajax (pedido do usuário, 2026-10-11; spec
+  `docs/superpowers/specs/2026-10-11-listas-por-ajax-design.md`, plano `.claude/plans/2026-10-11-listas-por-ajax.md`)**
+  - **Servidor.** Cada tela tem `GET …/dados` (JSON, **só leitura**; `tests/Feature/DadosDasListasTest.php` prova os
+    11 endereços: 401 sem sessão e nenhum INSERT/UPDATE/DELETE, mesmo com cobrança devida). A página Inertia só abre a
+    tela com os filtros (`filtros()` privado em cada controlador, já no formato da tela, `''` = sem filtro).
+    `App\Support\BlocoDePaginas::de(Builder|Relation|Collection, pagina, porPagina)` e `::regras([25, 50, 100])`.
+  - **Acerto (PostgreSQL):** `count(*)`/`sum()` com `ORDER BY` de coluna é erro no PostgreSQL e passa no SQLite dos
+    testes. `BlocoDePaginas` conta com `toBase()->getCountForPagination()` (tira o ORDER BY; teste do SQL da contagem);
+    contratos somam por periodicidade numa consulta **sem ordem** (`filtrada()` e a ordem só na lista); o painel soma
+    antes de ordenar.
+  - **Navegador.** `usarListaPaginada({ url, filtro, componente, endereco, idDoFoco, aoMostrar })` liga
+    `criarListaPaginada` à tela (primeira carga, URL por `router.replace`, foco, recarga no `success` da página
+    `componente`). `EstadoDaLista.vue` (esqueleto, filtro recusado, falha, vazio). `Etiqueta.vue` (selo reto de
+    situação de cadastro; o carimbo girado fica para cobranças e recibos). `estilosLista.js` (`botaoPrincipal`,
+    `itemMenu`). `chaveDoFiltro` vale para qualquer filtro (todas as chaves menos `pagina`).
+  - **Telas.** Clientes, Contratos, Produtos e Usuários em tabela (T17.15). Contratos: situação Ativo / Encerra em /
+    Encerrado e totais dos ativos **por periodicidade** (não se somam periodicidades diferentes); o filtro de produto
+    virou autosugestão (só ativos; o `produtoFiltro` da página mostra o nome mesmo inativo). Usuários: ação principal
+    pela situação (`acoesUsuario.js`), "Bloquear" no menu com confirmação no segundo clique, nunca na própria conta.
+    Painel: três `ListaDoPainel` independentes, 10 por página (10/25/50), paginador só embaixo e só com mais de uma
+    página, contagem e soma no título. Relatórios: faturamento inteiro numa página (o gráfico precisa de todas as
+    linhas), os outros paginam; totais sempre do relatório inteiro; CSV inteiro pelo link de sempre; títulos em
+    `relatorios.js` (aparecem antes dos dados).
+  - **N+1 corrigido:** `GeradorDeCobrancas::existentes(Collection $contratos)` busca as cobranças existentes de todos os
+    contratos numa consulta só (antes, uma por contrato; com o PostgreSQL remoto a ~580 ms por consulta). Usado pelo
+    gerador e pela previsão; teste conta as consultas.
+  - **Pegadinhas (execução).**
+    1. No Git Bash, `sed` trocando linhas `use App\…` do PHP (barra invertida) falha calado: usar o editor.
+    2. Script que converte asserções com regex `(.*?)\)\);` comeu o parêntese do último `->where(`: conferir o diff e
+       `php -l` depois de conversão automática.
+    3. Auxiliar de teste que cria produto com nome fixo estoura o `unique(user_id, nome)` se chamado duas vezes.
+    4. **Vue apaga o espaço que abre um elemento antes de interpolação:** `{{ n }}<span> {{ rotulo }}</span>` sai
+       "2contratos". Pôr o espaço fora (`{{ n }} <span>…`). Texto puro (`<span> em contratos</span>`) mantém o espaço.
+    5. **Regra `date` aceita ano de 5 dígitos** (o `<input type="date">` do Chrome deixa digitar até 6) e lê
+       `72026-08-01` como 2006-08-01, sem erro. Filtro e formulário de data: `date_format:Y-m-d` (mês: `Y-m`).
+    6. **`@change` em campo de data/mês dispara a cada dígito do ano e a cada parte** (0001, 0015, 0150…; dia, mês;
+       o mês pela metade deixa o valor vazio por um instante): uma data digitada virava até 12 pedidos. **Acerto:**
+       filtro de data/mês = `adiar(() => anoCompleto(de) && anoCompleto(ate) && filtrar())` (400 ms, como a busca de
+       texto). Formulário que **grava** data não precisa (só envia no "Salvar"), mas a regra do servidor é
+       `date_format:Y-m-d` em todos (pegadinha 5).
+    7. Valor em reais em coluna estreita quebra "R$" e o número em linhas diferentes: espaço inseparável
+       (`R$ `). `grep -P '\xC2\xA0'` não acha o caractere no Git Bash; conferir com `od -c`.
+  - **Conferência visual (2026-10-11, autorizada):** resultado e defeitos no "Registro de execução" do plano. Usuários
+    não foi conferida (o SMOKE não é admin). **Browser-use:** `cdp("Page.navigate")` estoura 5 s com o PostgreSQL
+    remoto; navegar com `js("setTimeout(()=>location.href='…',0);1")` e esperar por condição. A entrada de
+    `performance.getEntriesByType('resource')` só aparece quando a resposta termina. Esqueleto: atrasar a rede com
+    `Network.enable` + `Network.emulateNetworkConditions(latency=2500)` para dar tempo de ver.
+- **Fase 21 — apelido do cliente (T17.13; desenho aprovado pelo usuário em 2026-10-11; plano
+  `.claude/plans/2026-10-11-apelido-do-cliente.md`)**
+  - **Dado.** `clientes.apelido` (60, `''` por padrão, nunca nulo) e único `(user_id, documento, apelido)`: o mesmo CNPJ
+    pode ter outro cadastro com outro apelido (cada regional é um cliente). Com nulo, dois cadastros sem apelido passariam.
+  - **Um lugar só para a regra de exibição.** `Cliente::exibicao()` (apelido ou nome), `nomeOficial()` (nome só quando há
+    apelido) e `paraBusca()` (`{id, nome, nome_oficial, documento}`: autosugestão, cadastro rápido, `clienteFiltro`,
+    `clienteAtual`). Listas mandam `cliente` + `cliente_oficial`; a tela mostra o oficial embaixo, menor. Relatórios e
+    reajuste mostram só a exibição. Ordem pela exibição: escopo `ordemDeExibicao` (`coalesce(nullif(apelido, ''), nome)`).
+  - **Pegadinha.** Consulta que carrega colunas escolhidas do cliente (`with('cliente:id,nome')`) precisa de `apelido`
+    na lista; senão a exibição volta ao nome sem erro nenhum. Ao criar consulta nova com cliente, incluir `apelido`.
+  - **Recibo: o apelido NÃO aparece** (decisão do usuário, 2026-10-11, depois de ver o `-v2` com "Unidade atendida",
+    que foi desfeito). O snapshot do tomador não guarda o apelido (`Cliente::CAMPOS` sem ele). Opcional: botão "Incluir o
+    apelido na descrição" no contrato e na cobrança (`DescricaoComplementar.vue` + `resources/js/apelido.js`), que põe o
+    apelido na 1ª linha da descrição, editável. Não voltar a pôr o apelido no recibo sem falar com o usuário.
+  - **Nome do arquivo do PDF usa o apelido** (pedido do usuário): `Recibo::nomeArquivo($apelido)` com o apelido atual
+    do cliente; sem apelido, o nome oficial do snapshot. Quem chama passa o apelido já carregado (sem consulta por linha).
+- **Fase 22 — troca de modelo vale para as cobranças em aberto (plano `.claude/plans/2026-10-11-troca-de-modelo.md`).**
+  `EmissorDeRecibos::aplicarModeloDoCliente` dentro da transação do `ClienteController::update`, só quando o modelo
+  mudou; a tela de edição recebe `emAberto` e mostra a prévia (quantas mudam) com a caixa das enviadas. Teste:
+  `TrocaDeModeloTest`.
+- **Fase 23 — vencimento em dia útil (spec `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md`, plano
+  `.claude/plans/2026-10-11-vencimento-em-dia-util.md`)**
+  - **Calendário puro.** `App\Support\DiasUteis` (sem banco nem relógio): sábado/domingo, nacionais (Leis 662/1949,
+    6.802/1980, 14.759/2023 — o 20/11 só de 2024 em diante), Carnaval e Sexta-feira da Paixão pela Páscoa (Meeus/Jones/
+    Butcher, sem serviço externo) e a lista local do usuário (`anual`, `corpus_christi`, `unico`). `motivo()` diz o fim de
+    semana antes do feriado; no mesmo dia, o nome nacional vence o local. 29/02 "todo ano" só acontece em ano bissexto.
+  - **Calculadora com calendário por cópia.** `CalculadoraDePeriodos::comDiasUteis()` devolve um clone; sem calendário,
+    tudo como antes (testes unitários antigos intactos). **Não pôr `DiasUteis` no construtor:** o container injetaria um
+    calendário vazio sozinho (a classe é instanciável) e os feriados locais seriam ignorados sem erro. Só o vencimento
+    muda; início, fim e o índice único do contrato não.
+  - **Três pontos de ligação.** `GeradorDeCobrancas::gerarPara`, `PrevisaoDeCobrancas::entre` e
+    `EncerradorDeContratos::plano` pedem `comDiasUteis($usuario->diasUteis())` (feriados do próprio usuário: tabela
+    `feriados`, `User::feriados()` em ordem de id). `ContratoController::retroativos` não precisa (usa só início e fim).
+    Custo: uma consulta a mais por geração/previsão/encerramento. Contrato que nasce de agora em diante já sai com o
+    vencimento ajustado; cobranças antigas só mudam pelo ajuste com prévia (T23.4).
+  - **Cadastro de feriados locais** (`FeriadoController` + `FeriadoRequest`, rotas `/perfil/feriados`, padrão numérico
+    `{feriado}`): `prepareForValidation` zera os campos que não são do tipo escolhido (trocar de tipo não deixa resto);
+    `after()` confere o dia no mês com 2024 como ano de referência (29/02 aceito, 31/02 recusado); data única com
+    `date_format:Y-m-d`; feriado alheio dá 404 no `authorize()`. O perfil recebe `feriados` (com `quando` pronto para a
+    tela) e `feriadosNacionais` do ano corrente (só leitura).
+  - **Ajuste das cobranças já geradas** (`App\Services\AjusteDeVencimentos`, padrão 9): `previa()` e `ajustar()` usam a
+    **mesma** consulta (contrato, pendente, `enviado_em` nulo, vencimento em dia não útil). `POST /perfil/feriados/ajustar`
+    recebe os `ids` da prévia e só ajusta os que **ainda** estão na lista: id alheio, enviado, pago, avulso ou já ajustado
+    é ignorado (prévia velha e clique duplo seguros; o 2º clique responde "Nenhuma cobrança precisava de ajuste.").
+    Ajustar = vencimento novo + `EmissorDeRecibos::refazer` (mesmo número), numa transação. Boleto: ajusta e avisa
+    "Tem boleto: confira a data no banco" (D3). A prévia é prop do perfil (`vencimentosParaAjustar`), recalculada a cada
+    abertura — cadastrar feriado volta ao perfil com ela atualizada. **Auditoria (P1 = sim, 2026-10-11):** uma linha
+    `cobranca.vencimento_ajustado` por cobrança ("Vencimento ajustado de 24/10/2026 (sábado) para 26/10/2026"), na
+    mesma transação; o serviço recebe o `Request` (é o que `Auditoria::registrar` pede). Recibos refeitos por
+    `EmissorDeRecibos::refazerEmLote` (prestador e clientes lidos uma vez por lote, itens por cobrança: no máximo 4
+    consultas por cobrança, teste conta). A tela manda no máximo 1000 ids por clique ("Ajustar 1000 de N") e mostra o
+    erro ao lado do botão.
+  - **Aviso no Painel (P2 = sim, 2026-10-11):** prop `vencimentosEmDiaNaoUtil` (contagem da mesma prévia) e aviso no
+    formato do de perfil incompleto, com o link "Ver e ajustar" para `/perfil#feriados` (padrão 2: o aviso traz a saída).
+  - **Datas: ano entre 1900 e 2100 em toda regra** (`App\Rules\AnoValido`, junto de cada `date_format` — 18 lugares,
+    inclusive filtros `Y-m`). *Pegadinha:* o ano **0000** passa no `date_format` e o PostgreSQL recusa a data (500); o
+    SQLite dos testes aceita, então só o teste com a regra pega. Campo de data novo: `'date_format:Y-m-d', new AnoValido`.
+  - *Pegadinha (2ª revisão):* regra própria que faz `(string) $value` quebra com valor em lista (`?mes[]=x` → "Array to
+    string conversion" = **500**): o Laravel roda a regra seguinte mesmo com o `date_format` já falhando (sem `bail`).
+    Regra nova: `if (! is_string($value) ...) return;` e deixar o formato para a regra de formato.
+  - *Pegadinha (navegador):* elemento saindo por `<Transition>` fica no DOM durante a animação **e clicável** — o
+    "Usar…" de um aviso velho aceitava clique por 180 ms. Corrigido de vez em `app.css`: `.surgir-leave-active,
+    .lista-leave-active, .modal-leave-active { pointer-events: none }`.
+  - *Pegadinha (browser-use):* heredoc sem aspas (`<<PY`) deixa o bash mexer no script e a busca falha calada — usar
+    `<<'PY'`; `const` repetido entre chamadas de `js()` dá "already been declared" (envolver em `(()=>{...})()`); regex
+    com `\s`/`\n` no Python vira escape errado — usar `split(String.fromCharCode(10))`. Ler as props da página Inertia v3:
+    `<script>` cujo texto tem `"component"` (não há `data-page` no `#app`).
+  - **Calendário sem dia útil:** `proximoDiaUtil` para com `LogicException` depois de 366 dias (antes girava até
+    esgotar a memória) e o cadastro aceita no máximo 100 feriados locais (`FeriadoRequest::LIMITE`).
+  - **Ruling (2ª revisão, minor 6 — risco aceito deliberadamente):** o limite de 100 feriados é checado em
+    `FeriadoRequest::after()` (contagem) e só depois criado em `FeriadoController::store()`, sem transação/lock — dois
+    cliques simultâneos perto do limite podem passar de 100 por uma margem pequena. Não corrigido: (1) o botão "Cadastrar
+    feriado" já fica `:disabled="form.processing"` durante o próprio pedido, cobrindo o caso comum (clique duplo na
+    mesma aba); (2) o limite é só uma preferência de UX (não deixar a lista enorme), não a defesa contra calendário sem
+    dia útil — essa defesa é o `LogicException` do `proximoDiaUtil` acima, que não depende da contagem; (3) corrigir de
+    verdade pediria mover a regra para dentro de uma transação com `lockForUpdate()` no controller, mais complexidade do
+    que o risco (estourar o teto por 1-2 num cenário raro de duas abas) justifica. Custo se a decisão estiver errada:
+    usuário com pouco mais de 100 feriados locais até excluir um — sem crash, sem dado errado.
+  - **Aviso da avulsa** em `resources/js/avisoDiaUtil.js` (testado): apaga o aviso na hora ao trocar a data — o
+    "Usar…" da data anterior não pode ficar clicável durante a espera de 400 ms — e descarta resposta atrasada.
+  - **Acessibilidade:** aviso que entra por `v-if` não anuncia; usar um `<p class="sr-only" aria-live="polite">` sempre
+    presente com a frase, e o bloco visível sem `role="status"`. Seta "→" com `aria-hidden` + "passa para" em `sr-only`.
+  - **Aviso da avulsa:** `GET /dias-uteis/proximo?data=Y-m-d` (só leitura, 401 sem sessão, 422 com ano inválido) devolve
+    `{util, aviso, proximo, proximo_rotulo}` com o calendário do usuário — a regra fica no servidor, o JS não duplica o
+    calendário. A data digitada é respeitada; o aviso só sugere.
+  - **Telas.** `Feriados.vue` (seção do perfil, abaixo das chaves PIX, `id="feriados"`): prévia "N cobranças em aberto
+    vencem em dia não útil" com "Ajustar N cobranças" no topo (só aparece quando há), lista local com edição na linha e
+    exclusão em dois cliques (mesmo padrão de `ChavesPix.vue`), nacionais do ano num `<details>`. `Cobrancas/Form.vue`:
+    `watch` do vencimento → `adiar` (400 ms) + `anoCompleto` + contador de pedido (resposta atrasada é descartada) → aviso
+    `surgir` com "Usar <dia>"; vale ao criar e ao editar.
+  - *Pegadinha (revisão final):* teste de isolamento com `Cobranca::factory()->create()` alheia passa à toa em regra que
+    filtra cobrança **de contrato**: a factory grava `contrato_id` nulo (avulsa) e outro filtro a barra. Teste de
+    isolamento precisa de um recurso alheio que passaria em **todos** os outros filtros.
+  - **Testes antigos que mudaram de data (2026-10-11):** a factory de contrato vence dia 21 e 21/11/2026 é sábado (→ 23/11);
+    10/10/2026 → 13/10 (12/10 feriado); 25/10/2026 domingo → 26/10; 20/12/2026 domingo → 21/12. Em teste novo com datas
+    de vencimento, conferir o dia da semana e os feriados antes de escrever o valor esperado.
+  - *Pegadinha (teste):* 29/02/2028 é **terça de Carnaval** (Páscoa em 16/04/2028). Ao escolher data de exemplo para
+    feriado local, conferir se ela não cai em feriado nacional ou móvel.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).

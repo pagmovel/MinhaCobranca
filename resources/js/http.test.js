@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { enviarJson } from './http.js';
+import { buscarJson, enviarJson } from './http.js';
 
 const FALHA = 'Não foi possível salvar agora. Tente de novo.';
 
@@ -41,4 +41,25 @@ test('falha de rede ou resposta sem JSON vira mensagem; nunca lança', async () 
     // Redirecionamento seguido pelo fetch (ex.: conta bloqueada → /entrar) chega como 200 com HTML.
     globalThis.fetch = async () => new Response('<html>entrar</html>', { status: 200 });
     assert.deepEqual(await enviarJson('/x', {}), { mensagem: FALHA });
+});
+
+test('buscarJson faz GET sem corpo e avisa a falha como "carregar"', async () => {
+    let pedido;
+    globalThis.fetch = async (url, opcoes) => {
+        pedido = { url, ...opcoes };
+        return new Response(JSON.stringify({ linhas: [] }), { status: 200 });
+    };
+
+    assert.deepEqual(await buscarJson('/cobrancas/dados?pagina=2'), { dados: { linhas: [] } });
+    assert.equal(pedido.method, 'GET');
+    assert.equal(pedido.body, undefined);
+
+    globalThis.fetch = async () => { throw new TypeError('sem rede'); };
+    assert.deepEqual(await buscarJson('/x'), { mensagem: 'Não foi possível carregar agora. Tente de novo.' });
+});
+
+test('401 (sessão caiu num pedido JSON) diz para recarregar, em vez do "tente de novo" que falharia sempre', async () => {
+    globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Unauthenticated.' }), { status: 401 });
+
+    assert.deepEqual(await buscarJson('/x'), { mensagem: 'A sessão expirou. Recarregue a página para entrar de novo.' });
 });

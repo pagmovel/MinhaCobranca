@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FamiliaModelo;
 use App\Enums\StatusUsuario;
+use App\Support\DiasUteis;
 use App\Support\Ufs;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -110,6 +111,11 @@ class User extends Authenticatable
         return $this->hasMany(Cobranca::class);
     }
 
+    public function auditorias(): HasMany
+    {
+        return $this->hasMany(Auditoria::class);
+    }
+
     public function recibos(): HasMany
     {
         return $this->hasMany(Recibo::class);
@@ -118,5 +124,16 @@ class User extends Authenticatable
     public function produtosServicos(): HasMany
     {
         return $this->hasMany(ProdutoServico::class);
+    }
+
+    public function feriados(): HasMany
+    {
+        return $this->hasMany(Feriado::class)->orderBy('id');
+    }
+
+    /** Calendário do prestador: nacionais + a lista local dele (uma consulta). */
+    public function diasUteis(): DiasUteis
+    {
+        return new DiasUteis($this->feriados()->get()->map(fn (Feriado $feriado) => $feriado->paraCalendario())->all());
     }
 }

@@ -48,7 +48,7 @@ class CadastroRapidoTest extends TestCase
     {
         $this->postJson('/clientes', ['nome' => 'Padaria Pão Quente', 'documento' => '11.222.333/0001-81', 'modelo' => 'webiss'])
             ->assertCreated()->assertExactJson([
-                'id' => $this->usuario->clientes()->sole()->id, 'nome' => 'Padaria Pão Quente', 'documento' => '11.222.333/0001-81',
+                'id' => $this->usuario->clientes()->sole()->id, 'nome' => 'Padaria Pão Quente', 'nome_oficial' => null, 'documento' => '11.222.333/0001-81',
             ]);
 
         $this->postJson('/clientes', ['nome' => 'Outra', 'documento' => '11222333000181', 'modelo' => 'webiss'])

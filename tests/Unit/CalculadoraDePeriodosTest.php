@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Services\CalculadoraDePeriodos;
+use App\Support\DiasUteis;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -107,5 +108,45 @@ class CalculadoraDePeriodosTest extends TestCase
 
         // Setembro vence 10/10 (devido desde 30/09); outubro vence 10/11 (ainda não).
         $this->assertSame(['2026-10-10'], array_map(fn ($periodo) => $periodo->vencimento->toDateString(), $devidos));
+    }
+
+    public function test_entre_lista_os_vencimentos_do_intervalo_ate_o_fim_do_contrato(): void
+    {
+        $calc = new CalculadoraDePeriodos;
+        $vencimentos = fn (?string $fim) => array_map(
+            fn ($periodo) => $periodo->vencimento->toDateString(),
+            $calc->entre($this->data('2026-09-21'), $fim === null ? null : $this->data($fim), Periodicidade::Mensal, 21, Modalidade::Prepago, $this->data('2026-10-01'), $this->data('2027-01-21')),
+        );
+
+        $this->assertSame(['2026-10-21', '2026-11-21', '2026-12-21', '2027-01-21'], $vencimentos(null));
+        // Fim em 05/12: o período 21/11–20/12 contém o fim e entra; o de 21/12 começa depois e fica de fora.
+        $this->assertSame(['2026-10-21', '2026-11-21'], $vencimentos('2026-12-05'));
+    }
+
+    public function test_vencimento_em_dia_nao_util_vai_para_o_proximo_dia_util_e_o_periodo_nao_muda(): void
+    {
+        $calc = new CalculadoraDePeriodos;
+
+        $p = $calc->comDiasUteis(new DiasUteis)->periodo($this->data('2026-09-21'), Periodicidade::Mensal, 21, 2);
+
+        // 21/11/2026 é sábado (e 20/11, sexta, é feriado): segunda, 23/11.
+        $this->assertSame(
+            ['2026-11-21', '2026-12-20', '2026-11-23'],
+            [$p->inicio->toDateString(), $p->fim->toDateString(), $p->vencimento->toDateString()],
+        );
+        $this->assertSame(
+            '2026-11-21',
+            $calc->periodo($this->data('2026-09-21'), Periodicidade::Mensal, 21, 2)->vencimento->toDateString(),
+            'a calculadora original continua sem calendário',
+        );
+    }
+
+    public function test_antecedencia_conta_do_vencimento_ajustado(): void
+    {
+        $devidos = (new CalculadoraDePeriodos)->comDiasUteis(new DiasUteis)->devidos(
+            $this->data('2026-09-21'), null, Periodicidade::Mensal, 21, 0, $this->data('2026-11-21'),
+        );
+
+        $this->assertCount(2, $devidos, 'o de novembro vence em 23/11: em 21/11 ainda não é devido');
     }
 }

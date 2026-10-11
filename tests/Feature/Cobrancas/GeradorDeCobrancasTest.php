@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\GeradorDeCobrancas;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class GeradorDeCobrancasTest extends TestCase
@@ -106,5 +107,24 @@ class GeradorDeCobrancasTest extends TestCase
 
         $this->assertSame(1, $cedo->cobrancas()->firstOrFail()->recibo->numero);
         $this->assertSame(2, $tardio->cobrancas()->firstOrFail()->recibo->numero);
+    }
+
+    public function test_uma_consulta_so_para_as_cobrancas_existentes_de_todos_os_contratos(): void
+    {
+        $usuario = $this->prestador();
+        foreach ([5, 12, 21] as $dia) {
+            $this->contrato($usuario, ['dia_vencimento' => $dia]);
+        }
+        $consultas = 0;
+        DB::listen(function ($consulta) use (&$consultas) {
+            $sql = strtolower(ltrim($consulta->sql));
+            if (str_starts_with($sql, 'select') && str_contains($sql, 'periodo_inicio')) {
+                $consultas++;
+            }
+        });
+
+        $this->gerar($usuario, '2026-10-09');
+
+        $this->assertSame(1, $consultas);
     }
 }

@@ -71,6 +71,11 @@ class Cobranca extends Model
         return $this->hasMany(CobrancaItem::class)->orderBy('id');
     }
 
+    public function auditorias(): HasMany
+    {
+        return $this->hasMany(Auditoria::class, 'alvo_id')->where('alvo_tipo', 'cobranca')->orderBy('id');
+    }
+
     public function situacao(CarbonImmutable $hoje): string
     {
         return match ($this->status) {
@@ -94,14 +99,20 @@ class Cobranca extends Model
     {
         return [
             'id' => $this->id,
-            'cliente' => $this->cliente->nome,
+            'cliente' => $this->cliente->exibicao(),
+            'cliente_oficial' => $this->cliente->nomeOficial(),
             'vencimento' => $this->vencimento->format('d/m/Y'),
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),
+            'valor_centavos' => $this->valor_centavos,
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,
             'editavel' => $this->editavel(),
+            // Só quando a lista carregou as auditorias (evita uma consulta por linha).
+            'historico' => $this->relationLoaded('auditorias')
+                ? $this->auditorias->map(fn (Auditoria $registro) => $registro->created_at->format('d/m/Y').' · '.$registro->resumo)->all()
+                : [],
             'pagamento' => [
                 'forma_pagamento' => $this->forma_pagamento->value,
                 'chave_pix_id' => $this->chave_pix_id ?? '',
@@ -110,7 +121,7 @@ class Cobranca extends Model
             'recibo' => $this->recibo ? [
                 'numero' => $this->recibo->numeroFormatado(),
                 'pdf_url' => "/recibos/{$this->recibo->id}/pdf",
-                'pdf_nome' => $this->recibo->nomeArquivo(),
+                'pdf_nome' => $this->recibo->nomeArquivo($this->cliente->apelido),
             ] : null,
         ];
     }

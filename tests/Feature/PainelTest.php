@@ -32,10 +32,12 @@ class PainelTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Painel')
                 ->where('mes', 'Outubro de 2026')
-                ->has('paraEnviar', 1)
-                ->where('paraEnviar.0.recibo.numero', '2026/000001')
-                ->has('aguardando', 0)
-                ->has('recebidas', 0));
+                ->missing('paraEnviar')->missing('aguardando')->missing('recebidas'));
+        $this->getJson('/painel/dados?lista=para_enviar')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.recibo.numero', '2026/000001');
+        $this->getJson('/painel/dados?lista=aguardando')->assertJsonCount(0, 'linhas');
+        $this->getJson('/painel/dados?lista=recebidas')->assertJsonCount(0, 'linhas');
     }
 
     public function test_blocos_seguem_envio_e_pagamento(): void
@@ -61,11 +63,13 @@ class PainelTest extends TestCase
 
         $this->actingAs($usuario)->get('/painel')
             ->assertInertia(fn (Assert $page) => $page
-                ->has('paraEnviar', 1)->where('paraEnviar.0.id', $paraEnviar->id)
-                ->has('aguardando', 1)->where('aguardando.0.id', $enviada->id)
-                ->has('recebidas', 1)->where('recebidas.0.id', $paga->id)
                 ->where('resumo.previsto', '621,20')
                 ->where('resumo.recebido', '100,00'));
+        foreach (['para_enviar' => $paraEnviar, 'aguardando' => $enviada, 'recebidas' => $paga] as $lista => $cobranca) {
+            $this->getJson("/painel/dados?lista={$lista}")->assertOk()
+                ->assertJsonCount(1, 'linhas')
+                ->assertJsonPath('linhas.0.id', $cobranca->id);
+        }
     }
 
     public function test_perfil_incompleto_avisa_e_nao_gera(): void
@@ -75,8 +79,37 @@ class PainelTest extends TestCase
 
         $this->actingAs($usuario)->get('/painel')
             ->assertInertia(fn (Assert $page) => $page
-                ->where('perfilCompleto', false)
-                ->has('paraEnviar', 0));
+                ->where('perfilCompleto', false));
+        $this->getJson('/painel/dados?lista=para_enviar')->assertOk()->assertJsonCount(0, 'linhas');
+    }
+
+    public function test_dados_nao_geram_cobrancas(): void
+    {
+        $usuario = User::factory()->create();
+        Contrato::factory()->for($usuario)->create();
+
+        $this->actingAs($usuario)->getJson('/painel/dados?lista=para_enviar')->assertOk()->assertJsonCount(0, 'linhas');
+        $this->assertSame(0, Cobranca::count());
+    }
+
+    public function test_contagem_e_soma_da_lista_inteira_em_blocos_de_10(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        foreach (range(1, 12) as $dia) {
+            Cobranca::factory()->for($usuario)->for($cliente)->create([
+                'vencimento' => sprintf('2026-10-%02d', $dia + 10), 'valor_centavos' => 1000, 'enviado_em' => now(),
+            ]);
+        }
+        Cobranca::factory()->create(['vencimento' => '2026-10-20', 'valor_centavos' => 99900, 'enviado_em' => now()]); // de outro usuário
+
+        $this->actingAs($usuario)->getJson('/painel/dados?lista=aguardando')->assertOk()
+            ->assertJsonPath('pagina', ['inicio' => 1, 'por_pagina' => 10, 'total' => 12])
+            ->assertJsonPath('total_geral', ['quantidade' => 12, 'soma_centavos' => 12000])
+            ->assertJsonCount(12, 'linhas'); // bloco de 4 páginas de 10
+        $this->getJson('/painel/dados?lista=aguardando&pagina=9')->assertJsonPath('pagina.inicio', 2);
+        $this->getJson('/painel/dados?lista=outra')->assertUnprocessable()->assertJsonValidationErrors('lista');
+        $this->getJson('/painel/dados?lista=aguardando&por_pagina=100')->assertUnprocessable();
     }
 
     public function test_recebido_e_o_que_foi_pago_no_mes_qualquer_que_seja_o_vencimento(): void

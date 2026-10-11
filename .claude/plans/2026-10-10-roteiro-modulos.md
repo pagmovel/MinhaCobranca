@@ -1,8 +1,117 @@
 # Roteiro do produto — onde estamos e o que vem (handoff entre sessões)
 
-**Atualizado:** 2026-10-10 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
+**Atualizado:** 2026-10-11 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
+
+## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
+
+### 0.1 PRÓXIMO PASSO IMEDIATO (2026-10-11, antes de compactar e abrir conversa nova)
+- **Fases 20, 21 e 22 validadas** pelo usuário em 2026-10-11 ("Tudo conferido").
+- **Fase 23 (vencimento em dia útil): executada** (nativa), plano `.claude/plans/2026-10-11-vencimento-em-dia-util.md`.
+  T23.1–T23.11 testadas; migração `feriados` aplicada no dev; P1/P2 = sim (feitas); spinner global "Carregando…" (pedido
+  do usuário); duas revisões opus (Important corrigidos); conferência no navegador feita. **Aguarda:** validação do
+  usuário, decisão sobre 6 Minor da 2ª revisão (lista no registro do plano) e o merge na `main` (antes, a revisão final
+  da branch inteira, Fases 17–23).
+- Depois: Fase 24 (aviso pelo WhatsApp, spec aguardando revisão); revisão final da branch + merge na `main`; T17.11.
+
+### 0.2 Estado da branch
+**Branch:** `feat/modulo-cobranca-catalogo`, no remoto, árvore limpa. Último commit: `bf1a814` (iniciais do WebISS).
+- Suítes: PHP **399/399** (`php artisan test --compact`), JS **50/50** (`node --test resources/js/*.test.js`), build ok.
+- **Banco de dev:** todas as migrações aplicadas (a do apelido em 2026-10-11, com o "sim" do usuário).
+- **Merge na `main` ainda não feito** das Fases 17 (resto) a 22. A memória "Merge e push por fase" autoriza merge por fase
+  concluída; antes, fazer a **revisão final da branch inteira** (`git merge-base main HEAD`..HEAD) e mostrar o resultado.
+- O usuário fez um commit dele na `main` (`761f6d0`, PHP ^8.4 no composer); a branch tem o mesmo ajuste (`b83f22d`).
+
+**Fases recentes**
+
+| Fase | O quê | Plano | Estado |
+|---|---|---|---|
+| 18 | Previsão de recebimentos (previstas calculadas, nada gravado) | `2026-10-11-previsao-de-recebimentos.md` | **validada** |
+| 19 | Cobranças por ajax: blocos de 4 páginas, cache, paginador, totais, esqueleto | `2026-10-11-paginacao-cobrancas.md` | carregamento **validado**; falta conferir "dar baixa e a lista recarregar" (grava pagamento: pede autorização) |
+| 20 | Todas as listas por ajax e em tabela (T17.18) | `2026-10-11-listas-por-ajax.md` | **validada** (2026-10-11); Minor 2–7 e o "Enviar" do Painel a 390 px adiados (motivos no plano) |
+| 21 | Apelido do cliente (T17.13): telas, busca, mesmo CNPJ em outra unidade, botão na descrição, nome do PDF | `2026-10-11-apelido-do-cliente.md` | **validada** (2026-10-11) |
+| 22 | Trocar o modelo do recibo refaz as cobranças em aberto; enviadas não pagas com opção | `2026-10-11-troca-de-modelo.md` | **validada** (2026-10-11); depois, iniciais do WebISS centralizadas (`bf1a814`, decisão do usuário: no próprio `-v1`) |
+
+**Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
+0b. **PEDIDO NOVO (2026-10-11) — aviso de vencimento pelo WhatsApp (Fase 24, depois da 23).** Palavras do usuário:
+   "Adicione também uma forma de compartilhar mensagens via whatsapp avisando sobre vencimento. Um campo para que possamos
+   digitar modelos de mensagens a serem utilizadas por whatsapp que contenham os serviços ou produtos que estão vencendo
+   nos proximos 5 dias, a data de vencimento e o valor total da fatura que está vencendo." Desenho aprovado ("sim").
+   **Spec escrita:** `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` — **aguarda revisão do usuário**.
+   - Fatos: o cliente tem `telefone`; o envio de PDF hoje é `BotaoEnviar` (Web Share/download). Envio automático pela API
+     do WhatsApp é pago → fora (regra: serviço externo só se gratuito); caminho gratuito: link `https://wa.me/<número>?text=`
+     que abre o WhatsApp com a mensagem pronta e a pessoa toca em enviar. **[A VERIFICAR]** formato do link na doc oficial (faq.whatsapp.com é montada por JS: o `curl` e o Chrome de teste não
+     trouxeram o texto em 2026-10-11).
+   - **Respostas do usuário (2026-10-11):** (1) **bloco no Painel** "Vencendo nos próximos N dias", agrupado por cliente
+     (uma mensagem por cliente com as cobranças dele e o total) + ação no menu "⋯" de cada cobrança em aberto; (2) **vários
+     modelos, um padrão**, escolhido na hora com prévia; (3) prazo **configurável, padrão 5 dias**; (4) **marcar "avisado em"**
+     (pode avisar de novo).
+   - **Rascunho do desenho (a apresentar):** perfil com "Mensagens de WhatsApp" (modelos: nome, texto, padrão) e "Avisar
+     com N dias"; variáveis `{cliente}` (apelido ou nome), `{itens}`, `{vencimento}`, `{total}`, `{prestador}`; modal com
+     modelo + prévia editável + "Abrir WhatsApp" (link com o telefone do cliente; sem celular: digitar ou "Copiar
+     mensagem"); ao abrir, grava `avisado_em` nas cobranças do grupo. Só cobranças já geradas (previstas não entram).
+     Banco: `modelos_mensagem`, `users.dias_aviso`, `cobrancas.avisado_em` → PORTÃO-BANCO.
+0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
+   cobrança, verificar se o vencimento cai num final de semana ou feriado e se sim, alterar o vencimento daquela
+   cobrança para o primeiro dia útil seguinte". Desenho aprovado em chat ("sim", 2026-10-11). **Spec escrita:**
+   `docs/superpowers/specs/2026-10-11-vencimento-em-dia-util-design.md` — **aprovada pelo usuário** (D1–D3 "CONCORDO": Sexta-feira
+   da Paixão automática; avulsas fora do ajuste em lote; boleto ajustado com aviso). **Plano escrito (2026-10-11):**
+   `.claude/plans/2026-10-11-vencimento-em-dia-util.md` — aguarda revisão do usuário; depois, execução.
+   Migração `feriados`: "SIM" antecipado do usuário; no portão, mostrar conexão/contagem/comando e confirmar.
+   Fontes legais conferidas no planalto.gov.br (Leis 662/1949, 6.802/1980, 9.093/1995, 14.759/2023).
+   - Fato do código: o vencimento sai só de `CalculadoraDePeriodos::periodo()` (usado por gerador, previsão,
+     encerramento e retroativos); ajustar ali mantém o teste-guarda `test_previsao_bate_com_o_que_o_gerador_cria`.
+     Não há nada de feriado no código.
+   - **Respostas do usuário:** (1) feriados = **nacionais + locais** (estaduais/municipais cadastrados por ele numa tela).
+     (2) locais = **da cidade/estado do prestador** (uma lista no perfil, vale para todas as cobranças).
+     (3) **Carnaval conta** (segunda e terça, pela Páscoa). (4) **Avulsa: avisar e sugerir** o próximo dia útil (a data
+     digitada é respeitada). (5) **Já geradas: ajustar as em aberto e não enviadas** (recibo refeito, mesmo número);
+     enviadas e pagas não mudam.
+   - **Rascunho do desenho (a apresentar ao usuário):** `DiasUteis` (puro, testável) com nacionais fixos + móveis pela
+     Páscoa + Carnaval + lista local do usuário; `CalculadoraDePeriodos::periodo()` passa o vencimento por ele (o período
+     não muda, só o vencimento; antecedência conta do vencimento ajustado; previsão igual ao gerador). Tela "Feriados"
+     no perfil: lista local (dia/mês todo ano, ou data móvel como Corpus Christi) e **prévia** das cobranças em aberto
+     não enviadas que caem em dia não útil, com "Ajustar" (padrão 9) — serve também para o ajuste inicial. Avulsa: aviso
+     com botão "Usar <data>". Verificação feita (ver spec, seção 2).
+1. **Revisão final da branch e merge na `main`** (Fases 17 a 22).
+2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
+   fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
+   data fica para a prorrogação.
+3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
+   Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
+4. **T17.17 — ordenar cobranças pelo cabeçalho** (vencimento, valor, cliente), modelo `tables-m01`.
+5. **T17.19 — seleção de várias cobranças e ação em lote com prévia** (padrão de usabilidade 9). Deixada para depois.
+6. **Minor adiados da Fase 20** (lista no "Registro de execução" do plano): 2 pedido a mais, 3 e-mail longo em Usuários a
+   390 px (só conferível com conta admin), 4 e 5 período inválido, 6 foco, 7 "Tentar de novo"; e o botão "Enviar" do
+   Painel a 390 px (`LinhaCobranca`). Minor adiados da Fase 19 no plano dela.
+7. **Validações antigas:** T17.9 (smoke do encerramento), T17.12 (corrigir/desfazer baixa), T17.14 (área mais larga).
+8. **Conferência pendente da Fase 19:** dar baixa e ver a lista recarregar (grava pagamento: pede autorização).
+9. **Sessões do SMOKE na tabela `sessions`** (deixadas por testes no navegador): apagar só com o "sim" do usuário.
+10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores (planejados).
+11. Segurança do PostgreSQL de dev (sem SSL, superusuário exposto): fora do repositório, ver Pegadinhas da skill.
+
+**Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
+fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →
+plano em `.claude/plans/` com fases/tarefas e estado → execução com TDD); escrita no banco sempre pelo PORTÃO-BANCO.
+
+**Fatos desta sessão que não estão no código**
+- **419 ao excluir produto (relato do usuário):**
+  - Causa observada: com a sessão vencida e o "lembrar de mim" válido, cada pedido simultâneo cria uma sessão nova.
+  - Correção: `bootstrap/app.php` → `respond()` (419 fora de JSON volta para a página com "A página expirou. Tente
+    de novo.").
+  - O 419 em si não foi reproduzido: **[INCONCLUSIVO]**. Detalhes nas Pegadinhas da skill.
+  - O teste no navegador deixou **5 sessões do usuário 2 (SMOKE)** na tabela `sessions` (18 linhas). Não foram
+    apagadas: apagar é escrita e exige o "sim" do usuário.
+- **Processos que podem ter ficado rodando:**
+  - `php artisan serve` na porta 8000;
+  - Chrome headless de teste na porta 9333 (`--user-data-dir` no scratchpad).
+
+  O usuário usa `http://recibos.test` (Laragon).
+- **Regras reforçadas nesta sessão:**
+  - autorização de escrita no banco vale para um comando só;
+  - sonda de CSRF segura: `DELETE /produtos-servicos/999999` (404 = token ok);
+  - no browser-use, `js()` não pode devolver promessa (usar `setTimeout(async…, 0); 1`).
 
 ## 1. Estado agora
 
@@ -40,6 +149,15 @@ sem depender do histórico.
   cadastrar item sem sair da tela, valor negociado visível e editável, incluir vários itens) e **animações** em
   transições, inclusões/remoções, inputs e selects — design curto aguardando aprovação. Depois: Fase 16 (importação
   de XML) e Contas a Pagar.
+
+### Atualização 2026-10-10 (Fase 17)
+- Fase 17 (facilidades de uso) e T17.8 (recibo lista os itens; descrição opcional) **mergeadas na `main`**
+  (último merge `2f30cef`). Suíte 271/271 (SQLite), JS 16/16.
+- **Próximo:** T17.9 (encerrar/recomeçar contrato com pro-rata) — desenho aprovado e detalhado em
+  `.claude/plans/2026-10-10-facilidades-de-uso.md`; nenhum código escrito. Branch `feat/modulo-cobranca-catalogo`.
+- Padrões de usabilidade obrigatórios: seção no topo da skill `recibos` + linha no `CLAUDE.md` do projeto.
+- `phpunit.xml` em SQLite; `recibos_teste` existe (esquema criado por engano numa execução, sem dados) — rodar a suíte
+  no PostgreSQL só com autorização. Servidor do smoke (`artisan serve` :8000) e Chrome 9333 podem estar abertos.
 
 ## 3. Pendências em aberto (de planos anteriores)
 

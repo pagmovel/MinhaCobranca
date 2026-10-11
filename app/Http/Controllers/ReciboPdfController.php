@@ -12,10 +12,10 @@ class ReciboPdfController extends Controller
 {
     public function __invoke(Request $request, int $recibo, RenderizadorDeRecibo $renderizador): Response
     {
-        $registro = $request->user()->recibos()->with('cobranca')->findOrFail($recibo);
+        $registro = $request->user()->recibos()->with('cobranca.cliente:id,apelido')->findOrFail($recibo);
 
         try {
-            return $renderizador->pdf($registro, CarbonImmutable::now())->stream($registro->nomeArquivo());
+            return $renderizador->pdf($registro, CarbonImmutable::now())->stream($registro->nomeArquivo($registro->cobranca->cliente->apelido));
         } catch (Throwable $erro) {
             report($erro);
 

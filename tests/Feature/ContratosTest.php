@@ -61,11 +61,11 @@ class ContratosTest extends TestCase
         Contrato::factory()->for($usuario)->for($cliente)->create(['valor_centavos' => 26060]);
 
         $this->actingAs($usuario)->get('/contratos')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('Contratos/Index')
-                ->has('contratos', 1)
-                ->where('contratos.0.cliente', $cliente->nome)
-                ->where('contratos.0.valor', '260,60'));
+            ->assertInertia(fn (Assert $page) => $page->component('Contratos/Index'));
+        $this->getJson('/contratos/dados')->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.cliente', $cliente->nome)
+            ->assertJsonPath('linhas.0.valor', '260,60');
     }
 
     public function test_cliente_de_outro_usuario_e_recusado(): void
@@ -147,7 +147,7 @@ class ContratosTest extends TestCase
         Cobranca::factory()->for($usuario)->for($cliente)->create(['contrato_id' => $contrato->id]);
 
         $this->put("/contratos/{$contrato->id}", $this->dados($cliente, ['modalidade' => 'pospago']))
-            ->assertSessionHasErrors(['modalidade' => 'Este contrato já tem cobranças. Para mudar a modalidade, encerre-o e crie outro.']);
+            ->assertSessionHasErrors(['data_inicio' => 'Confirme a correção: as cobranças pendentes deste contrato serão canceladas.']);
         $this->assertSame(Modalidade::Prepago, $contrato->fresh()->modalidade);
     }
 }

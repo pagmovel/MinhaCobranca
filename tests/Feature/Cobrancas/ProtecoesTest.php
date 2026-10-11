@@ -46,7 +46,7 @@ class ProtecoesTest extends TestCase
 
         $this->actingAs($usuario);
         $this->put("/contratos/{$contrato->id}", ['data_inicio' => '2026-10-01'] + $dados)
-            ->assertSessionHasErrors(['data_inicio' => 'Este contrato já tem cobranças. Para mudar o início ou a periodicidade, encerre-o e crie outro.']);
+            ->assertSessionHasErrors(['data_inicio' => 'Confirme a correção: as cobranças pendentes deste contrato serão canceladas.']);
         $this->put("/contratos/{$contrato->id}", ['periodicidade' => 'anual'] + $dados)
             ->assertSessionHasErrors('data_inicio');
 

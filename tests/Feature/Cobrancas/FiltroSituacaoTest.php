@@ -46,7 +46,8 @@ class FiltroSituacaoTest extends TestCase
     /** @return list<string> */
     private function valores(string $url): array
     {
-        $cobrancas = $this->actingAs($this->usuario)->get($url)->assertOk()->inertiaProps('cobrancas');
+        $this->actingAs($this->usuario)->get($url)->assertOk(); // a página gera as cobranças devidas
+        $cobrancas = $this->getJson(str_replace('/cobrancas', '/cobrancas/dados', $url))->assertOk()->json('linhas');
 
         return array_map(fn (array $cobranca) => $cobranca['valor'], $cobrancas);
     }
@@ -63,6 +64,15 @@ class FiltroSituacaoTest extends TestCase
     {
         $this->assertSame(['6,00'], $this->valores('/cobrancas?status=a_vencer'));
         $this->assertSame(['7,00'], $this->valores('/cobrancas?status=a_vencer&mes=2026-11'));
+    }
+
+    public function test_todas_deixa_canceladas_de_fora_salvo_quando_pedidas(): void
+    {
+        $this->assertSame(['2,00', '3,00', '4,00', '6,00'], $this->valores('/cobrancas'));
+        $this->assertSame(['2,00', '3,00', '4,00', '5,00', '6,00'], $this->valores('/cobrancas?canceladas=1'));
+        $this->assertSame(['5,00'], $this->valores('/cobrancas?status=cancelada'));
+        $this->assertTrue($this->get('/cobrancas?canceladas=1')->inertiaProps('filtros.canceladas'));
+        $this->assertFalse($this->get('/cobrancas')->inertiaProps('filtros.canceladas'));
     }
 
     public function test_filtros_antigos_continuam(): void

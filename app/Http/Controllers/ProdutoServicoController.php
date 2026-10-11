@@ -7,10 +7,10 @@ use App\Http\Requests\ProdutoServicoRequest;
 use App\Models\ContratoItem;
 use App\Models\ProdutoServico;
 use App\Rules\ValorEmReais;
+use App\Support\BlocoDePaginas;
 use App\Support\Busca;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
-use App\Support\Paginacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,43 +24,69 @@ class ProdutoServicoController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filtros = $request->validate([
-            'nome' => ['nullable', 'string', 'max:120'],
-            'tipo' => ['nullable', Rule::enum(TipoItem::class)],
-            'situacao' => ['nullable', Rule::in(['ativos', 'inativos'])],
+        // A lista vem por ajax de /produtos-servicos/dados; a página só abre a tela com os filtros.
+        return Inertia::render('ProdutosServicos/Index', [
+            'filtros' => $this->filtros($request),
+            'tipos' => TipoItem::opcoes(),
         ]);
+    }
 
-        $consulta = $request->user()->produtosServicos()->orderBy('nome');
+    /** Dados da lista (JSON, só leitura): um bloco de páginas, com quantos contratos ativos usam cada item. */
+    public function dados(Request $request): JsonResponse
+    {
+        $filtros = $this->filtros($request);
+        // Um contrato não repete o item (regra `distinct` em RegrasDeItens): contar itens é contar contratos.
+        $consulta = $request->user()->produtosServicos()->orderBy('nome')->orderBy('id')
+            ->withCount(['contratoItens as em_contratos_ativos' => fn ($itens) => $itens->whereHas('contrato', fn ($contrato) => $contrato->where('ativo', true))]);
 
-        if (filled($filtros['nome'] ?? null)) {
+        if ($filtros['nome'] !== '') {
             $consulta->whereRaw("lower(nome) like ? escape '\\'", [Busca::contem($filtros['nome'])]);
         }
-        if (filled($filtros['tipo'] ?? null)) {
+        if ($filtros['tipo'] !== '') {
             $consulta->where('tipo', $filtros['tipo']);
         }
-        if (filled($filtros['situacao'] ?? null)) {
+        if ($filtros['situacao'] !== '') {
             $consulta->where('ativo', $filtros['situacao'] === 'ativos');
         }
 
-        $pagina = $consulta->paginate(25)->withQueryString();
+        $bloco = BlocoDePaginas::de($consulta, $filtros['pagina'], $filtros['por_pagina']);
 
-        return Inertia::render('ProdutosServicos/Index', [
-            'itens' => collect($pagina->items())->map(fn (ProdutoServico $item) => [
+        return response()->json([
+            'linhas' => $bloco['itens']->map(fn (ProdutoServico $item) => [
                 'id' => $item->id,
                 'nome' => $item->nome,
                 'tipo' => $item->tipo->rotulo(),
                 'unidade' => $item->unidade,
                 'preco' => Dinheiro::formatar($item->preco_centavos),
                 'ativo' => $item->ativo,
-            ]),
-            'paginacao' => Paginacao::dados($pagina),
-            'filtros' => [
-                'nome' => $filtros['nome'] ?? '',
-                'tipo' => $filtros['tipo'] ?? '',
-                'situacao' => $filtros['situacao'] ?? '',
-            ],
-            'tipos' => TipoItem::opcoes(),
+                'em_contratos_ativos' => $item->em_contratos_ativos,
+            ])->all(),
+            'pagina' => $bloco['pagina'],
+            'filtros' => $filtros,
         ]);
+    }
+
+    /**
+     * Filtros da lista, já no formato da tela ('' = sem filtro).
+     *
+     * @return array{nome: string, tipo: string, situacao: string, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request): array
+    {
+        $validados = $request->validate([
+            'nome' => ['nullable', 'string', 'max:120'],
+            'tipo' => ['nullable', Rule::enum(TipoItem::class)],
+            'situacao' => ['nullable', Rule::in(['ativos', 'inativos'])],
+            ...BlocoDePaginas::regras(),
+        ]);
+
+        return [
+            'nome' => trim($validados['nome'] ?? ''),
+            'tipo' => $validados['tipo'] ?? '',
+            'situacao' => $validados['situacao'] ?? '',
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
     }
 
     /** Autosugestão dos formulários de contrato e cobrança: só itens ativos do usuário. */
@@ -134,7 +160,7 @@ class ProdutoServicoController extends Controller
 
         $usos = $item->contratoItens()
             ->whereHas('contrato', fn ($contrato) => $contrato->where('user_id', $request->user()->id)->where('ativo', true))
-            ->with('contrato.cliente:id,nome')
+            ->with('contrato.cliente:id,nome,apelido')
             ->get();
 
         return Inertia::render('ProdutosServicos/Reajuste', [
@@ -146,7 +172,7 @@ class ProdutoServicoController extends Controller
             ],
             'contratos' => $usos->map(fn (ContratoItem $uso) => [
                 'id' => $uso->contrato_id,
-                'cliente' => $uso->contrato->cliente->nome,
+                'cliente' => $uso->contrato->cliente->exibicao(),
                 'resumo' => strtok($uso->contrato->descricao, "\n"),
                 'quantidade' => ItensDeVenda::formatarQuantidade(ItensDeVenda::milesimos($uso->quantidade)),
                 'preco' => Dinheiro::formatar($uso->preco_unitario_centavos),

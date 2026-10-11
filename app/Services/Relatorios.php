@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\StatusCobranca;
+use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\CobrancaItem;
 use App\Models\ContratoItem;
@@ -14,6 +15,8 @@ use Illuminate\Support\Collection;
 /** Relatórios do módulo Cobrança: cada método devolve uma tabela (colunas, linhas e totais) para a tela e para o CSV. */
 final class Relatorios
 {
+    public function __construct(private PrevisaoDeCobrancas $previsao) {}
+
     public function faturamento(User $usuario, CarbonImmutable $de, CarbonImmutable $ate, CarbonImmutable $hoje): array
     {
         $fim = $ate->endOfMonth();
@@ -25,12 +28,18 @@ final class Relatorios
             ->where(fn ($consulta) => $consulta->where('vencimento', '<=', $fim)->orWhereBetween('pago_em', [$de, $fim]))
             ->get(['vencimento', 'pago_em', 'status', 'valor_centavos']);
 
+        // O que os contratos ainda vão emitir, por mês (m/Y). Só depois de hoje: até hoje a geração já criou as de verdade.
+        $naoEmitido = collect($this->previsao->entre($usuario, $de->max($hoje->addDay()), $fim))
+            ->groupBy(fn (array $prevista) => substr($prevista['vencimento'], 3))
+            ->map(fn (Collection $previstas) => $previstas->sum('valor_centavos'));
+
         $linhas = [];
         for ($mes = $de; $mes->lte($ate); $mes = $mes->addMonthNoOverflow()) {
             $inicioMes = $mes->startOfMonth();
             $fimMes = $mes->endOfMonth();
             $corte = $fimMes->startOfDay()->min($hoje);
-            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => 0, 'recebido' => 0, 'inadimplencia' => 0];
+            $previstoNaoEmitido = (int) ($naoEmitido[$mes->format('m/Y')] ?? 0);
+            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => $previstoNaoEmitido, 'nao_emitido' => $previstoNaoEmitido, 'recebido' => 0, 'inadimplencia' => 0];
 
             foreach ($cobrancas as $cobranca) {
                 /** @var Cobranca $cobranca */
@@ -51,10 +60,11 @@ final class Relatorios
 
         return $this->tabela(
             'Faturamento por período',
-            'Mês a mês: previsto (vencimentos), recebido (pagamentos do mês) e o que estava em atraso no fim do mês.',
+            'Mês a mês: previsto (vencimentos, incluindo o que os contratos ainda vão emitir), recebido (pagamentos do mês) e o que estava em atraso no fim do mês.',
             [
                 self::coluna('mes', 'Mês', 'texto'),
                 self::coluna('previsto', 'Previsto'),
+                self::coluna('nao_emitido', 'Ainda não emitido'),
                 self::coluna('recebido', 'Recebido'),
                 self::coluna('inadimplencia', 'Em atraso no fim do mês', soma: false),
             ],
@@ -77,7 +87,8 @@ final class Relatorios
 
         $ids = $pagas->keys()->merge($contratos->keys())->merge($vencidas->keys())->unique()->all();
 
-        $linhas = $usuario->clientes()->whereIn('id', $ids)->pluck('nome', 'id')
+        $linhas = $usuario->clientes()->whereIn('id', $ids)->get(['id', 'nome', 'apelido'])
+            ->mapWithKeys(fn (Cliente $cliente) => [$cliente->id => $cliente->exibicao()])
             ->map(function (string $nome, int $id) use ($pagas, $contratos, $vencidas, $hoje) {
                 $recebido = (int) ($pagas[$id]->recebido ?? 0);
                 $quantidade = (int) ($pagas[$id]->quantidade ?? 0);
@@ -109,7 +120,7 @@ final class Relatorios
         );
     }
 
-    public function porProduto(User $usuario, CarbonImmutable $de, CarbonImmutable $ate): array
+    public function porProduto(User $usuario, CarbonImmutable $de, CarbonImmutable $ate, CarbonImmutable $hoje): array
     {
         $fim = $ate->endOfMonth();
         $somaDosItens = fn () => CobrancaItem::query()
@@ -122,6 +133,17 @@ final class Relatorios
             ->whereBetween('cobrancas.pago_em', [$de, $fim])->pluck('soma', 'produto');
         $previsto = $somaDosItens()->where('cobrancas.status', '!=', StatusCobranca::Cancelada)
             ->whereBetween('cobrancas.vencimento', [$de, $fim])->pluck('soma', 'produto');
+
+        // Previstas (só depois de hoje) somam no previsto pelos itens; contrato sem itens vai para "Sem item".
+        $previstoSemItem = 0;
+        foreach ($this->previsao->entre($usuario, $de->max($hoje->startOfDay()->addDay()), $fim) as $prevista) {
+            if ($prevista['itens'] === []) {
+                $previstoSemItem += $prevista['valor_centavos'];
+            }
+            foreach ($prevista['itens'] as $item) {
+                $previsto[$item['produto_servico_id']] = (int) ($previsto[$item['produto_servico_id']] ?? 0) + $item['total_centavos'];
+            }
+        }
         $contratos = ContratoItem::query()
             ->join('contratos', 'contratos.id', '=', 'contrato_itens.contrato_id')
             ->where('contratos.user_id', $usuario->id)->where('contratos.ativo', true)
@@ -141,7 +163,7 @@ final class Relatorios
 
         $semItens = fn () => $usuario->cobrancas()->whereDoesntHave('itens');
         $semItemRecebido = (int) $semItens()->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$de, $fim])->sum('valor_centavos');
-        $semItemPrevisto = (int) $semItens()->where('status', '!=', StatusCobranca::Cancelada)->whereBetween('vencimento', [$de, $fim])->sum('valor_centavos');
+        $semItemPrevisto = (int) $semItens()->where('status', '!=', StatusCobranca::Cancelada)->whereBetween('vencimento', [$de, $fim])->sum('valor_centavos') + $previstoSemItem;
 
         if ($semItemRecebido > 0 || $semItemPrevisto > 0) {
             $linhas[] = [
@@ -154,7 +176,7 @@ final class Relatorios
 
         return $this->tabela(
             'Receita por produto ou serviço',
-            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período), com os contratos ativos que usam cada item.',
+            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período, incluindo o que os contratos ainda vão emitir), com os contratos ativos que usam cada item.',
             [
                 self::coluna('item', 'Produto ou serviço', 'texto'),
                 self::coluna('recebido', 'Recebido'),
@@ -169,11 +191,11 @@ final class Relatorios
     {
         $hoje = $hoje->startOfDay();
 
-        $linhas = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)->with('cliente:id,nome')
+        $linhas = $usuario->cobrancas()->where('status', StatusCobranca::Pendente)->with('cliente:id,nome,apelido')
             ->get(['id', 'cliente_id', 'vencimento', 'valor_centavos'])
             ->groupBy('cliente_id')
             ->map(function (Collection $cobrancas) use ($hoje) {
-                $linha = ['cliente' => $cobrancas->first()->cliente->nome, 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0];
+                $linha = ['cliente' => $cobrancas->first()->cliente->exibicao(), 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0];
 
                 foreach ($cobrancas as $cobranca) {
                     $dias = (int) $hoje->diffInDays($cobranca->vencimento); // negativo = vencida

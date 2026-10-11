@@ -150,6 +150,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Projeto: Gerenciador de Cobranças
 
 - Skill do domínio: `.claude/skills/recibos/SKILL.md` (ler inteira antes de mexer).
+- **Usabilidade é o foco principal do produto:** antes de criar ou mexer em qualquer tela, aplicar a seção
+  "Padrões de usabilidade (obrigatórios)" da skill — nunca mandar o usuário sair da tela para cadastrar algo,
+  erro sempre com a saída na tela, autosugestão com indicador, máscaras, animações, prévia antes de ação em lote.
 - Plano: `.claude/plans/2026-10-09-sistema-recibos.md` · Spec: `docs/superpowers/specs/2026-10-09-sistema-recibos-design.md`
 - Memória do projeto: `.claude/MEMORY.md`.
 

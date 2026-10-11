@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,4 +27,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // Token CSRF vencido (sessão expirou ou trocou): em vez da janela "419 Page Expired" do Inertia, volta para a
+        // mesma página com o aviso; ela recarrega com o token novo e o segundo clique funciona (padrão da doc do Inertia v3).
+        // Pedido JSON continua 419: enviarJson/buscarJson já mostram a mensagem certa. 303 (não o 302 padrão do back()):
+        // a especificação Fetch só reescreve POST para GET em 301/302; em DELETE/PUT/PATCH o navegador repetiria o
+        // mesmo método no destino (ex.: DELETE em `/produtos-servicos`, que só aceita GET/POST, dando 405). 303
+        // reescreve para GET em qualquer método.
+        $exceptions->respond(function (Response $resposta, Throwable $erro, Request $request) {
+            if ($resposta->getStatusCode() === 419 && ! $request->expectsJson()) {
+                return back(303)->with('erro', 'A página expirou. Tente de novo.');
+            }
+
+            return $resposta;
+        });
     })->create();

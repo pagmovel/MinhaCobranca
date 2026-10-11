@@ -32,6 +32,43 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). Sem mudança no banco (nenhu
 | T17.6 | Animações padronizadas: linhas de itens e chaves PIX, listas de sugestão, avisos, troca de página, total | testada (navegador: 6 telas animadas sem erro no console; filtro preserva estado; build ok) |
 | T17.7 | Smoke no navegador (1280 e 390 px), revisão, merge e push | testada (revisão opus: 0 Critical, 2 Important + 1 Minor de segurança corrigidos; suíte 264/264; JS 16/16; navegador ok) — merge na main |
 | T17.8 | Descrição opcional; recibo lista os itens (`Nome: q unidade × R$ p = R$ t`) e a descrição complementar abaixo; limite de 25 linhas somando os dois (pedido do usuário, aprovado 2026-10-10) | testada (suíte 271/271; navegador ok) |
+| T17.9 | Encerrar contrato (botão visível) e "Recomeçar a partir desta data", com prévia e pro-rata — desenho aprovado abaixo | concluída; testada na suíte (293/293, JS 16/16, build ok) com as correções da revisão e o encerramento agendado; migração aplicada no dev (autorizada); smoke pendente (pede autorização: grava dados do SMOKE) |
+| T17.10 | Corrigir início errado de contrato sem cobrança paga + perguntar na hora se gera os períodos retroativos (também ao criar contrato com início no passado) | concluída; testada na suíte (303/303, JS 16/16, build ok; `tests/Feature/CorrecaoDoInicioTest.php`); migração aplicada no dev com autorização (contratos 6 linhas, migrations 14→15); **validada** pelo usuário em 2026-10-10 ("aqui funcionou"): contrato nº 6 corrigido para 17/01/2026, 10 cobranças geradas (jan–out, retroativas escolhidas), a antiga cancelada desvinculada |
+| T17.11 | Renovar ou prorrogar contrato perto do fim, com os mesmos dados e permitindo alterações antes de concluir | pendente (desenho a fazer com o usuário) |
+| T17.12 | Corrigir pagamento (data) e desfazer baixa, com senha + motivo; auditoria das ações sensíveis; histórico na cobrança e tela "Auditoria" | concluída; testada na suíte (313/313, JS 16/16, build ok; `tests/Feature/AuditoriaTest.php`); migração `auditorias` aplicada no dev com autorização em 2026-10-11 (migrations 15→16, tabela vazia); falta validação do usuário |
+| T17.13 | Apelido (nome curto) opcional no cliente — ex.: sindicato com CNPJ/endereço da sede, serviço prestado à regional ARACI/BA | **validada** (2026-10-11) — Fase 21, `.claude/plans/2026-10-11-apelido-do-cliente.md`. Mudança do usuário: o apelido **não** sai no recibo; botão "Incluir o apelido na descrição"; nome do arquivo PDF usa o apelido |
+| T17.14 | Área de conteúdo mais larga: `<main>` sem `mx-auto` e sem limite de largura (o limite de 1536 px ainda sobrava à direita); formulários seguem em `max-w-3xl` | concluída (build ok); falta validação do usuário |
+| T17.15 | Cobranças em tabela: colunas (cliente, período, vencimento, valor, situação, recibo), uma ação principal por linha + menu "⋯", faixa de ação abaixo da linha, cartões em 390 px. **Junto (pedido do usuário, 2026-10-11):** checkbox "Incluir canceladas" no filtro — "Todas" deixa as canceladas de fora sem ele; "Canceladas" continua no select | **validada** pelo usuário em 2026-10-11 ("OK", print da tabela com previstas); testada (PHP 332/332, JS 28/28, build ok) |
+| T17.16 | Abas de situação com contagem e soma (Vencidas · Hoje · A vencer · Pagas) + rodapé com total em aberto × recebido | **parcial:** rodapé de totais entregue na Fase 19 (validado); **abas de situação com contagem e soma continuam pendentes** (modelo `tables-m04`) |
+| T17.17 | Ordenar cobranças pelo cabeçalho (vencimento, valor, cliente) | pendente — aprovada em 2026-10-11 (modelo `tables-m01`) |
+| T17.18 | Clientes e contratos no mesmo componente de tabela; situação do contrato em etiqueta (Ativo / Encerra em … / Encerrado) | **validada** (2026-10-11) — feita na Fase 20 (todas as listas em tabela, situação do contrato em etiqueta) |
+| T17.19 | Seleção de várias cobranças e ação em lote com prévia | pendente — deixada para depois (item 6) |
+
+### Decisões de 2026-10-10, após a revisão da T17.9 (respostas do usuário)
+- **Relato:** contrato nº 6 (usuário 1) criado com início 10/10/2026 em vez de 17/01/2026; a única cobrança está
+  cancelada, mas a trava e o recomeço (só aceita início posterior) não deixavam corrigir.
+- **Corrigir direto:** sem cobrança **paga**, o início/periodicidade/modalidade podem mudar; a prévia mostra as pendentes
+  que serão canceladas (número do recibo não volta) e as canceladas são desvinculadas do contrato (`contrato_id` nulo)
+  para não bloquear períodos novos no índice único. Com cobrança paga: só recomeçar (início posterior).
+- **Retroativos — perguntar na hora:** quando o início fica no passado, a tela pergunta se gera os períodos anteriores ao
+  atual; a escolha é guardada no contrato (coluna nova `cobrar_a_partir_de`, data, nula = desde o início) e respeitada
+  pelo gerador. Vale ao corrigir e ao criar contrato.
+- **Vencida de período que começa depois do fim → cancelada** ("vencida continua" só para períodos até o fim).
+- ~~Data de fim ao encerrar: até 1 ano à frente~~ — o usuário reconsiderou ("não sei se é uma boa ideia limitar").
+  **Decisão final: fim no futuro = encerramento agendado, sem limite.** O contrato continua ativo com `data_fim`; as
+  cobranças saem no ritmo de sempre (sem recibos adiantados); o último período sai proporcional ou não sai, conforme a
+  escolha guardada na coluna nova `contratos.ultimo_periodo` (`inteiro` padrão — contratos antigos e o campo "Fim do
+  contrato" do formulário não mudam —, `proporcional`, `nao_cobrar`), respeitada pelo `GeradorDeCobrancas::criar`.
+  Já emitidas são acertadas na hora (depois do fim: canceladas; em curso: proporcional/cancelada). Fim até hoje encerra
+  na hora, como antes. Mesma migração da T17.10 (PORTÃO-BANCO).
+- **Revisão — demais correções:** recibo proporcional sai **sem a linha digitável** do boleto antigo (o valor mudou; a
+  prévia avisa); aba antiga não reativa contrato encerrado (reativar só com o campo explícito `reativar`); botão de
+  confirmar travado enquanto a prévia se atualiza; escolha do período em curso só quando muda algo; sem prévia com
+  início vazio. Adiado (menor): linha "Proporcional" pode passar das 25 linhas do recibo.
+- **Encerramento agendado não é reagendado** (`ultimo_periodo` ≠ `inteiro` → erro): a cobrança em curso já ficou
+  proporcional e reagendar reduziria a quantidade já reduzida. Mudar a data entra na prorrogação (T17.11).
+- Pendência para a T17.11: contrato com fim já passado continua `ativo` na lista e no filtro (já acontecia com o campo
+  "Fim do contrato"); tratar junto com renovar/prorrogar.
 
 Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smoke) → `validada` (usuário confirmou).
 
@@ -51,3 +88,70 @@ Estados: `pendente` → `concluída` (código pronto) → `testada` (suíte/smok
   (M5) `temClientes` removido; (M6) linha que sai de `ul` fica `absolute`; (M7) teste com cabeçalhos reais do Inertia.
 - Não julgados (decisão): durações das animações (regra 5), `color-mix()` (navegadores suportados não definidos),
   vários `Modal` por linha (só renderizam abertos), heurística CPF/CNPJ do cadastro rápido de cliente.
+
+## T17.9 — Encerrar e recomeçar contrato (desenho aprovado pelo usuário em 2026-10-10)
+**Problema relatado:** ao mudar a data de início de contrato com cobranças aparece "Este contrato já tem cobranças.
+Para mudar o início ou a periodicidade, encerre-o e crie outro." e não há nada na tela para encerrar (o encerramento
+hoje é a caixa "Contrato ativo (desmarque para encerrar)" no rodapé) nem para fazer a mudança.
+
+**Decisões do usuário:**
+1. Botão **"Encerrar contrato"** visível (`botao-perigo`, confirmação no 2º clique), com campo **data de fim**
+   (padrão hoje, ≥ início do contrato) e **prévia** do que acontece antes de confirmar.
+2. Na trava de início/periodicidade: aviso ao lado do campo + botão **"Encerrar este contrato e criar um novo a partir
+   de DD/MM/AAAA"** (recomeçar): encerra o atual com fim = véspera do novo início e cria outro copiando cliente, itens
+   (preços combinados), descrição, modalidade, dia de vencimento e forma de pagamento; muda só início/periodicidade;
+   leva ao contrato novo. Em contrato com cobranças, o campo de início avisa antes ("mudar cria um contrato novo").
+   Novo início anterior/igual ao atual: recusar com explicação (sobreporia períodos já cobrados).
+3. **Cobranças pendentes do contrato ao encerrar** (pagas e canceladas não mudam):
+   - vencida ou vencendo hoje → **continua em aberto** (é dívida; "só interessam as vencidas");
+   - período inteiro **até** a data de fim, ainda a vencer (ex.: pós-pago) → continua (serviço prestado);
+   - período que começa **depois** da data de fim → **cancelada**;
+   - período que **contém** a data de fim → o usuário escolhe **pro-rata** (padrão) ou **cancelar**.
+   - períodos até a data de fim **ainda não emitidos** (pós-pago emite perto do vencimento) → emitidos agora
+     (inteiros; o último proporcional ou não emitido, conforme a escolha).
+4. **Pro-rata:** dias usados = início do período até a data de fim (inclusive) ÷ dias do período (inclusive).
+   Quantidade de cada item × usados ÷ dias, 3 casas, meio-para-cima: `intdiv(2·q·usados + dias, 2·dias)` (mín. 1);
+   total pela conta de sempre (`ItensDeVenda::total`); cobrança antiga sem itens: valor × usados ÷ dias.
+   Descrição ganha a linha "Proporcional: 18 de 31 dias (01/10/2026 a 18/10/2026)"; `periodo_fim` = data de fim.
+   Exemplo aprovado: 1 mês × R$ 247,57, 18/31 → quantidade 0,581 → R$ 143,84.
+   Não enviada → ajusta e refaz o recibo (mesmo número). Já enviada → cancela a original e emite avulsa nova
+   (`contrato_id` nulo: o índice único `(contrato_id, periodo_inicio)` bloquearia a cópia).
+5. Fora do escopo: devolução de período já pago (pré-pago) quando o contrato termina antes.
+
+**Rascunho técnico (a confirmar no código):** serviço `App\Services\EncerradorDeContratos` com `plano()` (lista de
+ações manter/cancelar/ajustar/reemitir/emitir — a mesma usada na prévia e na execução) e `encerrar()`; helper
+`App\Support\ProRata`; extrair do `GeradorDeCobrancas` a criação de cobrança de um período para reaproveitar;
+rotas `GET /contratos/{contrato}/encerramento?fim=` (prévia JSON), `POST /contratos/{contrato}/encerrar`
+(`fim`, `em_curso`=proporcional|cancelar), `POST /contratos/{contrato}/recomecar` (`data_inicio`, `periodicidade`,
+`em_curso`); contrato encerrado: `ativo=false`, `data_fim=fim`. Calculadora: `devidos()` com `hoje` distante e
+`dataFim` lista todos os períodos até o fim. Sem migração. TDD; exemplo de teste: hoje 15/10/2026, contrato mensal
+pré-pago desde 01/08 — set/vencida mantém; out (01–31/10, vence 20/10) com fim 18/10 → 143,84; nov cancelada.
+
+## T17.12 — Corrigir/desfazer baixa com senha e auditoria (desenho aprovado pelo usuário em 2026-10-10)
+**Relato:** "Dei baixa na data errada, não tem como corrigir." Sugestão do usuário: permitir a correção pedindo a
+senha e registrando em auditoria a alteração ou exclusão.
+**Decisões:** (1) Cobrança paga ganha **"Corrigir pagamento"** (troca `pago_em`, até hoje) e **"Desfazer baixa"**
+(volta a pendente, `pago_em` nulo), na própria linha, com **senha** (`current_password`, rota com limite de tentativas)
+e **motivo obrigatório**. (2) Tabela nova **`auditorias`** só de inclusão: usuário, ação, alvo (cobrança/contrato),
+resumo legível, antes/depois (JSON), motivo, IP, data. (3) Registra **todas as ações sensíveis**: corrigir/desfazer
+baixa (pedem senha) e, só registrando, cancelar e editar cobrança, encerrar, recomeçar e corrigir contrato.
+(4) Histórico **na linha da cobrança** ("Pagamento corrigido em 10/10/2026 (antes: 17/06/2026)") e **tela
+"Auditoria"** no menu com filtro por período. (5) Recibo pago já enviado: a linha avisa que o cliente recebeu a data
+antiga. Efeito conhecido: o "recebido" (caixa, por `pago_em`) muda de mês ao corrigir — esperado.
+
+## T17.13 — Apelido do cliente (decisões do usuário em 2026-10-11)
+**Pedido:** campo opcional de apelido/nome curto. Ex.: sindicato com CNPJ e endereço da sede, mas o serviço é prestado
+à regional ARACI/BA.
+**Decisões:** (1) **Telas e recibo:** listas, filtros e autosugestão mostram o apelido no lugar do nome (nome oficial
+embaixo, menor) e a busca acha pelos dois; no recibo o tomador continua com nome e CNPJ oficiais e o apelido sai numa
+linha "Unidade atendida: …". (2) **Mesmo CNPJ em mais de um cadastro, se o apelido for diferente** (cada regional vira
+um cliente, com contratos e relatórios próprios).
+**Rascunho técnico (a confirmar no código):** `clientes.apelido` texto, vazio por padrão (`''`, não nulo — índice único
+`(user_id, documento, apelido)` funciona igual no PostgreSQL e no SQLite; com nulo, dois cadastros sem apelido passariam);
+trocar o único `(user_id, documento)`; regra de unicidade no request com o apelido; snapshot do tomador com o apelido
+(recibo antigo sem a chave sai igual). **Já há recibo emitido em produção** (resposta do usuário em 2026-10-11): os
+`-v1` ficam intactos e a linha "Unidade atendida" entra em modelos novos `webiss-v2`/`danfse-v2`. **[A VERIFICAR]** se
+a linha cabe na página (`AmostrasVisuaisTest`).
+Migração: PORTÃO-BANCO.
+**Mudança do usuário (2026-10-11):** o apelido **não sai no recibo**; opcional, um botão no contrato/cobrança põe o
+apelido na primeira linha da descrição. Executado na Fase 21 (`.claude/plans/2026-10-11-apelido-do-cliente.md`).

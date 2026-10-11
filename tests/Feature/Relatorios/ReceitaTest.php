@@ -10,7 +10,6 @@ use App\Models\ProdutoServico;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ReceitaTest extends TestCase
@@ -56,12 +55,11 @@ class ReceitaTest extends TestCase
         $this->cobranca($carla, '2025-05-10', 9000, '2025-05-10'); // paga antes do período: fora
         Cobranca::factory()->create(['vencimento' => '2026-09-01', 'valor_centavos' => 99900]); // de outro usuário
 
-        $this->actingAs($this->usuario)->get('/relatorios/clientes?de=2026-01&ate=2026-10')
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('tabela.linhas', 2)
-                ->where('tabela.linhas.0', ['cliente' => 'Ana Contabilidade', 'recebido' => 40000, 'contratos' => 1, 'media' => 20000, 'vencidas' => 0, 'atraso' => 0])
-                ->where('tabela.linhas.1', ['cliente' => 'Bruno Mecânica', 'recebido' => 0, 'contratos' => 0, 'media' => 0, 'vencidas' => 2, 'atraso' => 15])
-                ->where('tabela.totais', ['cliente' => 'Total', 'recebido' => 40000, 'contratos' => 1, 'media' => null, 'vencidas' => 2, 'atraso' => null]));
+        $this->actingAs($this->usuario)->getJson('/relatorios/clientes/dados?de=2026-01&ate=2026-10')->assertOk()
+            ->assertJsonCount(2, 'linhas')
+            ->assertJsonPath('linhas.0', ['cliente' => 'Ana Contabilidade', 'recebido' => 40000, 'contratos' => 1, 'media' => 20000, 'vencidas' => 0, 'atraso' => 0])
+            ->assertJsonPath('linhas.1', ['cliente' => 'Bruno Mecânica', 'recebido' => 0, 'contratos' => 0, 'media' => 0, 'vencidas' => 2, 'atraso' => 15])
+            ->assertJsonPath('totais', ['cliente' => 'Total', 'recebido' => 40000, 'contratos' => 1, 'media' => null, 'vencidas' => 2, 'atraso' => null]);
     }
 
     public function test_receita_por_produto_bate_com_o_total_pago(): void
@@ -88,16 +86,30 @@ class ReceitaTest extends TestCase
         $comItens('2026-10-12', null, [[$suporte, 7000]], cancelada: true);               // cancelada: fora
         $this->cobranca($cliente, '2026-10-01', 7000, '2026-10-02');                      // anterior ao catálogo
 
-        $this->actingAs($this->usuario)->get('/relatorios/produtos?de=2026-10&ate=2026-10')
-            ->assertInertia(fn (Assert $page) => $page
-                ->has('tabela.linhas', 3)
-                ->where('tabela.linhas.0', ['item' => 'Hospedagem', 'recebido' => 10000, 'previsto' => 30000, 'contratos' => 2])
-                ->where('tabela.linhas.1', ['item' => 'Suporte', 'recebido' => 5000, 'previsto' => 5000, 'contratos' => 0])
-                ->where('tabela.linhas.2', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 7000, 'previsto' => 7000, 'contratos' => 0])
-                ->where('tabela.totais.recebido', 22000));
+        $this->actingAs($this->usuario)->getJson('/relatorios/produtos/dados?de=2026-10&ate=2026-10')->assertOk()
+            ->assertJsonCount(3, 'linhas')
+                // Previsto: 30.000 emitidos + 2 previstas de 21/10 (contratos ativos, ainda não emitidas).
+            ->assertJsonPath('linhas.0', ['item' => 'Hospedagem', 'recebido' => 10000, 'previsto' => 50000, 'contratos' => 2])
+            ->assertJsonPath('linhas.1', ['item' => 'Suporte', 'recebido' => 5000, 'previsto' => 5000, 'contratos' => 0])
+            ->assertJsonPath('linhas.2', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 7000, 'previsto' => 7000, 'contratos' => 0])
+            ->assertJsonPath('totais.recebido', 22000);
 
         // Bate com a lista de cobranças: tudo o que foi pago no período.
         $this->assertSame(22000, (int) $this->usuario->cobrancas()->where('status', 'paga')->sum('valor_centavos'));
+    }
+
+    public function test_previsto_por_produto_inclui_as_previstas(): void
+    {
+        $hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem']);
+        Contrato::factory()->for($this->usuario)->create()->itens()->create([
+            'produto_servico_id' => $hospedagem->id, 'quantidade' => '2.000', 'preco_unitario_centavos' => 5000, 'principal' => true, 'ordem' => 0,
+        ]);
+        Contrato::factory()->for($this->usuario)->create(); // sem itens, R$ 260,60
+
+        $this->actingAs($this->usuario)->getJson('/relatorios/produtos/dados?de=2026-11&ate=2026-11')->assertOk()
+            ->assertJsonCount(2, 'linhas')
+            ->assertJsonPath('linhas.0', ['item' => 'Hospedagem', 'recebido' => 0, 'previsto' => 10000, 'contratos' => 1])
+            ->assertJsonPath('linhas.1', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 0, 'previsto' => 26060, 'contratos' => 0]);
     }
 
     public function test_csv_neutraliza_formula_no_nome_do_cliente(): void
@@ -108,5 +120,24 @@ class ReceitaTest extends TestCase
         $csv = $this->actingAs($this->usuario)->get('/relatorios/clientes?de=2026-10&ate=2026-10&formato=csv')->streamedContent();
 
         $this->assertStringContainsString("\n\"'=HYPERLINK(\"\"http://golpe.example\"\")\";100,00;", $csv);
+    }
+
+    public function test_por_cliente_pagina_com_os_totais_do_relatorio_inteiro_e_csv_inteiro(): void
+    {
+        foreach (range(1, 30) as $numero) {
+            $cliente = Cliente::factory()->for($this->usuario)->create(['nome' => sprintf('Cliente %02d', $numero)]);
+            $this->cobranca($cliente, '2026-10-05', 1000, '2026-10-05');
+        }
+        $this->actingAs($this->usuario);
+
+        $primeira = $this->getJson('/relatorios/clientes/dados?de=2026-10&ate=2026-10&por_pagina=25')->assertOk();
+        $segunda = $this->getJson('/relatorios/clientes/dados?de=2026-10&ate=2026-10&por_pagina=25&pagina=2')->assertOk();
+
+        $primeira->assertJsonPath('pagina.total', 30)->assertJsonCount(30, 'linhas'); // o bloco de 4 páginas cobre as 30
+        $segunda->assertJsonPath('pagina.inicio', 2)->assertJsonCount(5, 'linhas');
+        $this->assertSame($primeira->json('totais'), $segunda->json('totais'));
+        $this->assertSame(30000, $primeira->json('totais.recebido'));
+        $csv = $this->get('/relatorios/clientes?de=2026-10&ate=2026-10&formato=csv')->streamedContent();
+        $this->assertSame(32, substr_count($csv, "\n")); // cabeçalho + 30 clientes + total
     }
 }

@@ -52,6 +52,17 @@ class RenderizadorDeReciboTest extends TestCase
         }
     }
 
+    /** Decisão do usuário (2026-10-11): o apelido é só das telas; no recibo, só se ele o puser na descrição. */
+    public function test_apelido_do_cliente_nao_vai_para_o_recibo(): void
+    {
+        $recibo = $this->recibo(['nome' => 'Zeta Sindicato', 'apelido' => 'Regional Araci']);
+
+        $this->assertArrayNotHasKey('apelido', $recibo->snapshot['tomador']);
+        $html = view($recibo->modelo->view(), $this->renderizador->dados($recibo, CarbonImmutable::now()))->render();
+        $this->assertStringContainsString('Zeta Sindicato', $html);
+        $this->assertStringNotContainsString('Regional Araci', $html);
+    }
+
     public function test_monta_endereco_e_documento_como_na_nota(): void
     {
         $recibo = $this->recibo(['documento' => '11222333000181', 'complemento' => null]);

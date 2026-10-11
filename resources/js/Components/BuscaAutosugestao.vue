@@ -186,6 +186,8 @@ onBeforeUnmount(() => {
                     <slot v-else name="opcao" :opcao="opcao">
                         <span class="font-semibold">{{ opcao.nome }}</span>
                         <span class="ml-2 font-estreita text-xs text-grafite/70">{{ opcao.documento }}</span>
+                        <!-- Cliente com apelido: o nome oficial embaixo, menor (T17.13). -->
+                        <span v-if="opcao.nome_oficial" class="block text-xs text-grafite/70">{{ opcao.nome_oficial }}</span>
                     </slot>
                 </li>
             </ul>

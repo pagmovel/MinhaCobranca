@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\StatusCobranca;
 use App\Http\Requests\ClienteRequest;
 use App\Models\Cliente;
+use App\Services\EmissorDeRecibos;
+use App\Support\BlocoDePaginas;
 use App\Support\Busca;
-use App\Support\Documento;
-use App\Support\Paginacao;
 use App\Support\Ufs;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,29 +22,34 @@ class ClienteController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filtros = $request->validate([
-            'q' => ['nullable', 'string', 'max:255'],
-            'cidade' => ['nullable', 'string', 'max:255'],
-            'uf' => ['nullable', Rule::in(Ufs::TODAS)],
-            'modelo' => ['nullable', Rule::enum(FamiliaModelo::class)],
-            'contrato' => ['nullable', Rule::in(['com', 'sem'])],
+        // A lista vem por ajax de /clientes/dados; a página só abre a tela com os filtros.
+        return Inertia::render('Clientes/Index', [
+            'filtros' => $this->filtros($request),
+            'ufs' => Ufs::TODAS,
+            'modelos' => FamiliaModelo::opcoes(),
         ]);
+    }
 
-        $consulta = $request->user()->clientes()->orderBy('nome')->orderBy('id');
+    /** Dados da lista (JSON, só leitura): um bloco de páginas. */
+    public function dados(Request $request): JsonResponse
+    {
+        $filtros = $this->filtros($request);
+        $consulta = $request->user()->clientes()->ordemDeExibicao()->orderBy('id')
+            ->withCount(['contratos as contratos_ativos' => fn ($contratos) => $contratos->where('ativo', true)]);
 
-        if (filled($filtros['q'] ?? null)) {
+        if ($filtros['q'] !== '') {
             $consulta->comTermo($filtros['q']);
         }
-        if (filled($filtros['cidade'] ?? null)) {
+        if ($filtros['cidade'] !== '') {
             $consulta->whereRaw("lower(cidade) like ? escape '\\'", [Busca::contem($filtros['cidade'])]);
         }
-        if (filled($filtros['uf'] ?? null)) {
+        if ($filtros['uf'] !== '') {
             $consulta->where('uf', $filtros['uf']);
         }
-        if (filled($filtros['modelo'] ?? null)) {
+        if ($filtros['modelo'] !== '') {
             $consulta->where('modelo', $filtros['modelo']);
         }
-        if (filled($filtros['contrato'] ?? null)) {
+        if ($filtros['contrato'] !== '') {
             $ativo = fn ($contratos) => $contratos->where('ativo', true);
 
             if ($filtros['contrato'] === 'com') {
@@ -52,30 +59,48 @@ class ClienteController extends Controller
             }
         }
 
-        $pagina = $consulta->paginate(25)->withQueryString();
+        $bloco = BlocoDePaginas::de($consulta, $filtros['pagina'], $filtros['por_pagina']);
 
-        return Inertia::render('Clientes/Index', [
-            'clientes' => collect($pagina->items())->map(fn (Cliente $cliente) => [
-                'id' => $cliente->id,
-                'nome' => $cliente->nome,
-                'documento' => Documento::formatar($cliente->documento),
+        return response()->json([
+            'linhas' => $bloco['itens']->map(fn (Cliente $cliente) => [
+                ...$cliente->paraBusca(),
                 'cidade' => collect([$cliente->cidade, $cliente->uf])->filter()->implode(' / '),
                 'modelo' => $cliente->modelo->rotulo(),
-            ]),
-            'paginacao' => Paginacao::dados($pagina),
-            'filtros' => [
-                'q' => $filtros['q'] ?? '',
-                'cidade' => $filtros['cidade'] ?? '',
-                'uf' => $filtros['uf'] ?? '',
-                'modelo' => $filtros['modelo'] ?? '',
-                'contrato' => $filtros['contrato'] ?? '',
-            ],
-            'ufs' => Ufs::TODAS,
-            'modelos' => FamiliaModelo::opcoes(),
+                'contratos_ativos' => $cliente->contratos_ativos,
+            ])->all(),
+            'pagina' => $bloco['pagina'],
+            'filtros' => $filtros,
         ]);
     }
 
-    /** Autosugestão: nome (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */
+    /**
+     * Filtros da lista, já no formato da tela ('' = sem filtro).
+     *
+     * @return array{q: string, cidade: string, uf: string, modelo: string, contrato: string, pagina: int, por_pagina: int}
+     */
+    private function filtros(Request $request): array
+    {
+        $validados = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'cidade' => ['nullable', 'string', 'max:255'],
+            'uf' => ['nullable', Rule::in(Ufs::TODAS)],
+            'modelo' => ['nullable', Rule::enum(FamiliaModelo::class)],
+            'contrato' => ['nullable', Rule::in(['com', 'sem'])],
+            ...BlocoDePaginas::regras(),
+        ]);
+
+        return [
+            'q' => trim($validados['q'] ?? ''),
+            'cidade' => trim($validados['cidade'] ?? ''),
+            'uf' => $validados['uf'] ?? '',
+            'modelo' => $validados['modelo'] ?? '',
+            'contrato' => $validados['contrato'] ?? '',
+            'pagina' => (int) ($validados['pagina'] ?? 1),
+            'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
+        ];
+    }
+
+    /** Autosugestão: nome ou apelido (sem diferença de maiúsculas) ou começo do documento; só clientes do usuário. */
     public function busca(Request $request): JsonResponse
     {
         $termo = trim((string) $request->query('q', ''));
@@ -87,15 +112,9 @@ class ClienteController extends Controller
 
         $clientes = $request->user()->clientes()
             ->when($termo !== '', fn ($consulta) => $consulta->comTermo($termo))
-            ->orderBy('nome')->limit(10)->get(['id', 'nome', 'documento']);
+            ->ordemDeExibicao()->limit(10)->get(['id', 'nome', 'apelido', 'documento']);
 
-        return response()->json($clientes->map(fn (Cliente $cliente) => $this->paraBusca($cliente)));
-    }
-
-    /** @return array{id: int, nome: string, documento: string} */
-    private function paraBusca(Cliente $cliente): array
-    {
-        return ['id' => $cliente->id, 'nome' => $cliente->nome, 'documento' => Documento::formatar($cliente->documento)];
+        return response()->json($clientes->map(fn (Cliente $cliente) => $cliente->paraBusca()));
     }
 
     public function create(Request $request): Response
@@ -105,11 +124,11 @@ class ClienteController extends Controller
 
     public function store(ClienteRequest $request): RedirectResponse|JsonResponse
     {
-        $cliente = $request->user()->clientes()->create($request->validated());
+        $cliente = $request->user()->clientes()->create($request->safe()->except('regerar_enviadas'));
 
         // Cadastro rápido (modal no contrato/cobrança): devolve o cliente pronto para ser escolhido.
         if ($request->expectsJson()) {
-            return response()->json($this->paraBusca($cliente), 201);
+            return response()->json($cliente->paraBusca(), 201);
         }
 
         return redirect('/clientes')->with('sucesso', 'Cliente salvo.');
@@ -120,11 +139,23 @@ class ClienteController extends Controller
         return $this->formulario($request, $request->user()->clientes()->findOrFail($cliente));
     }
 
-    public function update(ClienteRequest $request, int $cliente): RedirectResponse
+    public function update(ClienteRequest $request, int $cliente, EmissorDeRecibos $emissor): RedirectResponse
     {
-        $request->user()->clientes()->findOrFail($cliente)->update($request->validated());
+        $registro = $request->user()->clientes()->findOrFail($cliente);
 
-        return redirect('/clientes')->with('sucesso', 'Cliente salvo.');
+        // Trocou o modelo do recibo: as cobranças em aberto passam a ele na mesma transação (Fase 22).
+        $refeitas = DB::transaction(function () use ($registro, $request, $emissor) {
+            $modeloAnterior = $registro->modelo;
+            $registro->update($request->safe()->except('regerar_enviadas'));
+
+            return $registro->modelo === $modeloAnterior ? 0 : $emissor->aplicarModeloDoCliente($registro, $request->boolean('regerar_enviadas'));
+        });
+
+        return redirect('/clientes')->with('sucesso', match ($refeitas) {
+            0 => 'Cliente salvo.',
+            1 => 'Cliente salvo. 1 recibo em aberto foi refeito no modelo novo.',
+            default => "Cliente salvo. {$refeitas} recibos em aberto foram refeitos no modelo novo.",
+        });
     }
 
     public function destroy(Request $request, int $cliente): RedirectResponse
@@ -144,9 +175,14 @@ class ClienteController extends Controller
     {
         return Inertia::render('Clientes/Form', [
             'cliente' => $cliente
-                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value]
+                ? ['id' => $cliente->id, 'modelo' => $cliente->modelo->value, 'apelido' => $cliente->apelido]
                     + array_map(fn ($valor) => $valor ?? '', $cliente->only(Cliente::CAMPOS))
                 : null,
+            // Prévia da troca de modelo: quantas cobranças em aberto seriam refeitas (Fase 22).
+            'emAberto' => $cliente ? [
+                'nao_enviadas' => $cliente->cobrancas()->where('status', StatusCobranca::Pendente)->whereNull('enviado_em')->count(),
+                'enviadas' => $cliente->cobrancas()->where('status', StatusCobranca::Pendente)->whereNotNull('enviado_em')->count(),
+            ] : null,
             'modeloPadrao' => $request->user()->modelo_padrao->value,
             'modelos' => FamiliaModelo::opcoes(),
             'ufs' => Ufs::TODAS,

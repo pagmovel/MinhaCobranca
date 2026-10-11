@@ -43,12 +43,16 @@ class TelasCobrancaTest extends TestCase
         $this->cobranca(['vencimento' => '2026-11-15']);
         Cobranca::factory()->create(['vencimento' => '2026-10-15']);
 
+        // A página abre só com os filtros; a lista vem do JSON.
         $this->actingAs($this->usuario)->get('/cobrancas')
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Cobrancas/Index')
+                ->missing('cobrancas')
                 ->where('filtros.mes', '2026-10')
-                ->has('cobrancas', 1)
-                ->where('cobrancas.0.id', $doMes->id));
+                ->where('filtros.pagina', 1)
+                ->where('filtros.por_pagina', 25)
+                ->where('padroes', ['mes' => '2026-10', 'ate' => '2026-10', 'status' => '', 'cliente_id' => '', 'canceladas' => false]));
+        $this->getJson('/cobrancas/dados')->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $doMes->id);
     }
 
     public function test_filtros_de_mes_situacao_e_cliente(): void
@@ -62,10 +66,10 @@ class TelasCobrancaTest extends TestCase
         $deOutro = Cobranca::factory()->for($this->usuario)->for($outroCliente)->create(['vencimento' => '2026-11-07']);
 
         $this->actingAs($this->usuario);
-        $this->get('/cobrancas?mes=2026-11&status=paga')
-            ->assertInertia(fn (Assert $page) => $page->has('cobrancas', 1)->where('cobrancas.0.id', $paga->id));
-        $this->get("/cobrancas?mes=2026-11&cliente_id={$outroCliente->id}")
-            ->assertInertia(fn (Assert $page) => $page->has('cobrancas', 1)->where('cobrancas.0.id', $deOutro->id));
+        $this->getJson('/cobrancas/dados?mes=2026-11&status=paga')
+            ->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $paga->id);
+        $this->getJson("/cobrancas/dados?mes=2026-11&cliente_id={$outroCliente->id}")
+            ->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $deOutro->id);
         $this->get('/cobrancas?mes=novembro')->assertSessionHasErrors('mes');
     }
 
@@ -73,8 +77,9 @@ class TelasCobrancaTest extends TestCase
     {
         Contrato::factory()->for($this->usuario)->for($this->cliente)->create(['data_inicio' => '2026-10-05', 'dia_vencimento' => 5]);
 
-        $this->actingAs($this->usuario)->get('/cobrancas')
-            ->assertInertia(fn (Assert $page) => $page->has('cobrancas', 1));
+        $this->actingAs($this->usuario)->get('/cobrancas')->assertOk(); // a geração roda ao abrir a página
+        $this->getJson('/cobrancas/dados')->assertJsonCount(1, 'linhas');
+        $this->assertSame(1, $this->usuario->cobrancas()->count());
     }
 
     public function test_formularios_de_avulsa_e_edicao(): void

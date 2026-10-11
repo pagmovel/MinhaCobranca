@@ -7,6 +7,7 @@ const props = defineProps({
     pdfUrl: { type: String, required: true },
     nomeArquivo: { type: String, required: true },
     rotulo: { type: String, default: 'Enviar' },
+    classeBotao: { type: String, default: 'botao' },
 });
 
 const preparando = ref(false);
@@ -57,7 +58,7 @@ async function enviar() {
 
 <template>
     <span class="inline-flex flex-col">
-        <button type="button" class="botao" :disabled="preparando" @click="enviar">
+        <button type="button" :class="classeBotao" :disabled="preparando" @click="enviar">
             {{ preparando ? 'Preparando PDF…' : rotulo }}
         </button>
         <span v-if="erro" role="alert" class="mt-1 text-xs text-tinta-vermelha">{{ erro }}</span>
