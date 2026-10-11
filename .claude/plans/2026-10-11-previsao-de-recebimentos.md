@@ -50,12 +50,12 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 
 | Tarefa | O quê | Estado |
 |---|---|---|
-| T18.1 | `CalculadoraDePeriodos::entre()` + regra comum do gerador (`existentes`, `cobravel`, `contemOFim` público) | testada (RED: método inexistente → GREEN; gerador, encerramento, correção do início e Unit 117/117) |
-| T18.2 | Serviço `PrevisaoDeCobrancas::entre()` + teste de igualdade com o gerador | testada (RED: classe inexistente nos 8 → GREEN 8/8, igualdade com o gerador inclusa) |
-| T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | testada (RED 0/7 pelos motivos esperados → GREEN; Cobrancas + Auditoria 67/67) |
-| T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | testada (JS RED: principal 'baixa' → GREEN 23/23; build ok); conferência no navegador pendente (T18.6) |
-| T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | testada (RED 4 falhas esperadas → GREEN; suíte inteira 332/332, JS 23/23) |
-| T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | concluída: skill atualizada; revisão final (Opus) com 0 Critical e 0 Important; a correção do "Até" foi testada (JS RED: módulo inexistente → GREEN 28/28, PHP 332/332, build ok). Pendentes: conferência no navegador (pede autorização) e validação do usuário |
+| T18.1 | `CalculadoraDePeriodos::entre()` + regra comum do gerador (`existentes`, `cobravel`, `contemOFim` público) | **validada** pelo usuário em 2026-10-11 (print da lista com previstas: "OK") |
+| T18.2 | Serviço `PrevisaoDeCobrancas::entre()` + teste de igualdade com o gerador | **validada** pelo usuário em 2026-10-11 (print da lista com previstas: "OK") |
+| T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | **validada** pelo usuário em 2026-10-11 (print da lista com previstas: "OK") |
+| T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | **validada** pelo usuário em 2026-10-11 (print da lista com previstas: "OK") |
+| T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | **validada** pelo usuário em 2026-10-11 (print da lista com previstas: "OK") |
+| T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | **validada** pelo usuário em 2026-10-11 ("OK"); minors adiados no registro de execução |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - Execução **inline** (superpowers:executing-plans). O usuário pediu "e iniciar" sem escolher o método. Se fosse
