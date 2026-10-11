@@ -162,6 +162,40 @@ class CorrecaoDoInicioTest extends TestCase
             ->where('contrato.cobrancas_pendentes.0.valor', '247,57'));
     }
 
+    /**
+     * O formulário do Inertia manda `gerar_retroativas: null` mesmo quando a pergunta nunca apareceu (início,
+     * periodicidade e modalidade não mudaram) — editar outro campo não pode mexer no corte de retroativos.
+     */
+    public function test_editar_outro_campo_sem_mudar_o_periodo_nao_pula_cobranca_ainda_nao_gerada(): void
+    {
+        $contrato = Contrato::factory()->for($this->usuario)->for($this->cliente)->create([
+            'modalidade' => 'pospago', 'periodicidade' => 'mensal', 'dia_vencimento' => 10,
+            'data_inicio' => '2026-01-10', 'cobrar_a_partir_de' => null,
+        ]);
+
+        $this->actingAs($this->usuario)->put("/contratos/{$contrato->id}", $this->dados([
+            'modalidade' => 'pospago', 'periodicidade' => 'mensal', 'dia_vencimento' => 10, 'data_inicio' => '2026-01-10',
+            'descricao' => 'Hospedagem (editada)', 'gerar_retroativas' => null,
+        ]))->assertRedirect('/contratos')->assertSessionHasNoErrors();
+
+        $this->assertNull($contrato->fresh()->cobrar_a_partir_de, 'editar outro campo não pode mexer no corte de retroativos');
+    }
+
+    /** O espelho do teste acima: editar outro campo também não pode desfazer uma escolha de "não gerar" já gravada. */
+    public function test_editar_outro_campo_nao_desfaz_a_escolha_de_nao_gerar_retroativos(): void
+    {
+        $this->actingAs($this->usuario)->post('/contratos', $this->dados(['data_inicio' => '2026-01-17', 'gerar_retroativas' => false]));
+        $contrato = $this->usuario->contratos()->sole();
+        $this->assertSame('2026-09-17', $contrato->cobrar_a_partir_de->toDateString());
+
+        $this->travelTo(CarbonImmutable::parse('2026-11-05 10:00:00'));
+        $this->put("/contratos/{$contrato->id}", $this->dados(['data_inicio' => '2026-01-17', 'descricao' => 'Outra descrição', 'gerar_retroativas' => null]))
+            ->assertRedirect('/contratos')->assertSessionHasNoErrors();
+
+        $this->assertSame('2026-09-17', $contrato->fresh()->cobrar_a_partir_de->toDateString(),
+            'editar outro campo não pode desfazer a escolha de não gerar retroativos');
+    }
+
     public function test_encerrar_nao_emite_periodos_antes_do_cobrar_a_partir_de(): void
     {
         $this->actingAs($this->usuario)->post('/contratos', $this->dados(['data_inicio' => '2026-01-17', 'gerar_retroativas' => false]));

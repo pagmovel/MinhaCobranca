@@ -198,7 +198,10 @@ class ContratoController extends Controller
             $corrigir = true;
         }
 
-        if ($mudaPeriodos || $request->has('gerar_retroativas')) {
+        // `has()` seria verdadeiro mesmo sem resposta: o formulário manda `gerar_retroativas: null` em toda edição,
+        // inclusive quando a pergunta nunca apareceu (início/periodicidade/modalidade não mudaram). Sem uma resposta
+        // de verdade e sem a âncora dos períodos ter mudado, o corte de retroativos fica como estava.
+        if ($mudaPeriodos || $request->filled('gerar_retroativas')) {
             $dados['cobrar_a_partir_de'] = $this->cobrarAPartirDe($request);
         }
 
@@ -358,10 +361,14 @@ class ContratoController extends Controller
         return [CarbonImmutable::parse($dados['fim'])->startOfDay(), ($dados['em_curso'] ?? 'proporcional') === 'proporcional'];
     }
 
-    /** "Cobrar a partir de": nulo gera desde o início (padrão de sempre); sem os retroativos, o período atual. */
+    /**
+     * "Cobrar a partir de": nulo gera desde o início (padrão de sempre, inclusive sem resposta); só o "não" explícito
+     * (`false`) corta no período atual. `boolean()` não serve aqui: como a chave sempre vem presente (até com `null`),
+     * o padrão dele nunca entraria em jogo.
+     */
     private function cobrarAPartirDe(ContratoRequest $request): ?CarbonImmutable
     {
-        if ($request->boolean('gerar_retroativas', true)) {
+        if ($request->input('gerar_retroativas') !== false) {
             return null;
         }
 
