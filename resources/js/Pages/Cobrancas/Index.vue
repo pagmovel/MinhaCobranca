@@ -1,6 +1,6 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
@@ -10,16 +10,19 @@ import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
 import CancelarInline from '../../Components/CancelarInline.vue';
 import CorrecaoPagamentoInline from '../../Components/CorrecaoPagamentoInline.vue';
+import EstadoDaLista from '../../Components/EstadoDaLista.vue';
 import PagamentoInline from '../../Components/PagamentoInline.vue';
 import Paginador from '../../Components/Paginador.vue';
 import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
+import { botaoPrincipal, itemMenu } from '../../estilosLista.js';
 import { ajustarAte } from '../../filtroPeriodo.js';
-import { buscarJson } from '../../http.js';
 import { formatarCentavos } from '../../itens.js';
-import { criarListaPaginada } from '../../listaPaginada.js';
+import { filtrosAlterados } from '../../paginacao.js';
+import { usarListaPaginada } from '../../usarListaPaginada.js';
 
 const props = defineProps({
     filtros: { type: Object, required: true },
+    padroes: { type: Object, required: true },
     clienteFiltro: { type: Object, default: null },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
@@ -46,23 +49,17 @@ function escolheuAte() {
     escolheuPeriodo();
 }
 
-// A lista vem de /cobrancas/dados em blocos de páginas (listaPaginada.js); a tela só cuida de URL, foco e faixa.
-function aoMostrar(pagina, focar) {
-    faixa.value = null;
-    // Filtros e página na URL (F5, voltar, link), sem pedido ao servidor nem entrada nova no histórico.
-    router.replace({ url: `/cobrancas?${parametros(pagina)}`, props: (atuais) => ({ ...atuais, filtros: { ...filtro } }), preserveState: true, preserveScroll: true });
-    if (focar) {
-        nextTick(() => {
-            const topo = document.getElementById('paginador-topo');
-            topo?.scrollIntoView({ block: 'start' });
-            topo?.focus({ preventScroll: true });
-        });
-    }
-}
+// A lista vem de /cobrancas/dados em blocos de páginas (usarListaPaginada.js: URL, foco e recarga depois das ações,
+// que chegam pelo evento "success" do Inertia); a tela só fecha a faixa aberta.
 const {
-    linhas: linhasDaPagina, resumo, carregando, falha, erros, estado, parametros, irPara, filtrar, recarregar, aoTerminarAcao, escolheuPorPagina,
-} = criarListaPaginada({ url: '/cobrancas/dados', filtro, buscar: buscarJson, aoMostrar });
+    linhas: linhasDaPagina, resumo, carregando, falha, erros, estado, irPara, filtrar, recarregar, escolheuPorPagina,
+} = usarListaPaginada({
+    url: '/cobrancas/dados', filtro, componente: 'Cobrancas/Index', endereco: '/cobrancas', aoMostrar: () => { faixa.value = null; },
+});
 const erroAte = computed(() => erros.value.ate ?? '');
+// Cliente escolhido (ou apagado) aplica na hora, como os selects.
+watch(() => filtro.cliente_id, filtrar);
+const filtrando = computed(() => filtrosAlterados(filtro, props.padroes));
 
 function escolheuPeriodo() {
     if (todosOsMeses.value) {
@@ -71,28 +68,12 @@ function escolheuPeriodo() {
     filtrar();
 }
 
-// As ações (baixa, cancelar, enviar…) respondem com o redirect do Inertia, que preserva o estado da página (não
-// remonta): o evento "success" só sai de resposta do servidor, então é a deixa para buscar a lista de novo.
-let pararDeOuvir = () => {};
-onMounted(() => {
-    irPara(filtro.pagina);
-    pararDeOuvir = router.on('success', (evento) => {
-        if (evento.detail.page.component === 'Cobrancas/Index') {
-            aoTerminarAcao();
-        }
-    });
-});
-onUnmounted(() => pararDeOuvir());
-
 const linhas = computed(() => linhasDaPagina.value.map((cobranca) => ({ ...cobranca, acoes: acoesDaCobranca(cobranca) })));
 const temPrevistas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'prevista')));
 const ROTULO_DO_TOTAL = { vencida: 'Vencidas', vence_hoje: 'Vencendo hoje', a_vencer: 'A vencer', prevista: 'Previstas', paga: 'Pagas', cancelada: 'Canceladas' };
 const temCanceladas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'cancelada')));
 const naFaixa = ['baixa', 'pagamento', 'cancelar', 'corrigir', 'desfazer'];
 const perigosa = (acao) => ['cancelar', 'desfazer'].includes(acao);
-// Mesma largura mínima em todas as linhas: os botões principais ficam alinhados e numa linha só.
-const botaoPrincipal = 'min-w-28 whitespace-nowrap';
-const itemMenu = 'w-full px-4 py-2 text-left text-sm hover:bg-papel focus-visible:bg-papel focus-visible:outline-none';
 
 // Formulário da ação numa faixa logo abaixo da linha (uma por vez); o foco vai para o primeiro campo e volta ao fechar.
 const faixa = ref(null);
@@ -147,6 +128,7 @@ async function fecharFaixa() {
                     </label>
                 </Transition>
                 <button class="botao-secundario w-full">Filtrar</button>
+                <Link v-if="filtrando" href="/cobrancas" class="font-estreita text-sm text-carbono underline">Limpar filtros</Link>
             </div>
         </form>
 
@@ -156,33 +138,14 @@ async function fecharFaixa() {
             </p>
         </Transition>
 
-        <!-- Primeira carga: esqueleto no formato das linhas (como o YouTube), sem a tela "pular" quando os dados chegam. -->
-        <div v-if="estado === 'carregando'" class="border border-linha bg-white" aria-busy="true">
-            <p class="flex items-center gap-2 px-4 py-3 text-sm text-grafite/75" role="status">
-                Carregando cobranças…
-                <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-carbono/25 border-t-carbono" aria-hidden="true" />
-            </p>
-            <div v-for="linha in 6" :key="linha" class="flex items-center gap-4 border-t border-linha px-4 py-4 motion-safe:animate-pulse" aria-hidden="true">
-                <span class="h-3 w-1/4 rounded-sm bg-linha" />
-                <span class="hidden h-3 w-40 rounded-sm bg-linha xl:block" />
-                <span class="hidden h-3 w-20 rounded-sm bg-linha xl:block" />
-                <span class="ml-auto h-3 w-20 rounded-sm bg-linha" />
-                <span class="h-5 w-28 rounded-sm bg-linha" />
-                <span class="hidden h-8 w-28 rounded-sm bg-linha sm:block" />
-            </div>
-        </div>
-        <p v-else-if="estado === 'erro-filtro'" class="border border-carbono bg-white px-4 py-3 text-sm">
-            Corrija o período acima para ver as cobranças.
-        </p>
-        <div v-else-if="estado === 'falha'" class="flex flex-wrap items-center gap-3 border border-tinta-vermelha bg-white px-4 py-3 text-sm">
-            <span>{{ falha }}</span>
-            <button type="button" class="botao-secundario" @click="recarregar">Tentar de novo</button>
-        </div>
-        <p v-else-if="estado === 'vazio'" class="border border-carbono bg-white px-4 py-3 text-sm">
-            {{ vazio }}
-        </p>
-
-        <template v-else>
+        <EstadoDaLista
+            :estado="estado"
+            :falha="falha"
+            carregando="Carregando cobranças…"
+            :vazio="vazio"
+            erro-filtro="Corrija o período acima para ver as cobranças."
+            @tentar="recarregar"
+        >
             <Paginador
                 id="paginador-topo"
                 :pagina="filtro.pagina"
@@ -319,6 +282,6 @@ async function fecharFaixa() {
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />
-        </template>
+        </EstadoDaLista>
     </CamadaApp>
 </template>

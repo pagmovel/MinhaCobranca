@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { reactive } from 'vue';
-import { criarListaPaginada } from './listaPaginada.js';
+import { adiar, criarListaPaginada } from './listaPaginada.js';
 
 const esperar = () => new Promise((resolver) => setImmediate(resolver));
 
@@ -102,4 +102,34 @@ test('chegada à tela: o "success" logo depois de montar não pede de novo', () 
     l.aoTerminarAcao();
 
     assert.equal(falso.pedidos.length, 1);
+});
+
+test('página além da última: mostra a que o servidor devolveu', async () => {
+    const falso = servidor();
+    const { filtro, lista: l } = lista(falso);
+
+    l.irPara(9);
+    falso.pedidos[0].resolver(bloco(8)); // 200 linhas de 25: a última é a 8
+    await esperar();
+
+    assert.deepEqual([filtro.pagina, l.linhas.value[0].id], [8, 176]);
+});
+
+test('busca ao digitar: só depois de 400 ms sem tecla nova; Enter busca na hora', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let buscas = 0;
+    const buscar = adiar(() => buscas++, 400);
+
+    buscar();
+    t.mock.timers.tick(300);
+    buscar();
+    t.mock.timers.tick(300);
+    assert.equal(buscas, 0);
+    t.mock.timers.tick(100);
+    assert.equal(buscas, 1);
+
+    buscar();
+    buscar.agora();
+    t.mock.timers.tick(1000);
+    assert.equal(buscas, 2);
 });

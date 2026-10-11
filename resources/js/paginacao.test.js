@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chaveDoFiltro, fatiarBloco, paginasVisiveis } from './paginacao.js';
+import { chaveDoFiltro, fatiarBloco, filtrosAlterados, paginasVisiveis } from './paginacao.js';
 
 test('páginas visíveis: primeira, última, atual ±1 e reticências nos buracos', () => {
     assert.deepEqual(paginasVisiveis(1, 1), [1]);
@@ -22,4 +22,19 @@ test('bloco do servidor vira linhas por página a partir da página inicial', ()
     const linhas = Array.from({ length: 7 }, (_, indice) => indice + 1);
     assert.deepEqual(fatiarBloco(linhas, 5, 3), { 5: [1, 2, 3], 6: [4, 5, 6], 7: [7] });
     assert.deepEqual(fatiarBloco([], 1, 25), {});
+});
+
+test('chave do cache aceita qualquer filtro: muda com qualquer campo, não com a página', () => {
+    const base = { q: 'pad', uf: 'BA', contrato: '', por_pagina: 25, pagina: 1 };
+    assert.equal(chaveDoFiltro(base), chaveDoFiltro({ ...base, pagina: 4 }));
+    assert.notEqual(chaveDoFiltro(base), chaveDoFiltro({ ...base, uf: 'SE' }));
+    assert.equal(chaveDoFiltro(base), chaveDoFiltro({ pagina: 9, por_pagina: 25, contrato: '', uf: 'BA', q: 'pad' }));
+});
+
+test('filtros alterados: só os campos dos padrões contam, e 7 é igual a "7"', () => {
+    const padroes = { mes: '2026-10', cliente_id: '', canceladas: false };
+    assert.equal(filtrosAlterados({ ...padroes, pagina: 3, por_pagina: 50 }, padroes), false);
+    assert.equal(filtrosAlterados({ ...padroes, cliente_id: 7 }, padroes), true);
+    assert.equal(filtrosAlterados({ ...padroes, canceladas: true }, padroes), true);
+    assert.equal(filtrosAlterados({ ...padroes, cliente_id: '7' }, { ...padroes, cliente_id: 7 }), false);
 });

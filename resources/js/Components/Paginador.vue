@@ -9,6 +9,7 @@ const props = defineProps({
     porPagina: { type: Number, required: true },
     total: { type: Number, required: true },
     carregando: { type: Boolean, default: false },
+    opcoes: { type: Array, default: () => [25, 50, 100] },
 });
 const emit = defineEmits(['ir', 'por-pagina']);
 
@@ -44,7 +45,7 @@ const ate = computed(() => Math.min(props.pagina * props.porPagina, props.total)
         <label class="flex items-center gap-2 font-estreita text-xs text-grafite/75">
             Por página
             <select :value="porPagina" class="entrada w-auto py-1" @change="emit('por-pagina', Number($event.target.value))">
-                <option v-for="opcao in [25, 50, 100]" :key="opcao" :value="opcao">{{ opcao }}</option>
+                <option v-for="opcao in opcoes" :key="opcao" :value="opcao">{{ opcao }}</option>
             </select>
         </label>
     </nav>

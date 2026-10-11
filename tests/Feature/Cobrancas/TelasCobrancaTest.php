@@ -50,7 +50,8 @@ class TelasCobrancaTest extends TestCase
                 ->missing('cobrancas')
                 ->where('filtros.mes', '2026-10')
                 ->where('filtros.pagina', 1)
-                ->where('filtros.por_pagina', 25));
+                ->where('filtros.por_pagina', 25)
+                ->where('padroes', ['mes' => '2026-10', 'ate' => '2026-10', 'status' => '', 'cliente_id' => '', 'canceladas' => false]));
         $this->getJson('/cobrancas/dados')->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $doMes->id);
     }
 

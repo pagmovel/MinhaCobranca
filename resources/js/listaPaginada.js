@@ -91,3 +91,18 @@ export function criarListaPaginada({ url, filtro, buscar, aoMostrar = () => {} }
 
     return { linhas, resumo, carregando, carregou, falha, erros, estado, parametros, irPara, filtrar, recarregar, aoTerminarAcao, escolheuPorPagina };
 }
+
+/** Busca ao digitar: espera `ms` sem tecla nova; `.agora()` (Enter, "Filtrar") não espera. */
+export function adiar(acao, ms = 400) {
+    let espera = null;
+    const adiada = () => {
+        clearTimeout(espera);
+        espera = setTimeout(acao, ms);
+    };
+    adiada.agora = () => {
+        clearTimeout(espera);
+        acao();
+    };
+
+    return adiada;
+}

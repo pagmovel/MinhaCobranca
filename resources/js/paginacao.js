@@ -7,9 +7,16 @@ export function paginasVisiveis(atual, ultima) {
     return paginas.flatMap((pagina, indice) => (indice > 0 && pagina - paginas[indice - 1] > 1 ? ['…', pagina] : [pagina]));
 }
 
-/** Chave do cache da lista: os filtros que mudam o resultado e o "por página" (a página não entra). */
-export function chaveDoFiltro({ mes, ate, status, cliente_id: clienteId, canceladas, por_pagina: porPagina }) {
-    return JSON.stringify([mes, ate, status, clienteId, Boolean(canceladas), Number(porPagina)]);
+/** Chave do cache da lista: todos os filtros menos a página (o "por página" entra: muda o fatiamento). */
+export function chaveDoFiltro(filtro) {
+    const { pagina, ...resto } = filtro;
+
+    return JSON.stringify(Object.keys(resto).sort().map((chave) => [chave, resto[chave]]));
+}
+
+/** Algum filtro difere do padrão? (mostra "Limpar filtros"). Compara como texto: o id vem número ou texto. */
+export function filtrosAlterados(filtro, padroes) {
+    return Object.entries(padroes).some(([campo, valor]) => String(filtro[campo] ?? '') !== String(valor ?? ''));
 }
 
 /** Bloco que o servidor mandou → linhas por página ({ 5: [...], 6: [...] }). */

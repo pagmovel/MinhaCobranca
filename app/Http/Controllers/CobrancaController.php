@@ -39,6 +39,8 @@ class CobrancaController extends Controller
 
         return Inertia::render('Cobrancas/Index', [
             'filtros' => $this->filtrosParaTela($filtros),
+            // Para o "Limpar filtros" aparecer só quando algum filtro difere do que a tela abre sem parâmetros.
+            'padroes' => ['mes' => $hoje->format('Y-m'), 'ate' => $hoje->format('Y-m'), 'status' => '', 'cliente_id' => '', 'canceladas' => false],
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
             'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'], ['id', 'nome']),

@@ -11,3 +11,14 @@ export function ajustarAte(mesAnterior, mes, ate) {
     if (!ate || ate === mesAnterior || ate < mes || meses(mes, ate) >= 36) return mes;
     return ate;
 }
+
+/** De `meses` atrás a `meses` à frente (AAAA-MM), para os links "Ver cobranças": com 12, são 24 meses (limite 36). */
+export function periodoAoRedor(hoje = new Date(), meses = 12) {
+    const mes = (deslocamento) => {
+        const data = new Date(hoje.getFullYear(), hoje.getMonth() + deslocamento, 1);
+
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    return { mes: mes(-meses), ate: mes(meses) };
+}
