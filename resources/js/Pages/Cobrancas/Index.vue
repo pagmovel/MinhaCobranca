@@ -12,6 +12,7 @@ import CancelarInline from '../../Components/CancelarInline.vue';
 import CorrecaoPagamentoInline from '../../Components/CorrecaoPagamentoInline.vue';
 import PagamentoInline from '../../Components/PagamentoInline.vue';
 import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
+import { ajustarAte } from '../../filtroPeriodo.js';
 
 const props = defineProps({
     cobrancas: { type: Array, required: true },
@@ -39,13 +40,16 @@ function escolheuPeriodo() {
     }
     filtrar();
 }
-// "Até" acompanha o mês enquanto os dois forem iguais (um mês só) e nunca fica antes dele.
+// O "Até" se ajusta sozinho (filtroPeriodo.js): o servidor nunca recusa o período por um campo que a pessoa não mexeu.
 let mesAnterior = filtro.mes;
 function escolheuMes() {
-    if (filtro.ate === mesAnterior || filtro.ate < filtro.mes) {
-        filtro.ate = filtro.mes;
-    }
+    filtro.ate = ajustarAte(mesAnterior, filtro.mes, filtro.ate);
     mesAnterior = filtro.mes;
+    escolheuPeriodo();
+}
+// Mexeu no próprio "Até": vazio vira o mês; fora do limite, o erro do servidor aparece embaixo dele (é o campo certo).
+function escolheuAte() {
+    filtro.ate ||= filtro.mes;
     escolheuPeriodo();
 }
 
@@ -83,7 +87,7 @@ async function fecharFaixa() {
                 <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
             </Campo>
             <Campo id="ate" rotulo="Até" :erro="$page.props.errors?.ate">
-                <input id="ate" v-model="filtro.ate" type="month" :min="filtro.mes" class="entrada" @change="escolheuPeriodo">
+                <input id="ate" v-model="filtro.ate" type="month" :min="filtro.mes" class="entrada" @change="escolheuAte">
             </Campo>
             <Campo id="status" rotulo="Situação">
                 <select id="status" v-model="filtro.status" class="entrada" @change="filtrar">

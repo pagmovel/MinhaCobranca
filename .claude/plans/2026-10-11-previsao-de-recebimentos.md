@@ -55,7 +55,7 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 | T18.3 | Lista de cobranças, servidor: filtro "até", validação, previstas mescladas por vencimento | testada (RED 0/7 pelos motivos esperados → GREEN; Cobrancas + Auditoria 67/67) |
 | T18.4 | Lista de cobranças, tela: campo "Até", carimbo "Prevista", sem ações, legenda | testada (JS RED: principal 'baixa' → GREEN 23/23; build ok); conferência no navegador pendente (T18.6) |
 | T18.5 | Relatórios: "Previsto" e "Ainda não emitido" no faturamento; previstas por produto | testada (RED 4 falhas esperadas → GREEN; suíte inteira 332/332, JS 23/23) |
-| T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | pendente |
+| T18.6 | Skill, revisão final, conferência no navegador (com autorização) e validação do usuário | concluída: skill atualizada; revisão final (Opus) com 0 Critical e 0 Important; a correção do "Até" foi testada (JS RED: módulo inexistente → GREEN 28/28, PHP 332/332, build ok). Pendentes: conferência no navegador (pede autorização) e validação do usuário |
 
 ## Registro de execução (decisões tomadas durante a execução)
 - Execução **inline** (superpowers:executing-plans). O usuário pediu "e iniciar" sem escolher o método. Se fosse
@@ -69,6 +69,19 @@ Branch: `feat/modulo-cobranca-catalogo` (continua). **Sem migração, sem escrit
 - **Decisão (T18.5):** o plano esqueceu o `test_csv_para_o_excel_em_portugues`, que compara o CSV do faturamento byte
   a byte. A expectativa foi atualizada com a coluna `"Ainda não emitido"`, vindo depois de "Previsto". A especificação
   diz "CSV acompanha". Se essa posição da coluna estiver errada, basta mudar a ordem das colunas.
+- **Revisão final** (subagente Opus, só leitura; não rodou a suíte): 0 Critical, 0 Important, 5 Minor.
+  - **Corrigido:** "Até" fora de contexto e campo apagado. Pela prioridade de usabilidade do produto, a gravidade subiu
+    para Important. A regra foi para `filtroPeriodo.js` com 5 testes.
+  - **Decisão do usuário:** os relatórios não geram cobranças ao abrir. Fica a limitação, registrada na skill.
+  - **Adiados (Minor):**
+    1. A previsão roda à toa quando o intervalo já passou (`de` > `ate`). Um `return []` no início de `entre()`
+       resolve.
+    2. Com "Vencendo hoje" ou "Vencidas", um "Até" inválido vindo da URL ainda é validado e bloqueia a tela. Pela tela
+       não acontece mais.
+    3. `cliente_id` e `contrato_id` da prevista sem `(int)`. Hoje funciona em SQLite e PostgreSQL.
+- **Decisão:** ao mudar o próprio "Até", ele não é corrigido sem aviso. Um valor fora do limite mostra o erro do
+  servidor embaixo dele, que é o campo mexido. Se o usuário preferir a correção automática também aí, basta trocar o
+  `escolheuAte` para usar `ajustarAte`.
 
 ---
 

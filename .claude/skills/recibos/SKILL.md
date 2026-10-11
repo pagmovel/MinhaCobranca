@@ -630,6 +630,25 @@ o relatório mostra a parte que existe.
     2. Teste de relatório com `Contrato::factory()` ativo passa a ter previstas, porque o relatório não gera
        cobranças. O teste antigo de produto teve o previsto da Hospedagem corrigido de 30.000 para 50.000.
   - **Painel fora.** O painel ainda não mostra previstas (fora do escopo).
+  - **Limitação aceita (decisão do usuário, 2026-10-11).** Os relatórios **não geram** cobranças ao abrir. A cobrança
+    que já venceu (hoje ou antes) e ainda não foi gerada fica de fora do "Previsto": ela não é real ainda e já não é
+    prevista, porque a previsão começa amanhã. Isso acontece quando a pessoa passa dias sem abrir o painel ou a lista e
+    entra direto nos relatórios. O usuário escolheu **deixar como está**: gerar ao abrir seria uma escrita disparada
+    por um GET. Não "corrigir" sem falar com ele.
+  - **"Até" que se ajusta sozinho.** `resources/js/filtroPeriodo.js` (`ajustarAte`) tem teste no `node --test`. Ao
+    mudar o **mês**:
+    - o "Até" acompanha o mês enquanto os dois eram iguais;
+    - nunca fica antes do mês;
+    - se ficar a 36 meses ou mais, volta para um mês só;
+    - mês apagado leva o "Até" junto.
+
+    Ao mudar o **próprio "Até"**, só o vazio vira o mês. Fora do limite, o erro do servidor aparece embaixo dele, que é
+    o campo que a pessoa mexeu.
+
+    *Pegadinha (revisão final):* com a regra dentro do `.vue`, mudar o mês para trás deixava o erro de 36 meses
+    embaixo do "Até", campo que a pessoa não tinha mexido. E um campo apagado ficava em branco, porque o
+    `preserveState` não ressincroniza o `filtro` com o `props.filtros`. Regra de filtro com casos de borda vai para um
+    módulo `.js` com teste, como o `acoesCobranca.js`.
 - **Pegadinha (execução do plano):** ao copiar trecho parcial do plano por texto, ancorar a busca **dentro da seção da
   tarefa** — "depois de `cobrancas()`" aparece na T12.2 (Contrato) e na T13.1 (Cliente); a primeira ocorrência colou o
   método errado no `Cliente` (o teste pegou com `undefined method comTermo`).
