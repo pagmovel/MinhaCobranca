@@ -251,7 +251,9 @@ class CobrancaController extends Controller
         $antes = $registro->vencimento;
 
         DB::transaction(function () use ($registro, $dados, $antes, $emissor, $request) {
-            $registro->update(['vencimento' => $dados['vencimento']]);
+            // A linha digitável traz o vencimento antigo embutido (mesmo motivo do ajuste proporcional): sem ela,
+            // o boleto cobraria na data errada.
+            $registro->update(['vencimento' => $dados['vencimento'], 'linha_digitavel' => null]);
             Auditoria::registrar($request, 'cobranca.vencimento_prorrogado', $registro,
                 'Vencimento prorrogado de '.$antes->format('d/m/Y').' para '.$registro->vencimento->format('d/m/Y'),
                 ['vencimento' => $antes->toDateString()], ['vencimento' => $registro->vencimento->toDateString()]);

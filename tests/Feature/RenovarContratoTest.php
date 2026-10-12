@@ -211,10 +211,15 @@ class RenovarContratoTest extends TestCase
         $this->assertTrue($outubro->itens()->sole()->principal);
     }
 
-    /** Caso difícil da spec (seção 1/5): proporcional já enviada vira avulsa — renovar não toca nela, só avisa. */
-    public function test_renovar_nao_toca_automaticamente_a_cobranca_proporcional_ja_enviada(): void
+    /**
+     * Caso difícil da spec (seção 1/5): proporcional já enviada vira avulsa. Decisão do usuário (2026-10-12):
+     * renovar avisa e resolve sozinho — cancela a avulsa e restaura a original (que nunca foi truncada), desde
+     * que a avulsa ainda não tenha sido paga.
+     */
+    public function test_renovar_cancela_a_avulsa_nao_paga_e_restaura_a_cobranca_original(): void
     {
         $contrato = $this->contratoComCobrancas();
+        $numeroOriginal = $this->cobrancaDe($contrato, '2026-10-01')->recibo->numero;
         $outubroOriginal = $this->cobrancaDe($contrato, '2026-10-01');
         $outubroOriginal->forceFill(['enviado_em' => now()])->save();
 
@@ -225,14 +230,39 @@ class RenovarContratoTest extends TestCase
 
         $this->getJson("/contratos/{$contrato->id}/renovacao")->assertOk()
             ->assertJsonCount(2, 'acoes')
+            ->assertJsonPath('acoes.0.acao', 'desfazer_avulsa')
+            ->assertJsonPath('acoes.1.acao', 'reabrir');
+
+        $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => ''])->assertRedirect();
+
+        $outubroOriginal->refresh();
+        $this->assertSame(['pendente', 24757], [$outubroOriginal->status->value, $outubroOriginal->valor_centavos]);
+        $this->assertSame($numeroOriginal, $outubroOriginal->recibo->numero);
+        $this->assertSame(StatusCobranca::Cancelada, $avulsa->fresh()->status);
+        $this->assertSame(StatusCobranca::Pendente, $this->cobrancaDe($contrato, '2026-11-01')->status);
+        $this->assertSame(['inteiro', null], [$contrato->fresh()->ultimo_periodo, $contrato->fresh()->data_fim]);
+    }
+
+    /** Avulsa já paga: dinheiro já recebido não é desfeito sozinho — fica só o aviso, nada muda. */
+    public function test_renovar_nao_mexe_quando_a_avulsa_proporcional_ja_foi_paga(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $outubroOriginal = $this->cobrancaDe($contrato, '2026-10-01');
+        $outubroOriginal->forceFill(['enviado_em' => now()])->save();
+
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18', 'em_curso' => 'proporcional'])->assertRedirect();
+        $avulsa = $this->usuario->cobrancas()->whereNull('contrato_id')->sole();
+        $this->actingAs($this->usuario)->post("/cobrancas/{$avulsa->id}/pagar", ['pago_em' => '2026-10-15'])->assertRedirect();
+
+        $this->getJson("/contratos/{$contrato->id}/renovacao")->assertOk()
+            ->assertJsonCount(2, 'acoes')
             ->assertJsonPath('acoes.0.acao', 'aviso_avulsa')
             ->assertJsonPath('acoes.1.acao', 'reabrir');
 
         $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => ''])->assertRedirect();
 
         $this->assertSame(StatusCobranca::Cancelada, $outubroOriginal->fresh()->status);
-        $this->assertSame(StatusCobranca::Pendente, $avulsa->fresh()->status);
+        $this->assertSame(StatusCobranca::Paga, $avulsa->fresh()->status);
         $this->assertSame(StatusCobranca::Pendente, $this->cobrancaDe($contrato, '2026-11-01')->status);
-        $this->assertSame(['inteiro', null], [$contrato->fresh()->ultimo_periodo, $contrato->fresh()->data_fim]);
     }
 }

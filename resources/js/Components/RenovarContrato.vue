@@ -41,11 +41,12 @@ onMounted(async () => {
 const TEXTOS = {
     reabrir: 'Volta a cobrar',
     proporcional_cheio: 'Volta ao valor cheio',
+    desfazer_avulsa: 'Cancela a avulsa (enviada como proporcional) e volta a cobrar o valor cheio aqui',
 };
 
 function oQueAcontece(acao) {
     return acao.acao === 'aviso_avulsa'
-        ? 'Já foi enviada como proporcional: revise manualmente, isto não muda sozinho.'
+        ? 'Já foi enviada como proporcional e paga como avulsa: revise manualmente, isto não muda sozinho.'
         : TEXTOS[acao.acao];
 }
 

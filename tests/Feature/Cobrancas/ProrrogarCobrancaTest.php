@@ -47,6 +47,20 @@ class ProrrogarCobrancaTest extends TestCase
         $this->assertSame('2026-10-20', $cobranca->recibo->snapshot['servico']['vencimento']);
     }
 
+    /** A linha digitável traz o vencimento antigo embutido (mesmo motivo do ajuste proporcional): limpa ao prorrogar. */
+    public function test_prorroga_limpa_a_linha_digitavel_do_boleto(): void
+    {
+        [$usuario, $cliente] = $this->prestadorComCliente();
+        $cobranca = $this->cobrancaComRecibo($usuario, $cliente, [
+            'vencimento' => '2026-10-10', 'forma_pagamento' => 'boleto', 'linha_digitavel' => str_repeat('1', 47),
+        ]);
+
+        $this->actingAs($usuario)->post("/cobrancas/{$cobranca->id}/prorrogar", ['vencimento' => '2026-10-20'])
+            ->assertSessionHas('sucesso', 'Vencimento prorrogado.');
+
+        $this->assertNull($cobranca->fresh()->linha_digitavel);
+    }
+
     public function test_recusa_data_igual_ou_anterior_ao_vencimento_atual(): void
     {
         [$usuario, $cliente] = $this->prestadorComCliente();
