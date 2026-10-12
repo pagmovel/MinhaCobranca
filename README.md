@@ -4,7 +4,12 @@ Cobranças recorrentes com recibo em PDF A4 inspirado nos modelos de NFS-e (WebI
 para envio antecipado ao cliente e baixa manual quando o pagamento é confirmado.
 
 ## Requisitos
-PHP 8.4, Composer, Node 22, SQLite (PostgreSQL no futuro).
+PHP 8.4, Composer, Node 22.
+
+Banco de dados: PostgreSQL é o banco usado tanto em desenvolvimento quanto em produção (instâncias dedicadas e
+separadas para cada ambiente). O `.env.example` traz `DB_CONNECTION=sqlite` só para facilitar rodar o projeto do
+zero sem precisar de um servidor PostgreSQL à mão — a suíte de testes roda em SQLite em memória
+independentemente do banco configurado (`phpunit.xml`).
 
 ## Instalação
     composer install

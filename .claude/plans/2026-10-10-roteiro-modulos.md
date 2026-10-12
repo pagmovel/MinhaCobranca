@@ -108,17 +108,18 @@ apagada — decisão de não apagar branches sem pedido explícito).
     `postgres_prod`/banco `cobrancas`/usuário `cobrancas_app` (sem acesso público, servidor compartilhado com
     outros projetos do Easypanel, mas banco isolado só nosso) — não mais do `postgres_dev`. Dados reais (usuário
     id 1) migrados; smoke test (id 2) ficou só no dev, de propósito.
-12. **Segurança do PostgreSQL** (detalhe na skill, seção "Segurança do PostgreSQL de dev — instruções"):
-    ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas) e ~~SSL no dev~~ (ligado, `hostssl`
-    exigido, confirmado TLSv1.3) **feitos em 2026-10-12**. ~~Fechar a porta pública do `postgres_dev`~~ —
-    **decisão do usuário (2026-10-12): não precisa mais**, é só banco de dev; o motivo original (produção
-    depender de porta pública) foi resolvido migrando a produção pro banco dedicado (item 11), que já nasceu
-    sem acesso público. Falta: senha do `recibos_app` (dev) e **SSL no `postgres_prod`** (criado em 2026-10-12,
-    ainda com `sslmode=disable`).
-    **Pedido do usuário (2026-10-12): quando essa pendência concluir (as duas de cima), atualizar o `README.md`**
-    — aproveitar pra corrigir também o que já está desatualizado nele hoje, sem relação com segurança: "Requisitos"
-    ainda diz "SQLite (PostgreSQL no futuro)", mas o projeto já usa PostgreSQL de verdade (dev e produção, dois
-    bancos separados desde 2026-10-12).
+12. **Segurança do PostgreSQL** (detalhe na skill, seção "Segurança do PostgreSQL de dev — instruções" e "SSL no
+    `postgres_prod`"): ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas), ~~SSL no dev~~ (ligado,
+    `hostssl` exigido, confirmado TLSv1.3) e ~~SSL no `postgres_prod`~~ (ligado do mesmo jeito; app implantado já
+    conecta em TLSv1.3 automaticamente com `DB_SSLMODE=prefer`, confirmado por tinker) **feitos em 2026-10-12**.
+    ~~Fechar a porta pública do `postgres_dev`~~ — **decisão do usuário (2026-10-12): não precisa mais**, é só
+    banco de dev; o motivo original (produção depender de porta pública) foi resolvido migrando a produção pro
+    banco dedicado (item 11), que já nasceu sem acesso público. ~~Senha do `recibos_app`~~ — **trocada em
+    2026-10-12** (PORTÃO-BANCO, `.env` local atualizado e confirmado; nada em produção depende mais dela desde a
+    migração do item 11). **Toda a pendência de segurança do Postgres está concluída.**
+    ~~Atualizar o `README.md`~~ — **feito em 2026-10-12**: "Requisitos" corrigido (PostgreSQL em dev e produção,
+    `.env.example` em SQLite só para facilitar o primeiro clone, testes sempre em SQLite em memória
+    independente do `.env`).
 
 **Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
 fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →

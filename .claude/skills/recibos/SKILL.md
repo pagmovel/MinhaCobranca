@@ -1067,8 +1067,14 @@ urgência, é do lado do servidor/painel — passos para o usuário (ou quem tiv
    - ~~Senha do superusuário `postgres`~~ — **trocada pelo usuário em 2026-10-12** direto no EasyPanel.
    - ~~`APP_KEY`~~ — **trocada pelo usuário em 2026-10-12**, local e no EasyPanel. Confirmado nesta sessão que o
      `.env` local lê a chave nova sem erro (`php artisan config:clear` + leitura de `config('app.key')`).
-   - **Ainda falta:** a senha do `recibos_app` — exige atualizar `.env` local **e** aba Environment do EasyPanel
-     do serviço `gerenciador_cobrancas`, depois um novo Deploy (variável só vale depois do deploy).
+   - ~~Senha do `recibos_app`~~ — **trocada em 2026-10-12** (`ALTER ROLE`, PORTÃO-BANCO autorizado pelo usuário,
+     conexão `207.180.205.211:1`/`recibos`). **Escopo menor do que o previsto originalmente:** depois da migração
+     de produção (seção abaixo), nada em produção usa mais `recibos_app` — só o `.env` local deste projeto, já
+     atualizado. **Pegadinha de execução:** `DB::statement` com bind (`?`) em `ALTER ROLE ... PASSWORD ?` dá erro
+     de sintaxe (`$1` não é aceito nessa posição pelo Postgres); e passar a senha entre aspas simples direto no
+     `--execute` do tinker quebra o parsing do shell (as aspas somem, a senha chega sem aspas no SQL). Solução:
+     escrever um script PHP temporário no scratchpad usando `$pdo->quote($senha)` para montar o literal com
+     segurança, incluir via tinker, apagar o script depois.
 2. ~~Ligar SSL no `postgres_dev`~~ — **feito em 2026-10-12**, pelo console do próprio container (root dentro do
    `postgres_dev`, sem precisar de SSH na VPS):
    - Certificado autoassinado gerado em `$PGDATA/server.{crt,key}` (`openssl req -x509 -nodes`), `chmod 600` +
@@ -1151,9 +1157,26 @@ ser "usar o banco `meus_projetos` direto".
   dentro do `psql`, funciona normalmente — inclusive um valor com quebra de linha literal dentro de uma string
   entre aspas simples.
 
+### SSL no `postgres_prod` (2026-10-12)
+Mesmo processo do `postgres_dev` (seção "Segurança do PostgreSQL de dev" acima), pelo console do container
+`postgres_prod` (bash root; `$PGDATA=/var/lib/postgresql/data`, igual ao dev):
+- Certificado autoassinado (`openssl req -x509 -nodes`), `chmod 600` + `chown postgres:postgres` na chave.
+- `postgresql.conf`: `#ssl = off` → `ssl = on`.
+- `pg_hba.conf`: única linha que aceitava conexão de fora (`host all all all scram-sha-256`) virou
+  `hostssl ...` — igual ao dev, mesmo padrão de arquivo.
+- Restart **pelo painel** do Easypanel (não por dentro do container). Confirmado: `SHOW ssl` → `on`.
+- **Pegadinha:** `SELECT ... FROM pg_stat_ssl JOIN pg_stat_activity ...` rodado por **socket local**
+  (`local all all trust`) sempre mostra `ssl = f` — `hostssl` só vale para conexão **TCP** (`host`). Para
+  confirmar de verdade, forçar TCP com `psql "host=127.0.0.1 ... sslmode=require"` → `ssl = t`, `TLSv1.3`.
+- **Não precisou trocar `DB_SSLMODE` do app** (`gerenciador_cobrancas` continua em `prefer`): com o servidor
+  oferecendo SSL, `prefer` já sobe a conexão em TLS automaticamente — confirmado por `tinker` no console do
+  app implantado (`DB::select` na mesma consulta a `pg_stat_ssl`, via a própria conexão do Eloquent) →
+  `ssl = 1`, `TLSv1.3`. `hostssl` só *bloquearia* quem pede explicitamente sem SSL (`sslmode=disable`); não
+  muda o comportamento de quem já tentava SSL primeiro.
+- Role `postgres` **não existe** nesse serviço (confirmado de novo, mesma pegadinha da migração) — toda
+  consulta de verificação usou o role `meus_projetos` (superusuário).
+
 ### Pendências depois da migração
-- `postgres_prod` sem SSL ainda (`sslmode=disable` na Internal Connection URL do painel) — mesmo processo do
-  `postgres_dev` (seção acima) resolve, ainda não feito.
 - `.env` local continua apontando pro `postgres_dev` — correto, é o banco de desenvolvimento; não mexer.
 - O usuário real (id 1) e os dados dele continuam **também** no `postgres_dev` (não foram removidos de lá, só
   copiados) — intencional, dev continua servindo de ambiente de teste.
