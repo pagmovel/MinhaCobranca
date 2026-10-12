@@ -4,9 +4,22 @@
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
-## 0. RETOMAR AQUI — estado em 2026-10-11 (antes de compactar a conversa)
+## 0. RETOMAR AQUI — estado em 2026-10-12
 
-### 0.1 PRÓXIMO PASSO IMEDIATO (atualizado em 2026-10-11, depois do merge das Fases 17–23)
+### 0.0 PRÓXIMO PASSO IMEDIATO (2026-10-12)
+- **T17.11 (renovar/prorrogar/aviso de contrato + Reativar desfaz encerramento) implementada direto na `main`**,
+  sem branch separada (plano `.claude/plans/2026-10-11-renovar-prorrogar-contrato.md`, 5 tarefas + extensões
+  pós-aprovação; detalhe completo na skill, seção "T17.11"). Suíte: **520 PHP + 94 JS, tudo verde**; `main` em dia
+  com `origin/main` (push feito). **Aguardando validação do usuário** (smoke test / uso real) — sem isso, não
+  marcar como "validada" na tabela de Fases abaixo.
+- **Fora do T17.11, mesma sessão (2026-10-12), também direto na `main`: CPF/CNPJ do cliente ficou opcional**
+  (cliente informal, pedido direto do usuário) — migration aplicada no banco de dev, testado, documentado na skill.
+  Sem pendência de validação visual (é só uma regra de formulário).
+- Backlog **não tocado nesta rodada**: itens 3–11 da seção "Backlog" abaixo (abas de situação, ordenar por
+  cabeçalho, seleção em lote, Minors adiados, validações antigas T17.9/T17.12/T17.14, sessões do SMOKE, segurança
+  do Postgres de dev, módulos futuros) continuam exatamente como estavam.
+
+### 0.1 Histórico anterior (atualizado em 2026-10-11, depois do merge das Fases 17–23)
 - **Fases 17–23 mergeadas na `main` e enviadas ao remoto** (merge `da2d53f`, `main` em `github.com:pagmovel/MinhaCobranca.git`
   no commit `da2d53f`). Fase 23 (vencimento em dia útil): T23.1–T23.12 testadas; 6 Minor da 2ª revisão tratados (5
   corrigidos com TDD, 1 — limite de 100 feriados sem lock — ruling documentado na skill); spinner global "Carregando…"
@@ -72,9 +85,8 @@ apagada — decisão de não apagar branches sem pedido explícito).
      não enviadas que caem em dia não útil, com "Ajustar" (padrão 9) — serve também para o ajuste inicial. Avulsa: aviso
      com botão "Usar <data>". Verificação feita (ver spec, seção 2).
 1. ~~Revisão final da branch e merge na `main`~~ — **feito em 2026-10-11** (Fases 17–23, merge `da2d53f`, ver seção 0.1).
-2. **T17.11 — renovar ou prorrogar contrato** perto do fim, com os mesmos dados e permitindo alterações: **desenho a
-   fazer com o usuário** (brainstorming → spec → plano). Ligada à T17.9: encerramento agendado não é reagendado; mudar a
-   data fica para a prorrogação.
+2. ~~T17.11 — renovar ou prorrogar contrato perto do fim~~ — **implementada em 2026-10-12** (ver seção 0.0);
+   falta só a validação do usuário.
 3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
    Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
 4. **T17.17 — ordenar cobranças pelo cabeçalho** (vencimento, valor, cliente), modelo `tables-m01`.
