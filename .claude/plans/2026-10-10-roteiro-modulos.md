@@ -107,6 +107,9 @@ apagada — decisão de não apagar branches sem pedido explícito).
     ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas) e ~~SSL~~ (ligado, `hostssl` exigido,
     confirmado TLSv1.3) **feitos em 2026-10-12**. Falta: senha do `recibos_app` e fechar a porta pública do
     Postgres pra internet em geral (só pela rede interna do EasyPanel + túnel SSH pra dev).
+    **Pedido do usuário (2026-10-12): quando essa pendência concluir (as duas de cima), atualizar o `README.md`**
+    — aproveitar pra corrigir também o que já está desatualizado nele hoje, sem relação com segurança: "Requisitos"
+    ainda diz "SQLite (PostgreSQL no futuro)", mas o projeto já usa PostgreSQL de verdade (dev e produção).
 
 **Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
 fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →
