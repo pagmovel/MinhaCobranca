@@ -90,4 +90,33 @@ class AdminUsuariosTest extends TestCase
             ->assertSessionHas('erro', 'Você não pode bloquear a própria conta.');
         $this->assertSame(StatusUsuario::Aprovado, $admin->fresh()->status);
     }
+
+    public function test_liberar_em_lote_aprova_pendentes_e_reativa_bloqueados(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pendente = User::factory()->pendente()->create();
+        $bloqueado = User::factory()->bloqueado()->create();
+
+        $this->actingAs($admin)->post('/admin/usuarios/lote/aprovar', ['ids' => [$pendente->id, $bloqueado->id]])
+            ->assertSessionHas('sucesso', '2 usuário(s) liberado(s).');
+
+        $this->assertSame(StatusUsuario::Aprovado, $pendente->fresh()->status);
+        $this->assertSame(StatusUsuario::Aprovado, $bloqueado->fresh()->status);
+    }
+
+    public function test_liberar_em_lote_ignora_quem_ja_esta_liberado_e_avisa(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pendente = User::factory()->pendente()->create();
+        $jaAprovado = User::factory()->create();
+
+        $this->actingAs($admin)->post('/admin/usuarios/lote/aprovar', ['ids' => [$pendente->id, $jaAprovado->id]])
+            ->assertSessionHas('sucesso', '1 usuário(s) liberado(s). 1 ignorado(s) (já estava liberado).');
+    }
+
+    public function test_liberar_em_lote_so_para_admin(): void
+    {
+        $this->actingAs(User::factory()->create())->post('/admin/usuarios/lote/aprovar', ['ids' => [1]])
+            ->assertForbidden();
+    }
 }

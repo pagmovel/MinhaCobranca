@@ -1,6 +1,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import Etiqueta from '../../Components/Etiqueta.vue';
@@ -22,7 +22,7 @@ const filtro = reactive({ ...props.filtros });
 const filtrando = computed(() => filtrosAlterados(filtro, PADROES));
 const { linhas: linhasDaPagina, resumo, carregando, falha, estado, irPara, filtrar, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/admin/usuarios/dados', filtro, componente: 'Admin/Usuarios', endereco: '/admin/usuarios',
-    aoMostrar: () => { confirmando.value = null; },
+    aoMostrar: () => { confirmando.value = null; limparSelecao(); },
 });
 const buscarAoDigitar = adiar(filtrar);
 const linhas = computed(() => linhasDaPagina.value.map((usuario) => ({ ...usuario, acoes: acoesDoUsuario(usuario) })));
@@ -31,6 +31,36 @@ const linhas = computed(() => linhasDaPagina.value.map((usuario) => ({ ...usuari
 const confirmando = ref(null);
 // A resposta é o redirect do Inertia: o evento "success" recarrega a lista (usarListaPaginada).
 const acao = (id, nome) => router.post(`/admin/usuarios/${id}/${nome}`, {}, { preserveScroll: true, onFinish: () => { confirmando.value = null; } });
+
+// Seleção em lote (liberar vários de uma vez): qualquer linha pode ser marcada; quem já está liberado é
+// ignorado e contado no resumo da resposta — mesmo padrão da seleção em lote de cobranças (T17.19).
+const selecionados = ref(new Set());
+const todosSelecionadosDaPagina = computed(() => linhas.value.length > 0 && linhas.value.every((u) => selecionados.value.has(u.id)));
+function alternarTodos() {
+    const novo = new Set(selecionados.value);
+    if (todosSelecionadosDaPagina.value) {
+        linhas.value.forEach((u) => novo.delete(u.id));
+    } else {
+        linhas.value.forEach((u) => novo.add(u.id));
+    }
+    selecionados.value = novo;
+}
+function alternarSelecao(id) {
+    const novo = new Set(selecionados.value);
+    if (novo.has(id)) {
+        novo.delete(id);
+    } else {
+        novo.add(id);
+    }
+    selecionados.value = novo;
+}
+function limparSelecao() {
+    selecionados.value = new Set();
+}
+const confirmandoLote = ref(false);
+const liberarForm = useForm({ ids: [] });
+const liberarEmLote = () => liberarForm.transform(() => ({ ids: [...selecionados.value] }))
+    .post('/admin/usuarios/lote/aprovar', { preserveScroll: true, onSuccess: () => { confirmandoLote.value = false; limparSelecao(); } });
 </script>
 
 <template>
@@ -55,12 +85,35 @@ const acao = (id, nome) => router.post(`/admin/usuarios/${id}/${nome}`, {}, { pr
             </div>
         </form>
 
+        <Transition name="surgir">
+            <div v-if="selecionados.size" class="mb-3 flex flex-wrap items-center gap-3 border border-carbono bg-papel px-4 py-2 text-sm">
+                <span class="font-semibold">{{ selecionados.size }} selecionado(s)</span>
+                <template v-if="confirmandoLote">
+                    <button type="button" class="botao" :disabled="liberarForm.processing" @click="liberarEmLote">Confirmar liberação</button>
+                    <button type="button" class="botao-secundario" @click="confirmandoLote = false">Cancelar</button>
+                </template>
+                <template v-else>
+                    <button type="button" class="botao-secundario" @click="confirmandoLote = true">Liberar selecionados</button>
+                    <button type="button" class="font-estreita text-xs text-carbono underline" @click="limparSelecao">Limpar seleção</button>
+                </template>
+            </div>
+        </Transition>
+
         <EstadoDaLista :estado="estado" :falha="falha" carregando="Carregando usuários…" vazio="Nenhum usuário com estes filtros." @tentar="recarregar">
             <Paginador id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />
             <div class="border border-linha bg-white transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
                 <TransitionGroup tag="table" name="lista" class="block w-full text-sm xl:table">
                     <thead key="cabecalho" class="hidden font-estreita text-xs text-grafite/75 xl:table-header-group">
                         <tr class="border-b border-linha text-left">
+                            <th scope="col" class="px-4 py-2 font-medium">
+                                <input
+                                    type="checkbox"
+                                    class="size-4 accent-carbono"
+                                    :checked="todosSelecionadosDaPagina"
+                                    aria-label="Selecionar todos os usuários desta página"
+                                    @change="alternarTodos"
+                                >
+                            </th>
                             <th scope="col" class="px-4 py-2 font-medium">Nome</th>
                             <th scope="col" class="px-3 py-2 font-medium">E-mail</th>
                             <th scope="col" class="px-3 py-2 font-medium">Cadastro</th>
@@ -70,6 +123,15 @@ const acao = (id, nome) => router.post(`/admin/usuarios/${id}/${nome}`, {}, { pr
                     </thead>
                     <tbody v-for="usuario in linhas" :key="usuario.id" class="block border-b border-linha last:border-b-0 xl:table-row-group">
                         <tr class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 xl:table-row xl:p-0">
+                            <td class="xl:px-4 xl:py-3">
+                                <input
+                                    type="checkbox"
+                                    class="size-4 accent-carbono"
+                                    :checked="selecionados.has(usuario.id)"
+                                    :aria-label="`Selecionar ${usuario.nome}`"
+                                    @change="alternarSelecao(usuario.id)"
+                                >
+                            </td>
                             <td class="basis-full xl:px-4 xl:py-3">
                                 <p class="font-semibold">{{ usuario.nome }} <span v-if="usuario.is_admin" class="font-estreita text-xs font-normal text-grafite/70">administrador</span></p>
                             </td>

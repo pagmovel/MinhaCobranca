@@ -1279,6 +1279,16 @@ passou sem provar nada sobre qual dos dois critérios realmente valia. Teste nov
 (`test_ordem_e_por_cadastro_nao_por_nome`) usa nomes em ordem alfabética invertida da ordem de cadastro
 ("Zeca Admin" antes de "Ana Depois") pra realmente travar o comportamento.
 
+## Liberação de usuário em lote (admin) — 2026-10-12
+Pedido do usuário, mesmo padrão de T17.19: checkbox por linha em `/admin/usuarios` + "selecionar todos da
+página" + barra de ações com confirmação em dois cliques (reaproveita o `confirmando`/botão-perigo já existente
+pra "Bloquear", mas com ref separada `confirmandoLote` pra não colidir). `POST /admin/usuarios/lote/aprovar`
+(`UsuarioController::aprovarEmLote`) libera (ou reativa, é a mesma ação) quem não está com `status=aprovado`;
+quem já está aprovado é ignorado e contado no resumo. Sem auditoria (o `aprovar`/`bloquear` individuais também
+não têm — gap já registrado no levantamento da seção T17.19 acima, ainda pendente de resolver em conjunto).
+**Mesma pegadinha de `<Transition>` + aba sem foco** descrita acima (seção T17.19) se repetiu aqui — mesma causa,
+mesma conclusão: não é bug da feature.
+
 ## T17.19: seleção em lote de cobranças (baixar, cancelar, enviar) — 2026-10-12
 Pedido do usuário: checkbox em cada linha de `/cobrancas` (+ "selecionar todas da página"), barra de ações
 quando há seleção, prévia antes de confirmar (padrão 9). Três ações: **baixar** (modal com escolha "usar a data
@@ -1317,6 +1327,13 @@ mecanismo de download/compartilhar já existente, uma cobrança de cada vez, com
   Mesmo assim, ficou uma melhoria real do processo: os modais (`BaixaEmLote.vue`/`CancelarEmLote.vue`) emitem um
   evento `@sucesso` dedicado (além de `@fechar`) pro pai limpar a seleção na hora, em vez de depender só do
   recarregamento genérico da lista — mais direto e não depende de timing de outro mecanismo.
+- **Causa raiz real, achada depois, ao repetir o mesmo "travamento" na liberação em lote de usuários (abaixo):**
+  não é reatividade — é a pegadinha **já documentada** de `<Transition>` + aba sem foco (achado da Fase 24, ver
+  Pegadinhas): a barra de ações em lote está dentro de `<Transition name="surgir">`; numa aba controlada por CDP
+  (browser-use) sem foco real, a animação de **saída** trava pra sempre, deixando o HTML antigo "congelado" na
+  tela mesmo com o dado já limpo por baixo (prova: os checkboxes, que ficam **fora** do `<Transition>`, sempre
+  mostravam o estado novo correto — só o texto "N selecionada(s)" dentro da transição ficava preso). **Não é bug
+  da feature, é limitação de teste automatizado**; não precisa de correção de código.
 
 ## Filtro de cobranças por contrato (2026-10-12)
 Pedido do usuário: ao clicar "Ver cobranças" num contrato específico, a lista trazia **todos** os contratos do

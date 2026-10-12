@@ -105,6 +105,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::middleware('can:admin')->prefix('admin')->group(function () {
         Route::get('/usuarios', [UsuarioController::class, 'index']);
         Route::get('/usuarios/dados', [UsuarioController::class, 'dados']);
+        Route::post('/usuarios/lote/aprovar', [UsuarioController::class, 'aprovarEmLote']);
         Route::post('/usuarios/{usuario}/aprovar', [UsuarioController::class, 'aprovar']);
         Route::post('/usuarios/{usuario}/bloquear', [UsuarioController::class, 'bloquear']);
     });
