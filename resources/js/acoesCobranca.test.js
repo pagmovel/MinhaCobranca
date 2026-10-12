@@ -8,14 +8,14 @@ const cobranca = (extra) => ({ situacao: 'a_vencer', enviado: false, editavel: t
 test('em aberto e não enviada: enviar é a principal', () => {
     assert.deepEqual(acoesDaCobranca(cobranca()), {
         principal: 'enviar',
-        menu: ['baixa', 'pdf', 'avisar', 'pagamento', 'editar', 'cancelar'],
+        menu: ['baixa', 'pdf', 'avisar', 'prorrogar', 'pagamento', 'editar', 'cancelar'],
     });
 });
 
 test('em aberto e já enviada: dar baixa é a principal, sem editar', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'vencida', enviado: true, editavel: false })), {
         principal: 'baixa',
-        menu: ['enviar', 'pdf', 'avisar', 'pagamento', 'cancelar'],
+        menu: ['enviar', 'pdf', 'avisar', 'prorrogar', 'pagamento', 'cancelar'],
     });
 });
 
@@ -34,7 +34,7 @@ test('cancelada: só o PDF; sem recibo, nada', () => {
 test('sem recibo não oferece PDF nem envio, mas avisar continua disponível', () => {
     assert.deepEqual(acoesDaCobranca(cobranca({ recibo: null })), {
         principal: 'baixa',
-        menu: ['avisar', 'pagamento', 'editar', 'cancelar'],
+        menu: ['avisar', 'prorrogar', 'pagamento', 'editar', 'cancelar'],
     });
 });
 
@@ -57,4 +57,19 @@ test('paga, cancelada e prevista não oferecem avisar', () => {
 
 test('rótulo de avisar', () => {
     assert.equal(rotuloDaAcao('avisar', cobranca()), 'Avisar no WhatsApp');
+});
+
+test('prorrogar aparece no menu de uma cobrança em aberto, enviada ou não', () => {
+    assert.ok(acoesDaCobranca(cobranca()).menu.includes('prorrogar'));
+    assert.ok(acoesDaCobranca(cobranca({ situacao: 'vencida', enviado: true, editavel: false })).menu.includes('prorrogar'));
+});
+
+test('prorrogar não aparece para paga, cancelada ou prevista', () => {
+    assert.ok(!acoesDaCobranca(cobranca({ situacao: 'paga', enviado: true })).menu.includes('prorrogar'));
+    assert.ok(!acoesDaCobranca(cobranca({ situacao: 'cancelada' })).menu.includes('prorrogar'));
+    assert.deepEqual(acoesDaCobranca(cobranca({ situacao: 'prevista', recibo: null, editavel: false })), { principal: null, menu: [] });
+});
+
+test('rótulo de prorrogar', () => {
+    assert.equal(rotuloDaAcao('prorrogar', cobranca()), 'Prorrogar vencimento');
 });
