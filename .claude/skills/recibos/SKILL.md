@@ -1061,10 +1061,14 @@ Ou seja: o lado da aplicação já está certo (usuário com privilégio limitad
 urgência, é do lado do servidor/painel — passos para o usuário (ou quem tiver acesso ao EasyPanel) executar:
 
 1. **Trocar as credenciais que já vazaram** (prioridade 1 — vazaram em texto puro no log do deploy Nixpacks, ver
-   acima): senha do `recibos_app`, senha do superusuário `postgres`, e o `APP_KEY` de produção/dev. Depois de
-   trocar cada uma, atualizar nos dois lugares — `.env` local **e** aba Environment do EasyPanel do serviço
-   `gerenciador_cobrancas` — e fazer um novo Deploy (variável só vale depois do deploy, pegadinha já registrada
-   acima). Trocar o `APP_KEY` invalida sessões/cookies ativos: fazer fora do horário de uso.
+   acima): senha do `recibos_app`, senha do superusuário `postgres`, e o `APP_KEY` de produção/dev.
+   - ~~Senha do superusuário `postgres`~~ — **trocada pelo usuário em 2026-10-12** direto no EasyPanel. Confirmado
+     nesta sessão que a conexão local (via `recibos_app`, conta separada) continua funcionando normalmente — a
+     troca não precisou de ajuste no `.env` nem no painel, porque a app nunca conecta como `postgres`.
+   - **Ainda faltam:** senha do `recibos_app` e o `APP_KEY`. Essas duas, sim, exigem atualizar nos dois lugares —
+     `.env` local **e** aba Environment do EasyPanel do serviço `gerenciador_cobrancas` — e fazer um novo Deploy
+     (variável só vale depois do deploy, pegadinha já registrada acima). Trocar o `APP_KEY` invalida
+     sessões/cookies ativos: fazer fora do horário de uso.
 2. **Ligar SSL no `postgres_dev`.** Depende da imagem usada pelo serviço no EasyPanel — geralmente é
    `ssl = on` em `postgresql.conf` (ou uma variável de ambiente equivalente, se a imagem expõe uma) mais um
    certificado (autoassinado já resolve o "em trânsito", mesmo sem CA confiável). **O lado do Laravel já está
