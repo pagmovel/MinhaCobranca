@@ -1069,12 +1069,16 @@ JS, suíte inteira), aguardando validação do usuário.
   `linha_digitavel` (mesmo motivo do `ajustarProporcional`: o vencimento vem embutido no código). Depois de
   renovar restaurando o valor cheio, a `linha_digitavel` já estava limpa desde o encerramento (o truncamento
   zera; nada para desfazer aqui).
-- **Pergunta em aberto (2026-10-12):** hoje "Renovar" só funciona com o contrato ainda `ativo = true`
-  (encerramento agendado, antes do fim chegar) — `ContratoController::renovar()` recusa se `ativo = false`.
-  Para contrato já encerrado de fato, existe o checkbox "Reativar contrato" (`Form.vue:177`,
-  `ContratoController::update():219-226`) no formulário normal de edição, que já permite mudar valor/itens —
-  mas **não** aciona `RenovadorDeContratos`: não desfaz cobrança cancelada nem fronteira truncada. Decisão
-  de produto pendente com o usuário: estender "Reativar" para também desfazer o que o encerramento fechou.
+- **Decisão do usuário (2026-10-12) — Reativar contrato já encerrado:** "Renovar" só funciona com
+  `ativo = true` (encerramento agendado). Para contrato já encerrado de fato, o checkbox "Reativar contrato"
+  (já existia, formulário normal de edição) agora também roda `RenovadorDeContratos::desfazerEncerramento()`
+  — reabre cancelada, restaura a fronteira truncada, resolve a avulsa (mesma regra do Renovar, avulsa paga
+  fica só aviso) — **e** continua permitindo mudar valor/itens na mesma ação, porque é o mesmo formulário.
+  `desfazerEncerramento()` roda **antes** do bloco `corrigir` (que desvincula todas as cobranças do
+  contrato) e antes de `$registro->update($dados)` (precisa da `data_fim`/itens antigos ainda no registro).
+  Prévia nova: `GET /contratos/{contrato}/reativacao` (mesmo formato de `/renovacao`), mostrada ao marcar o
+  checkbox; quem salva de verdade é o "Salvar contrato" de sempre — `ReativarContrato.vue` é só leitura, sem
+  botão de confirmar próprio.
 
 ### Pegadinhas
 - **`status` de `Cobranca` não é `#[Fillable]`** (decisão deliberada do projeto: mudança de status sempre
