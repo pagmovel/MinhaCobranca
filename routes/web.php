@@ -82,6 +82,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas', [CobrancaController::class, 'store']);
     Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);
     Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);
+    Route::post('/cobrancas/{cobranca}/prorrogar', [CobrancaController::class, 'prorrogar']);
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
     Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);

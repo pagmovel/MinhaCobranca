@@ -234,6 +234,36 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Cobrança cancelada. O recibo passa a sair como cancelado.');
     }
 
+    public function prorrogar(Request $request, int $cobranca, EmissorDeRecibos $emissor): RedirectResponse
+    {
+        $registro = $request->user()->cobrancas()->with('recibo')->findOrFail($cobranca);
+
+        if ($registro->status !== StatusCobranca::Pendente) {
+            return back()->with('erro', 'Só cobranças pendentes podem ter o vencimento prorrogado.');
+        }
+
+        $dados = $request->validate([
+            'vencimento' => ['required', 'date_format:Y-m-d', new AnoValido, 'after:'.$registro->vencimento->toDateString()],
+        ], [
+            'vencimento.after' => 'A nova data deve ser depois do vencimento atual ('.$registro->vencimento->format('d/m/Y').').',
+        ]);
+
+        $antes = $registro->vencimento;
+
+        DB::transaction(function () use ($registro, $dados, $antes, $emissor, $request) {
+            $registro->update(['vencimento' => $dados['vencimento']]);
+            Auditoria::registrar($request, 'cobranca.vencimento_prorrogado', $registro,
+                'Vencimento prorrogado de '.$antes->format('d/m/Y').' para '.$registro->vencimento->format('d/m/Y'),
+                ['vencimento' => $antes->toDateString()], ['vencimento' => $registro->vencimento->toDateString()]);
+
+            if ($registro->recibo !== null) {
+                $emissor->refazer($registro->recibo);
+            }
+        });
+
+        return back()->with('sucesso', 'Vencimento prorrogado.');
+    }
+
     /** Baixa com a data errada: troca a data do pagamento (senha + motivo, registrado na auditoria). */
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {
