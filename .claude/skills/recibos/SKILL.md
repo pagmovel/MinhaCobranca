@@ -350,6 +350,14 @@ o relatório mostra a parte que existe.
   clientes WebISS/DANFSe, contratos, painel gerando 4 cobranças, Enviar (download + "Aguardando"),
   baixa (PAGO no PDF), filtros, avulsa, edição (número mantido), cancelamento (CANCELADO no PDF),
   teclado com foco visível, 390 px sem rolagem horizontal. Prints em `storage/app/private/verificacao/smoke/`.
+- **Credenciais do smoke test (`browser-agent`):** login em `POST /entrar` (rota `login`, campos
+  `email`/`password`, mais `lembrar` opcional) com **`smoke@recibos.test` / `password`** — id 2, `is_admin=false`,
+  `status=aprovado`, no banco de dev `207.180.205.211:1`/`recibos` (ver `db:*` acima). A senha é a mesma usada por
+  padrão na `UserFactory` (`Hash::make('password')`), de propósito, para não existir um segredo novo para lembrar.
+  **Pegadinha (2026-10-12):** essa senha nunca tinha sido escrita em lugar nenhum — só o e-mail estava documentado
+  aqui (T5.3). Um agente numa sessão nova não tinha como adivinhar e travou no login. A senha foi definida via
+  tinker (PORTÃO-BANCO, autorizado pelo usuário) e só então documentada; se o login falhar de novo, é porque a
+  senha mudou ou a conta foi recriada — resetar com o mesmo comando, nunca supor a senha antiga.
 - **`php artisan serve` no Windows perdia o upload do logo sem erro**: o `ServeCommand` só repassa ao
   `php -S` as variáveis de `$passthroughVariables` (`ServeCommand.php:82-97`), sem `TEMP`/`TMP`; o PHP
   responde "unable to create a temporary file" (HTML com 200) e o POST chega vazio. Correção no
