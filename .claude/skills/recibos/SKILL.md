@@ -1046,6 +1046,23 @@ JS, suíte inteira), aguardando validação do usuário.
   uma cobrança pendente, refazendo o recibo se existir.
 - `GeradorDeCobrancas::desfazerProporcional()` é a contraparte de `ajustarProporcional()`: refaz os itens a
   partir do contrato e devolve o período cheio. Fica por conta do chamador emitir/refazer o recibo.
+- **Decisão do usuário (2026-10-12) — fronteira virada avulsa (proporcional já enviada):** renovar **avisa e
+  resolve sozinho**, não só avisa. `RenovadorDeContratos::acaoDaFronteira()` procura a avulsa substituta
+  (`avulsaSubstituta()`: mesmo cliente + mesmo início de período, sem FK de volta — ponytail, suficiente
+  porque a avulsa só nasce assim nesse fluxo). Se a avulsa **já foi paga**, dinheiro recebido não é desfeito
+  sozinho: fica `'aviso_avulsa'`, manual. Senão, `'desfazer_avulsa'` cancela a avulsa e reabre a cobrança
+  original (que nunca foi truncada — só a avulsa sofreu `ajustarProporcional`; reabrir basta, sem refazer
+  nada nela).
+- **Decisão do usuário (2026-10-12) — boleto depois de prorrogar:** `CobrancaController::prorrogar()` limpa
+  `linha_digitavel` (mesmo motivo do `ajustarProporcional`: o vencimento vem embutido no código). Depois de
+  renovar restaurando o valor cheio, a `linha_digitavel` já estava limpa desde o encerramento (o truncamento
+  zera; nada para desfazer aqui).
+- **Pergunta em aberto (2026-10-12):** hoje "Renovar" só funciona com o contrato ainda `ativo = true`
+  (encerramento agendado, antes do fim chegar) — `ContratoController::renovar()` recusa se `ativo = false`.
+  Para contrato já encerrado de fato, existe o checkbox "Reativar contrato" (`Form.vue:177`,
+  `ContratoController::update():219-226`) no formulário normal de edição, que já permite mudar valor/itens —
+  mas **não** aciona `RenovadorDeContratos`: não desfaz cobrança cancelada nem fronteira truncada. Decisão
+  de produto pendente com o usuário: estender "Reativar" para também desfazer o que o encerramento fechou.
 
 ### Pegadinhas
 - **`status` de `Cobranca` não é `#[Fillable]`** (decisão deliberada do projeto: mudança de status sempre
