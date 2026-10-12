@@ -138,6 +138,38 @@ class RenovarContratoVencidoTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('contrato.vencido', false));
     }
 
+    /** Pedido do usuário (2026-10-12): os campos do formulário principal já sugerem o próximo período, não as
+     * datas (vencidas) do contrato antigo — editáveis depois, sem travar nada. */
+    public function test_sugestao_de_renovacao_replica_a_duracao_da_vigencia_anterior(): void
+    {
+        $vencido = $this->contratoVencido();
+
+        $this->actingAs($this->usuario)->get("/contratos/{$vencido->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('contrato.sugestao_renovacao.data_inicio', '2026-10-13')
+                ->where('contrato.sugestao_renovacao.data_fim', '2026-11-12'));
+    }
+
+    /** Trimestral: a vigência anterior durou 3 meses (1 trimestre) — a sugestão replica 1 trimestre, não 3 meses corridos. */
+    public function test_sugestao_de_renovacao_conta_em_periodos_da_periodicidade(): void
+    {
+        $trimestral = Contrato::factory()->for($this->usuario)->for($this->cliente)
+            ->create(['periodicidade' => 'trimestral', 'data_inicio' => '2026-01-01', 'data_fim' => '2026-03-31', 'ativo' => true]);
+
+        $this->actingAs($this->usuario)->get("/contratos/{$trimestral->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('contrato.sugestao_renovacao.data_inicio', '2026-10-13')
+                ->where('contrato.sugestao_renovacao.data_fim', '2027-01-12'));
+    }
+
+    public function test_sem_sugestao_de_renovacao_quando_nao_esta_vencido(): void
+    {
+        $futuro = Contrato::factory()->for($this->usuario)->for($this->cliente)->create(['data_fim' => '2026-12-31']);
+
+        $this->actingAs($this->usuario)->get("/contratos/{$futuro->id}/edit")
+            ->assertInertia(fn (Assert $page) => $page->where('contrato.sugestao_renovacao', null));
+    }
+
     public function test_contrato_de_outro_usuario_da_404(): void
     {
         $alheio = $this->contratoVencido();

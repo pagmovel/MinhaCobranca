@@ -25,8 +25,14 @@ const props = defineProps({
 // Cliente escolhido (formato da autosugestão): a descrição oferece incluir o apelido.
 const cliente = ref(props.clienteAtual);
 
+// Vencido: os campos já sugerem o próximo período (hoje + mesma duração da vigência anterior), não as datas
+// (vencidas) do contrato antigo — editável depois. "Mudou período" compara contra essa sugestão, não o valor
+// bruto antigo, senão a seção "Recomeçar" apareceria sozinha ao abrir a tela, sem o usuário pedir.
+const baseInicio = props.contrato?.vencido ? props.contrato.sugestao_renovacao.data_inicio : props.contrato?.data_inicio;
+const baseFim = props.contrato?.vencido ? props.contrato.sugestao_renovacao.data_fim : props.contrato?.data_fim;
+
 // `reativar` só existe para contrato encerrado: sem ele marcado, salvar não desfaz o encerramento.
-const form = useForm(props.contrato ? { ...props.contrato, reativar: false, gerar_retroativas: null } : {
+const form = useForm(props.contrato ? { ...props.contrato, data_inicio: baseInicio, data_fim: baseFim, reativar: false, gerar_retroativas: null } : {
     gerar_retroativas: null,
     cliente_id: '',
     descricao: '',
@@ -49,7 +55,7 @@ const hoje = new Date().toLocaleDateString('sv-SE');
 
 /** Início ou periodicidade mudou (ou contrato novo): a tela pergunta sobre os períodos que já terminaram. */
 const perguntaRetroativos = computed(() => !props.contrato
-    || form.data_inicio !== props.contrato.data_inicio
+    || form.data_inicio !== baseInicio
     || form.periodicidade !== props.contrato.periodicidade);
 
 /**
@@ -57,7 +63,7 @@ const perguntaRetroativos = computed(() => !props.contrato
  * (as pendentes são canceladas); com paga, recomeçar (encerra e cria outro a partir de uma data posterior).
  */
 const mudaPeriodos = computed(() => Boolean(props.contrato?.tem_cobrancas) && (
-    form.data_inicio !== props.contrato.data_inicio
+    form.data_inicio !== baseInicio
     || form.periodicidade !== props.contrato.periodicidade
     || form.modalidade !== props.contrato.modalidade
 ));
@@ -84,7 +90,7 @@ const vespera = computed(() => {
 
 const desfazerMudancaDePeriodos = () => {
     modoEscolhido.value = null;
-    form.data_inicio = props.contrato.data_inicio;
+    form.data_inicio = baseInicio;
     form.periodicidade = props.contrato.periodicidade;
     form.modalidade = props.contrato.modalidade;
 };
@@ -133,7 +139,9 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
 <template>
     <CamadaApp>
         <Link href="/contratos" class="font-estreita text-sm text-carbono underline">Voltar para contratos</Link>
-        <h1 class="mt-2 mb-6 text-2xl font-semibold">{{ contrato ? 'Editar contrato' : 'Novo contrato' }}</h1>
+        <h1 class="mt-2 mb-6 text-2xl font-semibold">
+            {{ contrato?.vencido ? 'Renovar contrato' : (contrato ? 'Editar contrato' : 'Novo contrato') }}
+        </h1>
 
 
         <form class="grid max-w-3xl gap-4 sm:grid-cols-6" @submit.prevent="salvar">

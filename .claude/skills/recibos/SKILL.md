@@ -1245,6 +1245,24 @@ renegociado, diferente tanto do catálogo quanto do contrato antigo) — não s�
   sem quebrar o uso existente) que prefixa id/name; a seção de renovação usa `escopo="renovacao_"`. Achado
   **só no navegador** (testes PHP com Inertia não renderizam duas instâncias reais do componente Vue) — reforça
   por que o smoke test no navegador é obrigatório pra mudança de UI, mesmo com a suíte 100% verde.
+- **Pedido do usuário depois de usar (2026-10-12):** o título da tela ("Editar contrato") não dizia que era uma
+  renovação. `Contratos/Form.vue` agora mostra "Renovar contrato" quando `contrato?.vencido`, senão continua
+  "Editar contrato"/"Novo contrato".
+- **Pedido do usuário, mesmo dia:** os campos do formulário **principal** ("Início do primeiro período"/"Fim do
+  contrato") mostravam as datas (vencidas) do contrato antigo sem fazer sentido nenhum. Agora, quando `vencido`,
+  eles já vêm com uma **sugestão** calculada no servidor (`ContratoController::sugestaoDeRenovacao()`): início =
+  hoje; fim = hoje + a **mesma quantidade de períodos da periodicidade** que a vigência anterior teve (não a
+  mesma contagem de dias — ex.: vigência trimestral de 3 meses replica 1 trimestre a partir de hoje, não "+90
+  dias corridos"; mínimo 1 período, mesmo se a vigência antiga durou menos que um período, caso real achado num
+  contrato de smoke de sessão anterior com início = fim). Os campos continuam **editáveis** depois.
+  **Pegadinha evitada por desenho, não por acidente:** se a comparação de "mudou período"
+  (`mudaPeriodos`/`perguntaRetroativos`/`desfazerMudancaDePeriodos`) comparasse contra o valor **bruto** do
+  contrato antigo (`props.contrato.data_inicio`), a sugestão já apareceria como "diferente do original" assim
+  que a tela abrisse — disparando a seção "Recomeçar o contrato" **sem o usuário pedir nada**. Corrigido com uma
+  baseline (`baseInicio`/`baseFim`, igual à sugestão quando vencido, igual ao valor real nos outros casos) usada
+  nessas três comparações; os demais usos de `contrato.data_inicio`/`data_fim` (checagem de sobreposição com
+  cobranças já existentes, textos informativos, a seção de renovação em si) continuam no valor **real**, de
+  propósito.
 - **Smoke test (browser-agent, autorizado pelo usuário, 2 rodadas):** fixture no usuário SMOKE (cliente + contrato
   vencido + item), login, confirmado visualmente: etiqueta vermelha, link no menu, seção com itens pré-preenchidos,
   preço renegociado isolado corretamente (1ª rodada testou o campo errado por engano — mesmo rótulo duplicado,

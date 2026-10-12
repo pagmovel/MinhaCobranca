@@ -465,6 +465,31 @@ class ContratoController extends Controller
             ->with('sucesso', 'Contrato renovado: novo contrato a partir de '.$inicio->format('d/m/Y').'.');
     }
 
+    private function vencido(Contrato $contrato): bool
+    {
+        return $contrato->ativo && $contrato->data_fim !== null && $contrato->data_fim->lt(CarbonImmutable::today());
+    }
+
+    /**
+     * Sugestão de início/fim pra renovar (não grava nada): início hoje; fim replica a duração da vigência
+     * anterior (mesma quantidade de períodos da periodicidade, não as datas literais do contrato antigo).
+     *
+     * @return array{data_inicio: string, data_fim: string}
+     */
+    private function sugestaoDeRenovacao(Contrato $contrato): array
+    {
+        $meses = $contrato->periodicidade->meses();
+        $duracaoEmMeses = $contrato->data_inicio->diffInMonths($contrato->data_fim->addDay());
+        $periodos = max(1, (int) round($duracaoEmMeses / $meses));
+
+        $inicio = CarbonImmutable::today();
+
+        return [
+            'data_inicio' => $inicio->toDateString(),
+            'data_fim' => $inicio->addMonthsNoOverflow($periodos * $meses)->subDay()->toDateString(),
+        ];
+    }
+
     /**
      * Prévia do que marcar "Reativar" vai desfazer (JSON), para um contrato já encerrado de fato — sem gravar nada.
      * A execução de verdade é dentro de `update()`, junto com o resto do formulário (T17.11).
@@ -554,7 +579,8 @@ class ContratoController extends Controller
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
                 'ativo' => $contrato->ativo,
                 // Fim já passado mas ainda ativo (campo preenchido direto, nunca passou por "Encerrar"): T17.11 não cobre.
-                'vencido' => $contrato->ativo && $contrato->data_fim !== null && $contrato->data_fim->lt(CarbonImmutable::today()),
+                'vencido' => $this->vencido($contrato),
+                'sugestao_renovacao' => $this->vencido($contrato) ? $this->sugestaoDeRenovacao($contrato) : null,
                 'tem_cobrancas' => $contrato->cobrancas()->exists(),
                 'tem_pagas' => $contrato->cobrancas()->where('status', StatusCobranca::Paga)->exists(),
                 // O que uma correção de início cancelaria (prévia na tela).
