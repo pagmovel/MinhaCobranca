@@ -11,6 +11,7 @@ defineProps({
     mes: { type: String, required: true },
     perfilCompleto: { type: Boolean, required: true },
     vencimentosEmDiaNaoUtil: { type: Number, required: true },
+    contratosParaRenovar: { type: Number, required: true },
     diasAntecedencia: { type: Number, required: true },
     diasAviso: { type: Number, required: true },
     modelosMensagem: { type: Array, required: true },
@@ -34,6 +35,11 @@ defineProps({
             {{ vencimentosEmDiaNaoUtil === 1 ? '1 cobrança em aberto vence' : `${vencimentosEmDiaNaoUtil} cobranças em aberto vencem` }}
             em sábado, domingo ou feriado.
             <Link href="/perfil#feriados" class="font-semibold text-carbono underline">Ver e ajustar</Link>
+        </p>
+        <p v-if="contratosParaRenovar" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
+            {{ contratosParaRenovar === 1 ? '1 contrato encerra' : `${contratosParaRenovar} contratos encerram` }}
+            nos próximos dias.
+            <Link href="/contratos" class="font-semibold text-carbono underline">Ver contratos</Link>
         </p>
 
         <BlocoVencendo :dias-aviso="diasAviso" :modelos="modelosMensagem" :prestador="prestadorNome" />

@@ -40,6 +40,8 @@ class PainelController extends Controller
             'perfilCompleto' => $usuario->perfilCompleto(),
             // P2 (decisão do usuário, 2026-10-11): o aviso leva à prévia do ajuste, na seção Feriados do perfil.
             'vencimentosEmDiaNaoUtil' => $ajuste->quantas($usuario),
+            'contratosParaRenovar' => $usuario->contratos()->where('ativo', true)->whereNotNull('data_fim')
+                ->whereBetween('data_fim', [$hoje, $hoje->addDays($usuario->dias_aviso_contrato)])->count(),
             'diasAntecedencia' => $usuario->dias_antecedencia,
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),

@@ -44,6 +44,7 @@ class PerfilRequest extends FormRequest
             'modelo_padrao' => ['required', Rule::enum(FamiliaModelo::class)],
             'dias_antecedencia' => ['required', 'integer', 'between:0,60'],
             'dias_aviso' => ['required', 'integer', 'between:1,30'],
+            'dias_aviso_contrato' => ['required', 'integer', 'between:1,365'],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:1024'],
         ];
     }

@@ -17,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'name', 'email', 'password', 'documento', 'nome_fantasia', 'inscricao_municipal',
     'inscricao_estadual', 'telefone', 'logradouro', 'numero', 'complemento', 'bairro',
-    'cidade', 'uf', 'cep', 'modelo_padrao', 'dias_antecedencia', 'dias_aviso',
+    'cidade', 'uf', 'cep', 'modelo_padrao', 'dias_antecedencia', 'dias_aviso', 'dias_aviso_contrato',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -32,6 +32,7 @@ class User extends Authenticatable
         'modelo_padrao' => 'webiss',
         'dias_antecedencia' => 10,
         'dias_aviso' => 5,
+        'dias_aviso_contrato' => 30,
     ];
 
     /** Campos sem os quais o recibo sairia com o prestador em branco. */
@@ -52,6 +53,7 @@ class User extends Authenticatable
             'modelo_padrao' => FamiliaModelo::class,
             'dias_antecedencia' => 'integer',
             'dias_aviso' => 'integer',
+            'dias_aviso_contrato' => 'integer',
         ];
     }
 

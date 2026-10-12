@@ -36,6 +36,7 @@ class PerfilTest extends TestCase
             'modelo_padrao' => 'danfse',
             'dias_antecedencia' => 7,
             'dias_aviso' => 8,
+            'dias_aviso_contrato' => 20,
         ], $extra);
     }
 
@@ -75,6 +76,23 @@ class PerfilTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->post('/perfil', $this->dados(['dias_aviso' => 0]))->assertSessionHasErrors('dias_aviso');
         $this->post('/perfil', $this->dados(['dias_aviso' => 31]))->assertSessionHasErrors('dias_aviso');
+    }
+
+    public function test_dias_aviso_contrato_fora_de_1_a_365_e_recusado(): void
+    {
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario);
+
+        $this->post('/perfil', $this->dados(['dias_aviso_contrato' => 0]))->assertSessionHasErrors('dias_aviso_contrato');
+        $this->post('/perfil', $this->dados(['dias_aviso_contrato' => 366]))->assertSessionHasErrors('dias_aviso_contrato');
+
+        $this->post('/perfil', $this->dados(['dias_aviso_contrato' => 45]))->assertSessionHas('sucesso');
+        $this->assertSame(45, $usuario->fresh()->dias_aviso_contrato);
+    }
+
+    public function test_dias_aviso_contrato_tem_padrao_30_ao_criar_usuario(): void
+    {
+        $this->assertSame(30, User::factory()->create()->dias_aviso_contrato);
     }
 
     public function test_recusa_documento_uf_e_cep_invalidos(): void

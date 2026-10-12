@@ -130,4 +130,17 @@ class PainelTest extends TestCase
             ->where('resumo.recebido', '150,00')
             ->where('resumo.previsto', '120,00'));
     }
+
+    public function test_aviso_de_contrato_perto_do_fim(): void
+    {
+        $usuario = User::factory()->create(['dias_aviso_contrato' => 10]);
+        $cliente = Cliente::factory()->for($usuario)->create();
+        Contrato::factory()->for($usuario)->for($cliente)->create(['ativo' => true, 'data_fim' => '2026-10-15']);
+        Contrato::factory()->for($usuario)->for($cliente)->create(['ativo' => true, 'data_fim' => '2026-12-01']); // fora do prazo
+        Contrato::factory()->for($usuario)->for($cliente)->create(['ativo' => false, 'data_fim' => '2026-10-12']); // inativo
+        Contrato::factory()->for($usuario)->for($cliente)->create(['ativo' => true, 'data_fim' => null]); // sem fim
+
+        $this->actingAs($usuario)->get('/painel')
+            ->assertInertia(fn (Assert $page) => $page->where('contratosParaRenovar', 1));
+    }
 }
