@@ -1012,8 +1012,10 @@ o relatório mostra a parte que existe.
 
 ## Deploy no EasyPanel (validado pelo usuário em 2026-10-11)
 - **Onde:** VPS 207.180.205.211, projeto `meus_projetos`, serviço **Compose** `gerenciador_cobrancas` (fonte Git,
-  Build Path `/`, arquivo `docker-compose.easypanel.yml`). Banco = serviço `postgres_dev` do mesmo projeto, banco
-  `recibos`, usuário `recibos_app` — o mesmo que o projeto local usa (decisão do usuário).
+  Build Path `/`, arquivo `docker-compose.easypanel.yml`).
+- **Banco:** até 2026-10-12, usava o mesmo `postgres_dev`/`recibos` do projeto local. **Migrado para um banco de
+  produção dedicado em 2026-10-12** — ver seção "Migração para banco de produção dedicado" abaixo. Hoje: serviço
+  `postgres_prod` (host interno `meus_projetos_postgres_prod:5432`), banco `cobrancas`, usuário `cobrancas_app`.
 - **Arquivos:** `Dockerfile` (Node 22 compila o Vite → PHP 8.4 + Apache bookworm com `pdo_pgsql`, `gd`, `opcache`),
   `.dockerignore`, `docker-compose.easypanel.yml` (`env_file: .env`, volume `storage-app` em `storage/app`).
 - **Variáveis:** aba Environment com "Create .env file" ligado. `APP_ENV=production` e `APP_DEBUG=false` ficam fixos
@@ -1089,12 +1091,72 @@ urgência, é do lado do servidor/painel — passos para o usuário (ou quem tiv
      (local ou interna, não só a externa), o esperado é que ela suba SSL automaticamente sem precisar de mudança
      nenhuma. Ainda assim, **abrir o site implantado depois do restart do `postgres_dev`** pra confirmar que não
      quebrou nada — esta sessão não tem como testar a app implantada.
-3. **Fechar a porta pública do Postgres para a internet em geral** (ainda pendente). A app implantada fala com o
-   banco pela rede interna do EasyPanel (`DB_HOST=meus_projetos_postgres_dev:5432`, dentro do compose) — ela
-   **não precisa** da porta externa (a `1` que o `.env` local usa) aberta para o mundo; essa porta só existe hoje
-   para quem desenvolve localmente conectar de fora. Preferir: restringir essa porta por IP de origem no firewall
-   da VPS (ou no painel, se o EasyPanel expõe isso), ou trocar para um túnel SSH
-   (`ssh -L 5433:localhost:<porta_interna> usuario@vps`) em vez de expor a porta publicamente.
+3. ~~Fechar a porta pública do Postgres~~ — **decisão do usuário (2026-10-12): não se aplica mais ao
+   `postgres_dev`.** Esse banco é só de desenvolvimento e pode continuar com a porta pública aberta. O motivo
+   original (app implantada não devia depender de porta pública) foi resolvido de outro jeito: a produção agora
+   usa um banco **separado** (`postgres_prod`, já sem acesso público por natureza) — ver seção abaixo. Se um dia
+   quiser mesmo assim restringir a porta do `postgres_dev` por IP ou trocar por túnel SSH, o caminho é o mesmo
+   descrito antes; só deixou de ser urgente.
+
+### Migração para banco de produção dedicado (2026-10-12)
+
+**Contexto:** o app foi implantado em produção (serviço `gerenciador_cobrancas`) ainda lendo do `postgres_dev` —
+mesmo banco que o projeto local usa. O usuário pediu para migrar tudo pra um banco de produção **separado e sem
+acesso público**, que já existia criado no Easypanel: serviço `postgres_prod`, projeto `meus_projetos`, mas
+**compartilhado com outros projetos** do mesmo Easypanel (confirmado pelo usuário) — por isso a solução não podia
+ser "usar o banco `meus_projetos` direto".
+
+- **Isolamento escolhido: banco dedicado, não schema.** Perguntei ao usuário se um schema `recibos` dentro do
+  banco `meus_projetos` resolvia; ele preferiu um **banco (`CREATE DATABASE`) próprio** no mesmo servidor —
+  isolamento mais forte (sem risco de cruzar com tabela de outro projeto por engano, nem de dar `GRANT` errado
+  num schema compartilhado) e **igual ao padrão já usado no dev** (banco `recibos` dedicado lá). Nome escolhido
+  pelo usuário: `cobrancas` (banco) / `cobrancas_app` (role, por consistência com o nome do banco).
+- **Setup no servidor** (console do serviço `postgres_prod` no painel, conectado como `meus_projetos` —
+  confirmado superusuário via `\du` antes de criar qualquer coisa):
+  ```sql
+  CREATE ROLE cobrancas_app WITH LOGIN PASSWORD '...';
+  CREATE DATABASE cobrancas OWNER cobrancas_app;
+  ```
+- **Schema criado sem tocar no ambiente ao vivo.** `php artisan migrate --force` rodado pelo **console do app
+  implantado** (`gerenciador_cobrancas`, já tem `artisan` e alcança o `postgres_prod` pela rede interna), com as
+  variáveis de conexão passadas só naquele comando (prefixo de ambiente na mesma linha), **não** no
+  Environment salvo do painel — assim o app continuou servindo do `postgres_dev` normalmente durante a
+  migração. Pegadinha: o container roda com `config:cache` (`php artisan optimize` no boot, padrão deste deploy —
+  ver acima); sem `php artisan config:clear` antes, a variável de ambiente passada na linha de comando é
+  **ignorada** (o config em cache não lê `env()` de novo). Sequência: `config:clear` → `DB_HOST=... DB_DATABASE=cobrancas
+  ... php artisan migrate --force` → `config:cache` (restaura o cache original, poucos segundos sem cache no meio).
+  25 migrations rodaram limpas.
+- **Dados migrados, não só o schema** — decisão do usuário: levar só os dados **reais** (usuário id 1,
+  `marcos.ronaldo@gmail.com`), sem a conta e os dados do smoke test (id 2). Como são poucas linhas (confirmado
+  antes por contagem: 122 linhas ao todo em 11 tabelas), gerei um script PHP local (bootstrap do Laravel direto,
+  sem passar pelo `artisan`) que lê do `postgres_dev` filtrando por `user_id = 1` (e cascata: `contrato_id`/
+  `cobranca_id` das tabelas de itens) e escreve `INSERT` com `$pdo->quote()` por valor — evita bug de escape
+  manual em texto com acento, aspas ou JSON (o `recibos.snapshot`). Ordem de dependência: `users` →
+  `clientes`/`chaves_pix`/`produtos_servicos` (só dependem do user) → `contratos` → `contrato_itens` →
+  `cobrancas` → `cobranca_itens` → `recibos` → `auditorias` → `modelos_mensagem`. O SQL gerado (199 linhas) ficou
+  envolto em `BEGIN;`/`COMMIT;` — se o colar no console cortasse alguma linha, a transação falhava inteira, sem
+  sujeira parcial (não precisou: colou certo de primeira). No final, `setval(pg_get_serial_sequence(...), MAX(id))`
+  por tabela, pra sequência continuar depois do maior id migrado.
+- **Entrega do SQL ao usuário:** como o Claude Code roda na mesma máquina onde o usuário edita o projeto, o
+  arquivo gerado localmente foi aberto por ele no próprio editor e colado no console — mais barato em contexto do
+  que reproduzir 76 KB de SQL na conversa.
+  **Arquivos temporários com dado pessoal (nome, CPF, endereço, hash de senha) apagados do scratchpad depois de
+  confirmada a migração** (conferência de contagem por tabela batendo 1:1 com o filtrado do dev).
+- **Corte final:** Environment do `gerenciador_cobrancas` trocado (`DB_HOST=meus_projetos_postgres_prod`,
+  `DB_DATABASE=cobrancas`, `DB_USERNAME=cobrancas_app`, senha nova, `DB_SSLMODE=prefer` — o `postgres_prod`
+  ainda não tem SSL ligado, mesmo processo pendente de fazer lá que já foi feito no `postgres_dev`) + Deploy.
+  **Validado pelo usuário em 2026-10-12**: app em produção mostrando os 3 clientes migrados.
+- **Pegadinha de console do Easypanel, registrada antes e reconfirmada aqui:** colar comando de várias linhas
+  com `\` de continuação quebra (`bash: $'\E[200~...'`); SQL de várias linhas terminado em `;` (sem `\`), colado
+  dentro do `psql`, funciona normalmente — inclusive um valor com quebra de linha literal dentro de uma string
+  entre aspas simples.
+
+### Pendências depois da migração
+- `postgres_prod` sem SSL ainda (`sslmode=disable` na Internal Connection URL do painel) — mesmo processo do
+  `postgres_dev` (seção acima) resolve, ainda não feito.
+- `.env` local continua apontando pro `postgres_dev` — correto, é o banco de desenvolvimento; não mexer.
+- O usuário real (id 1) e os dados dele continuam **também** no `postgres_dev` (não foram removidos de lá, só
+  copiados) — intencional, dev continua servindo de ambiente de teste.
 
 ## T17.11: renovar contrato, prorrogar cobrança, aviso de contrato perto do fim (2026-10-12)
 

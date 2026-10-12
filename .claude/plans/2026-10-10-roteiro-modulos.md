@@ -103,13 +103,22 @@ apagada — decisão de não apagar branches sem pedido explícito).
 10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores
     (planejados). **Mantidos como pendência de propósito** (confirmado pelo usuário em 2026-10-12) — não
     antecipar o desenho sem pedido.
-11. **Segurança do PostgreSQL de dev** (detalhe na skill, seção "Segurança do PostgreSQL de dev — instruções"):
-    ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas) e ~~SSL~~ (ligado, `hostssl` exigido,
-    confirmado TLSv1.3) **feitos em 2026-10-12**. Falta: senha do `recibos_app` e fechar a porta pública do
-    Postgres pra internet em geral (só pela rede interna do EasyPanel + túnel SSH pra dev).
+11. **Produção migrada para banco dedicado (2026-10-12), validado pelo usuário** — detalhe completo na skill,
+    seção "Migração para banco de produção dedicado". `gerenciador_cobrancas` (app em produção) agora lê de
+    `postgres_prod`/banco `cobrancas`/usuário `cobrancas_app` (sem acesso público, servidor compartilhado com
+    outros projetos do Easypanel, mas banco isolado só nosso) — não mais do `postgres_dev`. Dados reais (usuário
+    id 1) migrados; smoke test (id 2) ficou só no dev, de propósito.
+12. **Segurança do PostgreSQL** (detalhe na skill, seção "Segurança do PostgreSQL de dev — instruções"):
+    ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas) e ~~SSL no dev~~ (ligado, `hostssl`
+    exigido, confirmado TLSv1.3) **feitos em 2026-10-12**. ~~Fechar a porta pública do `postgres_dev`~~ —
+    **decisão do usuário (2026-10-12): não precisa mais**, é só banco de dev; o motivo original (produção
+    depender de porta pública) foi resolvido migrando a produção pro banco dedicado (item 11), que já nasceu
+    sem acesso público. Falta: senha do `recibos_app` (dev) e **SSL no `postgres_prod`** (criado em 2026-10-12,
+    ainda com `sslmode=disable`).
     **Pedido do usuário (2026-10-12): quando essa pendência concluir (as duas de cima), atualizar o `README.md`**
     — aproveitar pra corrigir também o que já está desatualizado nele hoje, sem relação com segurança: "Requisitos"
-    ainda diz "SQLite (PostgreSQL no futuro)", mas o projeto já usa PostgreSQL de verdade (dev e produção).
+    ainda diz "SQLite (PostgreSQL no futuro)", mas o projeto já usa PostgreSQL de verdade (dev e produção, dois
+    bancos separados desde 2026-10-12).
 
 **Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
 fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →
