@@ -103,8 +103,10 @@ apagada — decisão de não apagar branches sem pedido explícito).
 10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores
     (planejados). **Mantidos como pendência de propósito** (confirmado pelo usuário em 2026-10-12) — não
     antecipar o desenho sem pedido.
-11. **Segurança do PostgreSQL de dev**: instruções escritas em 2026-10-12 na skill (seção "Segurança do PostgreSQL
-    de dev — instruções"), ainda não executadas — exigem acesso ao painel EasyPanel/VPS que esta sessão não tem.
+11. **Segurança do PostgreSQL de dev** (detalhe na skill, seção "Segurança do PostgreSQL de dev — instruções"):
+    ~~credenciais vazadas~~ (senha do `postgres` e `APP_KEY` trocadas) e ~~SSL~~ (ligado, `hostssl` exigido,
+    confirmado TLSv1.3) **feitos em 2026-10-12**. Falta: senha do `recibos_app` e fechar a porta pública do
+    Postgres pra internet em geral (só pela rede interna do EasyPanel + túnel SSH pra dev).
 
 **Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
 fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →

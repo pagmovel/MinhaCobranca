@@ -1062,27 +1062,39 @@ urgência, é do lado do servidor/painel — passos para o usuário (ou quem tiv
 
 1. **Trocar as credenciais que já vazaram** (prioridade 1 — vazaram em texto puro no log do deploy Nixpacks, ver
    acima): senha do `recibos_app`, senha do superusuário `postgres`, e o `APP_KEY` de produção/dev.
-   - ~~Senha do superusuário `postgres`~~ — **trocada pelo usuário em 2026-10-12** direto no EasyPanel. Confirmado
-     nesta sessão que a conexão local (via `recibos_app`, conta separada) continua funcionando normalmente — a
-     troca não precisou de ajuste no `.env` nem no painel, porque a app nunca conecta como `postgres`.
-   - **Ainda faltam:** senha do `recibos_app` e o `APP_KEY`. Essas duas, sim, exigem atualizar nos dois lugares —
-     `.env` local **e** aba Environment do EasyPanel do serviço `gerenciador_cobrancas` — e fazer um novo Deploy
-     (variável só vale depois do deploy, pegadinha já registrada acima). Trocar o `APP_KEY` invalida
-     sessões/cookies ativos: fazer fora do horário de uso.
-2. **Ligar SSL no `postgres_dev`.** Depende da imagem usada pelo serviço no EasyPanel — geralmente é
-   `ssl = on` em `postgresql.conf` (ou uma variável de ambiente equivalente, se a imagem expõe uma) mais um
-   certificado (autoassinado já resolve o "em trânsito", mesmo sem CA confiável). **O lado do Laravel já está
-   pronto**: `config/database.php:99` já lê `DB_SSLMODE` (padrão `prefer`, que é por isso que a conexão cai para
-   sem SSL hoje — o servidor não oferece). Depois de ligar SSL no servidor, trocar `DB_SSLMODE=require` no `.env`
-   local e no painel, para a conexão **recusar** cair para texto puro em vez de só preferir.
-3. **Fechar a porta pública do Postgres para a internet em geral.** A app implantada fala com o banco pela rede
-   interna do EasyPanel (`DB_HOST=meus_projetos_postgres_dev:5432`, dentro do compose) — ela **não precisa** da
-   porta externa (a `1` que o `.env` local usa) aberta para o mundo; essa porta só existe hoje para quem desenvolve
-   localmente conectar de fora. Preferir: restringir essa porta por IP de origem no firewall da VPS (ou no painel,
-   se o EasyPanel expõe isso), ou trocar para um túnel SSH (`ssh -L 5433:localhost:<porta_interna> usuario@vps`) em
-   vez de expor a porta publicamente.
-4. Depois dos passos 1–3, revisar `pg_hba.conf` dentro do container `postgres_dev` para exigir `hostssl` (não só
-   `host`) nas linhas de conexão TCP — isso faz o servidor **recusar** conexão sem SSL, reforçando o passo 2.
+   - ~~Senha do superusuário `postgres`~~ — **trocada pelo usuário em 2026-10-12** direto no EasyPanel.
+   - ~~`APP_KEY`~~ — **trocada pelo usuário em 2026-10-12**, local e no EasyPanel. Confirmado nesta sessão que o
+     `.env` local lê a chave nova sem erro (`php artisan config:clear` + leitura de `config('app.key')`).
+   - **Ainda falta:** a senha do `recibos_app` — exige atualizar `.env` local **e** aba Environment do EasyPanel
+     do serviço `gerenciador_cobrancas`, depois um novo Deploy (variável só vale depois do deploy).
+2. ~~Ligar SSL no `postgres_dev`~~ — **feito em 2026-10-12**, pelo console do próprio container (root dentro do
+   `postgres_dev`, sem precisar de SSH na VPS):
+   - Certificado autoassinado gerado em `$PGDATA/server.{crt,key}` (`openssl req -x509 -nodes`), `chmod 600` +
+     `chown postgres:postgres` na chave (o Postgres recusa chave com permissão mais aberta).
+   - `postgresql.conf`: `#ssl = off` → `ssl = on` (os defaults de `ssl_cert_file`/`ssl_key_file` já apontavam para
+     `server.crt`/`server.key`, os nomes usados).
+   - `pg_hba.conf`: a linha `host all all all scram-sha-256` (a única que aceita conexão de fora do container;
+     as de `127.0.0.1`/`::1`/`local` são `trust`, intocadas) virou `hostssl ...` — conexão de fora **sem** SSL é
+     recusada agora, não só "preferida".
+   - Restart pelo painel do EasyPanel (não por dentro do container — `ssl` é parâmetro de `postmaster`, pede
+     restart completo, e `pg_ctl restart` como root de dentro arrisca brigar com o processo principal do
+     container). Confirmado depois do restart: `SHOW ssl` → `on`, conexão local usando **TLSv1.3**
+     (`pg_stat_ssl`).
+   - `.env` local: `DB_SSLMODE=require` acrescentado (antes não existia a variável, valia o padrão `prefer` de
+     `config/database.php:99`) — confirmado que a conexão continua normal, agora exigindo SSL em vez de só
+     preferir.
+   - **Verificar (o usuário, não esta sessão):** a app **implantada** (serviço `gerenciador_cobrancas`) conecta ao
+     mesmo `postgres_dev` pela rede interna do EasyPanel e por padrão também usa `sslmode=prefer` (a menos que o
+     painel tenha `DB_SSLMODE` configurado diferente) — como a regra `hostssl` vale para **qualquer** conexão TCP
+     (local ou interna, não só a externa), o esperado é que ela suba SSL automaticamente sem precisar de mudança
+     nenhuma. Ainda assim, **abrir o site implantado depois do restart do `postgres_dev`** pra confirmar que não
+     quebrou nada — esta sessão não tem como testar a app implantada.
+3. **Fechar a porta pública do Postgres para a internet em geral** (ainda pendente). A app implantada fala com o
+   banco pela rede interna do EasyPanel (`DB_HOST=meus_projetos_postgres_dev:5432`, dentro do compose) — ela
+   **não precisa** da porta externa (a `1` que o `.env` local usa) aberta para o mundo; essa porta só existe hoje
+   para quem desenvolve localmente conectar de fora. Preferir: restringir essa porta por IP de origem no firewall
+   da VPS (ou no painel, se o EasyPanel expõe isso), ou trocar para um túnel SSH
+   (`ssh -L 5433:localhost:<porta_interna> usuario@vps`) em vez de expor a porta publicamente.
 
 ## T17.11: renovar contrato, prorrogar cobrança, aviso de contrato perto do fim (2026-10-12)
 
