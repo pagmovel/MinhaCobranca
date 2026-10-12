@@ -117,7 +117,7 @@ trait RegrasDeItens
     }
 
     /** Valor = soma dos itens; códigos fiscais = os do item principal no catálogo. */
-    protected function resumoDosItens(): array
+    public function resumoDosItens(): array
     {
         $itens = $this->itensCalculados();
 

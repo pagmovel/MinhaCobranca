@@ -36,6 +36,7 @@ watch(() => [filtro.cliente_id, filtro.produto_servico_id], filtrar);
 const SITUACAO = {
     ativo: () => ['Ativo', 'verde'],
     encerra: (contrato) => [`Encerra em ${contrato.fim}`, 'laranja'],
+    vencido: (contrato) => [`Vencido em ${contrato.fim}`, 'vermelho'],
     encerrado: () => ['Encerrado', 'apagado'],
 };
 // Valores de periodicidades diferentes não se somam: uma linha de total por periodicidade.
@@ -47,6 +48,7 @@ const PERIODICIDADE = {
 };
 const periodo = periodoAoRedor();
 const cobrancasDo = (contrato) => `/cobrancas?${new URLSearchParams({ cliente_id: contrato.cliente_id, ...periodo })}`;
+const cobrancasDesteContrato = (contrato) => `/cobrancas?${new URLSearchParams({ cliente_id: contrato.cliente_id, contrato_id: contrato.id, ...periodo })}`;
 </script>
 
 <template>
@@ -136,6 +138,8 @@ const cobrancasDo = (contrato) => `/cobrancas?${new URLSearchParams({ cliente_id
                                 <div class="flex items-center gap-2 xl:justify-end">
                                     <Link :href="`/contratos/${contrato.id}/edit`" :class="['botao', botaoPrincipal]">Editar</Link>
                                     <MenuAcoes :rotulo="`Mais ações: ${contrato.cliente}`">
+                                        <Link v-if="contrato.situacao === 'vencido'" :href="`/contratos/${contrato.id}/edit`" :class="itemMenu">Renovar contrato</Link>
+                                        <Link :href="cobrancasDesteContrato(contrato)" :class="itemMenu">Ver cobranças deste contrato</Link>
                                         <Link :href="cobrancasDo(contrato)" :class="itemMenu">Ver cobranças do cliente</Link>
                                     </MenuAcoes>
                                 </div>

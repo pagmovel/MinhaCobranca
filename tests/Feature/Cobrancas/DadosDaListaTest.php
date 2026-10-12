@@ -119,6 +119,22 @@ class DadosDaListaTest extends TestCase
             ->assertJsonPath('filtros.cliente_id', $outro->id);
     }
 
+    public function test_filtro_de_contrato_mostra_so_as_cobrancas_daquele_contrato(): void
+    {
+        // Encerrados: sem isso, a previsão calculada pelo próprio contrato entra na lista e confunde a contagem.
+        $contratoA = Contrato::factory()->for($this->usuario)->for($this->cliente)->create(['ativo' => false]);
+        $contratoB = Contrato::factory()->for($this->usuario)->for($this->cliente)->create(['ativo' => false]);
+        $daA = Cobranca::factory()->for($this->usuario)->for($this->cliente)->for($contratoA)
+            ->create(['vencimento' => '2026-10-20', 'valor_centavos' => 1000]);
+        Cobranca::factory()->for($this->usuario)->for($this->cliente)->for($contratoB)
+            ->create(['vencimento' => '2026-10-21', 'valor_centavos' => 2000]);
+
+        $this->dados("?contrato_id={$contratoA->id}")->assertOk()
+            ->assertJsonCount(1, 'linhas')
+            ->assertJsonPath('linhas.0.id', $daA->id)
+            ->assertJsonPath('filtros.contrato_id', $contratoA->id);
+    }
+
     public function test_so_dados_do_proprio_usuario_e_nada_gravado(): void
     {
         // Antes do actingAs (ele vale até o fim do teste): sem sessão, o JSON não responde.

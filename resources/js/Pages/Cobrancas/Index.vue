@@ -27,6 +27,7 @@ const props = defineProps({
     filtros: { type: Object, required: true },
     padroes: { type: Object, required: true },
     clienteFiltro: { type: Object, default: null },
+    contratoFiltro: { type: Object, default: null },
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
     modelosMensagem: { type: Array, required: true },
@@ -72,6 +73,10 @@ const erroAte = computed(() => erros.value.ate ?? '');
 // Cliente escolhido (ou apagado) aplica na hora, como os selects.
 watch(() => filtro.cliente_id, filtrar);
 const filtrando = computed(() => filtrosAlterados(filtro, props.padroes));
+// O mesmo filtro, sem o contrato: só o cliente (usado no link "Ver todos os contratos do cliente").
+const semContrato = computed(() => `/cobrancas?${new URLSearchParams({
+    mes: filtro.mes, ate: filtro.ate, status: filtro.status, cliente_id: filtro.cliente_id, canceladas: filtro.canceladas ? '1' : '',
+})}`);
 
 // O campo de mês muda a cada dígito e a cada parte: o pedido sai 400 ms depois da última mudança.
 const filtrarPeriodo = adiar(() => filtrar());
@@ -111,6 +116,11 @@ async function fecharFaixa() {
             <h1 class="text-2xl font-semibold">Cobranças</h1>
             <Link href="/cobrancas/create" class="botao">Nova cobrança avulsa</Link>
         </div>
+
+        <p v-if="contratoFiltro" class="mb-4 text-sm text-grafite/80">
+            Mostrando só o contrato de R$ {{ contratoFiltro.valor }} (desde {{ contratoFiltro.data_inicio }}) —
+            <Link :href="semContrato" class="underline">ver todos os contratos do cliente</Link>.
+        </p>
 
         <!-- Datas com largura fixa (o mês cabe em 11rem); situação e cliente dividem o resto; a última coluna é do tamanho
              da caixa + botão, que ficam na mesma linha (pedido do usuário, 2026-10-11). -->

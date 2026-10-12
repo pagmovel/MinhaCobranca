@@ -9,6 +9,7 @@ use App\Models\Cliente;
 use App\Models\Contrato;
 use App\Models\ProdutoServico;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -66,6 +67,18 @@ class FiltrosContratosTest extends TestCase
 
         $this->assertSame(['ativo', 'encerra', 'encerrado'], array_column($linhas, 'situacao'));
         $this->assertSame([null, '31/12/2026', '30/06/2026'], array_column($linhas, 'fim'));
+    }
+
+    /** Fim marcado direto no campo do formulário (sem passar por "Encerrar"): ativo nunca é recalculado com o tempo. */
+    public function test_situacao_vencido_quando_o_fim_ja_passou_mas_continua_ativo(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-13 10:00:00'));
+        Contrato::factory()->for($this->usuario)->create(['data_inicio' => '2026-09-01', 'data_fim' => '2026-09-30']);
+        Contrato::factory()->for($this->usuario)->create(['data_inicio' => '2026-09-01', 'data_fim' => '2026-10-13']);
+
+        $linhas = $this->actingAs($this->usuario)->getJson('/contratos/dados')->json('linhas');
+
+        $this->assertSame(['vencido', 'encerra'], array_column($linhas, 'situacao'));
     }
 
     public function test_pagina_traz_o_produto_do_filtro_mesmo_inativo(): void

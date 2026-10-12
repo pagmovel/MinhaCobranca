@@ -112,6 +112,22 @@ const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`
     onSuccess: () => { renovando.value = false; },
     onError: (erros) => { erroRenovacao.value = erros.data_fim ?? 'Não foi possível renovar agora. Tente de novo.'; },
 });
+
+// Contrato vencido (fim já passado, nunca passou por "Encerrar"): renovar cria um contrato novo, com os mesmos
+// itens/preço do antigo para ajustar — mesmo padrão do formulário principal, sem pedir para redigitar tudo.
+const diaSeguinte = (iso) => {
+    const data = new Date(`${iso}T12:00:00`);
+    data.setDate(data.getDate() + 1);
+
+    return data.toLocaleDateString('sv-SE');
+};
+const renovandoVencido = ref(false);
+// JSON (não structuredClone): props.contrato é reativo (Proxy), e structuredClone lança DataCloneError nele.
+const formRenovacaoVencido = useForm(props.contrato ? {
+    data_inicio: diaSeguinte(props.contrato.data_fim),
+    itens: JSON.parse(JSON.stringify(props.contrato.itens)),
+} : { data_inicio: '', itens: [] });
+const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${props.contrato.id}/renovar-vencido`, { preserveScroll: true });
 </script>
 
 <template>
@@ -259,7 +275,29 @@ const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`
             </Transition>
         </form>
 
-        <section v-if="contrato?.ativo && !mudaPeriodos && contrato.encerramento_agendado" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
+        <section v-if="contrato?.vencido" class="mt-10 grid max-w-3xl gap-4 border-t border-carbono/15 pt-6 sm:grid-cols-6">
+            <h2 class="text-lg font-semibold sm:col-span-6">Renovar contrato</h2>
+            <p class="text-sm sm:col-span-6">
+                Este contrato venceu em {{ dataBr(contrato.data_fim) }} e não gera mais cobranças. Renovar encerra este
+                contrato e cria um novo, com os mesmos dados — ajuste os itens e os preços se precisar.
+            </p>
+            <div v-if="!renovandoVencido" class="sm:col-span-6">
+                <button type="button" class="botao-secundario" @click="renovandoVencido = true">Renovar contrato…</button>
+            </div>
+            <template v-else>
+                <Campo id="renovacao_data_inicio" rotulo="A partir de" :erro="formRenovacaoVencido.errors.data_inicio" class="sm:col-span-3">
+                    <input id="renovacao_data_inicio" v-model="formRenovacaoVencido.data_inicio" type="date" class="entrada">
+                </Campo>
+                <SecaoItens :form="formRenovacaoVencido" escopo="renovacao_" />
+                <div class="flex items-center gap-2 sm:col-span-6">
+                    <button type="button" class="botao" :disabled="formRenovacaoVencido.processing" @click="confirmarRenovacaoVencido">
+                        Confirmar renovação
+                    </button>
+                    <button type="button" class="botao-secundario" @click="renovandoVencido = false">Cancelar</button>
+                </div>
+            </template>
+        </section>
+        <section v-else-if="contrato?.ativo && !mudaPeriodos && contrato.encerramento_agendado" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
             <h2 class="text-lg font-semibold">Renovar contrato</h2>
             <p class="text-sm">
                 Encerramento agendado para {{ dataBr(contrato.data_fim) }}: o contrato gera cobranças até lá.

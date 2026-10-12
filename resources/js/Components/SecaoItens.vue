@@ -5,7 +5,10 @@ import CadastroRapidoProduto from './CadastroRapidoProduto.vue';
 import CatalogoItens from './CatalogoItens.vue';
 import { centavos, formatarCentavos, totalDoItem } from '../itens.js';
 
-const props = defineProps({ form: { type: Object, required: true } });
+// `escopo` distingue ids/nomes quando duas seções de itens aparecem juntas na mesma tela (ex.: formulário
+// principal do contrato + seção "Renovar contrato" vencido) — sem isso, id/name duplicados quebram foco,
+// o rótulo "for" e o agrupamento do rádio "principal" entre as duas listas.
+const props = defineProps({ form: { type: Object, required: true }, escopo: { type: String, default: '' } });
 
 const total = computed(() => props.form.itens.reduce((soma, item) => soma + totalDoItem(item.quantidade, item.preco), 0));
 const erro = (indice, campo) => props.form.errors[`itens.${indice}.${campo}`];
@@ -33,7 +36,7 @@ async function adicionar(opcao) {
         return; // no catálogo a pessoa ainda está escolhendo; o foco volta à lista quando ela concluir
     }
     await nextTick();
-    const campo = document.getElementById(`preco_item_${opcao.id}`);
+    const campo = document.getElementById(`${props.escopo}preco_item_${opcao.id}`);
     campo?.focus();
     campo?.select();
 }
@@ -90,22 +93,22 @@ function abrirCadastro(texto) {
                             </td>
                             <td class="px-3 py-2">
                                 <input
-                                    :id="`preco_item_${item.produto_servico_id}`"
+                                    :id="`${escopo}preco_item_${item.produto_servico_id}`"
                                     v-model="item.preco"
                                     v-mascara="'valor'"
                                     inputmode="decimal"
                                     class="entrada w-32"
                                     :class="semPreco(item) ? 'border-tinta-laranja' : ''"
                                     :aria-label="`Preço combinado de ${item.nome}`"
-                                    :aria-describedby="semPreco(item) ? `preco_aviso_${item.produto_servico_id}` : undefined"
+                                    :aria-describedby="semPreco(item) ? `${escopo}preco_aviso_${item.produto_servico_id}` : undefined"
                                     required
                                 >
                                 <p v-if="erro(indice, 'preco')" class="text-xs text-tinta-vermelha">{{ erro(indice, 'preco') }}</p>
-                                <p v-else-if="semPreco(item)" :id="`preco_aviso_${item.produto_servico_id}`" class="text-xs text-tinta-laranja">Informe o preço combinado</p>
+                                <p v-else-if="semPreco(item)" :id="`${escopo}preco_aviso_${item.produto_servico_id}`" class="text-xs text-tinta-laranja">Informe o preço combinado</p>
                             </td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ formatarCentavos(totalDoItem(item.quantidade, item.preco)) }}</td>
                             <td class="px-3 py-2">
-                                <input type="radio" name="item_principal" :checked="item.principal" :aria-label="`${item.nome} é o item principal`" @change="marcarPrincipal(indice)">
+                                <input type="radio" :name="`${escopo}item_principal`" :checked="item.principal" :aria-label="`${item.nome} é o item principal`" @change="marcarPrincipal(indice)">
                             </td>
                             <td class="px-3 py-2 text-right">
                                 <button type="button" class="botao-secundario px-2 py-1" :aria-label="`Remover ${item.nome}`" @click="remover(indice)">Remover</button>
@@ -126,13 +129,13 @@ function abrirCadastro(texto) {
         </Transition>
 
         <div>
-            <label for="novo_item" class="font-estreita text-xs font-medium text-grafite/75">
+            <label :for="`${escopo}novo_item`" class="font-estreita text-xs font-medium text-grafite/75">
                 {{ form.itens.length ? 'Incluir outro produto ou serviço' : 'Incluir produto ou serviço' }}
             </label>
             <div class="flex flex-wrap items-start gap-2">
                 <div class="min-w-0 flex-1 basis-60">
                     <BuscaAutosugestao
-                        id="novo_item"
+                        :id="`${escopo}novo_item`"
                         url="/produtos-servicos/busca"
                         vazio="Clique para ver o catálogo ou digite o nome"
                         nenhum="Nenhum produto ou serviço ativo com esse nome."

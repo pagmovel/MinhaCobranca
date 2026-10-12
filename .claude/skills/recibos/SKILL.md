@@ -1176,10 +1176,93 @@ Mesmo processo do `postgres_dev` (seção "Segurança do PostgreSQL de dev" acim
 - Role `postgres` **não existe** nesse serviço (confirmado de novo, mesma pegadinha da migração) — toda
   consulta de verificação usou o role `meus_projetos` (superusuário).
 
+### Limpeza de dado de teste lançado direto na produção (2026-10-12)
+O usuário testou direto no `postgres_prod` (sem querer) — criou um contrato novo (R$ 162,57) para um cliente real
+(Vida Laboratório, id 5) e o sistema gerou cobrança + recibo. Pedido: apagar só o que o teste gerou, sem tocar no
+outro contrato real do mesmo cliente.
+- **Diagnóstico (só leitura, via `tinker` no console do app `gerenciador_cobrancas`):** `DB::table(...)->get()` com
+  `ilike` para achar o cliente pelo nome (a primeira tentativa com "vitas" não achou nada — era o nome informado de
+  ouvido; o nome real, confirmado pelo usuário, é "Vida Laboratório"). Contrato 7 (R$ 35,00, ativo, 10 cobranças,
+  a maioria paga) é o real; contrato 8 (R$ 162,57, criado na hora, já `ativo=false`, 1 cobrança pendente, 1 recibo
+  nº 23/2026) é o teste. Conferido também `auditorias` (tabela sem FK, `alvo_tipo`/`alvo_id`, não `cobranca_id` —
+  pegadinha de nome de coluna): 0 linhas, porque criação simples não gera auditoria (só ações sensíveis).
+- **Cascata do schema (lida nas migrations antes de propor o `DELETE`, não suposta):** `cobrancas.contrato_id` é
+  `restrictOnDelete` (não dá pra apagar o contrato com cobrança viva), mas `recibos.cobranca_id` e
+  `cobranca_itens.cobranca_id` são `cascadeOnDelete`, assim como `contrato_itens.contrato_id`. Logo bastam **dois**
+  `DELETE` explícitos (cobrança primeiro, depois contrato) — o resto cai em cascata.
+- **PORTÃO-BANCO:** conexão `meus_projetos_postgres_prod:5432/cobrancas` (produção) mostrada, contagem de cada
+  tabela alvo mostrada (1 em cada), comando literal mostrado, "sim" do usuário antes de passar o comando final.
+  Executado pelo próprio usuário via `tinker` no console do app (`DB::transaction` com dois `DB::delete`, veio
+  igual ao que apareceu no portão) — esta sessão não tem acesso de rede nem SSH a esse banco, só o usuário roda.
+  Confirmado depois por recontagem: tudo zerado, contrato 7 (real) intacto.
+
 ### Pendências depois da migração
 - `.env` local continua apontando pro `postgres_dev` — correto, é o banco de desenvolvimento; não mexer.
 - O usuário real (id 1) e os dados dele continuam **também** no `postgres_dev` (não foram removidos de lá, só
   copiados) — intencional, dev continua servindo de ambiente de teste.
+
+## Renovar contrato vencido (2026-10-12)
+**Achado real (não suposto):** o campo simples "Fim do contrato (opcional)" no formulário de edição grava `data_fim`
+**sem** passar pelo fluxo "Encerrar contrato" — não toca `ultimo_periodo` (fica `inteiro`) nem recalcula `ativo`.
+Como o projeto não tem cron (decisão deliberada, "geração preguiçosa"), um contrato nessa situação fica **preso**:
+`ativo=true` para sempre, mesmo depois que `data_fim` já passou. Isso quebrava duas coisas ao mesmo tempo:
+1. A etiqueta da lista mostrava "Encerra em X" (laranja) pra sempre, igual a um contrato que ainda vai vencer
+   (a regra só olhava `ativo` + `data_fim !== null`, nunca comparava com hoje).
+2. A seção "Renovar contrato" do T17.11 nunca aparecia (ela exige `ultimo_periodo !== 'inteiro'`, que só muda
+   passando pelo botão "Encerrar").
+
+**Decisão do usuário, depois de descartar "é só o mesmo Renovar do T17.11" e "é só trocar o rótulo":** quando o
+contrato está **vencido**, o botão **substitui** "Encerrar" por um "Renovar" que **encerra o antigo e cria um
+contrato novo** (não empurra a data do mesmo registro, que é o que o "Renovar" do T17.11 já faz pros casos de
+encerramento agendado pro futuro) — assim o cliente acumula um **histórico** de termos do contrato. Pedido
+explícito: a tela de renovação tem que deixar **ajustar os itens/produtos e os preços** (o preço pode ser
+renegociado, diferente tanto do catálogo quanto do contrato antigo) — não só pedir uma data.
+- **Etiqueta nova:** 4º estado `vencido` (vermelho, distinto de `encerra` laranja) — `ContratoController::dados()`
+  compara `data_fim` com `CarbonImmutable::today()`, não só a presença do campo.
+- **`POST /contratos/{contrato}/renovar-vencido`** (`RenovarContratoVencidoRequest`, reaproveitando o trait
+  `RegrasDeItens` já usado por `ContratoRequest` — preço sempre vem do pedido, nunca do catálogo, igual ao
+  formulário principal): valida `data_inicio` (depois do `data_fim` antigo) + `itens`. No controller: encerra o
+  antigo com `EncerradorDeContratos::encerrar($registro, $registro->data_fim, false, hoje)` (a mesma data de fim
+  já gravada — reaproveita a lógica já testada do T17.9, sem perguntar de novo sobre pró-rata porque tudo já está
+  no passado) e cria um contrato novo copiando cliente/periodicidade/modalidade/dia de vencimento/forma de
+  pagamento, com os itens ajustados. `resumoDosItens()` do trait virou **público** (antes `protected`) para o
+  controller poder chamar em `$request` de fora da própria Request.
+- **Front-end:** `Contratos/Form.vue` ganhou uma seção "Renovar contrato" (prioridade mais alta que o "Renovar"
+  antigo e o "Encerrar" — só um dos três aparece) que reaproveita `SecaoItens.vue` com um segundo `useForm()`
+  pré-preenchido com os itens do contrato antigo (mesmo preço negociado, não o do catálogo). `Contratos/Index.vue`
+  ganhou o link "Renovar contrato" no menu (só quando `situacao === 'vencido'`), que só leva para a tela de
+  edição — a ação em si só existe lá.
+- **Pegadinha grave (achada só no navegador, não nos testes PHP):** `structuredClone(props.contrato.itens)` lança
+  `DataCloneError` — `props` do Vue é um **Proxy reativo**, e `structuredClone` não clona Proxy. A página ficava
+  presa em "Carregando…" pra sempre porque o `setup()` do componente quebrava inteiro, sem erro visível na tela
+  (só apareceu no `browser-logs` do Boost). **Usar `JSON.parse(JSON.stringify(...))` para clonar dado reativo do
+  Vue, nunca `structuredClone`.**
+- **Pegadinha de acessibilidade (achada no mesmo smoke test):** `SecaoItens.vue` tinha `id`/`name`/`aria-label`
+  fixos (`preco_item_{id}`, `name="item_principal"`, `id="novo_item"`) — funciona com uma instância por tela, mas
+  com **duas instâncias simultâneas** (formulário principal + seção de renovação, mesmo produto nos dois), os ids
+  colidem (`getElementById` só acha o primeiro, quebra o foco automático ao incluir item) e o rádio "principal"
+  de uma lista desmarca o da outra (mesmo `name`, HTML nativo). Corrigido com uma prop `escopo` (default `''`,
+  sem quebrar o uso existente) que prefixa id/name; a seção de renovação usa `escopo="renovacao_"`. Achado
+  **só no navegador** (testes PHP com Inertia não renderizam duas instâncias reais do componente Vue) — reforça
+  por que o smoke test no navegador é obrigatório pra mudança de UI, mesmo com a suíte 100% verde.
+- **Smoke test (browser-agent, autorizado pelo usuário, 2 rodadas):** fixture no usuário SMOKE (cliente + contrato
+  vencido + item), login, confirmado visualmente: etiqueta vermelha, link no menu, seção com itens pré-preenchidos,
+  preço renegociado isolado corretamente (1ª rodada testou o campo errado por engano — mesmo rótulo duplicado,
+  achado que levou à correção de acessibilidade acima), submissão real, contrato antigo com `ativo=false` e novo
+  com o preço certo (30000 centavos) confirmados no banco depois.
+
+## Filtro de cobranças por contrato (2026-10-12)
+Pedido do usuário: ao clicar "Ver cobranças" num contrato específico, a lista trazia **todos** os contratos do
+cliente (só existia filtro por `cliente_id`). Acrescentado `contrato_id` ao lado de `cliente_id`, mesmo padrão:
+`CobrancaController::filtros()`/`filtrosParaTela()`, `ListaDeCobrancas::montar()` (filtra reais **e** previstas —
+os itens de previsão já trazem `contrato_id` em `PrevisaoDeCobrancas::prevista()`), `contratoFiltro` passado à
+tela (valor + data de início) do mesmo jeito que `clienteFiltro`. `Contratos/Index.vue` ganhou um segundo link no
+menu, "Ver cobranças deste contrato" (manda `cliente_id` **e** `contrato_id`), ao lado do already existente
+"Ver cobranças do cliente". `Cobrancas/Index.vue` mostra uma linha "Mostrando só o contrato de R$ X — ver todos os
+contratos do cliente" quando `contratoFiltro` vem preenchido.
+**Pegadinha de teste:** criar um `Contrato::factory()` de verdade no teste do filtro entra na previsão
+(`PrevisaoDeCobrancas`) e confunde a contagem de linhas — usar `['ativo' => false]` quando o teste só quer
+verificar o filtro nas cobranças reais, não a previsão.
 
 ## T17.11: renovar contrato, prorrogar cobrança, aviso de contrato perto do fim (2026-10-12)
 

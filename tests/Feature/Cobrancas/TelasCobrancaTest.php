@@ -51,7 +51,7 @@ class TelasCobrancaTest extends TestCase
                 ->where('filtros.mes', '2026-10')
                 ->where('filtros.pagina', 1)
                 ->where('filtros.por_pagina', 25)
-                ->where('padroes', ['mes' => '2026-10', 'ate' => '2026-10', 'status' => '', 'cliente_id' => '', 'canceladas' => false]));
+                ->where('padroes', ['mes' => '2026-10', 'ate' => '2026-10', 'status' => '', 'cliente_id' => '', 'contrato_id' => '', 'canceladas' => false]));
         $this->getJson('/cobrancas/dados')->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $doMes->id);
     }
 
@@ -85,6 +85,18 @@ class TelasCobrancaTest extends TestCase
         $this->getJson("/cobrancas/dados?mes=2026-11&cliente_id={$outroCliente->id}")
             ->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $deOutro->id);
         $this->get('/cobrancas?mes=novembro')->assertSessionHasErrors('mes');
+    }
+
+    public function test_pagina_mostra_o_contrato_filtrado(): void
+    {
+        $contrato = Contrato::factory()->for($this->usuario)->for($this->cliente)
+            ->create(['valor_centavos' => 16257, 'data_inicio' => '2026-09-01', 'ativo' => false]);
+
+        $this->actingAs($this->usuario)->get("/cobrancas?contrato_id={$contrato->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filtros.contrato_id', $contrato->id)
+                ->where('contratoFiltro.valor', '162,57')
+                ->where('contratoFiltro.data_inicio', '01/09/2026'));
     }
 
     public function test_abrir_a_lista_gera_as_cobrancas_devidas(): void

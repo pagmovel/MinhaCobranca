@@ -16,7 +16,7 @@ final class ListaDeCobrancas
     public function __construct(private PrevisaoDeCobrancas $previsao) {}
 
     /**
-     * @param  array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, canceladas: bool, pagina: int, por_pagina: int}  $filtros
+     * @param  array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, contrato_id: ?int, canceladas: bool, pagina: int, por_pagina: int}  $filtros
      * @return array{linhas: list<array<string, mixed>>, totais: list<array{situacao: string, quantidade: int, soma_centavos: int}>, total_geral: array{quantidade: int, soma_centavos: int}, pagina: array{inicio: int, por_pagina: int, total: int}}
      */
     public function montar(User $usuario, array $filtros, CarbonImmutable $hoje): array
@@ -45,6 +45,10 @@ final class ListaDeCobrancas
         if ($filtros['cliente_id'] !== null) {
             $consulta->where('cliente_id', $filtros['cliente_id']);
             $previstas = array_filter($previstas, fn (array $prevista) => $prevista['cliente_id'] === $filtros['cliente_id']);
+        }
+        if ($filtros['contrato_id'] !== null) {
+            $consulta->where('contrato_id', $filtros['contrato_id']);
+            $previstas = array_filter($previstas, fn (array $prevista) => $prevista['contrato_id'] === $filtros['contrato_id']);
         }
 
         // ponytail: a lista leve fica inteira na memória (até 36 meses); agregar no SQL se passar de dezenas de milhares de linhas.

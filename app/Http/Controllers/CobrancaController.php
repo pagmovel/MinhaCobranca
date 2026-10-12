@@ -38,13 +38,20 @@ class CobrancaController extends Controller
         // A lista vem por ajax de /cobrancas/dados; a página só abre a tela com os filtros (o período é conferido lá).
         $filtros = $this->filtros($request, $hoje);
 
+        $contrato = $filtros['contrato_id'] === null ? null : $usuario->contratos()->find($filtros['contrato_id']);
+
         return Inertia::render('Cobrancas/Index', [
             'filtros' => $this->filtrosParaTela($filtros),
             // Para o "Limpar filtros" aparecer só quando algum filtro difere do que a tela abre sem parâmetros.
-            'padroes' => ['mes' => $hoje->format('Y-m'), 'ate' => $hoje->format('Y-m'), 'status' => '', 'cliente_id' => '', 'canceladas' => false],
+            'padroes' => ['mes' => $hoje->format('Y-m'), 'ate' => $hoje->format('Y-m'), 'status' => '', 'cliente_id' => '', 'contrato_id' => '', 'canceladas' => false],
             'chavesPix' => $usuario->opcoesDeChavePix(),
             'formasPagamento' => FormaPagamento::opcoes(),
             'clienteFiltro' => $filtros['cliente_id'] === null ? null : $usuario->clientes()->find($filtros['cliente_id'])?->paraBusca(),
+            'contratoFiltro' => $contrato === null ? null : [
+                'id' => $contrato->id,
+                'valor' => Dinheiro::formatar($contrato->valor_centavos),
+                'data_inicio' => $contrato->data_inicio->format('d/m/Y'),
+            ],
             'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
             'prestadorNome' => $usuario->nome_fantasia ?: $usuario->name,
         ]);
@@ -70,7 +77,7 @@ class CobrancaController extends Controller
     /**
      * Filtros da lista validados só no formato (o período é conferido no JSON).
      *
-     * @return array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, canceladas: bool, pagina: int, por_pagina: int}
+     * @return array{mes: CarbonImmutable, ate: CarbonImmutable, status: ?string, cliente_id: ?int, contrato_id: ?int, canceladas: bool, pagina: int, por_pagina: int}
      */
     private function filtros(Request $request, CarbonImmutable $hoje): array
     {
@@ -79,6 +86,7 @@ class CobrancaController extends Controller
             'ate' => ['nullable', 'date_format:Y-m', new AnoValido],
             'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
+            'contrato_id' => ['nullable', 'integer'],
             'canceladas' => ['nullable', 'boolean'],
             ...BlocoDePaginas::regras(),
         ]);
@@ -89,13 +97,14 @@ class CobrancaController extends Controller
             'ate' => isset($validados['ate']) ? CarbonImmutable::createFromFormat('Y-m-d', $validados['ate'].'-01')->startOfDay() : $mes,
             'status' => $validados['status'] ?? null,
             'cliente_id' => empty($validados['cliente_id']) ? null : (int) $validados['cliente_id'],
+            'contrato_id' => empty($validados['contrato_id']) ? null : (int) $validados['contrato_id'],
             'canceladas' => (bool) ($validados['canceladas'] ?? false),
             'pagina' => (int) ($validados['pagina'] ?? 1),
             'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
         ];
     }
 
-    /** @return array{mes: string, ate: string, status: string, cliente_id: int|string, canceladas: bool, pagina: int, por_pagina: int} */
+    /** @return array{mes: string, ate: string, status: string, cliente_id: int|string, contrato_id: int|string, canceladas: bool, pagina: int, por_pagina: int} */
     private function filtrosParaTela(array $filtros): array
     {
         return [
@@ -103,6 +112,7 @@ class CobrancaController extends Controller
             'ate' => $filtros['ate']->format('Y-m'),
             'status' => $filtros['status'] ?? '',
             'cliente_id' => $filtros['cliente_id'] ?? '',
+            'contrato_id' => $filtros['contrato_id'] ?? '',
             'canceladas' => $filtros['canceladas'],
             'pagina' => $filtros['pagina'],
             'por_pagina' => $filtros['por_pagina'],

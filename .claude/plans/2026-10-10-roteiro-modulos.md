@@ -6,6 +6,27 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-10-12
 
+### 0.0a Segurança do Postgres concluída + bug real achado em produção (2026-10-12, mesma sessão)
+- **Segurança do PostgreSQL 100% concluída**: SSL no `postgres_prod` (TLS 1.3, confirmado pelo app implantado) e
+  senha do `recibos_app` trocada — ver skill, seção "SSL no `postgres_prod`". `README.md` corrigido (PostgreSQL
+  em dev e produção, não mais "SQLite — PostgreSQL no futuro"). Commit `1850d94`, push feito.
+- **Limpeza de dado de teste lançado na produção**: usuário testou direto no banco `cobrancas` (produção) por
+  engano — contrato + cobrança + recibo de teste no cliente real "Vida Laboratório". Apagados com PORTÃO-BANCO
+  (ver skill, seção "Limpeza de dado de teste lançado direto na produção").
+- **Dois achados de produto a partir desse teste, ambos implementados nesta sessão:**
+  1. **Filtro de cobranças por contrato** (`contrato_id` em `/cobrancas`, além do `cliente_id` que já existia) —
+     ver skill, seção "Filtro de cobranças por contrato".
+  2. **Renovar contrato vencido** — contrato com `data_fim` no passado mas ainda `ativo` (campo simples do
+     formulário, nunca passou por "Encerrar") ficava sem opção nenhuma e com a etiqueta errada (laranja, igual
+     a "ainda vai vencer"). Novo 4º estado da etiqueta ("vencido", vermelho) + `POST
+     /contratos/{contrato}/renovar-vencido` (encerra o antigo, cria um novo com itens/preços ajustáveis) — ver
+     skill, seção "Renovar contrato vencido" (inclui duas pegadinhas achadas só no smoke test no navegador:
+     `structuredClone` em dado reativo do Vue, e `id`/`name` duplicados no `SecaoItens.vue` com duas instâncias
+     na mesma tela).
+- Suíte: **531 PHP + 94 JS, tudo verde**. Smoke test completo no navegador (browser-agent, fixtures no usuário
+  SMOKE, autorizado) confirmando as duas features de ponta a ponta. **Ainda não commitado** (pendente desta
+  sessão).
+
 ### 0.0 PRÓXIMO PASSO IMEDIATO (2026-10-12)
 - **T17.11 (renovar/prorrogar/aviso de contrato + Reativar desfaz encerramento) implementada direto na `main`**,
   sem branch separada (plano `.claude/plans/2026-10-11-renovar-prorrogar-contrato.md`, 5 tarefas + extensões

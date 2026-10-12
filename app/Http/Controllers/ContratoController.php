@@ -7,6 +7,7 @@ use App\Enums\Modalidade;
 use App\Enums\Periodicidade;
 use App\Enums\StatusCobranca;
 use App\Http\Requests\ContratoRequest;
+use App\Http\Requests\RenovarContratoVencidoRequest;
 use App\Models\Auditoria;
 use App\Models\Cobranca;
 use App\Models\Contrato;
@@ -77,9 +78,11 @@ class ContratoController extends Controller
                 'inicio' => $contrato->data_inicio->format('d/m/Y'),
                 'fim' => $contrato->data_fim?->format('d/m/Y'),
                 'valor' => Dinheiro::formatar($contrato->valor_centavos),
-                // Ativo com fim marcado = encerramento agendado (T17.9).
+                // Ativo com fim marcado = encerramento agendado (T17.9). Fim já passado mas ainda ativo = vencido
+                // (sem cron: "ativo" só é recalculado quando alguém passa pelo fluxo de encerrar/renovar).
                 'situacao' => match (true) {
                     ! $contrato->ativo => 'encerrado',
+                    $contrato->data_fim !== null && $contrato->data_fim->lt(CarbonImmutable::today()) => 'vencido',
                     $contrato->data_fim !== null => 'encerra',
                     default => 'ativo',
                 },
@@ -416,6 +419,53 @@ class ContratoController extends Controller
     }
 
     /**
+     * Fim já passado mas ainda ativo (marcado direto no campo, nunca passou por "Encerrar"): encerra o antigo com a
+     * mesma data de fim já gravada e cria um novo a partir de agora, com os mesmos dados — menos início e itens, que
+     * podem ser ajustados (preço renegociado, não o do catálogo).
+     */
+    public function renovarVencido(RenovarContratoVencidoRequest $request, int $contrato, EncerradorDeContratos $encerrador): RedirectResponse
+    {
+        $registro = $request->user()->contratos()->findOrFail($contrato);
+
+        if (! $registro->ativo) {
+            return back()->with('erro', 'Este contrato já está encerrado.');
+        }
+        if ($registro->data_fim === null || $registro->data_fim->gte(CarbonImmutable::today())) {
+            return back()->with('erro', 'Este contrato ainda não venceu.');
+        }
+
+        $inicio = CarbonImmutable::createFromFormat('Y-m-d', $request->validated('data_inicio'))->startOfDay();
+        if ($inicio->lte($registro->data_fim)) {
+            return back()->withErrors(['data_inicio' => 'O novo início precisa ser depois de '.$registro->data_fim->format('d/m/Y').'.']);
+        }
+
+        $novo = DB::transaction(function () use ($request, $registro, $inicio, $encerrador) {
+            $encerrador->encerrar($registro, $registro->data_fim, false, CarbonImmutable::today());
+
+            $novo = $request->user()->contratos()->create([
+                'cliente_id' => $registro->cliente_id,
+                'descricao' => $registro->descricao,
+                'periodicidade' => $registro->periodicidade,
+                'modalidade' => $registro->modalidade,
+                'dia_vencimento' => $registro->dia_vencimento,
+                'data_inicio' => $inicio,
+                'ativo' => true,
+                'forma_pagamento' => $registro->forma_pagamento,
+                'chave_pix_id' => $registro->chave_pix_id,
+            ] + $request->resumoDosItens());
+            $novo->itens()->createMany($request->itensDoContrato());
+
+            Auditoria::registrar($request, 'contrato.renovado_vencido', $registro,
+                "Contrato vencido renovado: novo contrato nº {$novo->id} a partir de ".$inicio->format('d/m/Y'));
+
+            return $novo;
+        });
+
+        return redirect("/contratos/{$novo->id}/edit")
+            ->with('sucesso', 'Contrato renovado: novo contrato a partir de '.$inicio->format('d/m/Y').'.');
+    }
+
+    /**
      * Prévia do que marcar "Reativar" vai desfazer (JSON), para um contrato já encerrado de fato — sem gravar nada.
      * A execução de verdade é dentro de `update()`, junto com o resto do formulário (T17.11).
      */
@@ -503,6 +553,8 @@ class ContratoController extends Controller
                 'data_inicio' => $contrato->data_inicio->toDateString(),
                 'data_fim' => $contrato->data_fim?->toDateString() ?? '',
                 'ativo' => $contrato->ativo,
+                // Fim já passado mas ainda ativo (campo preenchido direto, nunca passou por "Encerrar"): T17.11 não cobre.
+                'vencido' => $contrato->ativo && $contrato->data_fim !== null && $contrato->data_fim->lt(CarbonImmutable::today()),
                 'tem_cobrancas' => $contrato->cobrancas()->exists(),
                 'tem_pagas' => $contrato->cobrancas()->where('status', StatusCobranca::Paga)->exists(),
                 // O que uma correção de início cancelaria (prévia na tela).
