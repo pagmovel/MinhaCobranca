@@ -8,6 +8,7 @@ import CamposPagamento from '../../Components/CamposPagamento.vue';
 import DescricaoComplementar from '../../Components/DescricaoComplementar.vue';
 import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
 import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
+import ReativarContrato from '../../Components/ReativarContrato.vue';
 import RenovarContrato from '../../Components/RenovarContrato.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
@@ -173,9 +174,12 @@ const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`
                 :erro="form.errors.gerar_retroativas"
             />
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
-            <label v-if="contrato && !contrato.ativo" class="flex items-center gap-2 text-sm sm:col-span-6">
-                <input v-model="form.reativar" type="checkbox"> Reativar contrato
-            </label>
+            <div v-if="contrato && !contrato.ativo" class="grid gap-2 sm:col-span-6">
+                <label class="flex items-center gap-2 text-sm">
+                    <input v-model="form.reativar" type="checkbox"> Reativar contrato
+                </label>
+                <ReativarContrato v-if="form.reativar" :contrato-id="contrato.id" />
+            </div>
             <Transition name="surgir" mode="out-in">
                 <section v-if="mudaPeriodos && modo === 'corrigir'" key="corrigir" class="grid gap-3 sm:col-span-6">
                     <h2 class="text-lg font-semibold">Corrigir o contrato</h2>

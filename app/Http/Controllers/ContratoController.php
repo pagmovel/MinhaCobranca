@@ -170,7 +170,7 @@ class ContratoController extends Controller
         return $this->formulario($request, $request->user()->contratos()->findOrFail($contrato));
     }
 
-    public function update(ContratoRequest $request, int $contrato): RedirectResponse
+    public function update(ContratoRequest $request, int $contrato, RenovadorDeContratos $renovador): RedirectResponse
     {
         $registro = $request->user()->contratos()->findOrFail($contrato);
         $dados = $request->dadosContrato();
@@ -218,15 +218,25 @@ class ContratoController extends Controller
 
         // Encerrado só volta a valer com "Reativar" marcado: um formulário aberto antes do encerramento (outra aba)
         // manda ativo e fim vazio, e não pode desfazer o encerramento sem ninguém ver.
-        if (! $registro->ativo && ! $request->boolean('reativar')) {
+        $reativando = ! $registro->ativo && $request->boolean('reativar');
+        if (! $registro->ativo && ! $reativando) {
             $dados['ativo'] = false;
             $dados['data_fim'] = $registro->data_fim;
-        } elseif (! $registro->ativo) {
+        } elseif ($reativando) {
             $dados['ativo'] = true;
             $dados['ultimo_periodo'] = 'inteiro';
         }
 
-        DB::transaction(function () use ($registro, $dados, $request, $corrigir) {
+        DB::transaction(function () use ($registro, $dados, $request, $corrigir, $reativando, $renovador) {
+            if ($reativando) {
+                // Antes do "corrigir" (que desvincula tudo do contrato) e antes de `update()` (que precisa da
+                // data_fim antiga e dos itens antigos ainda no contrato para desfazer certo).
+                $fimAntigo = $registro->data_fim;
+                $novaData = filled($dados['data_fim'] ?? null) ? CarbonImmutable::parse($dados['data_fim'])->startOfDay() : null;
+                $renovador->desfazerEncerramento($registro, $novaData);
+                $this->registrarReativacao($request, $registro, $fimAntigo, $novaData);
+            }
+
             if ($corrigir) {
                 Auditoria::registrar($request, 'contrato.corrigido', $registro, 'Contrato corrigido (antes: início '
                     .$registro->data_inicio->format('d/m/Y').', '.mb_strtolower($registro->periodicidade->rotulo())
@@ -402,6 +412,31 @@ class ContratoController extends Controller
     {
         Auditoria::registrar($request, 'contrato.renovado', $contrato,
             'Renovado (era '.$fimAntigo->format('d/m/Y').'): '.($novaData !== null ? 'novo fim em '.$novaData->format('d/m/Y') : 'sem data de fim'),
+            ['data_fim' => $fimAntigo->toDateString()], ['data_fim' => $novaData?->toDateString()]);
+    }
+
+    /**
+     * Prévia do que marcar "Reativar" vai desfazer (JSON), para um contrato já encerrado de fato — sem gravar nada.
+     * A execução de verdade é dentro de `update()`, junto com o resto do formulário (T17.11).
+     */
+    public function reativacao(Request $request, int $contrato, RenovadorDeContratos $renovador): JsonResponse
+    {
+        $registro = $request->user()->contratos()->findOrFail($contrato);
+
+        return response()->json([
+            'acoes' => array_map(fn (array $acao) => [
+                'acao' => $acao['acao'],
+                'periodo' => $acao['cobranca']->periodo_inicio->format('d/m/Y').' a '.$acao['cobranca']->periodo_fim->format('d/m/Y'),
+                'valor' => Dinheiro::formatar($acao['cobranca']->valor_centavos),
+            ], $registro->ativo ? [] : $renovador->plano($registro)),
+        ]);
+    }
+
+    private function registrarReativacao(Request $request, Contrato $contrato, CarbonImmutable $fimAntigo, ?CarbonImmutable $novaData): void
+    {
+        Auditoria::registrar($request, 'contrato.reativado', $contrato,
+            'Reativado (estava encerrado em '.$fimAntigo->format('d/m/Y').'): '
+                .($novaData !== null ? 'novo fim em '.$novaData->format('d/m/Y') : 'sem data de fim'),
             ['data_fim' => $fimAntigo->toDateString()], ['data_fim' => $novaData?->toDateString()]);
     }
 

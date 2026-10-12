@@ -59,6 +59,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/contratos/{contrato}/recomecar', [ContratoController::class, 'recomecar']);
     Route::get('/contratos/{contrato}/renovacao', [ContratoController::class, 'renovacao']);
     Route::post('/contratos/{contrato}/renovar', [ContratoController::class, 'renovar']);
+    Route::get('/contratos/{contrato}/reativacao', [ContratoController::class, 'reativacao']);
     Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
     Route::get('/produtos-servicos/dados', [ProdutoServicoController::class, 'dados']);
     Route::resource('produtos-servicos', ProdutoServicoController::class)

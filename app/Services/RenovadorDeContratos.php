@@ -89,18 +89,27 @@ final class RenovadorDeContratos
     public function renovar(Contrato $contrato, ?CarbonImmutable $novaData): void
     {
         DB::transaction(function () use ($contrato, $novaData) {
-            foreach ($this->plano($contrato, $novaData) as $acao) {
-                match ($acao['acao']) {
-                    // `status` não é Fillable (App\Models\Cobranca): mudança sempre por atribuição direta, como em EncerradorDeContratos::cancelar().
-                    'reabrir' => $this->reabrir($acao['cobranca']),
-                    'proporcional_cheio' => $this->desfazerProporcional($contrato, $acao['cobranca']),
-                    'desfazer_avulsa' => $this->desfazerAvulsa($acao['cobranca'], $acao['avulsa']),
-                    'aviso_avulsa' => null, // avulsa já paga: dinheiro recebido não é desfeito sozinho, só avisa.
-                };
-            }
-
+            $this->desfazerEncerramento($contrato, $novaData);
             $contrato->update(['data_fim' => $novaData, 'ultimo_periodo' => 'inteiro']);
         });
+    }
+
+    /**
+     * Só a parte de desfazer (reabrir/restaurar cobranças) — sem tocar em `data_fim`/`ultimo_periodo` do contrato
+     * nem abrir transação própria, para o chamador poder combinar com outras mudanças na mesma transação (T17.11:
+     * usado também pelo "Reativar contrato" num contrato já encerrado de fato, junto com o resto do `update()`).
+     */
+    public function desfazerEncerramento(Contrato $contrato, ?CarbonImmutable $novaData): void
+    {
+        foreach ($this->plano($contrato, $novaData) as $acao) {
+            match ($acao['acao']) {
+                // `status` não é Fillable (App\Models\Cobranca): mudança sempre por atribuição direta, como em EncerradorDeContratos::cancelar().
+                'reabrir' => $this->reabrir($acao['cobranca']),
+                'proporcional_cheio' => $this->desfazerProporcional($contrato, $acao['cobranca']),
+                'desfazer_avulsa' => $this->desfazerAvulsa($acao['cobranca'], $acao['avulsa']),
+                'aviso_avulsa' => null, // avulsa já paga: dinheiro recebido não é desfeito sozinho, só avisa.
+            };
+        }
     }
 
     /** A cobrança (pendente ou cancelada) cujo período contém a data de fim antiga. */
