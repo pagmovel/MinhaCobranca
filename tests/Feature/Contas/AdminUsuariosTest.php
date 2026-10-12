@@ -35,6 +35,17 @@ class AdminUsuariosTest extends TestCase
             ->assertJsonPath('linhas.0.status', 'pendente');
     }
 
+    /** Pedido do usuário (2026-10-12): quem se cadastrou primeiro aparece primeiro, não por ordem alfabética. */
+    public function test_ordem_e_por_cadastro_nao_por_nome(): void
+    {
+        $admin = User::factory()->admin()->create(['name' => 'Zeca Admin']);
+        User::factory()->create(['name' => 'Ana Depois']);
+
+        $nomes = array_column($this->actingAs($admin)->getJson('/admin/usuarios/dados')->assertOk()->json('linhas'), 'nome');
+
+        $this->assertSame(['Zeca Admin', 'Ana Depois'], $nomes);
+    }
+
     public function test_dados_pendentes_primeiro_com_busca_situacao_e_eu(): void
     {
         $admin = User::factory()->admin()->create(['name' => 'Admin']);

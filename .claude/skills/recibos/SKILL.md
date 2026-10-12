@@ -1269,6 +1269,54 @@ renegociado, diferente tanto do catálogo quanto do contrato antigo) — não s�
   achado que levou à correção de acessibilidade acima), submissão real, contrato antigo com `ativo=false` e novo
   com o preço certo (30000 centavos) confirmados no banco depois.
 
+## Admin de usuários: ordem por cadastro, não por nome (2026-10-12)
+Pedido do usuário: na lista `/admin/usuarios`, quem se cadastrou primeiro aparece primeiro. A consulta ordenava
+por `name` (alfabético) depois do agrupamento "pendente primeiro" — trocado para `orderBy('id')` (ordem de
+cadastro). **Pegadinha do teste já existente:** `test_dados_pendentes_primeiro_com_busca_situacao_e_eu` usava
+nomes cujo pedido alfabético coincidia com o de cadastro (Admin, Ana, Bia nessa ordem nos dois critérios) —
+passou sem provar nada sobre qual dos dois critérios realmente valia. Teste novo
+(`test_ordem_e_por_cadastro_nao_por_nome`) usa nomes em ordem alfabética invertida da ordem de cadastro
+("Zeca Admin" antes de "Ana Depois") pra realmente travar o comportamento.
+
+## T17.19: seleção em lote de cobranças (baixar, cancelar, enviar) — 2026-10-12
+Pedido do usuário: checkbox em cada linha de `/cobrancas` (+ "selecionar todas da página"), barra de ações
+quando há seleção, prévia antes de confirmar (padrão 9). Três ações: **baixar** (modal com escolha "usar a data
+de vencimento de cada cobrança" ou "usar hoje para todas" — decisão do usuário: vencimento futuro vira hoje,
+nunca data no futuro), **cancelar** (confirmação em dois cliques), **enviar** (sem modal — reaproveita o
+mecanismo de download/compartilhar já existente, uma cobrança de cada vez, com "Enviando X de Y…").
+- **Backend:** `POST /cobrancas/lote/pagar` e `/lote/cancelar` (`CobrancaController::pagarEmLote`/`cancelarEmLote`),
+  só agem em `status=pendente` do próprio usuário; o que não é pendente é silenciosamente ignorado e contado no
+  resumo ("N ignorada(s), não estavam pendentes") — a mesma mensagem serve tanto pra "não é pendente" quanto pra
+  "não é do usuário" (isolamento: nunca revelar que um id de outro usuário existe). Cada item grava sua própria
+  linha de auditoria (`cobranca.paga`/`cobranca.cancelada`), não uma entrada agregada.
+- **Lacuna de auditoria achada e corrigida nesta tarefa** (pedido do usuário: "registrar todas as ações de criar,
+  editar, cancelar, renovar, etc"): `CobrancaController::pagar()` (baixa individual) e `marcarEnviada()` **nunca
+  tinham `Auditoria::registrar`** — só a correção/desfazimento da baixa eram auditados, não a baixa em si.
+  Corrigido (`cobranca.paga`, `cobranca.enviada`). **Ainda não auditado** (levantamento feito, não implementado
+  por falta de tempo nesta sessão): `ClienteController` (criar/editar/excluir), `ContratoController::store`
+  (criar), `ProdutoServicoController` (criar/editar/excluir/reajustar), `ChavePixController` (criar/editar/
+  excluir), `CobrancaController::store` (criar avulsa), `PerfilController::update`, `FeriadoController`,
+  `ModeloMensagemController`. Retomar esse levantamento quando o usuário pedir.
+- **`enviarRecibo.js`** (novo): extrai a lógica de `BotaoEnviar.vue` (fetch do PDF, Web Share ou download,
+  marcar enviada) pra uma função reaproveitável, usada tanto pelo botão individual quanto pelo loop em lote.
+- **`SecaoItens.vue` reaproveitado** não se aplica aqui (é do contrato); mas o mesmo cuidado de **duas instâncias
+  simultâneas na tela** não se repete neste caso — cada linha tem seu próprio checkbox com `aria-label` único
+  por `cobranca.id` (sem colisão).
+- **Pegadinha grave de depuração (vale registrar o processo, não só a causa):** depois de implementar, um teste
+  manual no navegador parecia mostrar a barra "N selecionada(s)" **travada** mesmo depois da ação confirmada —
+  horas de investigação (Set reativo do Vue, ordem de eventos, `@sucesso` dedicado em vez de depender só do
+  recarregamento global da lista) até **logs de diagnóstico temporários** (`console.log` dentro de
+  `limparSelecao()` + `watch()` no tamanho do Set, lidos via `mcp__laravel-boost__browser-logs`) provarem que o
+  código **sempre esteve correto**: o handler disparava e limpava a seleção certinho. O "travamento" era só
+  **impaciência minha** — o banco de dev remoto some pode levar bem mais que os "5-40s" já documentados,
+  principalmente quando acumula fetch de PDF (dompdf) + POST em sequência (envio individual chegou a levar
+  >30s). **Lição:** antes de supor bug de reatividade, isolar com `console.log`/`browser-logs` em vez de inferir
+  pela demora — e dar mais tempo ainda ao banco remoto do que o já documentado, especialmente em fluxos que
+  geram PDF.
+  Mesmo assim, ficou uma melhoria real do processo: os modais (`BaixaEmLote.vue`/`CancelarEmLote.vue`) emitem um
+  evento `@sucesso` dedicado (além de `@fechar`) pro pai limpar a seleção na hora, em vez de depender só do
+  recarregamento genérico da lista — mais direto e não depende de timing de outro mecanismo.
+
 ## Filtro de cobranças por contrato (2026-10-12)
 Pedido do usuário: ao clicar "Ver cobranças" num contrato específico, a lista trazia **todos** os contratos do
 cliente (só existia filtro por `cliente_id`). Acrescentado `contrato_id` ao lado de `cliente_id`, mesmo padrão:

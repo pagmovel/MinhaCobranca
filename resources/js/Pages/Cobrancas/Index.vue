@@ -7,8 +7,10 @@ import BuscaAutosugestao from '../../Components/BuscaAutosugestao.vue';
 import Carimbo from '../../Components/Carimbo.vue';
 import MenuAcoes from '../../Components/MenuAcoes.vue';
 import AvisarWhatsapp from '../../Components/AvisarWhatsapp.vue';
+import BaixaEmLote from '../../Components/BaixaEmLote.vue';
 import BotaoEnviar from '../../Components/BotaoEnviar.vue';
 import BaixaInline from '../../Components/BaixaInline.vue';
+import CancelarEmLote from '../../Components/CancelarEmLote.vue';
 import CancelarInline from '../../Components/CancelarInline.vue';
 import CorrecaoPagamentoInline from '../../Components/CorrecaoPagamentoInline.vue';
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
@@ -17,6 +19,7 @@ import Paginador from '../../Components/Paginador.vue';
 import ProrrogarInline from '../../Components/ProrrogarInline.vue';
 import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
 import { botaoPrincipal, itemMenu } from '../../estilosLista.js';
+import { enviarRecibo } from '../../enviarRecibo.js';
 import { ajustarAte, anoCompleto } from '../../filtroPeriodo.js';
 import { formatarCentavos } from '../../itens.js';
 import { adiar } from '../../listaPaginada.js';
@@ -67,7 +70,8 @@ function escolheuAte() {
 const {
     linhas: linhasDaPagina, resumo, carregando, falha, erros, estado, irPara, filtrar, recarregar, escolheuPorPagina,
 } = usarListaPaginada({
-    url: '/cobrancas/dados', filtro, componente: 'Cobrancas/Index', endereco: '/cobrancas', aoMostrar: () => { faixa.value = null; },
+    url: '/cobrancas/dados', filtro, componente: 'Cobrancas/Index', endereco: '/cobrancas',
+    aoMostrar: () => { faixa.value = null; limparSelecao(); },
 });
 const erroAte = computed(() => erros.value.ate ?? '');
 // Cliente escolhido (ou apagado) aplica na hora, como os selects.
@@ -94,6 +98,52 @@ const temCanceladas = computed(() => Boolean(resumo.value?.totais.some((total) =
 const naFaixa = ['baixa', 'pagamento', 'cancelar', 'prorrogar', 'corrigir', 'desfazer'];
 const perigosa = (acao) => ['cancelar', 'desfazer'].includes(acao);
 const avisando = ref(null);
+
+// T17.19: seleção de várias cobranças + ação em lote (prévia no modal, antes de confirmar).
+const PENDENTE = ['vencida', 'vence_hoje', 'a_vencer'];
+const selecionadas = ref(new Set());
+const elegiveisDaPagina = computed(() => linhas.value.filter((c) => c.situacao !== 'prevista'));
+const todasSelecionadasDaPagina = computed(() => elegiveisDaPagina.value.length > 0
+    && elegiveisDaPagina.value.every((c) => selecionadas.value.has(c.id)));
+function alternarTodasDaPagina() {
+    const novo = new Set(selecionadas.value);
+    if (todasSelecionadasDaPagina.value) {
+        elegiveisDaPagina.value.forEach((c) => novo.delete(c.id));
+    } else {
+        elegiveisDaPagina.value.forEach((c) => novo.add(c.id));
+    }
+    selecionadas.value = novo;
+}
+function alternarSelecao(id) {
+    const novo = new Set(selecionadas.value);
+    if (novo.has(id)) {
+        novo.delete(id);
+    } else {
+        novo.add(id);
+    }
+    selecionadas.value = novo;
+}
+function limparSelecao() {
+    selecionadas.value = new Set();
+}
+const cobrancasSelecionadas = computed(() => linhas.value.filter((c) => selecionadas.value.has(c.id)));
+const loteAberto = ref(null); // 'baixa' | 'cancelar' | null
+const enviandoLote = ref(null); // { feito, total } ou null
+
+async function enviarLote() {
+    const elegiveis = cobrancasSelecionadas.value.filter((c) => c.recibo && c.situacao !== 'cancelada');
+    enviandoLote.value = { feito: 0, total: elegiveis.length };
+    for (const cobranca of elegiveis) {
+        try {
+            await enviarRecibo({ cobrancaId: cobranca.id, pdfUrl: cobranca.recibo.pdf_url, nomeArquivo: cobranca.recibo.pdf_nome });
+        } catch {
+            // Segue pras próximas; a lista mostra quais ficaram sem "Enviado em" no fim.
+        }
+        enviandoLote.value = { feito: enviandoLote.value.feito + 1, total: elegiveis.length };
+    }
+    limparSelecao();
+    enviandoLote.value = null;
+}
 
 // Formulário da ação numa faixa logo abaixo da linha (uma por vez); o foco vai para o primeiro campo e volta ao fechar.
 const faixa = ref(null);
@@ -165,6 +215,34 @@ async function fecharFaixa() {
             </p>
         </Transition>
 
+        <Transition name="surgir">
+            <div v-if="selecionadas.size" class="mb-3 flex flex-wrap items-center gap-3 border border-carbono bg-papel px-4 py-2 text-sm">
+                <span class="font-semibold">{{ selecionadas.size }} selecionada(s)</span>
+                <template v-if="enviandoLote">
+                    <span class="text-grafite/80">Enviando {{ enviandoLote.feito }} de {{ enviandoLote.total }}…</span>
+                </template>
+                <template v-else>
+                    <button type="button" class="botao-secundario" @click="loteAberto = 'baixa'">Dar baixa</button>
+                    <button type="button" class="botao-secundario" @click="loteAberto = 'cancelar'">Cancelar</button>
+                    <button type="button" class="botao-secundario" @click="enviarLote">Enviar</button>
+                    <button type="button" class="font-estreita text-xs text-carbono underline" @click="limparSelecao">Limpar seleção</button>
+                </template>
+            </div>
+        </Transition>
+
+        <BaixaEmLote
+            v-if="loteAberto === 'baixa'"
+            :cobrancas="cobrancasSelecionadas"
+            @fechar="loteAberto = null"
+            @sucesso="loteAberto = null; limparSelecao()"
+        />
+        <CancelarEmLote
+            v-if="loteAberto === 'cancelar'"
+            :cobrancas="cobrancasSelecionadas"
+            @fechar="loteAberto = null"
+            @sucesso="loteAberto = null; limparSelecao()"
+        />
+
         <EstadoDaLista
             :estado="estado"
             :falha="falha"
@@ -187,6 +265,15 @@ async function fecharFaixa() {
                 <TransitionGroup tag="table" name="lista" class="block w-full text-sm xl:table">
                     <thead key="cabecalho" class="hidden font-estreita text-xs text-grafite/75 xl:table-header-group">
                         <tr class="border-b border-linha text-left">
+                            <th scope="col" class="px-4 py-2 font-medium">
+                                <input
+                                    type="checkbox"
+                                    class="size-4 accent-carbono"
+                                    :checked="todasSelecionadasDaPagina"
+                                    aria-label="Selecionar todas as cobranças desta página"
+                                    @change="alternarTodasDaPagina"
+                                >
+                            </th>
                             <th scope="col" class="px-4 py-2 font-medium">Cliente</th>
                             <th scope="col" class="px-3 py-2 font-medium">Período</th>
                             <th scope="col" class="px-3 py-2 font-medium">Vencimento</th>
@@ -198,6 +285,16 @@ async function fecharFaixa() {
                     </thead>
                     <tbody v-for="cobranca in linhas" :key="cobranca.id" class="block border-b border-linha last:border-b-0 xl:table-row-group">
                         <tr class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 xl:table-row xl:p-0">
+                            <td class="xl:px-4 xl:py-3">
+                                <input
+                                    v-if="cobranca.situacao !== 'prevista'"
+                                    type="checkbox"
+                                    class="size-4 accent-carbono"
+                                    :checked="selecionadas.has(cobranca.id)"
+                                    :aria-label="`Selecionar cobrança de ${cobranca.cliente}`"
+                                    @change="alternarSelecao(cobranca.id)"
+                                >
+                            </td>
                             <td class="basis-full xl:px-4 xl:py-3">
                                 <p class="font-semibold">{{ cobranca.cliente }}</p>
                                 <p v-if="cobranca.cliente_oficial" class="text-xs text-grafite/80">{{ cobranca.cliente_oficial }}</p>
@@ -268,7 +365,7 @@ async function fecharFaixa() {
                         </tr>
                         <Transition name="surgir">
                             <tr v-if="faixa?.id === cobranca.id && naFaixa.includes(faixa.acao)" class="block xl:table-row">
-                                <td :id="`faixa-${cobranca.id}`" colspan="7" class="block border-t border-carbono/10 bg-papel px-4 py-3 xl:table-cell">
+                                <td :id="`faixa-${cobranca.id}`" colspan="8" class="block border-t border-carbono/10 bg-papel px-4 py-3 xl:table-cell">
                                     <BaixaInline v-if="faixa.acao === 'baixa'" :cobranca-id="cobranca.id" na-faixa @fechar="fecharFaixa" />
                                     <PagamentoInline
                                         v-else-if="faixa.acao === 'pagamento'"

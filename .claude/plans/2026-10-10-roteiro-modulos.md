@@ -111,7 +111,14 @@ apagada — decisão de não apagar branches sem pedido explícito).
 3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
    Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
 4. ~~T17.17 — ordenar cobranças pelo cabeçalho~~ — **cancelada a pedido do usuário (2026-10-12)**. Não implementar.
-5. **T17.19 — seleção de várias cobranças e ação em lote com prévia** (padrão de usabilidade 9). Deixada para depois.
+5. ~~T17.19 — seleção de várias cobranças e ação em lote com prévia~~ — **implementada em 2026-10-12** (baixar,
+   cancelar, enviar; ver skill, seção "T17.19"). Suíte 541 PHP + 94 JS verde; testada no navegador (as três
+   ações, de ponta a ponta, com fixtures no usuário SMOKE). **Lacuna de auditoria achada e corrigida** na baixa
+   individual e no "marcar enviada" (nunca tinham `Auditoria::registrar`); levantamento completo de TODAS as
+   ações de escrita do sistema sem auditoria feito, mas correção das demais (clientes, contratos, produtos,
+   chaves PIX, perfil, feriados, modelos de mensagem) **ainda pendente** — ver skill.
+6. ~~Admin de usuários: ordem por cadastro, não por nome~~ — **feita em 2026-10-12** (pedido do usuário), ver
+   skill.
 6. **Minor adiados da Fase 20** (lista no "Registro de execução" do plano): 2 pedido a mais, 3 e-mail longo em Usuários a
    390 px (só conferível com conta admin), 4 e 5 período inválido, 6 foco, 7 "Tentar de novo"; e o botão "Enviar" do
    Painel a 390 px (`LinhaCobranca`). Minor adiados da Fase 19 no plano dela.

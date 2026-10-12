@@ -22,13 +22,12 @@ class UsuarioController extends Controller
         return Inertia::render('Admin/Usuarios', ['filtros' => $this->filtros($request)]);
     }
 
-    /** Dados da lista (JSON, só leitura): pendentes primeiro, depois nome. */
+    /** Dados da lista (JSON, só leitura): pendentes primeiro, depois ordem de cadastro. */
     public function dados(Request $request): JsonResponse
     {
         $filtros = $this->filtros($request);
         $consulta = User::query()
             ->orderByRaw("case when status = 'pendente' then 0 else 1 end")
-            ->orderBy('name')
             ->orderBy('id');
 
         if ($filtros['q'] !== '') {

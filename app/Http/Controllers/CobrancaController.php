@@ -244,6 +244,62 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Cobrança cancelada. O recibo passa a sair como cancelado.');
     }
 
+    /** T17.19: baixa de várias cobranças de uma vez (prévia fica na tela, aqui só executa). */
+    public function pagarEmLote(Request $request): RedirectResponse
+    {
+        $dados = $request->validate([
+            'ids' => ['required', 'array', 'max:200'],
+            'ids.*' => ['integer'],
+            'modo' => ['required', Rule::in(['vencimento', 'hoje'])],
+        ]);
+
+        $hoje = CarbonImmutable::today();
+        $pedidas = count($dados['ids']);
+        $cobrancas = $request->user()->cobrancas()->whereIn('id', $dados['ids'])->where('status', StatusCobranca::Pendente)->get();
+
+        DB::transaction(function () use ($cobrancas, $dados, $hoje, $request) {
+            foreach ($cobrancas as $registro) {
+                $pagoEm = $dados['modo'] === 'hoje' ? $hoje : $registro->vencimento->min($hoje);
+                $registro->status = StatusCobranca::Paga;
+                $registro->pago_em = $pagoEm;
+                $registro->save();
+                Auditoria::registrar($request, 'cobranca.paga', $registro, 'Baixa em lote (R$ '
+                    .Dinheiro::formatar($registro->valor_centavos).', paga em '.$pagoEm->format('d/m/Y').')');
+            }
+        });
+
+        return back()->with('sucesso', $this->resumoDoLote($cobrancas->count(), $pedidas, 'baixada'));
+    }
+
+    /** T17.19: cancelamento de várias cobranças de uma vez. */
+    public function cancelarEmLote(Request $request): RedirectResponse
+    {
+        $dados = $request->validate(['ids' => ['required', 'array', 'max:200'], 'ids.*' => ['integer']]);
+
+        $pedidas = count($dados['ids']);
+        $cobrancas = $request->user()->cobrancas()->whereIn('id', $dados['ids'])->where('status', StatusCobranca::Pendente)->get();
+
+        DB::transaction(function () use ($cobrancas, $request) {
+            foreach ($cobrancas as $registro) {
+                $registro->status = StatusCobranca::Cancelada;
+                $registro->save();
+                Auditoria::registrar($request, 'cobranca.cancelada', $registro, 'Cancelada em lote (R$ '
+                    .Dinheiro::formatar($registro->valor_centavos).', vence '.$registro->vencimento->format('d/m/Y').')');
+            }
+        });
+
+        return back()->with('sucesso', $this->resumoDoLote($cobrancas->count(), $pedidas, 'cancelada'));
+    }
+
+    /** "2 cobrança(s) baixada(s)." + ", N ignorada(s) (não estavam pendentes)." quando alguma pedida não entrou. */
+    private function resumoDoLote(int $feitas, int $pedidas, string $participio): string
+    {
+        $resumo = "{$feitas} cobrança(s) {$participio}(s).";
+        $ignoradas = $pedidas - $feitas;
+
+        return $ignoradas > 0 ? "{$resumo} {$ignoradas} ignorada(s) (não estavam pendentes)." : $resumo;
+    }
+
     public function prorrogar(Request $request, int $cobranca, EmissorDeRecibos $emissor): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->with('recibo')->findOrFail($cobranca);
@@ -348,9 +404,13 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');
         }
 
-        $registro->status = StatusCobranca::Paga;
-        $registro->pago_em = $dados['pago_em'];
-        $registro->save();
+        DB::transaction(function () use ($registro, $dados, $request) {
+            $registro->status = StatusCobranca::Paga;
+            $registro->pago_em = $dados['pago_em'];
+            $registro->save();
+            Auditoria::registrar($request, 'cobranca.paga', $registro, 'Baixa registrada (R$ '
+                .Dinheiro::formatar($registro->valor_centavos).', paga em '.CarbonImmutable::parse($dados['pago_em'])->format('d/m/Y').')');
+        });
 
         return back()->with('sucesso', 'Baixa registrada.');
     }
@@ -361,6 +421,7 @@ class CobrancaController extends Controller
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
         $registro->enviado_em = now();
         $registro->save();
+        Auditoria::registrar($request, 'cobranca.enviada', $registro, 'Recibo enviado (R$ '.Dinheiro::formatar($registro->valor_centavos).')');
 
         return back();
     }
