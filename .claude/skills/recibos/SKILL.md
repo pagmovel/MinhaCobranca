@@ -847,6 +847,18 @@ o relatório mostra a parte que existe.
     apelido na 1ª linha da descrição, editável. Não voltar a pôr o apelido no recibo sem falar com o usuário.
   - **Nome do arquivo do PDF usa o apelido** (pedido do usuário): `Recibo::nomeArquivo($apelido)` com o apelido atual
     do cliente; sem apelido, o nome oficial do snapshot. Quem chama passa o apelido já carregado (sem consulta por linha).
+- **Cliente informal: documento (CPF/CNPJ) opcional (pedido direto do usuário, 2026-10-12, sem spec/plano — "faça
+  direto na main").** `clientes.documento` ficou `nullable` (migration
+  `2026_10_12_113338_make_documento_nullable_on_clientes_table`); `ClienteRequest` troca `documento` de `required`
+  para `nullable` e, em `prepareForValidation()`, normaliza vazio para **`null`, não `''`**.
+  - **Pegadinha evitada:** o índice único é `(user_id, documento, apelido)`, e `apelido` vazio já é `''` (não aceita
+    nulo — ver Fase 21 acima). Se `documento` vazio também virasse `''`, dois clientes informais do mesmo usuário sem
+    apelido colidiriam no índice — só um informal por usuário seria possível. Com `documento = null`, o Postgres trata
+    cada linha como distinta (NULL nunca é igual a NULL num índice), permitindo quantos informais o usuário quiser.
+  - **Acerto:** `Documento::formatar(null)` e `DocumentoValido` já tratavam `null`/vazio sem erro (não precisou mudar
+    nada ali); o blade do recibo (`danfse-v1`/`webiss-v1`) imprime `$tomador['documento']` cru — em branco para
+    informal, sem quebrar o PDF. Testes: `ClientesTest::test_documento_e_opcional_para_cliente_informal` e
+    `test_permite_mais_de_um_cliente_informal_no_mesmo_usuario`.
 - **Fase 22 — troca de modelo vale para as cobranças em aberto (plano `.claude/plans/2026-10-11-troca-de-modelo.md`).**
   `EmissorDeRecibos::aplicarModeloDoCliente` dentro da transação do `ClienteController::update`, só quando o modelo
   mudou; a tela de edição recebe `emAberto` e mostra a prévia (quantas mudam) com a caixa das enviadas. Teste:

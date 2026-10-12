@@ -45,8 +45,8 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                 <Campo id="nome" rotulo="Nome ou razão social" :erro="form.errors.nome" class="sm:col-span-4">
                     <input id="nome" v-model="form.nome" class="entrada" required>
                 </Campo>
-                <Campo id="documento" rotulo="CPF ou CNPJ" :erro="form.errors.documento" class="sm:col-span-2">
-                    <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada" required>
+                <Campo id="documento" rotulo="CPF ou CNPJ (opcional)" :erro="form.errors.documento" class="sm:col-span-2">
+                    <input id="documento" v-mascara="'documento'" v-model="form.documento" class="entrada">
                 </Campo>
                 <Campo id="apelido" rotulo="Apelido (opcional)" :erro="form.errors.apelido" class="sm:col-span-6">
                     <input id="apelido" v-model="form.apelido" maxlength="60" class="entrada" aria-describedby="apelido-ajuda">

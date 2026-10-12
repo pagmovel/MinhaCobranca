@@ -21,11 +21,13 @@ class ClienteRequest extends FormRequest
         $cep = preg_replace('/\D/', '', (string) $this->input('cep'));
         $uf = mb_strtoupper((string) $this->input('uf'));
         $apelido = $this->input('apelido');
+        // Cliente informal: sem documento é nulo (não ''), para não colidir no índice único com outro informal.
+        $documento = Documento::normalizar($this->input('documento'));
 
         $this->merge([
             // Sem apelido = '' (a coluna não aceita nulo: é parte do índice único com o documento).
             'apelido' => is_string($apelido) ? trim($apelido) : ($apelido ?? ''),
-            'documento' => Documento::normalizar($this->input('documento')),
+            'documento' => $documento === '' ? null : $documento,
             'cep' => $cep === '' ? null : $cep,
             'uf' => $uf === '' ? null : $uf,
         ]);
@@ -37,9 +39,10 @@ class ClienteRequest extends FormRequest
             'nome' => ['required', 'string', 'max:255'],
             'apelido' => ['string', 'max:60'],
             'contato' => ['nullable', 'string', 'max:100'],
-            // O mesmo CPF/CNPJ pode repetir com outro apelido (cada regional é um cliente).
+            // Cliente informal pode não ter CPF/CNPJ. Quando tem, vale a mesma regra de sempre: repete com apelido
+            // diferente, não na mesma unidade.
             'documento' => [
-                'required',
+                'nullable',
                 new DocumentoValido,
                 Rule::unique('clientes', 'documento')
                     ->where('user_id', $this->user()->id)

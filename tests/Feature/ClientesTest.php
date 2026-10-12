@@ -80,6 +80,31 @@ class ClientesTest extends TestCase
         $this->assertSame('12ABC34501DE35', $usuario->clientes()->firstOrFail()->documento);
     }
 
+    /** Cliente informal: sem CPF/CNPJ (decisão do usuário, 2026-10-12). */
+    public function test_documento_e_opcional_para_cliente_informal(): void
+    {
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)->post('/clientes', $this->dados(['documento' => '']))
+            ->assertSessionHasNoErrors()->assertRedirect('/clientes');
+
+        $cliente = $usuario->clientes()->firstOrFail();
+        $this->assertNull($cliente->documento);
+        $this->assertSame('-', $cliente->paraBusca()['documento']);
+    }
+
+    /** Documento nulo é distinto de documento nulo no índice único (user_id, documento, apelido) — sem isso, só um informal por usuário. */
+    public function test_permite_mais_de_um_cliente_informal_no_mesmo_usuario(): void
+    {
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario);
+
+        $this->post('/clientes', $this->dados(['nome' => 'Cliente informal 1', 'documento' => '']))->assertSessionHasNoErrors();
+        $this->post('/clientes', $this->dados(['nome' => 'Cliente informal 2', 'documento' => '']))->assertSessionHasNoErrors();
+
+        $this->assertSame(2, $usuario->clientes()->whereNull('documento')->count());
+    }
+
     public function test_recusa_documento_invalido_e_repetido_no_mesmo_usuario(): void
     {
         $usuario = User::factory()->create();
