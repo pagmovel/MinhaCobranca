@@ -19,11 +19,19 @@ novas de contrato (`GET /contratos/{id}/renovacao`, `POST /contratos/{id}/renova
 
 **Estado geral: testado, aguardando validação do usuário.** Implementado em `feat/renovar-prorrogar-contrato`
 (5 tarefas, TDD) + revisão final (reviewer com contexto novo) que achou 1 Critical e 4 Important, todos
-corrigidos num fix pass com teste próprio (commit `5a6d5e7`) — detalhes e rulings no ledger
-`.superpowers/sdd/2026-10-11-renovar-prorrogar-contrato/progress.md`. Suíte: `php artisan test` 510/510,
-`node --test` 19/19, `npm run build` ok. Duas perguntas abertas para o usuário (ver mensagem final):
-tratamento da cobrança "proporcional já enviada" ao renovar, e o que fazer com boleto desatualizado depois
-de prorrogar/renovar.
+corrigidos num fix pass com teste próprio (commit `5a6d5e7`) — detalhes e rulings no ledger (apagado após a
+revisão limpa, histórico fica no git). Mesclado em `main`.
+
+**Extensões pós-aprovação (2026-10-12, decisões do usuário em conversa, fora das 5 tarefas originais):**
+- Renovar avisa **e resolve sozinho** a cobrança "proporcional já enviada" (vira avulsa), exceto se a avulsa
+  já foi paga — commit de código + doc na skill.
+- Prorrogar limpa a `linha_digitavel` do boleto (mesmo motivo do ajuste proporcional) — commit de código + doc.
+- "Reativar contrato" (formulário normal, para contrato já encerrado de fato) passou a também desfazer
+  cancelamentos/truncamentos, com prévia própria (`GET /contratos/{contrato}/reativacao` +
+  `ReativarContrato.vue`), igual ao "Renovar" dedicado — brainstorming bounded aprovado pelo usuário, TDD,
+  commit `8a27262`.
+
+Suíte depois de tudo: `php artisan test` 520/520, `node --test` 19/19, `npm run build` ok.
 
 ## Global Constraints
 
