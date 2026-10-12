@@ -27,6 +27,14 @@ sem depender do histórico.
   SMOKE, autorizado) confirmando as duas features de ponta a ponta. **Ainda não commitado** (pendente desta
   sessão).
 
+### 0.0b T17.16 — abas de situação com contagem e soma (2026-10-12, sessão seguinte à 0.0a)
+- **Implementada**: abas Todas · Vencidas · Hoje · A vencer · Pagas acima da tabela de `/cobrancas`, com contagem
+  e soma, sempre do conjunto inteiro (independente de qual aba está selecionada) — ver skill, seção "T17.16".
+  Bug real descoberto e corrigido no processo (as outras abas zerariam ao entrar numa aba específica, se
+  reusassem a consulta já filtrada por `status`). Suíte 549 PHP + 94 JS verde; testada no navegador (usuário
+  SMOKE, números batendo com o rodapé, 390 px sem rolagem). **Validada pelo usuário** (2026-10-12, "validado").
+  Não commitado ainda nesta sessão.
+
 ### 0.0 PRÓXIMO PASSO IMEDIATO (2026-10-12)
 - **T17.11 (renovar/prorrogar/aviso de contrato + Reativar desfaz encerramento) implementada direto na `main`**,
   sem branch separada (plano `.claude/plans/2026-10-11-renovar-prorrogar-contrato.md`, 5 tarefas + extensões
@@ -108,8 +116,13 @@ apagada — decisão de não apagar branches sem pedido explícito).
 1. ~~Revisão final da branch e merge na `main`~~ — **feito em 2026-10-11** (Fases 17–23, merge `da2d53f`, ver seção 0.1).
 2. ~~T17.11 — renovar ou prorrogar contrato perto do fim~~ — **implementada em 2026-10-12** (ver seção 0.0);
    falta só a validação do usuário.
-3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
-   Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
+3. ~~T17.16 (parte que falta) — abas de situação~~ — **implementada e validada em 2026-10-12** (Todas · Vencidas ·
+   Hoje · A vencer · Pagas, com contagem e soma, acima da tabela de `/cobrancas`; ver skill, seção "T17.16").
+   Backend ganhou `ListaDeCobrancas::abas()` (consultas de agregação independentes da aba escolhida, corrigindo um
+   bug real descoberto no processo: as abas não selecionadas zerariam se reusassem a consulta já filtrada). Suíte
+   549 PHP (1 teste novo) + 94 JS verde; `npm run build` ok; testada no navegador com o usuário SMOKE (abas
+   batendo com o rodapé, clique numa aba vazia não zera as outras, 390 px sem rolagem). **Validada pelo usuário**
+   (2026-10-12, "validado").
 4. ~~T17.17 — ordenar cobranças pelo cabeçalho~~ — **cancelada a pedido do usuário (2026-10-12)**. Não implementar.
 5. ~~T17.19 — seleção de várias cobranças e ação em lote com prévia~~ — **implementada em 2026-10-12** (baixar,
    cancelar, enviar; ver skill, seção "T17.19"). Suíte 541 PHP + 94 JS verde; testada no navegador (as três

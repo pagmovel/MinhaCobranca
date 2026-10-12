@@ -93,6 +93,19 @@ function escolheuPeriodo() {
 
 const linhas = computed(() => linhasDaPagina.value.map((cobranca) => ({ ...cobranca, acoes: acoesDaCobranca(cobranca) })));
 const temPrevistas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'prevista')));
+
+// T17.16: abas de situação com contagem e soma, sempre do conjunto inteiro (o servidor não zera as outras
+// abas quando uma está selecionada). "Todas" é status === '' na mesma variável do select "Situação" abaixo.
+const ROTULO_DA_ABA = { todas: 'Todas', vencida: 'Vencidas', vence_hoje: 'Hoje', a_vencer: 'A vencer', paga: 'Pagas' };
+const ABAS = Object.keys(ROTULO_DA_ABA);
+const abaAtiva = computed(() => filtro.status || 'todas');
+function valorDaAba(chave) {
+    return resumo.value?.abas.find((aba) => aba.chave === chave) ?? { quantidade: 0, soma_centavos: 0 };
+}
+function escolherAba(chave) {
+    filtro.status = chave === 'todas' ? '' : chave;
+    filtrar();
+}
 const ROTULO_DO_TOTAL = { vencida: 'Vencidas', vence_hoje: 'Vencendo hoje', a_vencer: 'A vencer', prevista: 'Previstas', paga: 'Pagas', cancelada: 'Canceladas' };
 const temCanceladas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'cancelada')));
 const naFaixa = ['baixa', 'pagamento', 'cancelar', 'prorrogar', 'corrigir', 'desfazer'];
@@ -208,6 +221,23 @@ async function fecharFaixa() {
                 <Link v-if="filtrando" href="/cobrancas" class="font-estreita text-sm text-carbono underline">Limpar filtros</Link>
             </div>
         </form>
+
+        <div v-if="resumo" class="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Filtrar por situação">
+            <button
+                v-for="aba in ABAS"
+                :key="aba"
+                type="button"
+                role="tab"
+                :aria-selected="abaAtiva === aba"
+                :class="[abaAtiva === aba ? 'botao' : 'botao-secundario', 'flex items-center gap-1.5 px-3 py-1.5 text-xs']"
+                @click="escolherAba(aba)"
+            >
+                {{ ROTULO_DA_ABA[aba] }}
+                <span class="tabular-nums" :class="abaAtiva === aba ? 'text-white/80' : 'text-grafite/60'">
+                    ({{ valorDaAba(aba).quantidade }} · R$ {{ formatarCentavos(valorDaAba(aba).soma_centavos) }})
+                </span>
+            </button>
+        </div>
 
         <Transition name="surgir">
             <p v-if="temPrevistas" class="mb-3 font-estreita text-xs text-grafite/75">

@@ -81,4 +81,25 @@ class FiltroSituacaoTest extends TestCase
         $this->assertSame(['4,00'], $this->valores('/cobrancas?status=paga'));
         $this->get('/cobrancas?status=talvez')->assertSessionHasErrors('status');
     }
+
+    /**
+     * T17.16: as abas somam vencida (1,00+2,00) + vence_hoje (3,00) + a_vencer (6,00, só este mês) + paga (4,00);
+     * cancelada (5,00) fica fora de "todas", como no rodapé.
+     */
+    public function test_abas_mostram_contagem_e_soma_do_conjunto_inteiro(): void
+    {
+        $esperado = [
+            ['chave' => 'todas', 'quantidade' => 5, 'soma_centavos' => 1600],
+            ['chave' => 'vencida', 'quantidade' => 2, 'soma_centavos' => 300],
+            ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
+            ['chave' => 'paga', 'quantidade' => 1, 'soma_centavos' => 400],
+        ];
+        $abas = fn (string $consulta) => $this->actingAs($this->usuario)->getJson('/cobrancas/dados'.$consulta)->assertOk()->json('abas');
+
+        $this->assertSame($esperado, $abas(''));
+        // Estar numa aba (ex.: só vencidas na listagem) não pode "zerar" a contagem das outras.
+        $this->assertSame($esperado, $abas('?status=vencida'));
+        $this->assertSame($esperado, $abas('?status=paga'));
+    }
 }

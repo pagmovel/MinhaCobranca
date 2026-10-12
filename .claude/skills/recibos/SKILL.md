@@ -1341,6 +1341,46 @@ mecanismo de download/compartilhar já existente, uma cobrança de cada vez, com
   mostravam o estado novo correto — só o texto "N selecionada(s)" dentro da transição ficava preso). **Não é bug
   da feature, é limitação de teste automatizado**; não precisa de correção de código.
 
+## T17.16: abas de situação com contagem e soma (2026-10-12)
+Pedido já registrado no roteiro: abas **Todas · Vencidas · Hoje · A vencer · Pagas** acima da tabela de
+`/cobrancas`, cada uma com contagem e soma, modelo visual `MATERIAIS/tables-m04.html` (só a estrutura — o
+segmento de botões "View all/Monitored/Unmonitored", adaptado às 5 abas e com a paleta do projeto, nunca a azul
+do modelo). O rodapé de totais (Fase 19) e o select "Situação" continuam **inalterados**: a aba é um atalho
+visual adicional para as 5 situações mais comuns, não substitui o select (que ainda tem "Pendentes" e
+"Canceladas", fora do escopo pedido para as abas).
+- **Acerto de design — reaproveitar `botao`/`botao-secundario` para o estado ativo/inativo**, exatamente como o
+  `Paginador.vue` já faz para a página atual (`item === pagina ? 'botao' : 'botao-secundario'`). Evita CSS novo e
+  mantém a mesma linguagem visual (nenhuma pílula arredondada do modelo, nenhuma cor nova).
+- **Pegadinha real encontrada e corrigida — abas não podem depender da aba selecionada.** A primeira tentativa
+  natural seria calcular os totais de cada aba a partir da mesma consulta já filtrada pelo `status` escolhido
+  (`ListaDeCobrancas::montar`) — mas essa consulta **já aplica o `where` do status** antes de virar `$leves`, então
+  ao entrar em "Vencidas" as outras abas (Hoje, A vencer, Pagas) apareceriam zeradas na tela, porque suas linhas
+  nunca foram buscadas. **Corrigido** com um método novo, `ListaDeCobrancas::abas()`, que roda 4 consultas de
+  agregação (`count`/`sum` via `toBase()->selectRaw(...)`) **independentes do `status` escolhido**, cada uma com a
+  mesma regra de escopo que o filtro principal já usa (vencida/vence-hoje ignoram mês; a_vencer/paga respeitam
+  mês/até) — e soma as previstas (sempre calculadas agora, não só quando a aba é "A vencer"/"pendente"/"Todas") no
+  balde de "A vencer", porque é isso que a pessoa vê ao clicar nessa aba. "Todas" é a soma dos outros 4 (cancelada
+  não entra, igual ao rodapé). Teste que prova isso:
+  `tests/Feature/Cobrancas/FiltroSituacaoTest.php::test_abas_mostram_contagem_e_soma_do_conjunto_inteiro` — chama
+  `/cobrancas/dados` com `status=''`, `status=vencida` e `status=paga` e exige a **mesma** lista de abas nas três.
+- **Custo aceito:** a previsão (`PrevisaoDeCobrancas::entre`) agora é calculada em **toda** chamada a
+  `/cobrancas/dados` (antes só rodava se a aba pedida fosse Todas/A vencer/Pendentes) — inevitável, pois a aba "A
+  vencer" tem que aparecer certa mesmo vendo "Pagas". Sem problema de N+1 (Fase 20 já corrigiu
+  `GeradorDeCobrancas::existentes()` para 1 consulta por lote de contratos, não por contrato).
+- **Resposta JSON:** nova chave `abas` em `/cobrancas/dados`, lista de `{chave, quantidade, soma_centavos}` na
+  ordem `todas, vencida, vence_hoje, a_vencer, paga`. Reaproveitada no Vue por `ROTULO_DA_ABA` (rótulo da aba
+  "Hoje", mais curto que o "Vencendo hoje" do select) e `valorDaAba(chave)`.
+- **Smoke (browser-agent, usuário `smoke@recibos.test`/`password`, autorizado — só leitura):** com
+  `?mes=2026-09&ate=2026-12`, abas mostraram Todas 16/R$9.737,06, Vencidas 0, Hoje 0, A vencer 10/R$7.085,46
+  (com previstas mescladas), Pagas 6/R$2.651,60 — bate exatamente com o rodapé. Clicar em "Vencidas" (vazia)
+  filtrou a lista (`status=vencida` na URL, "Nenhuma cobrança vencida em aberto.") **sem zerar as outras abas** —
+  prova visual do bug que o teste automatizado também cobre. 390 px sem rolagem horizontal
+  (`scrollWidth === clientWidth === 390`).
+- **Pegadinha do browser-use reconfirmada:** `new_tab`/`goto_url` (que chamam `cdp("Page.navigate")`) estouram
+  timeout com o Postgres remoto de dev; usar `js("setTimeout(()=>location.href='…',0);1")` e aguardar em loop por
+  `document.readyState === 'complete'` e pelo texto esperado no `innerText` (já documentado na Fase 19, repetido
+  aqui porque voltou a acontecer).
+
 ## Filtro de cobranças por contrato (2026-10-12)
 Pedido do usuário: ao clicar "Ver cobranças" num contrato específico, a lista trazia **todos** os contratos do
 cliente (só existia filtro por `cliente_id`). Acrescentado `contrato_id` ao lado de `cliente_id`, mesmo padrão:
