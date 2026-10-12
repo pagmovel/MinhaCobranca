@@ -89,16 +89,22 @@ apagada — decisão de não apagar branches sem pedido explícito).
    falta só a validação do usuário.
 3. **T17.16 (parte que falta) — abas de situação** na lista de cobranças com contagem e soma (Vencidas · Hoje · A vencer ·
    Pagas), modelo `MATERIAIS/tables-m04.html` (só a estrutura). Os totais por situação já vêm do `/cobrancas/dados`.
-4. **T17.17 — ordenar cobranças pelo cabeçalho** (vencimento, valor, cliente), modelo `tables-m01`.
+4. ~~T17.17 — ordenar cobranças pelo cabeçalho~~ — **cancelada a pedido do usuário (2026-10-12)**. Não implementar.
 5. **T17.19 — seleção de várias cobranças e ação em lote com prévia** (padrão de usabilidade 9). Deixada para depois.
 6. **Minor adiados da Fase 20** (lista no "Registro de execução" do plano): 2 pedido a mais, 3 e-mail longo em Usuários a
    390 px (só conferível com conta admin), 4 e 5 período inválido, 6 foco, 7 "Tentar de novo"; e o botão "Enviar" do
    Painel a 390 px (`LinhaCobranca`). Minor adiados da Fase 19 no plano dela.
 7. **Validações antigas:** T17.9 (smoke do encerramento), T17.12 (corrigir/desfazer baixa), T17.14 (área mais larga).
-8. **Conferência pendente da Fase 19:** dar baixa e ver a lista recarregar (grava pagamento: pede autorização).
-9. **Sessões do SMOKE na tabela `sessions`** (deixadas por testes no navegador): apagar só com o "sim" do usuário.
-10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores (planejados).
-11. Segurança do PostgreSQL de dev (sem SSL, superusuário exposto): fora do repositório, ver Pegadinhas da skill.
+8. ~~Conferência pendente da Fase 19: dar baixa e ver a lista recarregar~~ — **validada pelo usuário (2026-10-12,
+   "OK")**.
+9. ~~Sessões do SMOKE na tabela `sessions`~~ — **apagadas (2026-10-12, autorizado pelo usuário)**: 1 linha do
+   usuário 2 (smoke@recibos.test); a tabela tinha 3 linhas no total (não as "5 de 18" do registro antigo — estado
+   mudou desde então), ficaram 2.
+10. **Módulos seguintes** (seção 4): Contas a Pagar (a desenhar), Notas Fiscais e Integração com emissores
+    (planejados). **Mantidos como pendência de propósito** (confirmado pelo usuário em 2026-10-12) — não
+    antecipar o desenho sem pedido.
+11. **Segurança do PostgreSQL de dev**: instruções escritas em 2026-10-12 na skill (seção "Segurança do PostgreSQL
+    de dev — instruções"), ainda não executadas — exigem acesso ao painel EasyPanel/VPS que esta sessão não tem.
 
 **Como retomar numa conversa nova:** ler esta seção 0, a skill `.claude/skills/recibos/SKILL.md` inteira e o plano da
 fase em questão. Tarefa nova de produto segue o fluxo superpowers (brainstorming → spec em `docs/superpowers/specs/` →

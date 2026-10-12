@@ -1046,6 +1046,40 @@ o relatório mostra a parte que existe.
 - **Pendente (segurança):** as senhas do `recibos_app`, do superusuário `postgres` e o `APP_KEY` de dev apareceram
   em texto puro nos logs do deploy com Nixpacks — trocar.
 
+### Segurança do PostgreSQL de dev — instruções (2026-10-12)
+
+Esta sessão **não tem acesso ao painel EasyPanel nem SSH na VPS** `207.180.205.211` — só à conexão do banco pelo
+`.env` local. Os dois fatos abaixo foram **confirmados agora** (consulta só leitura), não supostos a partir do
+registro antigo:
+
+```
+SHOW ssl;                        → off
+SELECT usesuper FROM pg_user WHERE usename = current_user;   → recibos_app NÃO é superusuário
+```
+
+Ou seja: o lado da aplicação já está certo (usuário com privilégio limitado). O que falta resolver, em ordem de
+urgência, é do lado do servidor/painel — passos para o usuário (ou quem tiver acesso ao EasyPanel) executar:
+
+1. **Trocar as credenciais que já vazaram** (prioridade 1 — vazaram em texto puro no log do deploy Nixpacks, ver
+   acima): senha do `recibos_app`, senha do superusuário `postgres`, e o `APP_KEY` de produção/dev. Depois de
+   trocar cada uma, atualizar nos dois lugares — `.env` local **e** aba Environment do EasyPanel do serviço
+   `gerenciador_cobrancas` — e fazer um novo Deploy (variável só vale depois do deploy, pegadinha já registrada
+   acima). Trocar o `APP_KEY` invalida sessões/cookies ativos: fazer fora do horário de uso.
+2. **Ligar SSL no `postgres_dev`.** Depende da imagem usada pelo serviço no EasyPanel — geralmente é
+   `ssl = on` em `postgresql.conf` (ou uma variável de ambiente equivalente, se a imagem expõe uma) mais um
+   certificado (autoassinado já resolve o "em trânsito", mesmo sem CA confiável). **O lado do Laravel já está
+   pronto**: `config/database.php:99` já lê `DB_SSLMODE` (padrão `prefer`, que é por isso que a conexão cai para
+   sem SSL hoje — o servidor não oferece). Depois de ligar SSL no servidor, trocar `DB_SSLMODE=require` no `.env`
+   local e no painel, para a conexão **recusar** cair para texto puro em vez de só preferir.
+3. **Fechar a porta pública do Postgres para a internet em geral.** A app implantada fala com o banco pela rede
+   interna do EasyPanel (`DB_HOST=meus_projetos_postgres_dev:5432`, dentro do compose) — ela **não precisa** da
+   porta externa (a `1` que o `.env` local usa) aberta para o mundo; essa porta só existe hoje para quem desenvolve
+   localmente conectar de fora. Preferir: restringir essa porta por IP de origem no firewall da VPS (ou no painel,
+   se o EasyPanel expõe isso), ou trocar para um túnel SSH (`ssh -L 5433:localhost:<porta_interna> usuario@vps`) em
+   vez de expor a porta publicamente.
+4. Depois dos passos 1–3, revisar `pg_hba.conf` dentro do container `postgres_dev` para exigir `hostssl` (não só
+   `host`) nas linhas de conexão TCP — isso faz o servidor **recusar** conexão sem SSL, reforçando o passo 2.
+
 ## T17.11: renovar contrato, prorrogar cobrança, aviso de contrato perto do fim (2026-10-12)
 
 Plano: `.claude/plans/2026-10-11-renovar-prorrogar-contrato.md` (5 tarefas, estado por tarefa no topo de cada
