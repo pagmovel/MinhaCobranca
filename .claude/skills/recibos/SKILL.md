@@ -1034,6 +1034,58 @@ o relatório mostra a parte que existe.
 - **Pendente (segurança):** as senhas do `recibos_app`, do superusuário `postgres` e o `APP_KEY` de dev apareceram
   em texto puro nos logs do deploy com Nixpacks — trocar.
 
+## T17.11: renovar contrato, prorrogar cobrança, aviso de contrato perto do fim (2026-10-12)
+
+Plano: `.claude/plans/2026-10-11-renovar-prorrogar-contrato.md` (5 tarefas, estado por tarefa no topo de cada
+uma). Spec: `docs/superpowers/specs/2026-10-11-renovar-prorrogar-contrato-design.md`. Testada (510 PHP + 19
+JS, suíte inteira), aguardando validação do usuário.
+
+- **Renovar** (`RenovadorDeContratos`, espelha `EncerradorDeContratos`) desfaz um encerramento agendado:
+  reabre cobrança cancelada com período depois do fim antigo, devolve a cobrança de fronteira ao valor
+  cheio quando ela foi truncada. **Prorrogar** (`CobrancaController::prorrogar`) só adia o `vencimento` de
+  uma cobrança pendente, refazendo o recibo se existir.
+- `GeradorDeCobrancas::desfazerProporcional()` é a contraparte de `ajustarProporcional()`: refaz os itens a
+  partir do contrato e devolve o período cheio. Fica por conta do chamador emitir/refazer o recibo.
+
+### Pegadinhas
+- **`status` de `Cobranca` não é `#[Fillable]`** (decisão deliberada do projeto: mudança de status sempre
+  por código explícito). `update(['status' => ...])` falha **em silêncio** (mass assignment descartado, sem
+  exceção) — confirmado com `Log::debug` temporário. Usar atribuição direta + `save()`, como
+  `EncerradorDeContratos::cancelar()` já fazia. Qualquer novo "reabrir"/mudança de status segue esse padrão.
+- **`EncerradorDeContratos` nem sempre trunca a cobrança de fronteira.** Quando o fim do encerramento cai
+  exatamente no último dia do período (ou a cobrança já está vencida/vence hoje), a ação é `'manter'`: a
+  cobrança fica cheia, intacta. Um `RenovadorDeContratos::plano()` que assume "toda fronteira pendente
+  após um encerramento 'proporcional' foi truncada" desfaz algo que nunca foi feito — reemite o recibo
+  (mesmo já enviado) e perde itens/descrição editados manualmente. A regra certa: só é "proporcional_cheio"
+  quando `periodo_fim` gravado é **menor** que o fim natural do período (`periodoCompletoDe`).
+- **`after:data` do Laravel respeita `Carbon::setTestNow()`/`travelTo`** (confirmado isolado com
+  `Validator::make`), mas um teste do próprio plano testava uma data **depois** de "hoje" esperando que
+  fosse recusada — contradizia a spec e a regra implementada. Teste corrigido para uma data genuinamente no
+  passado; a lição é desconfiar de datas em teste que não batem com o nome do teste.
+- **Reabrir cobrança cancelada sem olhar a nova `data_fim`** reabre período que ficaria fora do contrato
+  renovado (nova data mais próxima que o fim antigo, cobrança cancelada que começa depois dela). `plano()`
+  ganhou um `?CarbonImmutable $novaData` opcional só para filtrar a reabertura na execução — a prévia (GET,
+  antes da pessoa escolher a data) continua mostrando tudo, como a spec pede.
+- **Ação de menu sem tela não dá erro nenhum, só não faz nada.** `acoesCobranca.js` listar `'prorrogar'` no
+  menu não bastou: `Cobrancas/Index.vue` só abre a faixa (`<tr v-if="naFaixa.includes(faixa.acao)">`) para
+  ações na lista `naFaixa`. Clicar chamava `abrirFaixa` mas nada aparecia, sem erro de console — só pegou na
+  revisão final (o smoke test da Tarefa 2 testou "Renovar contrato", que tem UI própria desde o início; a
+  Tarefa 4 só mexeu no array JS, sem smoke test, e ninguém notou que faltava o componente). **Toda ação nova
+  de menu com campo próprio precisa de um componente ligado em `naFaixa` + um `v-else-if` dedicado** (nunca
+  deixar cair no `v-else` genérico, que hoje é `CorrecaoPagamentoInline` — pegaria a ação errada).
+
+### Acertos
+- Revisão final (reviewer com contexto novo, modelo mais capaz) pegou 1 Critical + 4 Important que a
+  implementação linha a linha (TDD tarefa por tarefa) não achou — todos em cenários que os testes do próprio
+  plano não cobriam (fronteira "mantida" cheia, nova data mais próxima que o fim antigo, ação de menu sem
+  UI). Confirma o valor de rodar essa revisão mesmo com TDD rigoroso em cada tarefa.
+- `ProrrogarInline.vue` segue exatamente o padrão de `BaixaInline.vue` (botão → formulário inline com campo
+  de data, `useForm`, `@fechar`) — mesmo exercício de "seguir o padrão existente" de outras telas do projeto.
+- Erro de validação de uma ação que só confirma por `router.post` avulso (sem `useForm` próprio) precisa de
+  tratamento explícito de `onError` no componente pai, repassado por prop — `useForm` do formulário principal
+  não recebe erros de um POST que não é dele. Ver `RenovarContrato.vue` (prop `erro`) + `Form.vue` (`onError`
+  no `renovar()`).
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).

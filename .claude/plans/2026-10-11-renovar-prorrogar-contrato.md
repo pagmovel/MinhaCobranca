@@ -17,6 +17,14 @@ novas de contrato (`GET /contratos/{id}/renovacao`, `POST /contratos/{id}/renova
 
 **Spec:** [docs/superpowers/specs/2026-10-11-renovar-prorrogar-contrato-design.md](../../docs/superpowers/specs/2026-10-11-renovar-prorrogar-contrato-design.md)
 
+**Estado geral: testado, aguardando validação do usuário.** Implementado em `feat/renovar-prorrogar-contrato`
+(5 tarefas, TDD) + revisão final (reviewer com contexto novo) que achou 1 Critical e 4 Important, todos
+corrigidos num fix pass com teste próprio (commit `5a6d5e7`) — detalhes e rulings no ledger
+`.superpowers/sdd/2026-10-11-renovar-prorrogar-contrato/progress.md`. Suíte: `php artisan test` 510/510,
+`node --test` 19/19, `npm run build` ok. Duas perguntas abertas para o usuário (ver mensagem final):
+tratamento da cobrança "proporcional já enviada" ao renovar, e o que fazer com boleto desatualizado depois
+de prorrogar/renovar.
+
 ## Global Constraints
 
 - pt-BR em todo código visível: comentários, mensagens de erro/sucesso, nomes de teste, auditoria.
@@ -46,6 +54,11 @@ novas de contrato (`GET /contratos/{id}/renovacao`, `POST /contratos/{id}/renova
 
 ## Task 1: `RenovadorDeContratos` + rotas de contrato
 
+**Estado: testada** — 12/12 testes (8 do plano + 4 da revisão final: descrição/principal preservados ao
+desfazer proporcional, fronteira cheia não mexida, fronteira `nao_cobrar` intacta não listada, nova
+`data_fim` não reabre cobrança fora do novo intervalo). Commits `34217a1` (tarefa) e `5a6d5e7` (correções
+da revisão). Falta validação do usuário.
+
 **Files:**
 - Modify: `app/Services/GeradorDeCobrancas.php` (novo método público `desfazerProporcional()`)
 - Create: `app/Services/RenovadorDeContratos.php`
@@ -61,7 +74,7 @@ novas de contrato (`GET /contratos/{id}/renovacao`, `POST /contratos/{id}/renova
   (via `ContratoController`, que a Tarefa 2 não toca de novo) e pelas rotas `GET /contratos/{contrato}/renovacao`
   (JSON `{acoes: [{acao, periodo, valor}]}`) e `POST /contratos/{contrato}/renovar` (body `{data_fim: string|null}`).
 
-- [ ] **Step 1: Escrever o teste principal (RED)**
+- [x] **Step 1: Escrever o teste principal (RED)**
 
 Criar `tests/Feature/RenovarContratoTest.php`:
 
@@ -250,12 +263,12 @@ class RenovarContratoTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `php artisan test --filter=RenovarContratoTest`
 Expected: FAIL — rota `renovacao`/`renovar` não existe (404) ou classe `RenovadorDeContratos` não encontrada.
 
-- [ ] **Step 3: `GeradorDeCobrancas::desfazerProporcional()`**
+- [x] **Step 3: `GeradorDeCobrancas::desfazerProporcional()`**
 
 Em `app/Services/GeradorDeCobrancas.php`, adicionar depois do método `ajustarProporcional()` (os imports
 `App\Models\Contrato`, `App\Models\ContratoItem`, `App\Support\Periodo` já existem no arquivo):
@@ -288,7 +301,7 @@ Em `app/Services/GeradorDeCobrancas.php`, adicionar depois do método `ajustarPr
     }
 ```
 
-- [ ] **Step 4: `app/Services/RenovadorDeContratos.php`**
+- [x] **Step 4: `app/Services/RenovadorDeContratos.php`**
 
 ```php
 <?php
@@ -397,7 +410,7 @@ final class RenovadorDeContratos
 }
 ```
 
-- [ ] **Step 5: Rotas**
+- [x] **Step 5: Rotas**
 
 Em `routes/web.php`, depois da linha `Route::post('/contratos/{contrato}/recomecar', [ContratoController::class, 'recomecar']);`:
 
@@ -406,7 +419,7 @@ Em `routes/web.php`, depois da linha `Route::post('/contratos/{contrato}/recomec
     Route::post('/contratos/{contrato}/renovar', [ContratoController::class, 'renovar']);
 ```
 
-- [ ] **Step 6: `ContratoController`**
+- [x] **Step 6: `ContratoController`**
 
 Adicionar `use App\Services\RenovadorDeContratos;` aos imports. Adicionar os métodos (ao lado de `encerramento()`/`encerrar()`):
 
@@ -458,18 +471,18 @@ Adicionar `use App\Services\RenovadorDeContratos;` aos imports. Adicionar os mé
     }
 ```
 
-- [ ] **Step 7: Rodar e ver passar**
+- [x] **Step 7: Rodar e ver passar**
 
 Run: `php artisan test --filter=RenovarContratoTest`
 Expected: PASS (8/8).
 
-- [ ] **Step 8: Formatar e rodar a suíte completa**
+- [x] **Step 8: Formatar e rodar a suíte completa**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Run: `php artisan test`
 Expected: suíte inteira verde (nenhuma regressão em `EncerramentoContratoTest`, `ContratosTest`, etc.).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add app/Services/GeradorDeCobrancas.php app/Services/RenovadorDeContratos.php app/Http/Controllers/ContratoController.php routes/web.php tests/Feature/RenovarContratoTest.php
@@ -479,6 +492,10 @@ git commit -m "feat: renovar contrato com encerramento agendado (T17.11)"
 ---
 
 ## Task 2: `RenovarContrato.vue` + `Form.vue`
+
+**Estado: testada** — smoke test com browser-agent (usuário smoke@recibos.test, dev); revisão final
+corrigiu erro de validação invisível e falta de aviso de alterações não salvas (commit `5a6d5e7`).
+Commit da tarefa: `24e5a90`. Falta validação do usuário.
 
 **Files:**
 - Create: `resources/js/Components/RenovarContrato.vue`
@@ -493,7 +510,7 @@ git commit -m "feat: renovar contrato com encerramento agendado (T17.11)"
 Esta tarefa não tem teste automatizado próprio (o projeto não tem harness para `.vue`); a verificação é o smoke test
 do Step 3.
 
-- [ ] **Step 1: Criar `resources/js/Components/RenovarContrato.vue`**
+- [x] **Step 1: Criar `resources/js/Components/RenovarContrato.vue`**
 
 ```vue
 <script setup>
@@ -577,7 +594,7 @@ const confirmar = () => emit('confirmar', { data_fim: novaData.value || null });
 </template>
 ```
 
-- [ ] **Step 2: Editar `resources/js/Pages/Contratos/Form.vue`**
+- [x] **Step 2: Editar `resources/js/Pages/Contratos/Form.vue`**
 
 Adicionar o import e os dois `ref`/função novos, perto de `encerrando`/`encerrar` (mesmo bloco de `<script setup>`):
 
@@ -672,7 +689,7 @@ por:
         </section>
 ```
 
-- [ ] **Step 3: Build e smoke test com o browser-agent**
+- [x] **Step 3: Build e smoke test com o browser-agent**
 
 Run: `npm run build`
 
@@ -683,7 +700,7 @@ campo de data vazio redireciona com a mensagem "Contrato renovado." Checar tamb�
 "Encerrar contrato" continua aparecendo como antes.
 Expected: os dois fluxos renderizam sem erro de console e sem quebrar o fluxo de "Encerrar" já existente.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/Components/RenovarContrato.vue resources/js/Pages/Contratos/Form.vue
@@ -693,6 +710,8 @@ git commit -m "feat: tela de renovar contrato (T17.11)"
 ---
 
 ## Task 3: `CobrancaController::prorrogar()`
+
+**Estado: testada** — 7/7 testes passando. Commit `92a7135`. Falta validação do usuário.
 
 **Files:**
 - Modify: `app/Http/Controllers/CobrancaController.php` (novo método `prorrogar()`)
@@ -705,7 +724,7 @@ git commit -m "feat: tela de renovar contrato (T17.11)"
   (`acoesCobranca.js`, que só decide se o botão aparece; o POST em si é feito por `resources/js/Pages/Cobrancas/Index.vue`
   ou equivalente, fora do escopo desta tarefa — ver nota no Step 4).
 
-- [ ] **Step 1: Escrever o teste (RED)**
+- [x] **Step 1: Escrever o teste (RED)**
 
 Criar `tests/Feature/Cobrancas/ProrrogarCobrancaTest.php`:
 
@@ -830,12 +849,12 @@ class ProrrogarCobrancaTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `php artisan test --filter=ProrrogarCobrancaTest`
 Expected: FAIL — rota `/cobrancas/{cobranca}/prorrogar` não existe (404 em todos os métodos).
 
-- [ ] **Step 3: Rota**
+- [x] **Step 3: Rota**
 
 Em `routes/web.php`, depois de `Route::post('/cobrancas/{cobranca}/cancelar', [CobrancaController::class, 'cancelar']);`:
 
@@ -843,7 +862,7 @@ Em `routes/web.php`, depois de `Route::post('/cobrancas/{cobranca}/cancelar', [C
     Route::post('/cobrancas/{cobranca}/prorrogar', [CobrancaController::class, 'prorrogar']);
 ```
 
-- [ ] **Step 4: `CobrancaController::prorrogar()`**
+- [x] **Step 4: `CobrancaController::prorrogar()`**
 
 Adicionar ao lado de `cancelar()` (`EmissorDeRecibos` e `AnoValido` já estão importados no arquivo):
 
@@ -882,18 +901,18 @@ Adicionar ao lado de `cancelar()` (`EmissorDeRecibos` e `AnoValido` já estão i
 Nota: a cobrança avulsa/sem recibo (caso raro — todo fluxo de criação já emite recibo) não quebra por causa do guard
 `$registro->recibo !== null`.
 
-- [ ] **Step 5: Rodar e ver passar**
+- [x] **Step 5: Rodar e ver passar**
 
 Run: `php artisan test --filter=ProrrogarCobrancaTest`
 Expected: PASS (7/7).
 
-- [ ] **Step 6: Formatar e rodar a suíte completa**
+- [x] **Step 6: Formatar e rodar a suíte completa**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Run: `php artisan test`
 Expected: suíte inteira verde.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/CobrancaController.php routes/web.php tests/Feature/Cobrancas/ProrrogarCobrancaTest.php
@@ -903,6 +922,10 @@ git commit -m "feat: prorrogar vencimento de cobrança em aberto (T17.11)"
 ---
 
 ## Task 4: `acoesCobranca.js` — ação "Prorrogar"
+
+**Estado: testada** — 12/12 testes (3 do plano + 3 antigos ajustados para incluir 'prorrogar'). A revisão
+final achou que o menu chamava uma ação sem tela — corrigido na Tarefa 2/revisão (`ProrrogarInline.vue`,
+commit `5a6d5e7`). Commit da tarefa: `e02c45f`. Falta validação do usuário.
 
 **Files:**
 - Modify: `resources/js/acoesCobranca.js`
@@ -915,7 +938,7 @@ git commit -m "feat: prorrogar vencimento de cobrança em aberto (T17.11)"
 - Produces: `'prorrogar'` passa a aparecer em `acoesDaCobranca(cobranca).menu` para cobrança em aberto (não
   prevista/paga/cancelada); `rotuloDaAcao('prorrogar', cobranca)` retorna `'Prorrogar vencimento'`.
 
-- [ ] **Step 1: Escrever os testes (RED)**
+- [x] **Step 1: Escrever os testes (RED)**
 
 Em `resources/js/acoesCobranca.test.js`, adicionar (depois do teste `'rótulo de avisar'`):
 
@@ -936,12 +959,12 @@ test('rótulo de prorrogar', () => {
 });
 ```
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `node --test resources/js/acoesCobranca.test.js`
 Expected: FAIL — `menu` não contém `'prorrogar'`; `rotuloDaAcao('prorrogar', ...)` retorna `undefined`.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Em `resources/js/acoesCobranca.js`, trocar a linha do `return` em `emOrdem()`:
 
@@ -961,12 +984,12 @@ E adicionar ao objeto `ROTULOS`:
     prorrogar: 'Prorrogar vencimento',
 ```
 
-- [ ] **Step 4: Rodar e ver passar**
+- [x] **Step 4: Rodar e ver passar**
 
 Run: `node --test resources/js/acoesCobranca.test.js`
 Expected: PASS, todos os testes do arquivo (os novos e os já existentes).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/js/acoesCobranca.js resources/js/acoesCobranca.test.js
@@ -976,6 +999,9 @@ git commit -m "feat: ação Prorrogar vencimento no menu da cobrança (T17.11)"
 ---
 
 ## Task 5: Aviso de contrato perto do fim no Painel
+
+**Estado: testada** — 9/9 PerfilTest + 7/7 PainelTest. Migration aplicada no banco de dev (PostgreSQL
+207.180.205.211:1/recibos) com autorização do usuário. Commit `72fe0f3`. Falta validação do usuário.
 
 **Files:**
 - Create: migration `add_dias_aviso_contrato_to_users_table` (via `php artisan make:migration`)
@@ -991,7 +1017,7 @@ git commit -m "feat: ação Prorrogar vencimento no menu da cobrança (T17.11)"
 - Consumes: nada das tarefas anteriores (independente).
 - Produces: `users.dias_aviso_contrato` (int, 1–365, padrão 30); `PainelController` expõe `contratosParaRenovar: int`.
 
-- [ ] **Step 1: Criar a migration**
+- [x] **Step 1: Criar a migration**
 
 Run: `php artisan make:migration add_dias_aviso_contrato_to_users_table --no-interaction`
 
@@ -1029,7 +1055,7 @@ também no banco de **desenvolvimento** (necessário para usar a tela manualment
 database.connections.<default>` ou equivalente), o comando literal (`php artisan migrate`), e esperar o "sim"
 explícito. Não rodar por conta própria.
 
-- [ ] **Step 2: Escrever os testes (RED)**
+- [x] **Step 2: Escrever os testes (RED)**
 
 Em `tests/Feature/PerfilTest.php`, adicionar `'dias_aviso_contrato' => 20,` dentro do `array_merge` de `dados()`
 (ao lado de `'dias_aviso' => 8,`), e adicionar, depois de `test_dias_aviso_fora_de_1_a_30_e_recusado`:
@@ -1071,7 +1097,7 @@ importados no arquivo):
     }
 ```
 
-- [ ] **Step 3: Rodar e ver falhar**
+- [x] **Step 3: Rodar e ver falhar**
 
 Run: `php artisan test --filter=PerfilTest`
 Expected: FAIL — coluna `dias_aviso_contrato` não existe / regra de validação ainda não aceita o campo.
@@ -1079,14 +1105,14 @@ Expected: FAIL — coluna `dias_aviso_contrato` não existe / regra de validaç�
 Run: `php artisan test --filter=PainelTest`
 Expected: FAIL — `contratosParaRenovar` ausente no Inertia response.
 
-- [ ] **Step 4: `User` model**
+- [x] **Step 4: `User` model**
 
 Em `app/Models/User.php`:
 - Adicionar `'dias_aviso_contrato'` ao array do atributo `#[Fillable([...])]` (ao lado de `'dias_aviso'`).
 - Adicionar `'dias_aviso_contrato' => 30` ao `protected $attributes`.
 - Adicionar `'dias_aviso_contrato' => 'integer',` em `casts()`.
 
-- [ ] **Step 5: `PerfilRequest` e `PerfilController`**
+- [x] **Step 5: `PerfilRequest` e `PerfilController`**
 
 Em `app/Http/Requests/PerfilRequest.php`, adicionar depois de `'dias_aviso' => ['required', 'integer', 'between:1,30'],`:
 
@@ -1097,7 +1123,7 @@ Em `app/Http/Requests/PerfilRequest.php`, adicionar depois de `'dias_aviso' => [
 Em `app/Http/Controllers/PerfilController.php`, adicionar `'dias_aviso_contrato'` ao array `CAMPOS` (ao lado de
 `'dias_aviso'`).
 
-- [ ] **Step 6: `Perfil/Editar.vue`**
+- [x] **Step 6: `Perfil/Editar.vue`**
 
 Em `resources/js/Pages/Perfil/Editar.vue`, depois do `<Campo id="dias_aviso" ...>` existente:
 
@@ -1107,7 +1133,7 @@ Em `resources/js/Pages/Perfil/Editar.vue`, depois do `<Campo id="dias_aviso" ...
                 </Campo>
 ```
 
-- [ ] **Step 7: `PainelController`**
+- [x] **Step 7: `PainelController`**
 
 Em `app/Http/Controllers/PainelController.php`, dentro de `__invoke()`, adicionar ao array passado para
 `Inertia::render('Painel', [...])` (ao lado de `'vencimentosEmDiaNaoUtil' => ...`):
@@ -1117,7 +1143,7 @@ Em `app/Http/Controllers/PainelController.php`, dentro de `__invoke()`, adiciona
                 ->whereBetween('data_fim', [$hoje, $hoje->addDays($usuario->dias_aviso_contrato)])->count(),
 ```
 
-- [ ] **Step 8: `Painel.vue`**
+- [x] **Step 8: `Painel.vue`**
 
 Em `resources/js/Pages/Painel.vue`, adicionar a prop (ao lado de `vencimentosEmDiaNaoUtil`):
 
@@ -1135,7 +1161,7 @@ E o banner, depois do bloco `<p v-if="vencimentosEmDiaNaoUtil" ...>`:
         </p>
 ```
 
-- [ ] **Step 9: Rodar e ver passar**
+- [x] **Step 9: Rodar e ver passar**
 
 Run: `php artisan test --filter=PerfilTest`
 Expected: PASS.
@@ -1143,14 +1169,14 @@ Expected: PASS.
 Run: `php artisan test --filter=PainelTest`
 Expected: PASS.
 
-- [ ] **Step 10: Formatar, build e rodar a suíte completa**
+- [x] **Step 10: Formatar, build e rodar a suíte completa**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Run: `npm run build`
 Run: `php artisan test`
 Expected: suíte inteira verde.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add database/migrations app/Models/User.php app/Http/Requests/PerfilRequest.php app/Http/Controllers/PerfilController.php resources/js/Pages/Perfil/Editar.vue app/Http/Controllers/PainelController.php resources/js/Pages/Painel.vue tests/Feature/PerfilTest.php tests/Feature/PainelTest.php
