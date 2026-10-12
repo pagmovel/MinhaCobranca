@@ -8,6 +8,7 @@ import CamposPagamento from '../../Components/CamposPagamento.vue';
 import DescricaoComplementar from '../../Components/DescricaoComplementar.vue';
 import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
 import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
+import RenovarContrato from '../../Components/RenovarContrato.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
 
 const props = defineProps({
@@ -98,6 +99,15 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
     onStart: () => { enviandoEncerramento.value = true; },
     onFinish: () => { enviandoEncerramento.value = false; },
     onSuccess: () => { encerrando.value = false; },
+});
+
+const renovando = ref(false);
+const enviandoRenovacao = ref(false);
+const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`, dados, {
+    preserveScroll: true,
+    onStart: () => { enviandoRenovacao.value = true; },
+    onFinish: () => { enviandoRenovacao.value = false; },
+    onSuccess: () => { renovando.value = false; },
 });
 </script>
 
@@ -243,16 +253,28 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
             </Transition>
         </form>
 
-        <section v-if="contrato?.ativo && !mudaPeriodos" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
-            <h2 class="text-lg font-semibold">Encerrar contrato</h2>
-            <p v-if="contrato.encerramento_agendado" class="text-sm">
+        <section v-if="contrato?.ativo && !mudaPeriodos && contrato.encerramento_agendado" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
+            <h2 class="text-lg font-semibold">Renovar contrato</h2>
+            <p class="text-sm">
                 Encerramento agendado para {{ dataBr(contrato.data_fim) }}: o contrato gera cobranças até lá.
             </p>
-            <p v-else class="text-sm text-grafite/80">
+            <div v-if="!renovando">
+                <button type="button" class="botao-secundario" @click="renovando = true">Renovar contrato…</button>
+            </div>
+            <RenovarContrato
+                v-else
+                :contrato-id="contrato.id"
+                :processando="enviandoRenovacao"
+                @confirmar="renovar"
+                @voltar="renovando = false"
+            />
+        </section>
+        <section v-else-if="contrato?.ativo && !mudaPeriodos" class="mt-10 grid max-w-3xl gap-3 border-t border-carbono/15 pt-6">
+            <h2 class="text-lg font-semibold">Encerrar contrato</h2>
+            <p class="text-sm text-grafite/80">
                 Para de gerar cobranças a partir da data de fim. Antes de confirmar, você vê o que acontece com cada cobrança.
             </p>
-            <template v-if="contrato.encerramento_agendado" />
-            <p v-else-if="form.isDirty" class="text-sm">
+            <p v-if="form.isDirty" class="text-sm">
                 Você mudou campos acima: salve o contrato antes de encerrar, para não perder as mudanças.
             </p>
             <div v-else-if="!encerrando">
