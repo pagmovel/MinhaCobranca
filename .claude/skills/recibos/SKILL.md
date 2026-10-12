@@ -1021,8 +1021,9 @@ o relatório mostra a parte que existe.
 - **Variáveis:** aba Environment com "Create .env file" ligado. `APP_ENV=production` e `APP_DEBUG=false` ficam fixos
   no compose (ganham do painel). Banco por host interno: `DB_HOST=meus_projetos_postgres_dev`, `DB_PORT=5432`.
   `LOG_CHANNEL=stderr` para o erro aparecer no log do container.
-- **Subida do container:** `php artisan optimize` em runtime (as variáveis só existem ali); migração só com
-  `RODAR_MIGRACOES=1` — ligar no deploy que traz migração nova e voltar a 0.
+- **Subida do container:** `php artisan optimize` em runtime (as variáveis só existem ali); migração roda
+  **sempre** (`php artisan migrate --force`, idempotente — decisão do usuário, 2026-10-12). Antes disso exigia
+  `RODAR_MIGRACOES=1` manual no painel a cada deploy com migração nova; não exige mais.
 - **Domínio:** service `app`, porta 80, protocolo HTTP (o HTTPS é do EasyPanel).
 
 ### Pegadinhas do deploy

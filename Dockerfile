@@ -41,5 +41,6 @@ RUN mkdir -p storage/app/private storage/app/public storage/framework/cache/data
 EXPOSE 80
 
 # O cache de config/rotas/views é feito na subida porque as variáveis de ambiente só existem em runtime.
-# Migração só roda se RODAR_MIGRACOES=1 no EasyPanel (escrever no banco é decisão explícita, não automática).
-CMD ["sh", "-c", "php artisan optimize && if [ \"$RODAR_MIGRACOES\" = 1 ]; then php artisan migrate --force; fi && chown -R www-data:www-data storage bootstrap/cache && exec apache2-foreground"]
+# Migração roda sempre (migrate --force é idempotente: só aplica o que está pendente). Decisão do usuário,
+# 2026-10-12 — antes exigia RODAR_MIGRACOES=1 manual no EasyPanel.
+CMD ["sh", "-c", "php artisan optimize && php artisan migrate --force && chown -R www-data:www-data storage bootstrap/cache && exec apache2-foreground"]
