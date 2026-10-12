@@ -119,4 +119,29 @@ class UsuarioController extends Controller
 
         return back()->with('sucesso', "Acesso de {$usuario->name} bloqueado.");
     }
+
+    /** Bloqueia vários de uma vez; quem já está bloqueado ou é a própria conta é ignorado. */
+    public function bloquearEmLote(Request $request): RedirectResponse
+    {
+        $dados = $request->validate(['ids' => ['required', 'array', 'max:200'], 'ids.*' => ['integer']]);
+
+        $pedidos = count($dados['ids']);
+        $usuarios = User::whereIn('id', $dados['ids'])
+            ->where('status', '!=', StatusUsuario::Bloqueado)
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+
+        foreach ($usuarios as $usuario) {
+            $usuario->status = StatusUsuario::Bloqueado;
+            $usuario->save();
+        }
+
+        $ignorados = $pedidos - $usuarios->count();
+        $resumo = "{$usuarios->count()} usuário(s) bloqueado(s).";
+        if ($ignorados > 0) {
+            $resumo .= ' '.$ignorados.' ignorado(s) (já '.($ignorados === 1 ? 'estava bloqueado' : 'estavam bloqueados').' ou é sua própria conta).';
+        }
+
+        return back()->with('sucesso', $resumo);
+    }
 }

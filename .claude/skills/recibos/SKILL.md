@@ -1288,6 +1288,12 @@ quem já está aprovado é ignorado e contado no resumo. Sem auditoria (o `aprov
 não têm — gap já registrado no levantamento da seção T17.19 acima, ainda pendente de resolver em conjunto).
 **Mesma pegadinha de `<Transition>` + aba sem foco** descrita acima (seção T17.19) se repetiu aqui — mesma causa,
 mesma conclusão: não é bug da feature.
+**Bloquear em lote** (pedido do usuário, mesmo dia, esquecido no pedido original): `POST
+/admin/usuarios/lote/bloquear` (`bloquearEmLote`), ignora quem já está bloqueado **ou é a própria conta** (nunca
+bloqueia quem está executando a ação, igual o `bloquear()` individual). Front: `loteAcao` (`null`/`'liberar'`/
+`'bloquear'`) substitui o booleano único, pra caber dois botões na mesma barra — "Bloquear selecionados" usa
+`botao-perigo`/`botao-perigo-confirmar`, igual o "Bloquear" por linha. Confirmado direto no banco (4 usuários
+bloqueados com sucesso) — a barra trava visualmente na mesma pegadinha do `<Transition>`, sem efeito real.
 
 ## T17.19: seleção em lote de cobranças (baixar, cancelar, enviar) — 2026-10-12
 Pedido do usuário: checkbox em cada linha de `/cobrancas` (+ "selecionar todas da página"), barra de ações

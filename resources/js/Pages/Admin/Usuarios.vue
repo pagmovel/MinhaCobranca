@@ -57,10 +57,14 @@ function alternarSelecao(id) {
 function limparSelecao() {
     selecionados.value = new Set();
 }
-const confirmandoLote = ref(false);
+// null | 'liberar' | 'bloquear': qual ação em lote está pedindo confirmação (padrão de usabilidade 9).
+const loteAcao = ref(null);
 const liberarForm = useForm({ ids: [] });
 const liberarEmLote = () => liberarForm.transform(() => ({ ids: [...selecionados.value] }))
-    .post('/admin/usuarios/lote/aprovar', { preserveScroll: true, onSuccess: () => { confirmandoLote.value = false; limparSelecao(); } });
+    .post('/admin/usuarios/lote/aprovar', { preserveScroll: true, onSuccess: () => { loteAcao.value = null; limparSelecao(); } });
+const bloquearForm = useForm({ ids: [] });
+const bloquearEmLote = () => bloquearForm.transform(() => ({ ids: [...selecionados.value] }))
+    .post('/admin/usuarios/lote/bloquear', { preserveScroll: true, onSuccess: () => { loteAcao.value = null; limparSelecao(); } });
 </script>
 
 <template>
@@ -88,12 +92,17 @@ const liberarEmLote = () => liberarForm.transform(() => ({ ids: [...selecionados
         <Transition name="surgir">
             <div v-if="selecionados.size" class="mb-3 flex flex-wrap items-center gap-3 border border-carbono bg-papel px-4 py-2 text-sm">
                 <span class="font-semibold">{{ selecionados.size }} selecionado(s)</span>
-                <template v-if="confirmandoLote">
+                <template v-if="loteAcao === 'liberar'">
                     <button type="button" class="botao" :disabled="liberarForm.processing" @click="liberarEmLote">Confirmar liberação</button>
-                    <button type="button" class="botao-secundario" @click="confirmandoLote = false">Cancelar</button>
+                    <button type="button" class="botao-secundario" @click="loteAcao = null">Cancelar</button>
+                </template>
+                <template v-else-if="loteAcao === 'bloquear'">
+                    <button type="button" class="botao-perigo-confirmar" :disabled="bloquearForm.processing" @click="bloquearEmLote">Confirmar bloqueio</button>
+                    <button type="button" class="botao-secundario" @click="loteAcao = null">Cancelar</button>
                 </template>
                 <template v-else>
-                    <button type="button" class="botao-secundario" @click="confirmandoLote = true">Liberar selecionados</button>
+                    <button type="button" class="botao-secundario" @click="loteAcao = 'liberar'">Liberar selecionados</button>
+                    <button type="button" class="botao-perigo" @click="loteAcao = 'bloquear'">Bloquear selecionados</button>
                     <button type="button" class="font-estreita text-xs text-carbono underline" @click="limparSelecao">Limpar seleção</button>
                 </template>
             </div>

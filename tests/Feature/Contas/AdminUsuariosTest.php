@@ -119,4 +119,36 @@ class AdminUsuariosTest extends TestCase
         $this->actingAs(User::factory()->create())->post('/admin/usuarios/lote/aprovar', ['ids' => [1]])
             ->assertForbidden();
     }
+
+    public function test_bloquear_em_lote_bloqueia_pendentes_e_aprovados(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $pendente = User::factory()->pendente()->create();
+        $aprovado = User::factory()->create();
+
+        $this->actingAs($admin)->post('/admin/usuarios/lote/bloquear', ['ids' => [$pendente->id, $aprovado->id]])
+            ->assertSessionHas('sucesso', '2 usuário(s) bloqueado(s).');
+
+        $this->assertSame(StatusUsuario::Bloqueado, $pendente->fresh()->status);
+        $this->assertSame(StatusUsuario::Bloqueado, $aprovado->fresh()->status);
+    }
+
+    public function test_bloquear_em_lote_ignora_quem_ja_esta_bloqueado_e_a_propria_conta(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $aprovado = User::factory()->create();
+        $jaBloqueado = User::factory()->bloqueado()->create();
+
+        $this->actingAs($admin)
+            ->post('/admin/usuarios/lote/bloquear', ['ids' => [$aprovado->id, $jaBloqueado->id, $admin->id]])
+            ->assertSessionHas('sucesso', '1 usuário(s) bloqueado(s). 2 ignorado(s) (já estavam bloqueados ou é sua própria conta).');
+
+        $this->assertSame(StatusUsuario::Aprovado, $admin->fresh()->status);
+    }
+
+    public function test_bloquear_em_lote_so_para_admin(): void
+    {
+        $this->actingAs(User::factory()->create())->post('/admin/usuarios/lote/bloquear', ['ids' => [1]])
+            ->assertForbidden();
+    }
 }
