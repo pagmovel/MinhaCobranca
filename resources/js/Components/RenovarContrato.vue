@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 const props = defineProps({
     contratoId: { type: Number, required: true },
     processando: { type: Boolean, default: false },
+    erro: { type: String, default: '' }, // erro de validação da confirmação (POST), vindo do pai
 });
 
 const emit = defineEmits(['confirmar', 'voltar']);
@@ -11,7 +12,7 @@ const emit = defineEmits(['confirmar', 'voltar']);
 const novaData = ref('');
 const previa = ref(null);
 const carregando = ref(true);
-const erro = ref('');
+const erroPrevia = ref('');
 
 const minimo = (() => {
     const amanha = new Date();
@@ -26,12 +27,12 @@ onMounted(async () => {
             credentials: 'same-origin',
         });
         if (!resposta.ok) {
-            erro.value = 'Não foi possível montar a prévia.';
+            erroPrevia.value = 'Não foi possível montar a prévia.';
             return;
         }
         previa.value = await resposta.json();
     } catch {
-        erro.value = 'Não foi possível montar a prévia.';
+        erroPrevia.value = 'Não foi possível montar a prévia.';
     } finally {
         carregando.value = false;
     }
@@ -59,9 +60,9 @@ const confirmar = () => emit('confirmar', { data_fim: novaData.value || null });
         </label>
         <p v-if="carregando" class="text-sm text-grafite/70">Montando a prévia…</p>
         <Transition name="surgir">
-            <p v-if="erro" class="text-sm text-tinta-vermelha">{{ erro }}</p>
+            <p v-if="erroPrevia" class="text-sm text-tinta-vermelha">{{ erroPrevia }}</p>
         </Transition>
-        <template v-if="previa && !erro">
+        <template v-if="previa && !erroPrevia">
             <p v-if="!previa.acoes.length" class="text-sm text-grafite/80">Nenhuma cobrança para ajustar.</p>
             <ul v-else class="grid gap-1 text-sm">
                 <li v-for="(acao, indice) in previa.acoes" :key="indice" :class="{ 'text-tinta-vermelha': acao.acao === 'aviso_avulsa' }">
@@ -69,8 +70,11 @@ const confirmar = () => emit('confirmar', { data_fim: novaData.value || null });
                 </li>
             </ul>
         </template>
+        <Transition name="surgir">
+            <p v-if="erro" class="text-sm text-tinta-vermelha">{{ erro }}</p>
+        </Transition>
         <div class="mt-2 flex gap-3">
-            <button type="button" class="botao" :disabled="processando || carregando" @click="confirmar">
+            <button type="button" class="botao" :disabled="processando || carregando || !previa || Boolean(erroPrevia)" @click="confirmar">
                 Confirmar renovação
             </button>
             <button type="button" class="botao-secundario" @click="emit('voltar')">Voltar</button>

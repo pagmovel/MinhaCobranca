@@ -14,6 +14,7 @@ import CorrecaoPagamentoInline from '../../Components/CorrecaoPagamentoInline.vu
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
 import PagamentoInline from '../../Components/PagamentoInline.vue';
 import Paginador from '../../Components/Paginador.vue';
+import ProrrogarInline from '../../Components/ProrrogarInline.vue';
 import { acoesDaCobranca, rotuloDaAcao } from '../../acoesCobranca.js';
 import { botaoPrincipal, itemMenu } from '../../estilosLista.js';
 import { ajustarAte, anoCompleto } from '../../filtroPeriodo.js';
@@ -85,7 +86,7 @@ const linhas = computed(() => linhasDaPagina.value.map((cobranca) => ({ ...cobra
 const temPrevistas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'prevista')));
 const ROTULO_DO_TOTAL = { vencida: 'Vencidas', vence_hoje: 'Vencendo hoje', a_vencer: 'A vencer', prevista: 'Previstas', paga: 'Pagas', cancelada: 'Canceladas' };
 const temCanceladas = computed(() => Boolean(resumo.value?.totais.some((total) => total.situacao === 'cancelada')));
-const naFaixa = ['baixa', 'pagamento', 'cancelar', 'corrigir', 'desfazer'];
+const naFaixa = ['baixa', 'pagamento', 'cancelar', 'prorrogar', 'corrigir', 'desfazer'];
 const perigosa = (acao) => ['cancelar', 'desfazer'].includes(acao);
 const avisando = ref(null);
 
@@ -269,6 +270,13 @@ async function fecharFaixa() {
                                         @fechar="fecharFaixa"
                                     />
                                     <CancelarInline v-else-if="faixa.acao === 'cancelar'" :cobranca-id="cobranca.id" na-faixa @fechar="fecharFaixa" />
+                                    <ProrrogarInline
+                                        v-else-if="faixa.acao === 'prorrogar'"
+                                        :cobranca-id="cobranca.id"
+                                        :vencimento-atual="cobranca.vencimento"
+                                        na-faixa
+                                        @fechar="fecharFaixa"
+                                    />
                                     <CorrecaoPagamentoInline
                                         v-else
                                         :cobranca-id="cobranca.id"

@@ -155,6 +155,62 @@ class RenovarContratoTest extends TestCase
         $this->assertSame('2026-10-18', $contrato->fresh()->data_fim->toDateString());
     }
 
+    /** Fim no último dia exato do período: a fronteira fica cheia (nunca truncada) — renovar não deve mexer nela. */
+    public function test_renovar_nao_mexe_na_fronteira_que_ficou_cheia_porque_o_fim_bateu_no_ultimo_dia_do_periodo(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $outubro = $this->cobrancaDe($contrato, '2026-10-01');
+        $itemIdDeOutubro = $outubro->itens()->sole()->id;
+
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-31', 'em_curso' => 'proporcional'])->assertRedirect();
+        $this->assertSame(StatusCobranca::Pendente, $outubro->fresh()->status);
+
+        $this->getJson("/contratos/{$contrato->id}/renovacao")->assertOk()
+            ->assertJsonCount(1, 'acoes')->assertJsonPath('acoes.0.acao', 'reabrir');
+
+        $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => ''])->assertRedirect();
+
+        // Nunca foi "desfeita": o item continua o mesmo registro (desfazerProporcional apaga e recria).
+        $this->assertSame($itemIdDeOutubro, $outubro->itens()->sole()->id);
+        $this->assertSame(StatusCobranca::Pendente, $this->cobrancaDe($contrato, '2026-11-01')->status);
+    }
+
+    /** Mesma ideia com "não cobrar": a fronteira intacta (Pendente) não pode aparecer como "reabrir" (nada muda nela). */
+    public function test_renovacao_nao_lista_acao_para_fronteira_nao_cobrar_que_ficou_intacta(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-31', 'em_curso' => 'cancelar'])->assertRedirect();
+
+        $this->getJson("/contratos/{$contrato->id}/renovacao")->assertOk()
+            ->assertJsonCount(1, 'acoes')->assertJsonPath('acoes.0.acao', 'reabrir');
+    }
+
+    /** Nova data_fim mais perto que o fim antigo: não reabre cobrança cancelada que começa depois dela. */
+    public function test_renovar_so_reabre_canceladas_que_cabem_na_nova_data_fim(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18'])->assertRedirect();
+
+        $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => '2026-10-25'])->assertRedirect();
+
+        $this->assertSame(StatusCobranca::Cancelada, $this->cobrancaDe($contrato, '2026-11-01')->status);
+        $this->assertSame('2026-10-25', $contrato->fresh()->data_fim->toDateString());
+    }
+
+    public function test_renovar_preserva_descricao_extra_e_item_principal_ao_desfazer_proporcional(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+        $outubro = $this->cobrancaDe($contrato, '2026-10-01');
+        $outubro->forceFill(['descricao' => $outubro->descricao."\nNota: desconto combinado"])->save();
+
+        $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18', 'em_curso' => 'proporcional'])->assertRedirect();
+        $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => ''])->assertRedirect();
+
+        $outubro->refresh();
+        $this->assertSame("Domínio exemplo.com.br\nNota: desconto combinado", $outubro->descricao);
+        $this->assertTrue($outubro->itens()->sole()->principal);
+    }
+
     /** Caso difícil da spec (seção 1/5): proporcional já enviada vira avulsa — renovar não toca nela, só avisa. */
     public function test_renovar_nao_toca_automaticamente_a_cobranca_proporcional_ja_enviada(): void
     {

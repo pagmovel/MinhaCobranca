@@ -153,12 +153,20 @@ final class GeradorDeCobrancas
             'quantidade' => $item->quantidade,
             'preco_unitario_centavos' => $item->preco_unitario_centavos,
             'total_centavos' => $item->total(),
+            'principal' => $item->principal,
         ])->all());
+
+        // Só tira a linha "Proporcional: …" que `ajustarProporcional` acrescentou; o resto da descrição (edição
+        // manual feita na cobrança antes do encerramento) continua como estava.
+        $linhas = explode("\n", $cobranca->descricao);
+        if (str_starts_with(end($linhas), 'Proporcional:')) {
+            array_pop($linhas);
+        }
 
         $cobranca->update([
             'periodo_fim' => $periodoCheio->fim,
             'valor_centavos' => $contrato->itens->isEmpty() ? $contrato->valor_centavos : $cobranca->itens()->sum('total_centavos'),
-            'descricao' => $contrato->descricao,
+            'descricao' => implode("\n", $linhas),
         ]);
     }
 

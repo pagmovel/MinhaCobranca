@@ -23,11 +23,13 @@ final class RenovadorDeContratos
     ) {}
 
     /**
-     * O que volta ao renovar — mesma lista para a prévia e para a execução.
+     * O que volta ao renovar — mesma lista para a prévia e para a execução. `$novaData` (só na execução, a prévia
+     * roda antes de a pessoa escolher) limita a reabertura ao que cabe no contrato renovado: cancelada que começa
+     * depois da nova data_fim fica cancelada (T17.11, achado da revisão final).
      *
      * @return list<array{acao: 'reabrir'|'proporcional_cheio'|'aviso_avulsa', cobranca: Cobranca}>
      */
-    public function plano(Contrato $contrato): array
+    public function plano(Contrato $contrato, ?CarbonImmutable $novaData = null): array
     {
         $fimAntigo = $contrato->data_fim;
         $acoes = [];
@@ -35,21 +37,16 @@ final class RenovadorDeContratos
         $canceladasDepois = $contrato->cobrancas()
             ->where('status', StatusCobranca::Cancelada)
             ->whereDate('periodo_inicio', '>', $fimAntigo)
+            ->when($novaData !== null, fn ($query) => $query->whereDate('periodo_inicio', '<=', $novaData))
             ->get();
         foreach ($canceladasDepois as $cobranca) {
             $acoes[] = ['acao' => 'reabrir', 'cobranca' => $cobranca];
         }
 
         $fronteira = $this->cobrancaDeFronteira($contrato, $fimAntigo);
-
-        if ($fronteira !== null) {
-            $acoes[] = match (true) {
-                // Sem proporcional: o período de fronteira foi só cancelado (não truncado) ao encerrar.
-                $contrato->ultimo_periodo === 'nao_cobrar' => ['acao' => 'reabrir', 'cobranca' => $fronteira],
-                // Proporcional e já enviada: o encerramento criou uma avulsa e cancelou esta. Só avisa.
-                $fronteira->status === StatusCobranca::Cancelada => ['acao' => 'aviso_avulsa', 'cobranca' => $fronteira],
-                default => ['acao' => 'proporcional_cheio', 'cobranca' => $fronteira],
-            };
+        $acaoDaFronteira = $fronteira === null ? null : $this->acaoDaFronteira($contrato, $fronteira);
+        if ($acaoDaFronteira !== null) {
+            $acoes[] = $acaoDaFronteira;
         }
 
         usort($acoes, fn (array $a, array $b) => $a['cobranca']->periodo_inicio <=> $b['cobranca']->periodo_inicio);
@@ -57,11 +54,34 @@ final class RenovadorDeContratos
         return $acoes;
     }
 
+    /**
+     * O que fazer com a cobrança de fronteira — `null` quando o encerramento não mexeu nela (ficou cheia porque o
+     * fim caiu no último dia do período, ou porque estava vencida/vence hoje: `EncerradorDeContratos` manteve).
+     *
+     * @return ?array{acao: 'reabrir'|'proporcional_cheio'|'aviso_avulsa', cobranca: Cobranca}
+     */
+    private function acaoDaFronteira(Contrato $contrato, Cobranca $fronteira): ?array
+    {
+        if ($fronteira->status === StatusCobranca::Cancelada) {
+            // Proporcional e já enviada: o encerramento criou uma avulsa e cancelou esta. Só avisa.
+            // Nos outros casos (nao_cobrar truncando, ou cancelamento manual na fronteira), reabre.
+            return $contrato->ultimo_periodo === 'proporcional'
+                ? ['acao' => 'aviso_avulsa', 'cobranca' => $fronteira]
+                : ['acao' => 'reabrir', 'cobranca' => $fronteira];
+        }
+
+        // Pendente: só "proporcional_cheio" se de fato foi truncada (o período natural é maior que o gravado).
+        $periodoCompleto = $this->periodoCompletoDe($contrato, $fronteira->periodo_inicio);
+        $foiTruncada = $periodoCompleto !== null && $fronteira->periodo_fim->lt($periodoCompleto->fim);
+
+        return $foiTruncada ? ['acao' => 'proporcional_cheio', 'cobranca' => $fronteira] : null;
+    }
+
     /** Tudo ou nada: reabre o que o agendamento tinha fechado e volta a gerar no ritmo normal. */
     public function renovar(Contrato $contrato, ?CarbonImmutable $novaData): void
     {
         DB::transaction(function () use ($contrato, $novaData) {
-            foreach ($this->plano($contrato) as $acao) {
+            foreach ($this->plano($contrato, $novaData) as $acao) {
                 match ($acao['acao']) {
                     // `status` não é Fillable (App\Models\Cobranca): mudança sempre por atribuição direta, como em EncerradorDeContratos::cancelar().
                     'reabrir' => $this->reabrir($acao['cobranca']),
@@ -99,7 +119,7 @@ final class RenovadorDeContratos
     }
 
     /** Período cheio (sem truncar pelo fim antigo) que começa em `$periodoInicio`, pela periodicidade do contrato. */
-    private function periodoCompletoDe(Contrato $contrato, CarbonImmutable $periodoInicio): Periodo
+    private function periodoCompletoDe(Contrato $contrato, CarbonImmutable $periodoInicio): ?Periodo
     {
         $periodos = $this->calculadora->devidos(
             $contrato->data_inicio, null, $contrato->periodicidade, $contrato->dia_vencimento, 0,

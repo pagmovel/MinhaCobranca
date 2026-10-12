@@ -103,11 +103,13 @@ const encerrar = (dados) => router.post(`/contratos/${props.contrato.id}/encerra
 
 const renovando = ref(false);
 const enviandoRenovacao = ref(false);
+const erroRenovacao = ref('');
 const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`, dados, {
     preserveScroll: true,
-    onStart: () => { enviandoRenovacao.value = true; },
+    onStart: () => { enviandoRenovacao.value = true; erroRenovacao.value = ''; },
     onFinish: () => { enviandoRenovacao.value = false; },
     onSuccess: () => { renovando.value = false; },
+    onError: (erros) => { erroRenovacao.value = erros.data_fim ?? 'Não foi possível renovar agora. Tente de novo.'; },
 });
 </script>
 
@@ -258,12 +260,16 @@ const renovar = (dados) => router.post(`/contratos/${props.contrato.id}/renovar`
             <p class="text-sm">
                 Encerramento agendado para {{ dataBr(contrato.data_fim) }}: o contrato gera cobranças até lá.
             </p>
-            <div v-if="!renovando">
+            <p v-if="form.isDirty" class="text-sm">
+                Você mudou campos acima: salve o contrato antes de renovar, para não perder as mudanças.
+            </p>
+            <div v-else-if="!renovando">
                 <button type="button" class="botao-secundario" @click="renovando = true">Renovar contrato…</button>
             </div>
             <RenovarContrato
                 v-else
                 :contrato-id="contrato.id"
+                :erro="erroRenovacao"
                 :processando="enviandoRenovacao"
                 @confirmar="renovar"
                 @voltar="renovando = false"
