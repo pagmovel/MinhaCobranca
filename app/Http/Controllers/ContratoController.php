@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Rules\AnoValido;
 use App\Services\CalculadoraDePeriodos;
 use App\Services\EncerradorDeContratos;
+use App\Services\RenovadorDeContratos;
 use App\Support\BlocoDePaginas;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
@@ -356,6 +357,52 @@ class ContratoController extends Controller
 
         return redirect("/contratos/{$novo->id}/edit")->with('sucesso', 'Contrato anterior termina em '
             .$inicio->subDay()->format('d/m/Y').'. Este é o contrato novo, a partir de '.$inicio->format('d/m/Y').'.');
+    }
+
+    /** Prévia da renovação (JSON): o que volta a pendente/cheio, sem gravar nada. */
+    public function renovacao(Request $request, int $contrato, RenovadorDeContratos $renovador): JsonResponse
+    {
+        $registro = $request->user()->contratos()->findOrFail($contrato);
+        $podeRenovar = $registro->ativo && $registro->ultimo_periodo !== 'inteiro';
+
+        return response()->json([
+            'acoes' => array_map(fn (array $acao) => [
+                'acao' => $acao['acao'],
+                'periodo' => $acao['cobranca']->periodo_inicio->format('d/m/Y').' a '.$acao['cobranca']->periodo_fim->format('d/m/Y'),
+                'valor' => Dinheiro::formatar($acao['cobranca']->valor_centavos),
+            ], $podeRenovar ? $renovador->plano($registro) : []),
+        ]);
+    }
+
+    public function renovar(Request $request, int $contrato, RenovadorDeContratos $renovador): RedirectResponse
+    {
+        $registro = $request->user()->contratos()->findOrFail($contrato);
+
+        if (! $registro->ativo || $registro->ultimo_periodo === 'inteiro') {
+            return back()->with('erro', 'Este contrato não tem encerramento agendado para renovar.');
+        }
+
+        $dados = $request->validate([
+            'data_fim' => ['nullable', 'date_format:Y-m-d', new AnoValido, 'after:today'],
+        ], [
+            'data_fim.after' => 'A nova data de fim deve ser depois de hoje.',
+        ]);
+        $novaData = filled($dados['data_fim'] ?? null) ? CarbonImmutable::parse($dados['data_fim'])->startOfDay() : null;
+
+        DB::transaction(function () use ($renovador, $registro, $novaData, $request) {
+            $fimAntigo = $registro->data_fim;
+            $renovador->renovar($registro, $novaData);
+            $this->registrarRenovacao($request, $registro, $fimAntigo, $novaData);
+        });
+
+        return redirect("/contratos/{$registro->id}/edit")->with('sucesso', 'Contrato renovado.');
+    }
+
+    private function registrarRenovacao(Request $request, Contrato $contrato, CarbonImmutable $fimAntigo, ?CarbonImmutable $novaData): void
+    {
+        Auditoria::registrar($request, 'contrato.renovado', $contrato,
+            'Renovado (era '.$fimAntigo->format('d/m/Y').'): '.($novaData !== null ? 'novo fim em '.$novaData->format('d/m/Y') : 'sem data de fim'),
+            ['data_fim' => $fimAntigo->toDateString()], ['data_fim' => $novaData?->toDateString()]);
     }
 
     private function registrarEncerramento(Request $request, Contrato $contrato, CarbonImmutable $fim): void

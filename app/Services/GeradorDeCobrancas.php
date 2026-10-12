@@ -137,6 +137,32 @@ final class GeradorDeCobrancas
     }
 
     /**
+     * Desfaz `ajustarProporcional`: refaz os itens a partir do contrato (quantidade e preço cheios) e devolve o
+     * período original. Usado ao renovar um contrato com encerramento agendado (T17.11). O recibo fica por conta
+     * do chamador.
+     */
+    public function desfazerProporcional(Cobranca $cobranca, Contrato $contrato, Periodo $periodoCheio): void
+    {
+        $contrato->loadMissing('itens.produtoServico');
+
+        $cobranca->itens()->delete();
+        $cobranca->itens()->createMany($contrato->itens->map(fn (ContratoItem $item) => [
+            'produto_servico_id' => $item->produto_servico_id,
+            'nome' => $item->produtoServico->nome,
+            'unidade' => $item->produtoServico->unidade,
+            'quantidade' => $item->quantidade,
+            'preco_unitario_centavos' => $item->preco_unitario_centavos,
+            'total_centavos' => $item->total(),
+        ])->all());
+
+        $cobranca->update([
+            'periodo_fim' => $periodoCheio->fim,
+            'valor_centavos' => $contrato->itens->isEmpty() ? $contrato->valor_centavos : $cobranca->itens()->sum('total_centavos'),
+            'descricao' => $contrato->descricao,
+        ]);
+    }
+
+    /**
      * Início (Y-m-d) dos períodos que já têm cobrança, em qualquer situação, por contrato: uma consulta para todos.
      *
      * @param  Collection<int, Contrato>  $contratos
