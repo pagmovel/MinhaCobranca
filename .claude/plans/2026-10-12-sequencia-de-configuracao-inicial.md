@@ -60,7 +60,7 @@ para os módulos `.js` puros, Pint para formatação.
 
 ## Tarefa 1 — `ProgressoDeConfiguracao`
 
-**Status:** pendente
+**Status:** testada (commit 7712cb4)
 
 **Arquivos:**
 - Criar: `app/Support/ProgressoDeConfiguracao.php`
@@ -79,7 +79,7 @@ para os módulos `.js` puros, Pint para formatação.
   }
   ```
 
-- [ ] **Passo 1: teste (falha).** Criar `tests/Feature/ProgressoDeConfiguracaoTest.php`:
+- [x] **Passo 1: teste (falha).** Criar `tests/Feature/ProgressoDeConfiguracaoTest.php`:
 
 ```php
 <?php
@@ -169,12 +169,12 @@ class ProgressoDeConfiguracaoTest extends TestCase
 }
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoTest`
 Expected: FAIL — `Class "App\Support\ProgressoDeConfiguracao" not found`.
 
-- [ ] **Passo 3: implementar.** Criar `app/Support/ProgressoDeConfiguracao.php`:
+- [x] **Passo 3: implementar.** Criar `app/Support/ProgressoDeConfiguracao.php`:
 
 ```php
 <?php
@@ -263,12 +263,17 @@ class ProgressoDeConfiguracao
 }
 ```
 
-- [ ] **Passo 4: rodar e ver passar.**
+- [x] **Passo 4: rodar e ver passar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoTest`
 Expected: PASS 5/5.
 
-- [ ] **Passo 5: Pint e commit.**
+> **Ruling (achado na execução):** `test_nada_cadastrado_nenhum_bloco_feito` esperava 9 `campos_faltando`;
+> a implementação (correta, bate com a spec) só encontrou 8, porque `semPerfil()` (factory já existente,
+> Tarefa 1 não a modifica) nunca zera `name` — `name` é obrigatório no cadastro (`CadastroController.php:27`),
+> então nenhuma conta real fica sem nome. Corrigido o teste para `assertCount(8, ...)`, não a implementação.
+
+- [x] **Passo 5: Pint e commit.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -280,7 +285,8 @@ git commit -m "feat: calcula o progresso de configuração inicial (perfil/catá
 
 ## Tarefa 2 — Coluna `apresentacao_vista` e `POST /perfil/apresentacao`
 
-**Status:** pendente
+**Status:** testada (commit 69e38f4) — ⚠️ migration ainda **não aplicada** no banco de dev/produção; precisa de
+`php artisan migrate` com autorização explícita (PORTÃO-BANCO) antes do smoke test da Tarefa 10.
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_12_150000_add_apresentacao_vista_to_users_table.php`
@@ -294,7 +300,7 @@ git commit -m "feat: calcula o progresso de configuração inicial (perfil/catá
 - Produz: `POST /perfil/apresentacao` (sem corpo) → marca `apresentacao_vista = true` no usuário logado, `back()`.
   Usado pela Tarefa 9 (`ModalBoasVindas.vue`).
 
-- [ ] **Passo 1: teste (falha).** Em `tests/Feature/PerfilTest.php`, adicionar:
+- [x] **Passo 1: teste (falha).** Em `tests/Feature/PerfilTest.php`, adicionar:
 
 ```php
     public function test_marca_apresentacao_vista(): void
@@ -308,12 +314,12 @@ git commit -m "feat: calcula o progresso de configuração inicial (perfil/catá
     }
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `php artisan test --filter=test_marca_apresentacao_vista`
 Expected: FAIL — rota `/perfil/apresentacao` não existe (404) ou coluna não existe.
 
-- [ ] **Passo 3: migration.** Criar `database/migrations/2026_10_12_150000_add_apresentacao_vista_to_users_table.php`
+- [x] **Passo 3: migration.** Criar `database/migrations/2026_10_12_150000_add_apresentacao_vista_to_users_table.php`
   (mesmo padrão de `database/migrations/2026_10_12_103524_add_dias_aviso_contrato_to_users_table.php`):
 
 ```php
@@ -352,7 +358,7 @@ return new class extends Migration
   "sim". Em ambiente de teste, `php artisan test` já roda as migrations na base de teste automaticamente — não
   precisa de autorização para isso (é a base de teste, não dev/produção).
 
-- [ ] **Passo 4: `User::casts()`.** Em `app/Models/User.php:46-58`, adicionar ao array retornado:
+- [x] **Passo 4: `User::casts()`.** Em `app/Models/User.php:46-58`, adicionar ao array retornado:
 
 ```php
             'apresentacao_vista' => 'boolean',
@@ -360,13 +366,20 @@ return new class extends Migration
 
   (não adicionar `apresentacao_vista` ao `#[Fillable]` — é gravado só internamente, igual a `logo`.)
 
-- [ ] **Passo 5: rota.** Em `routes/web.php`, depois da linha `Route::get('/perfil/logo', ...)` (linha 38):
+> **Ruling (achado na execução):** faltava no plano um passo extra — acrescentar `'apresentacao_vista' => false,`
+> a `User::$attributes` (linhas 29-36), o array de defaults em PHP para o objeto recém-criado. Sem isso,
+> `User::factory()->create()->apresentacao_vista` voltava `null` (não `false`) até reler do banco, porque o
+> valor default só existe na migration/DB, nunca chega ao objeto em memória — exatamente o motivo pelo qual
+> `dias_antecedencia`/`dias_aviso`/`dias_aviso_contrato` já estavam nesse array (comentário já existente na
+> linha 28 do arquivo). Mesmo padrão aplicado a `apresentacao_vista`.
+
+- [x] **Passo 5: rota.** Em `routes/web.php`, depois da linha `Route::get('/perfil/logo', ...)` (linha 38):
 
 ```php
     Route::post('/perfil/apresentacao', [PerfilController::class, 'apresentacao']);
 ```
 
-- [ ] **Passo 6: controller.** Em `app/Http/Controllers/PerfilController.php`, adicionar método (mesmo padrão de
+- [x] **Passo 6: controller.** Em `app/Http/Controllers/PerfilController.php`, adicionar método (mesmo padrão de
   `logo()` para campo fora do Fillable: atribuição direta + `save()`):
 
 ```php
@@ -380,12 +393,12 @@ return new class extends Migration
     }
 ```
 
-- [ ] **Passo 7: rodar e ver passar.**
+- [x] **Passo 7: rodar e ver passar.**
 
 Run: `php artisan test --filter=PerfilTest`
 Expected: PASS (todos os testes de `PerfilTest`, incluindo o novo).
 
-- [ ] **Passo 8: Pint e commit.**
+- [x] **Passo 8: Pint e commit.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -397,7 +410,7 @@ git commit -m "feat: coluna apresentacao_vista e rota para marcar o modal de boa
 
 ## Tarefa 3 — Middleware `progresso:perfil` em Produtos/Serviços e Clientes
 
-**Status:** pendente
+**Status:** testada (commit 2ee75dd)
 
 **Arquivos:**
 - Criar: `app/Http/Middleware/GarantirProgressoDeConfiguracao.php`
@@ -414,7 +427,7 @@ git commit -m "feat: coluna apresentacao_vista e rota para marcar o modal de boa
   `User::factory()->comPerfilPronto()` (cria 1 `ChavePix` + 1 `ModeloMensagem` para o usuário — usado por esta e
   pela Tarefa 4).
 
-- [ ] **Passo 1: teste do middleware (falha).** Criar `tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php`:
+- [x] **Passo 1: teste do middleware (falha).** Criar `tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php`:
 
 ```php
 <?php
@@ -483,12 +496,12 @@ class ProgressoDeConfiguracaoMiddlewareTest extends TestCase
 }
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoMiddlewareTest`
 Expected: FAIL — alias `progresso` não existe / `comPerfilPronto` não existe.
 
-- [ ] **Passo 3: estado de factory.** Em `database/factories/UserFactory.php`, adicionar `use App\Models\ChavePix;`
+- [x] **Passo 3: estado de factory.** Em `database/factories/UserFactory.php`, adicionar `use App\Models\ChavePix;`
   e `use App\Models\ModeloMensagem;` no topo, e o método:
 
 ```php
@@ -502,7 +515,7 @@ Expected: FAIL — alias `progresso` não existe / `comPerfilPronto` não existe
     }
 ```
 
-- [ ] **Passo 4: middleware.** Criar `app/Http/Middleware/GarantirProgressoDeConfiguracao.php` (mesmo padrão de
+- [x] **Passo 4: middleware.** Criar `app/Http/Middleware/GarantirProgressoDeConfiguracao.php` (mesmo padrão de
   `GarantirContaAprovada`, mas parametrizado):
 
 ```php
@@ -540,7 +553,7 @@ class GarantirProgressoDeConfiguracao
 }
 ```
 
-- [ ] **Passo 5: registrar o alias.** Em `bootstrap/app.php`, acrescentar o `use` e o alias:
+- [x] **Passo 5: registrar o alias.** Em `bootstrap/app.php`, acrescentar o `use` e o alias:
 
 ```php
 use App\Http\Middleware\GarantirProgressoDeConfiguracao;
@@ -552,7 +565,7 @@ use App\Http\Middleware\GarantirProgressoDeConfiguracao;
             'progresso' => GarantirProgressoDeConfiguracao::class,
 ```
 
-- [ ] **Passo 6: dividir as rotas.** Em `routes/web.php`, trocar a linha 53 (clientes):
+- [x] **Passo 6: dividir as rotas.** Em `routes/web.php`, trocar a linha 53 (clientes):
 
 ```php
     Route::resource('clientes', ClienteController::class)->except('show');
@@ -581,12 +594,12 @@ use App\Http\Middleware\GarantirProgressoDeConfiguracao;
         ->only(['create', 'store'])->parameters(['produtos-servicos' => 'produto'])->middleware('progresso:perfil');
 ```
 
-- [ ] **Passo 7: rodar o teste novo e ver passar.**
+- [x] **Passo 7: rodar o teste novo e ver passar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoMiddlewareTest`
 Expected: PASS 3/3.
 
-- [ ] **Passo 8: ajustar `tests/Feature/ClientesTest.php` e `tests/Feature/ProdutosServicosTest.php`** — os sites
+- [x] **Passo 8: ajustar `tests/Feature/ClientesTest.php` e `tests/Feature/ProdutosServicosTest.php`** — os sites
   abaixo criam um usuário e, na mesma respiração, criam ou abrem o formulário de criação; sem chave PIX/modelo,
   passam a cair no redirect para `/painel`. Trocar `User::factory()->create(` por
   `User::factory()->comPerfilPronto()->create(` **só** nestas linhas (as demais do arquivo testam listagem, busca,
@@ -597,7 +610,7 @@ Expected: PASS 3/3.
   | `tests/Feature/ClientesTest.php` | 51, 62, 74, 86, 99, 110, 121, 134, 146, 178 |
   | `tests/Feature/ProdutosServicosTest.php` | 33, 46, 60 |
 
-- [ ] **Passo 9: rodar as duas suítes e ver passar.**
+- [x] **Passo 9: rodar as duas suítes e ver passar.**
 
 Run: `php artisan test --filter=ClientesTest`
 Expected: PASS (todos).
@@ -605,7 +618,7 @@ Expected: PASS (todos).
 Run: `php artisan test --filter=ProdutosServicosTest`
 Expected: PASS (todos).
 
-- [ ] **Passo 10: Pint e commit.**
+- [x] **Passo 10: Pint e commit.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -617,7 +630,7 @@ git commit -m "feat: trava de criação em produtos/serviços e clientes até o 
 
 ## Tarefa 4 — Middleware `progresso:liberado` em Contratos e Cobranças
 
-**Status:** pendente
+**Status:** testada (commits 0bacb37, 8da8a29) — suíte completa 560/560
 
 **Contexto importante:** `CobrancaController::store()` (linha 173-175) já tinha um guard próprio —
 `if (! $usuario->perfilCompleto()) { return back()->with('erro', 'Complete seu perfil para emitir recibos.'); }`.
@@ -637,7 +650,7 @@ morto e deve ser removido, não duplicado.
 **Interfaces:**
 - Consome: `App\Support\ProgressoDeConfiguracao` (Tarefa 1), middleware e `comPerfilPronto()` (Tarefa 3).
 
-- [ ] **Passo 1: testes novos (falham).** Em `tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php`, adicionar:
+- [x] **Passo 1: testes novos (falham).** Em `tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php`, adicionar:
 
 ```php
     public function test_bloco_liberado_incompleto_impede_criar_contrato_e_cobranca(): void
@@ -691,12 +704,12 @@ morto e deve ser removido, não duplicado.
     }
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoMiddlewareTest`
 Expected: FAIL — `/contratos/create` e `/cobrancas/create` ainda abrem sem a trava.
 
-- [ ] **Passo 3: dividir e travar as rotas de contrato.** Em `routes/web.php`, trocar a linha 56:
+- [x] **Passo 3: dividir e travar as rotas de contrato.** Em `routes/web.php`, trocar a linha 56:
 
 ```php
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
@@ -718,7 +731,7 @@ Expected: FAIL — `/contratos/create` e `/cobrancas/create` ainda abrem sem a t
     Route::post('/contratos/{contrato}/renovar-vencido', [ContratoController::class, 'renovarVencido'])->middleware('progresso:liberado');
 ```
 
-- [ ] **Passo 4: travar as rotas de cobrança.** Nas linhas 80 e 84, acrescentar o middleware:
+- [x] **Passo 4: travar as rotas de cobrança.** Nas linhas 80 e 84, acrescentar o middleware:
 
 ```php
     Route::get('/cobrancas/create', [CobrancaController::class, 'create'])->middleware('progresso:liberado');
@@ -726,7 +739,7 @@ Expected: FAIL — `/contratos/create` e `/cobrancas/create` ainda abrem sem a t
     Route::post('/cobrancas', [CobrancaController::class, 'store'])->middleware('progresso:liberado');
 ```
 
-- [ ] **Passo 5: remover o guard morto.** Em `app/Http/Controllers/CobrancaController.php:173-176`, remover só o
+- [x] **Passo 5: remover o guard morto.** Em `app/Http/Controllers/CobrancaController.php:173-176`, remover só o
   `if` (a linha 171, `$usuario = $request->user();`, continua — é usada em `DB::transaction(... use ($usuario, ...))`
   nas linhas seguintes):
 
@@ -754,7 +767,7 @@ Expected: FAIL — `/contratos/create` e `/cobrancas/create` ainda abrem sem a t
     }
 ```
 
-- [ ] **Passo 6: ajustar o teste do guard removido.** Em `tests/Feature/Cobrancas/AcoesCobrancaTest.php:64-74`,
+- [x] **Passo 6: ajustar o teste do guard removido.** Em `tests/Feature/Cobrancas/AcoesCobrancaTest.php:64-74`,
   trocar o teste `test_avulsa_exige_perfil_completo_e_cliente_proprio` (que cobria as duas coisas) por um só sobre
   isolamento de cliente — a parte do perfil incompleto já está coberta pelo novo
   `test_bloco_liberado_incompleto_impede_criar_contrato_e_cobranca` (Passo 1 acima), com uma mensagem diferente
@@ -785,7 +798,7 @@ Expected: FAIL — `/contratos/create` e `/cobrancas/create` ainda abrem sem a t
     }
 ```
 
-- [ ] **Passo 7: rodar os dois arquivos e ver passar.**
+- [x] **Passo 7: rodar os dois arquivos e ver passar.**
 
 Run: `php artisan test --filter=ProgressoDeConfiguracaoMiddlewareTest`
 Expected: PASS 6/6 (3 da Tarefa 3 + 3 desta tarefa).
@@ -793,7 +806,7 @@ Expected: PASS 6/6 (3 da Tarefa 3 + 3 desta tarefa).
 Run: `php artisan test --filter=AcoesCobrancaTest`
 Expected: PASS (todos, inclusive `test_avulsa_nasce_com_recibo` que também passa por `prestadorComCliente()`).
 
-- [ ] **Passo 8: Pint e commit parcial.**
+- [x] **Passo 8: Pint e commit parcial.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -801,7 +814,7 @@ git add routes/web.php app/Http/Controllers/CobrancaController.php tests/Feature
 git commit -m "feat: trava de criação em contratos e cobranças até perfil e catálogo estarem completos"
 ```
 
-- [ ] **Passo 9: `tests/Feature/CadastroRapidoTest.php`.** Este arquivo usa `->sole()` em várias asserções
+- [x] **Passo 9: `tests/Feature/CadastroRapidoTest.php`.** Este arquivo usa `->sole()` em várias asserções
   (`produtosServicos()->sole()`, `clientes()->sole()`, `chavesPix()->sole()`) — **não** dar perfil/catálogo prontos
   no `setUp()` global, porque `sole()` quebra (`MultipleRecordsFoundException`) se o usuário já tiver um
   registro daquele tipo antes do teste criar "o" registro que a asserção espera ser único. A correção é por
@@ -841,7 +854,7 @@ git commit -m "feat: trava de criação em contratos e cobranças até perfil e 
 
   Rodar: `php artisan test --filter=CadastroRapidoTest` → PASS (7 testes — o removido no item 2 não conta mais).
 
-- [ ] **Passo 10: repertório restante — rodar a suíte inteira, ler as falhas, corrigir pelo mesmo padrão.**
+- [x] **Passo 10: repertório restante — rodar a suíte inteira, ler as falhas, corrigir pelo mesmo padrão.**
   Os arquivos abaixo criam contrato(s) ou cobrança(s) avulsa(s) via HTTP (`POST /contratos`, `POST /cobrancas`,
   `GET .../create`, `.../recomecar`, `.../renovar`, `.../renovar-vencido`) com um usuário que, hoje, nunca tem
   chave PIX nem modelo de mensagem — vão quebrar com o redirect para `/painel`:
@@ -870,19 +883,42 @@ git commit -m "feat: trava de criação em contratos e cobranças até perfil e 
   4. Repetir até a suíte ficar verde. Nenhuma correção deve enfraquecer a trava (nunca remover o middleware da rota
      para "destravar" um teste) — a correção é sempre no fixture do teste.
 
-- [ ] **Passo 11: suíte PHP completa.**
+- [x] **Passo 11: suíte PHP completa.**
 
 Run: `php artisan test --compact`
 Expected: PASS (todos — mesmo total de antes da Tarefa 3, menos o teste removido no Passo 9, mais os testes novos
 das Tarefas 1, 2, 3 e 4).
 
-- [ ] **Passo 12: Pint e commit.**
+- [x] **Passo 12: Pint e commit.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
 git add -A -- tests/
 git commit -m "fix: ajusta fixtures de teste para o novo gate de progresso de configuração"
 ```
+
+> **Rulings (achados na execução da Tarefa 4):**
+> 1. **Passo 1** — `test_bloco_liberado_incompleto_impede_criar_contrato_e_cobranca` criava um `ProdutoServico`
+>    real do próprio usuário bem antes do `POST /contratos`; como o `$cliente` já existia, isso completava o
+>    catálogo e o POST passava a ser legitimamente permitido (não bloqueado, como o teste esperava). Corrigido
+>    removendo a criação do produto — o middleware roda antes de qualquer validação do corpo, então o payload
+>    nem precisa citar um produto real para provar o bloqueio.
+> 2. **Passo 6** — `prestadorComCliente()` dá `comPerfilPronto()`, mas o teste
+>    `test_avulsa_recusa_cliente_de_outro_usuario` posta com um cliente de **outro** usuário; `dados()` cria o
+>    produto do **dono desse cliente**, não do `$usuario` que faz a requisição. Sem um produto próprio, o
+>    catálogo do `$usuario` ficava incompleto e o gate bloqueava antes da validação de "cliente inválido" que o
+>    teste queria provar. Corrigido com `ProdutoServico::factory()->for($usuario)->create();` explícito no teste.
+> 3. **Passo 9** — `CadastroRapidoTest` ficou com **8** testes (não 7): o arquivo tinha 9 antes, 1 foi removido.
+>    Contagem do plano estava errada por 1; sem efeito prático.
+> 4. **Passo 10** — a suíte completa revelou **2 arquivos a mais**, não citados na lista do plano:
+>    `IdsNaoNumericosTest.php` e `RenovarContratoVencidoTest.php`. Corrigidos pelo mesmo padrão.
+> 5. **Padrão recorrente no Passo 10** — todo teste `*_de_outro_usuario_da_404` que aciona uma rota travada
+>    (`recomecar`/`renovar`/`renovar-vencido`) com um usuário "outro" sem perfil/catálogo próprios quebra: o
+>    gate de progresso intercepta **antes** da checagem de dono do contrato (que é o 404 que o teste quer
+>    provar), e devolve redirect para `/painel` em vez de 404. Achado em `EncerramentoContratoTest`,
+>    `RenovarContratoTest` e `RenovarContratoVencidoTest` — corrigido dando `comPerfilPronto()` + 1 cliente + 1
+>    produto ao usuário "outro" em cada um desses testes específicos (nunca ao usuário "ator" principal do
+>    cenário, que já tinha o necessário).
 
 ---
 
