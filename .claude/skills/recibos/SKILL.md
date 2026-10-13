@@ -1467,6 +1467,41 @@ JS, suíte inteira), aguardando validação do usuário.
   não recebe erros de um POST que não é dele. Ver `RenovarContrato.vue` (prop `erro`) + `Form.vue` (`onError`
   no `renovar()`).
 
+## Limpeza completa de um usuário (ex.: SMOKE) — mapa de FKs (2026-10-12, L1)
+Toda vez que precisar apagar um usuário de teste e **tudo** que é dele (contrato, cobrança, cliente, chave PIX,
+produto/serviço, modelo de mensagem, feriado, auditoria), PORTÃO-BANCO sempre (contagem real antes, comando
+literal, esperar "sim" — autorização não é transitiva, mesmo que já tenha limpado o SMOKE antes).
+- **Nunca confiar num `id` anotado numa sessão anterior** (ex.: "chaves PIX 5 e 6, contrato 4, cobranças 7 e 8").
+  Esses números crescem a cada smoke test novo (fixtures acumulam). **Sempre reconferir com `SELECT count(*)
+  WHERE user_id = <id>` em cada tabela antes de montar o comando** — nesta tarefa, o registro antigo estava
+  bem defasado: eram 15 cobranças (não 2), 8 contratos (não 1), 4 clientes, 2 chaves PIX, 5 produtos/serviços,
+  1 modelo de mensagem, 21 auditorias — 86 linhas no total, não as ~4 que a nota antiga sugeria.
+- **Mapa de FKs do schema (`information_schema.referential_constraints`, não supor pelo nome da coluna):**
+  - `CASCADE` a partir de `users.id`: `clientes.user_id`, `contratos.user_id`, `cobrancas.user_id`,
+    `chaves_pix.user_id`, `produtos_servicos.user_id`, `modelos_mensagem.user_id`, `feriados.user_id`,
+    `auditorias.user_id`, `recibos.user_id`.
+  - `CASCADE` dentro do mesmo agregado: `cobranca_itens.cobranca_id`, `recibos.cobranca_id`,
+    `contrato_itens.contrato_id`.
+  - **`RESTRICT` (não cascata!) entre os próprios agregados:** `cobrancas.contrato_id`, `cobrancas.cliente_id`,
+    `cobrancas.chave_pix_id`, `contratos.cliente_id`, `contratos.chave_pix_id`, `contrato_itens.produto_servico_id`.
+    `cobranca_itens.produto_servico_id` é a única exceção (`SET NULL`, não bloqueia).
+- **Por isso um único `DELETE FROM users WHERE id = ?` pode falhar** (ou, na melhor das hipóteses, depende da
+  ordem interna dos triggers de cascata do PostgreSQL, que não é garantida entre tabelas-irmãs com `RESTRICT`
+  cruzado — `RESTRICT` no Postgres é sempre verificado na hora, nunca pode ser adiado, diferente de `NO ACTION`).
+  **Acerto: 3 comandos, nesta ordem exata**, cada um resolvendo o `RESTRICT` do próximo:
+  ```sql
+  DELETE FROM cobrancas WHERE user_id = ?;   -- cascata: cobranca_itens, recibos
+  DELETE FROM contratos WHERE user_id = ?;   -- cascata: contrato_itens
+  DELETE FROM users WHERE id = ?;            -- cascata: clientes, chaves_pix, produtos_servicos,
+                                              --          modelos_mensagem, feriados, auditorias
+  ```
+- **Executado via `php artisan tinker --execute` com `DB::transaction()`** (os 3 `DB::table(...)->delete()` numa
+  transação só — se algo inesperado violasse uma FK, desfaz tudo em vez de deixar o usuário pela metade). O
+  tool de leitura do Boost (`database-query`) só aceita `SELECT`/`SHOW`/`EXPLAIN`, por isso a escrita em si
+  precisa de tinker (ou `php artisan db` fora do MCP), nunca pular a conferência de leitura antes/depois.
+- **Conferência pós-exclusão:** `count(*) = 0` em todas as tabelas por `user_id`/`id`, mais órfãos de
+  `cobranca_itens`/`contrato_itens` (`LEFT JOIN ... WHERE pai.id IS NULL`) — prova que a cascata não deixou lixo.
+
 ## Resultados da prova do dompdf (T0.4)
 - Acentos em DejaVu Sans: corretos (extração de texto). Fonte embutida `Identity-H`.
 - Acentos em Helvetica: corretos (fonte nativa com `WinAnsiEncoding`).
