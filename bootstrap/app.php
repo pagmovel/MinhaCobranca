@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\GarantirContaAprovada;
+use App\Http\Middleware\GarantirProgressoDeConfiguracao;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'conta.aprovada' => GarantirContaAprovada::class,
+            'progresso' => GarantirProgressoDeConfiguracao::class,
         ]);
         $middleware->redirectUsersTo('/painel');
         // Em produção o app fica atrás do proxy do EasyPanel (Traefik), que termina o HTTPS: sem isso o Laravel gera

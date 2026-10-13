@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\StatusUsuario;
+use App\Models\ChavePix;
+use App\Models\ModeloMensagem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -66,5 +68,14 @@ class UserFactory extends Factory
             ['documento', 'telefone', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep'],
             null,
         ));
+    }
+
+    /** Bloco "perfil" completo (dados do prestador já vêm prontos da definition()): soma 1 chave PIX e 1 modelo. */
+    public function comPerfilPronto(): static
+    {
+        return $this->afterCreating(function (User $usuario) {
+            ChavePix::factory()->for($usuario)->create();
+            ModeloMensagem::factory()->for($usuario)->create();
+        });
     }
 }

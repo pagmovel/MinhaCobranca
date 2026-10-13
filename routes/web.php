@@ -51,7 +51,8 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
 
     Route::get('/clientes/busca', [ClienteController::class, 'busca']);
     Route::get('/clientes/dados', [ClienteController::class, 'dados']);
-    Route::resource('clientes', ClienteController::class)->except('show');
+    Route::resource('clientes', ClienteController::class)->except(['show', 'create', 'store']);
+    Route::resource('clientes', ClienteController::class)->only(['create', 'store'])->middleware('progresso:perfil');
     Route::get('/contratos/retroativos', [ContratoController::class, 'retroativos']);
     Route::get('/contratos/dados', [ContratoController::class, 'dados']);
     Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
@@ -65,7 +66,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
     Route::get('/produtos-servicos/dados', [ProdutoServicoController::class, 'dados']);
     Route::resource('produtos-servicos', ProdutoServicoController::class)
-        ->except('show')->parameters(['produtos-servicos' => 'produto']);
+        ->except(['show', 'create', 'store'])->parameters(['produtos-servicos' => 'produto']);
+    Route::resource('produtos-servicos', ProdutoServicoController::class)
+        ->only(['create', 'store'])->parameters(['produtos-servicos' => 'produto'])->middleware('progresso:perfil');
     Route::get('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajuste']);
     Route::post('/produtos-servicos/{produto}/reajuste', [ProdutoServicoController::class, 'reajustar']);
     Route::middleware('throttle:30,1')->group(function () {

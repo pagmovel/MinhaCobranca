@@ -48,7 +48,7 @@ class ClientesTest extends TestCase
 
     public function test_formulario_novo_sugere_o_modelo_padrao_do_usuario(): void
     {
-        $usuario = User::factory()->create(['modelo_padrao' => FamiliaModelo::Danfse]);
+        $usuario = User::factory()->comPerfilPronto()->create(['modelo_padrao' => FamiliaModelo::Danfse]);
 
         $this->actingAs($usuario)->get('/clientes/create')
             ->assertInertia(fn (Assert $page) => $page
@@ -59,7 +59,7 @@ class ClientesTest extends TestCase
 
     public function test_cria_cliente_normalizando_documento_e_cep(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         $this->actingAs($usuario)->post('/clientes', $this->dados())->assertRedirect('/clientes');
 
@@ -71,7 +71,7 @@ class ClientesTest extends TestCase
 
     public function test_aceita_cnpj_alfanumerico(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         $this->actingAs($usuario)->post('/clientes', $this->dados(['documento' => '12.ABC.345/01DE-35']))
             ->assertSessionHasNoErrors()
@@ -83,7 +83,7 @@ class ClientesTest extends TestCase
     /** Cliente informal: sem CPF/CNPJ (decisão do usuário, 2026-10-12). */
     public function test_documento_e_opcional_para_cliente_informal(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         $this->actingAs($usuario)->post('/clientes', $this->dados(['documento' => '']))
             ->assertSessionHasNoErrors()->assertRedirect('/clientes');
@@ -96,7 +96,7 @@ class ClientesTest extends TestCase
     /** Documento nulo é distinto de documento nulo no índice único (user_id, documento, apelido) — sem isso, só um informal por usuário. */
     public function test_permite_mais_de_um_cliente_informal_no_mesmo_usuario(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         $this->actingAs($usuario);
 
         $this->post('/clientes', $this->dados(['nome' => 'Cliente informal 1', 'documento' => '']))->assertSessionHasNoErrors();
@@ -107,7 +107,7 @@ class ClientesTest extends TestCase
 
     public function test_recusa_documento_invalido_e_repetido_no_mesmo_usuario(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         Cliente::factory()->for($usuario)->create(['documento' => '11222333000181']);
 
         $this->actingAs($usuario)->post('/clientes', $this->dados(['documento' => '123']))
@@ -118,7 +118,7 @@ class ClientesTest extends TestCase
 
     public function test_mesmo_documento_em_outra_unidade_com_apelido_diferente(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         Cliente::factory()->for($usuario)->create(['documento' => '11222333000181']);
         $this->actingAs($usuario);
 
@@ -131,7 +131,7 @@ class ClientesTest extends TestCase
 
     public function test_salva_e_mostra_a_pessoa_de_contato(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         $this->actingAs($usuario);
 
         $this->post('/clientes', $this->dados(['contato' => 'Wendel']))->assertSessionHasNoErrors();
@@ -143,7 +143,7 @@ class ClientesTest extends TestCase
 
     public function test_pessoa_de_contato_e_opcional(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         $this->actingAs($usuario);
 
         $this->post('/clientes', $this->dados())->assertSessionHasNoErrors();
@@ -175,7 +175,7 @@ class ClientesTest extends TestCase
     {
         Cliente::factory()->create(['documento' => '11222333000181']);
 
-        $this->actingAs(User::factory()->create())->post('/clientes', $this->dados())
+        $this->actingAs(User::factory()->comPerfilPronto()->create())->post('/clientes', $this->dados())
             ->assertSessionHasNoErrors()
             ->assertRedirect('/clientes');
     }

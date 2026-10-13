@@ -30,7 +30,7 @@ class ProdutosServicosTest extends TestCase
 
     public function test_cria_item_convertendo_o_preco(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         $this->actingAs($usuario)->post('/produtos-servicos', $this->dados())->assertRedirect('/produtos-servicos');
 
@@ -43,7 +43,7 @@ class ProdutosServicosTest extends TestCase
 
     public function test_preco_zero_e_aceito_mas_negativo_e_texto_nao(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         $this->actingAs($usuario);
 
         $this->post('/produtos-servicos', $this->dados(['preco' => '0,00']))->assertRedirect('/produtos-servicos');
@@ -57,7 +57,7 @@ class ProdutosServicosTest extends TestCase
 
     public function test_nome_repetido_so_conta_no_mesmo_usuario(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         ProdutoServico::factory()->for($usuario)->create(['nome' => 'Hospedagem de site']);
         ProdutoServico::factory()->create(['nome' => 'Suporte mensal']);
         $this->actingAs($usuario);
