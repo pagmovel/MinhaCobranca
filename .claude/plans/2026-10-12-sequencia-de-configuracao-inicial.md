@@ -924,7 +924,7 @@ git commit -m "fix: ajusta fixtures de teste para o novo gate de progresso de co
 
 ## Tarefa 5 — Prop compartilhada `progresso` e `mostrarApresentacao`
 
-**Status:** pendente
+**Status:** testada (commit 8d7f6b9) — suíte completa 562/562
 
 **Arquivos:**
 - Modificar: `app/Http/Middleware/HandleInertiaRequests.php`
@@ -934,7 +934,7 @@ git commit -m "fix: ajusta fixtures de teste para o novo gate de progresso de co
 - Consome: `App\Support\ProgressoDeConfiguracao` (Tarefa 1), `apresentacao_vista` (Tarefa 2).
 - Produz: props Inertia `progresso` (a forma da Tarefa 1) e `mostrarApresentacao: bool`, disponíveis em toda tela.
 
-- [ ] **Passo 1: teste (falha).** Em `tests/Feature/PerfilTest.php`, adicionar:
+- [x] **Passo 1: teste (falha).** Em `tests/Feature/PerfilTest.php`, adicionar:
 
 ```php
     public function test_progresso_e_mostrar_apresentacao_vem_compartilhados(): void
@@ -964,12 +964,12 @@ git commit -m "fix: ajusta fixtures de teste para o novo gate de progresso de co
     }
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `php artisan test --filter=PerfilTest`
 Expected: FAIL — `progresso`/`mostrarApresentacao` ausentes das props.
 
-- [ ] **Passo 3: implementar.** Em `app/Http/Middleware/HandleInertiaRequests.php`, adicionar `use
+- [x] **Passo 3: implementar.** Em `app/Http/Middleware/HandleInertiaRequests.php`, adicionar `use
   App\Support\ProgressoDeConfiguracao;` e, dentro do array de `share()` (depois de `'flash' => [...]`):
 
 ```php
@@ -984,12 +984,12 @@ Expected: FAIL — `progresso`/`mostrarApresentacao` ausentes das props.
             },
 ```
 
-- [ ] **Passo 4: rodar e ver passar.**
+- [x] **Passo 4: rodar e ver passar.**
 
 Run: `php artisan test --filter=PerfilTest`
 Expected: PASS (todos).
 
-- [ ] **Passo 5: Pint e commit.**
+- [x] **Passo 5: Pint e commit.**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1001,7 +1001,7 @@ git commit -m "feat: compartilha o progresso de configuração e o aviso do moda
 
 ## Tarefa 6 — Menu com itens bloqueados (`CamadaApp.vue`)
 
-**Status:** pendente
+**Status:** testada (commit 630c839) — `node --test` 4/4, `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/progresso.js`, `resources/js/progresso.test.js`
@@ -1012,7 +1012,7 @@ git commit -m "feat: compartilha o progresso de configuração e o aviso do moda
 - Produz: `itemBloqueado(href: string, progresso: object|null): boolean` — usado pela Tarefa 6 e reaproveitável
   pelas Tarefas 7/8/9 para decidir quando mostrar coach/holofote/modal.
 
-- [ ] **Passo 1: teste (falha).** Criar `resources/js/progresso.test.js`:
+- [x] **Passo 1: teste (falha).** Criar `resources/js/progresso.test.js`:
 
 ```js
 import { test } from 'node:test';
@@ -1043,12 +1043,12 @@ test('sem usuário logado (progresso nulo) nada bloqueia — a tela de login nã
 });
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `node --test resources/js/progresso.test.js`
 Expected: FAIL — `progresso.js` não existe.
 
-- [ ] **Passo 3: implementar.** Criar `resources/js/progresso.js`:
+- [x] **Passo 3: implementar.** Criar `resources/js/progresso.js`:
 
 ```js
 const BLOCOS_POR_HREF = {
@@ -1069,12 +1069,12 @@ export function itemBloqueado(href, progresso) {
 }
 ```
 
-- [ ] **Passo 4: rodar e ver passar.**
+- [x] **Passo 4: rodar e ver passar.**
 
 Run: `node --test resources/js/progresso.test.js`
 Expected: PASS 4/4.
 
-- [ ] **Passo 5: wiring em `CamadaApp.vue`.** Em `resources/js/Layouts/CamadaApp.vue`, importar e usar:
+- [x] **Passo 5: wiring em `CamadaApp.vue`.** Em `resources/js/Layouts/CamadaApp.vue`, importar e usar:
 
 ```js
 import { itemBloqueado } from '../progresso.js';
@@ -1129,12 +1129,12 @@ const itens = computed(() => [
                 </li>
 ```
 
-- [ ] **Passo 6: build e smoke visual rápido.**
+- [x] **Passo 6: build e smoke visual rápido.**
 
 Run: `npm run build`
 Expected: build sem erro.
 
-- [ ] **Passo 7: commit.**
+- [x] **Passo 7: commit.**
 
 ```bash
 git add resources/js/progresso.js resources/js/progresso.test.js resources/js/Layouts/CamadaApp.vue
@@ -1145,7 +1145,7 @@ git commit -m "feat: itens de Contratos/Cobranças/Clientes/Produtos no menu fic
 
 ## Tarefa 7 — IDs que faltam + `CoachDeConfiguracao.vue`
 
-**Status:** pendente
+**Status:** testada (commit 86b923e) — `npm run build` sem erro
 
 **Arquivos:**
 - Modificar: `resources/js/Components/ChavesPix.vue:98`, `resources/js/Components/MensagensWhatsapp.vue:177`,
@@ -1159,7 +1159,7 @@ git commit -m "feat: itens de Contratos/Cobranças/Clientes/Produtos no menu fic
 - Produz: `<CoachDeConfiguracao :progresso="page.props.progresso" />` — sem props adicionais, lê tudo de
   `progresso.pendencias`.
 
-- [ ] **Passo 1: IDs.** Quatro trocas de uma linha só (o seletor já está certo na Tarefa 1, só falta o elemento ter
+- [x] **Passo 1: IDs.** Quatro trocas de uma linha só (o seletor já está certo na Tarefa 1, só falta o elemento ter
   o `id`):
 
   `resources/js/Components/ChavesPix.vue:98`:
@@ -1186,7 +1186,7 @@ git commit -m "feat: itens de Contratos/Cobranças/Clientes/Produtos no menu fic
   +            <Link id="novo-cliente" href="/clientes/create" class="botao">Novo cliente</Link>
   ```
 
-- [ ] **Passo 2: `CoachDeConfiguracao.vue`.** Criar `resources/js/Components/CoachDeConfiguracao.vue`:
+- [x] **Passo 2: `CoachDeConfiguracao.vue`.** Criar `resources/js/Components/CoachDeConfiguracao.vue`:
 
 ```vue
 <script setup>
@@ -1223,7 +1223,7 @@ const proxima = computed(() => props.progresso.pendencias.find((pendencia) => !p
 </template>
 ```
 
-- [ ] **Passo 3: montar nas 4 telas.** Em `resources/js/Pages/Perfil/Editar.vue`,
+- [x] **Passo 3: montar nas 4 telas.** Em `resources/js/Pages/Perfil/Editar.vue`,
   `resources/js/Pages/ProdutosServicos/Index.vue`, `resources/js/Pages/Clientes/Index.vue` e
   `resources/js/Pages/Painel.vue`: importar `CoachDeConfiguracao` e `usePage` do `@inertiajs/vue3`, e adicionar no
   template, dentro de `<CamadaApp>`:
@@ -1243,12 +1243,12 @@ const progresso = computed(() => usePage().props.progresso);
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
 ```
 
-- [ ] **Passo 4: build.**
+- [x] **Passo 4: build.**
 
 Run: `npm run build`
 Expected: build sem erro.
 
-- [ ] **Passo 5: commit.**
+- [x] **Passo 5: commit.**
 
 ```bash
 git add resources/js/Components/ChavesPix.vue resources/js/Components/MensagensWhatsapp.vue resources/js/Pages/ProdutosServicos/Index.vue resources/js/Pages/Clientes/Index.vue resources/js/Components/CoachDeConfiguracao.vue resources/js/Pages/Perfil/Editar.vue resources/js/Pages/Painel.vue
@@ -1259,7 +1259,7 @@ git commit -m "feat: coach flutuante com a lista de pendências da configuraçã
 
 ## Tarefa 8 — `HolofoteDePendencia.vue`
 
-**Status:** pendente
+**Status:** testada (commit d0528f4) — `node --test` 2/2, `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/progressoHolofote.js`, `resources/js/progressoHolofote.test.js`
@@ -1273,7 +1273,7 @@ git commit -m "feat: coach flutuante com a lista de pendências da configuraçã
   de novo contra o `form` reativo (não o valor vindo do servidor), para acompanhar o que a pessoa já digitou antes
   de salvar (Review Focus item 5).
 
-- [ ] **Passo 1: teste (falha).** Criar `resources/js/progressoHolofote.test.js`:
+- [x] **Passo 1: teste (falha).** Criar `resources/js/progressoHolofote.test.js`:
 
 ```js
 import { test } from 'node:test';
@@ -1295,12 +1295,12 @@ test('lista vazia quando o form já preencheu tudo', () => {
 });
 ```
 
-- [ ] **Passo 2: rodar e ver falhar.**
+- [x] **Passo 2: rodar e ver falhar.**
 
 Run: `node --test resources/js/progressoHolofote.test.js`
 Expected: FAIL — módulo não existe.
 
-- [ ] **Passo 3: implementar.** Criar `resources/js/progressoHolofote.js`:
+- [x] **Passo 3: implementar.** Criar `resources/js/progressoHolofote.js`:
 
 ```js
 /** Re-filtra contra o form reativo: o que a pessoa já digitou (ainda não salvo) sai da lista do holofote. */
@@ -1309,12 +1309,12 @@ export function camposFaltandoNoForm(camposFaltando, form) {
 }
 ```
 
-- [ ] **Passo 4: rodar e ver passar.**
+- [x] **Passo 4: rodar e ver passar.**
 
 Run: `node --test resources/js/progressoHolofote.test.js`
 Expected: PASS 2/2.
 
-- [ ] **Passo 5: `HolofoteDePendencia.vue`.** Criar `resources/js/Components/HolofoteDePendencia.vue`:
+- [x] **Passo 5: `HolofoteDePendencia.vue`.** Criar `resources/js/Components/HolofoteDePendencia.vue`:
 
 ```vue
 <script setup>
@@ -1359,7 +1359,7 @@ function proximoCampo() {
   depois do smoke test da Tarefa 10, se o usuário validar que precisa. **Não** desenhar o recorte em telas
   ≤ 640 px, conforme a seção 4 da spec, quando ele for adicionado.)
 
-- [ ] **Passo 6: montar nas 3 telas.** Em `resources/js/Pages/Perfil/Editar.vue`:
+- [x] **Passo 6: montar nas 3 telas.** Em `resources/js/Pages/Perfil/Editar.vue`:
 
 ```html
         <HolofoteDePendencia v-if="progresso && !progresso.pendencias[0].feito" :pendencia="progresso.pendencias[0]" :form="form" />
@@ -1375,12 +1375,12 @@ function proximoCampo() {
 
   (importar `HolofoteDePendencia` de `'../../Components/HolofoteDePendencia.vue'` nas três.)
 
-- [ ] **Passo 7: build.**
+- [x] **Passo 7: build.**
 
 Run: `npm run build`
 Expected: build sem erro.
 
-- [ ] **Passo 8: commit.**
+- [x] **Passo 8: commit.**
 
 ```bash
 git add resources/js/progressoHolofote.js resources/js/progressoHolofote.test.js resources/js/Components/HolofoteDePendencia.vue resources/js/Pages/Perfil/Editar.vue resources/js/Pages/ProdutosServicos/Index.vue resources/js/Pages/Clientes/Index.vue
@@ -1391,7 +1391,7 @@ git commit -m "feat: holofote aponta o próximo campo ou botão pendente na conf
 
 ## Tarefa 9 — `ModalBoasVindas.vue`
 
-**Status:** pendente
+**Status:** testada (commit c7b0170) — `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/Components/ModalBoasVindas.vue`
@@ -1401,7 +1401,7 @@ git commit -m "feat: holofote aponta o próximo campo ou botão pendente na conf
 - Consome: `mostrarApresentacao` (Tarefa 5), `progresso.pendencias` (Tarefa 1/5).
 - Produz: `POST /perfil/apresentacao` ao fechar (Tarefa 2) — não expõe mais nada (é folha).
 
-- [ ] **Passo 1: `ModalBoasVindas.vue`.** Criar `resources/js/Components/ModalBoasVindas.vue` (mesmo padrão de
+- [x] **Passo 1: `ModalBoasVindas.vue`.** Criar `resources/js/Components/ModalBoasVindas.vue` (mesmo padrão de
   `Modal.vue` usado em `CadastroRapidoCliente.vue`):
 
 ```vue
@@ -1455,7 +1455,7 @@ function concluir() {
 </template>
 ```
 
-- [ ] **Passo 2: montar em `CamadaApp.vue`.** Importar `ModalBoasVindas` e adicionar, dentro do `<div
+- [x] **Passo 2: montar em `CamadaApp.vue`.** Importar `ModalBoasVindas` e adicionar, dentro do `<div
   class="min-h-screen ...">` (depois do `<main>`, para não interferir no grid):
 
 ```js
@@ -1466,12 +1466,12 @@ import ModalBoasVindas from '../Components/ModalBoasVindas.vue';
         <ModalBoasVindas v-if="page.props.mostrarApresentacao" :progresso="page.props.progresso" />
 ```
 
-- [ ] **Passo 3: build.**
+- [x] **Passo 3: build.**
 
 Run: `npm run build`
 Expected: build sem erro.
 
-- [ ] **Passo 4: commit.**
+- [x] **Passo 4: commit.**
 
 ```bash
 git add resources/js/Components/ModalBoasVindas.vue resources/js/Layouts/CamadaApp.vue
