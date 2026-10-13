@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { itemBloqueado } from '../progresso.js';
+import ModalBoasVindas from '../Components/ModalBoasVindas.vue';
 
 const page = usePage();
 const usuario = computed(() => page.props.auth.user);
@@ -98,5 +99,7 @@ const sair = () => router.post('/sair');
                 <slot />
             </div>
         </main>
+
+        <ModalBoasVindas v-if="page.props.mostrarApresentacao" :progresso="page.props.progresso" />
     </div>
 </template>
