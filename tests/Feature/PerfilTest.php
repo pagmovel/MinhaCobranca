@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\FamiliaModelo;
+use App\Models\Cliente;
+use App\Models\ProdutoServico;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -149,5 +151,31 @@ class PerfilTest extends TestCase
         $this->actingAs($usuario)->post('/perfil/apresentacao')->assertRedirect();
 
         $this->assertTrue($usuario->refresh()->apresentacao_vista);
+    }
+
+    public function test_progresso_e_mostrar_apresentacao_vem_compartilhados(): void
+    {
+        $usuario = User::factory()->create(); // perfil incompleto, apresentacao_vista = false
+
+        $this->actingAs($usuario)->get('/painel')
+            ->assertInertia(fn ($pagina) => $pagina
+                ->where('progresso.perfil', false)
+                ->where('progresso.liberado', false)
+                ->where('mostrarApresentacao', true));
+
+        $usuario->apresentacao_vista = true;
+        $usuario->save();
+        $this->get('/painel')->assertInertia(fn ($pagina) => $pagina->where('mostrarApresentacao', false));
+    }
+
+    public function test_mostrar_apresentacao_nunca_aparece_para_quem_ja_esta_liberado(): void
+    {
+        $usuario = User::factory()->comPerfilPronto()->create();
+        Cliente::factory()->for($usuario)->create();
+        ProdutoServico::factory()->for($usuario)->create();
+        // apresentacao_vista continua false (nunca viu o modal), mas já está liberado.
+
+        $this->actingAs($usuario)->get('/painel')
+            ->assertInertia(fn ($pagina) => $pagina->where('mostrarApresentacao', false));
     }
 }

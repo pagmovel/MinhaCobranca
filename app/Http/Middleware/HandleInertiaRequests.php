@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\StatusUsuario;
 use App\Enums\TipoChavePix;
 use App\Models\User;
+use App\Support\ProgressoDeConfiguracao;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -52,6 +53,15 @@ class HandleInertiaRequests extends Middleware
                 'sucesso' => fn () => $request->session()->get('sucesso'),
                 'erro' => fn () => $request->session()->get('erro'),
             ],
+            'progresso' => fn () => $request->user() ? ProgressoDeConfiguracao::de($request->user()) : null,
+            'mostrarApresentacao' => function () use ($request) {
+                $usuario = $request->user();
+                if (! $usuario || $usuario->apresentacao_vista) {
+                    return false;
+                }
+
+                return ! ProgressoDeConfiguracao::de($usuario)['liberado'];
+            },
         ];
     }
 }
