@@ -15,7 +15,8 @@ import { usarListaPaginada } from '../../usarListaPaginada.js';
 
 const props = defineProps({ filtros: { type: Object, required: true } });
 
-const PADROES = { q: '', status: '' };
+const PADROES = { q: '', status: '', ordenar: 'nome', direcao: 'asc' };
+const COLUNAS = { nome: 'Nome', email: 'E-mail', cadastrado_em: 'Cadastro', situacao: 'Situação' };
 const SITUACAO = { pendente: ['Aguardando liberação', 'laranja'], aprovado: ['Liberado', 'verde'], bloqueado: ['Bloqueado', 'vermelho'] };
 const ROTULO = { aprovar: 'Liberar acesso', reativar: 'Reativar' };
 const filtro = reactive({ ...props.filtros });
@@ -25,6 +26,14 @@ const { linhas: linhasDaPagina, resumo, carregando, falha, estado, irPara, filtr
     aoMostrar: () => { confirmando.value = null; limparSelecao(); },
 });
 const buscarAoDigitar = adiar(filtrar);
+
+// Ordenação pelo cabeçalho: clicar numa coluna nova ordena crescente; clicar na mesma inverte a direção.
+function ordenarPor(coluna) {
+    filtro.direcao = filtro.ordenar === coluna && filtro.direcao === 'asc' ? 'desc' : 'asc';
+    filtro.ordenar = coluna;
+    filtrar();
+}
+const ariaOrdenacao = (coluna) => (filtro.ordenar === coluna ? (filtro.direcao === 'asc' ? 'ascending' : 'descending') : 'none');
 const linhas = computed(() => linhasDaPagina.value.map((usuario) => ({ ...usuario, acoes: acoesDoUsuario(usuario) })));
 
 // "Bloquear" é ação destrutiva: confirmação no segundo clique, na própria linha (padrão de usabilidade 8).
@@ -123,10 +132,12 @@ const bloquearEmLote = () => bloquearForm.transform(() => ({ ids: [...selecionad
                                     @change="alternarTodos"
                                 >
                             </th>
-                            <th scope="col" class="px-4 py-2 font-medium">Nome</th>
-                            <th scope="col" class="px-3 py-2 font-medium">E-mail</th>
-                            <th scope="col" class="px-3 py-2 font-medium">Cadastro</th>
-                            <th scope="col" class="px-3 py-2 font-medium">Situação</th>
+                            <th v-for="(rotulo, coluna) in COLUNAS" :key="coluna" scope="col" class="px-3 py-2 font-medium first:px-4" :aria-sort="ariaOrdenacao(coluna)">
+                                <button type="button" class="flex items-center gap-1 hover:text-carbono" @click="ordenarPor(coluna)">
+                                    {{ rotulo }}
+                                    <span v-if="filtro.ordenar === coluna" aria-hidden="true">{{ filtro.direcao === 'asc' ? '▲' : '▼' }}</span>
+                                </button>
+                            </th>
                             <th scope="col" class="px-4 py-2 font-medium"><span class="sr-only">Ações</span></th>
                         </tr>
                     </thead>

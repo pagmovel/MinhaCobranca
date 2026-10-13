@@ -16,19 +16,24 @@ use Inertia\Response;
 
 class UsuarioController extends Controller
 {
+    /** Colunas ordenáveis pelo cabeçalho da tela (nome da coluna real por trás do nome exposto). */
+    private const COLUNAS_ORDENACAO = ['nome' => 'name', 'email' => 'email', 'situacao' => 'status', 'cadastrado_em' => 'created_at'];
+
     public function index(Request $request): Response
     {
         // A lista vem por ajax de /admin/usuarios/dados; a página só abre a tela com os filtros.
         return Inertia::render('Admin/Usuarios', ['filtros' => $this->filtros($request)]);
     }
 
-    /** Dados da lista (JSON, só leitura): pendentes primeiro, depois ordem de cadastro. */
+    /** Dados da lista (JSON, só leitura): ordem alfabética por nome por padrão; cabeçalho muda `ordenar`/`direcao`. */
     public function dados(Request $request): JsonResponse
     {
         $filtros = $this->filtros($request);
-        $consulta = User::query()
-            ->orderByRaw("case when status = 'pendente' then 0 else 1 end")
-            ->orderBy('id');
+        $coluna = self::COLUNAS_ORDENACAO[$filtros['ordenar']];
+        $consulta = $filtros['ordenar'] === 'cadastrado_em'
+            ? User::query()->orderBy($coluna, $filtros['direcao'])
+            : User::query()->orderByRaw("lower({$coluna}) {$filtros['direcao']}");
+        $consulta->orderBy('id');
 
         if ($filtros['q'] !== '') {
             $termo = Busca::contem($filtros['q']);
@@ -59,19 +64,23 @@ class UsuarioController extends Controller
     /**
      * Filtros da lista, já no formato da tela ('' = sem filtro).
      *
-     * @return array{q: string, status: string, pagina: int, por_pagina: int}
+     * @return array{q: string, status: string, ordenar: string, direcao: string, pagina: int, por_pagina: int}
      */
     private function filtros(Request $request): array
     {
         $validados = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::enum(StatusUsuario::class)],
+            'ordenar' => ['nullable', Rule::in(array_keys(self::COLUNAS_ORDENACAO))],
+            'direcao' => ['nullable', Rule::in(['asc', 'desc'])],
             ...BlocoDePaginas::regras(),
         ]);
 
         return [
             'q' => trim($validados['q'] ?? ''),
             'status' => $validados['status'] ?? '',
+            'ordenar' => $validados['ordenar'] ?? 'nome',
+            'direcao' => $validados['direcao'] ?? 'asc',
             'pagina' => (int) ($validados['pagina'] ?? 1),
             'por_pagina' => (int) ($validados['por_pagina'] ?? 25),
         ];

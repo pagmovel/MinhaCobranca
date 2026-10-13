@@ -17,7 +17,9 @@ class AdminUsuariosTest extends TestCase
         $this->actingAs(User::factory()->create())->get('/admin/usuarios')->assertForbidden();
     }
 
-    public function test_lista_mostra_pendentes_primeiro_e_conta_pendentes(): void
+    /** Pedido do usuário (2026-10-12): ordem alfabética é o padrão; ordenação por cadastro/situação só por escolha
+     *  explícita no cabeçalho (ver test_ordenar_por_cabecalho_aceita_as_colunas_da_tela). */
+    public function test_lista_mostra_em_ordem_alfabetica_por_padrao_e_conta_pendentes(): void
     {
         $admin = User::factory()->admin()->create(['name' => 'Admin']);
         User::factory()->create(['name' => 'Aprovado']);
@@ -27,26 +29,28 @@ class AdminUsuariosTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Usuarios')
                 ->missing('usuarios')
-                ->where('filtros', ['q' => '', 'status' => '', 'pagina' => 1, 'por_pagina' => 25])
+                ->where('filtros', ['q' => '', 'status' => '', 'ordenar' => 'nome', 'direcao' => 'asc', 'pagina' => 1, 'por_pagina' => 25])
                 ->where('pendentes', 1));
-        $this->getJson('/admin/usuarios/dados')->assertOk()
-            ->assertJsonCount(3, 'linhas')
-            ->assertJsonPath('linhas.0.nome', 'Zé Pendente')
-            ->assertJsonPath('linhas.0.status', 'pendente');
+        $nomes = array_column($this->getJson('/admin/usuarios/dados')->assertOk()->assertJsonCount(3, 'linhas')->json('linhas'), 'nome');
+
+        $this->assertSame(['Admin', 'Aprovado', 'Zé Pendente'], $nomes);
     }
 
-    /** Pedido do usuário (2026-10-12): quem se cadastrou primeiro aparece primeiro, não por ordem alfabética. */
-    public function test_ordem_e_por_cadastro_nao_por_nome(): void
+    public function test_ordenar_por_cabecalho_aceita_as_colunas_da_tela(): void
     {
         $admin = User::factory()->admin()->create(['name' => 'Zeca Admin']);
-        User::factory()->create(['name' => 'Ana Depois']);
+        User::factory()->pendente()->create(['name' => 'Ana Depois']);
 
-        $nomes = array_column($this->actingAs($admin)->getJson('/admin/usuarios/dados')->assertOk()->json('linhas'), 'nome');
+        $nomes = fn (string $consulta) => array_column($this->actingAs($admin)->getJson("/admin/usuarios/dados{$consulta}")->assertOk()->json('linhas'), 'nome');
 
-        $this->assertSame(['Zeca Admin', 'Ana Depois'], $nomes);
+        $this->assertSame(['Zeca Admin', 'Ana Depois'], $nomes('?ordenar=cadastrado_em')); // quem se cadastrou primeiro
+        $this->assertSame(['Zeca Admin', 'Ana Depois'], $nomes('?ordenar=nome&direcao=desc')); // Z antes de A
+        $this->assertSame(['Zeca Admin', 'Ana Depois'], $nomes('?ordenar=situacao')); // aprovado antes de pendente
+        $this->getJson('/admin/usuarios/dados?ordenar=id')->assertUnprocessable()->assertJsonValidationErrors('ordenar');
+        $this->getJson('/admin/usuarios/dados?direcao=cima')->assertUnprocessable()->assertJsonValidationErrors('direcao');
     }
 
-    public function test_dados_pendentes_primeiro_com_busca_situacao_e_eu(): void
+    public function test_dados_com_busca_situacao_e_eu(): void
     {
         $admin = User::factory()->admin()->create(['name' => 'Admin']);
         User::factory()->create(['name' => 'Ana Liberada', 'email' => 'ana.liberada@exemplo.test']);
@@ -54,11 +58,11 @@ class AdminUsuariosTest extends TestCase
         User::factory()->bloqueado()->create(['name' => 'Bia Bloqueada']);
         $nomes = fn (string $consulta = '') => array_column($this->actingAs($admin)->getJson('/admin/usuarios/dados'.$consulta)->assertOk()->json('linhas'), 'nome');
 
-        $this->assertSame(['Zé Pendente', 'Admin', 'Ana Liberada', 'Bia Bloqueada'], $nomes());
+        $this->assertSame(['Admin', 'Ana Liberada', 'Bia Bloqueada', 'Zé Pendente'], $nomes());
         $this->assertSame(['Ana Liberada'], $nomes('?q=ANA.LIBERADA@'));
         $this->assertSame(['Ana Liberada'], $nomes('?q=liberada'));
         $this->assertSame(['Bia Bloqueada'], $nomes('?status=bloqueado'));
-        $this->getJson('/admin/usuarios/dados')->assertJsonPath('linhas.1.eu', true)->assertJsonPath('linhas.0.eu', false);
+        $this->getJson('/admin/usuarios/dados')->assertJsonPath('linhas.0.eu', true)->assertJsonPath('linhas.1.eu', false);
         $this->getJson('/admin/usuarios/dados?status=talvez')->assertUnprocessable()->assertJsonValidationErrors('status');
     }
 

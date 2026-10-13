@@ -130,8 +130,9 @@ apagada — decisão de não apagar branches sem pedido explícito).
    individual e no "marcar enviada" (nunca tinham `Auditoria::registrar`); levantamento completo de TODAS as
    ações de escrita do sistema sem auditoria feito, mas correção das demais (clientes, contratos, produtos,
    chaves PIX, perfil, feriados, modelos de mensagem) **ainda pendente** — ver skill.
-6. ~~Admin de usuários: ordem por cadastro, não por nome~~ — **feita em 2026-10-12** (pedido do usuário), ver
-   skill.
+6. ~~Admin de usuários: ordem por cadastro, não por nome~~ — **feita em 2026-10-12, depois revertida no mesmo
+   dia**: o usuário pediu ordem alfabética como padrão + ordenação pelo cabeçalho (clique na coluna). Feito e
+   **validado pelo usuário no navegador** (2026-10-12, "testei e funcionou"); ver skill.
 6. **Minor adiados da Fase 20** (lista no "Registro de execução" do plano): 2 pedido a mais, 3 e-mail longo em Usuários a
    390 px (só conferível com conta admin), 4 e 5 período inválido, 6 foco, 7 "Tentar de novo"; e o botão "Enviar" do
    Painel a 390 px (`LinhaCobranca`). Minor adiados da Fase 19 no plano dela.

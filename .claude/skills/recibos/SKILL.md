@@ -43,6 +43,9 @@ ele apontar. Ao criar ou mexer em qualquer tela, conferir esta lista:
     a paleta azul, fotos externas ou ícones do Google): colunas alinhadas, valor à direita em `tabular-nums`, **uma
     ação principal por linha conforme a situação** e as demais num menu "⋯", formulário da ação numa faixa abaixo da
     linha, abas de situação com contagem e soma, ordenação pelo cabeçalho; em 390 px a tabela vira cartões.
+    **Ordenação pelo cabeçalho só existe em `/admin/usuarios` até agora** (seção "Admin de usuários" abaixo);
+    o equivalente em `/cobrancas` (T17.17) foi cancelado a pedido do usuário em 2026-10-12 — não implementar
+    sem pedido novo.
     **Lista longa carrega por ajax, com paginação e totais** (Fase 19, aprovado em 2026-10-11):
     - endpoint JSON só de leitura que devolve um **bloco de 4 páginas** e os totais do resultado inteiro;
     - o navegador guarda as páginas por filtro e desenha só a atual;
@@ -1270,14 +1273,33 @@ renegociado, diferente tanto do catálogo quanto do contrato antigo) — não s�
   achado que levou à correção de acessibilidade acima), submissão real, contrato antigo com `ativo=false` e novo
   com o preço certo (30000 centavos) confirmados no banco depois.
 
-## Admin de usuários: ordem por cadastro, não por nome (2026-10-12)
-Pedido do usuário: na lista `/admin/usuarios`, quem se cadastrou primeiro aparece primeiro. A consulta ordenava
-por `name` (alfabético) depois do agrupamento "pendente primeiro" — trocado para `orderBy('id')` (ordem de
-cadastro). **Pegadinha do teste já existente:** `test_dados_pendentes_primeiro_com_busca_situacao_e_eu` usava
-nomes cujo pedido alfabético coincidia com o de cadastro (Admin, Ana, Bia nessa ordem nos dois critérios) —
-passou sem provar nada sobre qual dos dois critérios realmente valia. Teste novo
-(`test_ordem_e_por_cadastro_nao_por_nome`) usa nomes em ordem alfabética invertida da ordem de cadastro
-("Zeca Admin" antes de "Ana Depois") pra realmente travar o comportamento.
+## Admin de usuários: ordem alfabética por padrão + ordenação pelo cabeçalho (2026-10-12)
+**Revertido no mesmo dia:** a entrada anterior desta seção documentava "ordem por cadastro, não por nome"
+(`orderBy('id')`), pedido do usuário mais cedo em 2026-10-12. Pedido novo, mesmo dia: ordem alfabética volta a
+ser o **padrão**, e a tela ganha **ordenação pelo cabeçalho** (clicar na coluna ordena; clicar de novo inverte) —
+o mesmo "ordenação pelo cabeçalho" que o padrão de usabilidade 12 já previa para todas as listas em tabela, mas
+que só esta tela tem implementado até agora (T17.17, o equivalente em `/cobrancas`, **foi cancelado** a pedido
+do usuário no mesmo dia — ver roteiro, item 4).
+- **Backend** (`UsuarioController`): `COLUNAS_ORDENACAO` mapeia os 4 nomes expostos (`nome`, `email`,
+  `situacao`, `cadastrado_em`) para a coluna real; `ordenar`/`direcao` vêm do request validados por `Rule::in`
+  (só assim é seguro interpolar `$direcao` dentro de `orderByRaw` — nunca aceitar a direção crua). Texto
+  (`nome`/`email`/`situacao`) ordena por `lower(coluna)` (portátil SQLite/PostgreSQL, mesmo padrão de
+  `Busca::contem`); `cadastrado_em` usa `orderBy` direto (`lower()` num timestamp quebra no PostgreSQL).
+  `orderBy('id')` sempre por último, como critério de desempate.
+- **Front** (`Usuarios.vue`): `ordenar`/`direcao` entram no mesmo objeto `filtro` reativo que já guarda
+  `q`/`status`/`pagina` — o mecanismo de URL e cache por filtro (`listaPaginada.js`/`paginacao.js`) não precisou
+  de nenhuma mudança, só ganhou os dois campos novos. Cabeçalho é um `<button>` dentro do `<th>` (alvo de clique
+  maior que o texto) com seta (▲/▼) e `aria-sort` no `<th>` (acessibilidade: leitor de tela anuncia a coluna e
+  direção ativas).
+- **Pegadinha do teste já existente** (antes da reversão): `test_dados_pendentes_primeiro_com_busca_situacao_e_eu`
+  usava nomes cujo pedido alfabético coincidia com o de cadastro (Admin, Ana, Bia nessa ordem nos dois critérios)
+  — passou sem provar qual dos dois critérios realmente valia. Testes novos usam nomes em ordem alfabética
+  invertida da ordem de cadastro ("Zeca Admin" antes de "Ana Depois") para travar o comportamento de verdade;
+  mesmo cuidado vale para qualquer ordenação nova que se pareça com outra por coincidência dos dados do teste.
+- **Validado pelo usuário no navegador** (2026-10-12, "testei e funcionou"); suíte 549 PHP verde, `npm run build`
+  ok. Sem smoke pelo agente: a tela é restrita a admin e não há conta de smoke test com `is_admin=true`
+  documentada (só a conta real, id 1) — se precisar automatizar de novo, pedir autorização antes de promover o
+  usuário SMOKE (UPDATE em banco).
 
 ## Liberação de usuário em lote (admin) — 2026-10-12
 Pedido do usuário, mesmo padrão de T17.19: checkbox por linha em `/admin/usuarios` + "selecionar todos da
