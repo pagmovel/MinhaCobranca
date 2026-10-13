@@ -1546,3 +1546,78 @@ aprovada pelo usuário em 2026-10-13). Todos os itens do roteiro bateram, inclui
 git add .claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md .claude/skills/recibos/SKILL.md
 git commit -m "docs: fecha a Fase 25 (sequência obrigatória de configuração inicial) como validada"
 ```
+
+---
+
+## Tarefa 11 — Pós-revisão: limpeza do SMOKE + correções aprovadas (2026-10-13)
+
+**Status:** pendente
+
+**Contexto:** depois de validar a Fase 25, uma revisão de branch inteira (subagente fresco, modelo Opus,
+commits `bd6068a..4431f36`) achou 0 Critical, 6 Important, 8 Minor. 2 Important já foram corrigidos no commit
+`c56940d` (holofote com pendência errada em `/clientes`/`/produtos-servicos`; 2 afirmações erradas na skill).
+Os itens abaixo ficaram como `Ruling` (registrados, não corrigidos) e o usuário aprovou corrigi-los agora
+("sim" em 2026-10-13, junto com a autorização de limpar o SMOKE).
+
+**PORTÃO-BANCO pendente (Passo 1):** apagar o usuário de teste é escrita em banco — segue o roteiro completo
+(conexão, contagem, comando literal, esperar "sim" para ESSE comando específico; autorização de limpar ≠
+autorização do comando exato) antes de rodar.
+
+- [ ] **Passo 1: limpar a conta `smoke-fase25@recibos.test` (id 9).** Banco de dev, PostgreSQL
+  `207.180.205.211:1`/`recibos`. Usar o mapa de FKs e o padrão de 3 `DELETE`s em transação já documentado em
+  "Limpeza completa de um usuário (ex.: SMOKE) — mapa de FKs" na skill (`.claude/skills/recibos/SKILL.md`).
+  **Reconferir a contagem real antes de montar o comando** (não presumir que id 9 só tem o que esta sessão
+  criou — 1 ChavePix, 1 ModeloMensagem, 1 ProdutoServico, 1 Cliente, 0 contratos/cobranças, conforme leitura em
+  2026-10-13, mas o usuário pode ter mexido na conta nesse meio-tempo). Mostrar a contagem e o comando literal,
+  esperar "sim", só então executar via `php artisan tinker --execute` com `DB::transaction()`. Conferir
+  `count(*) = 0` depois em `chaves_pix`, `modelos_mensagem`, `produtos_servicos`, `clientes`, `users` (id 9).
+
+- [ ] **Passo 2: `Contratos/Form.vue` — gate nos botões que criam contrato novo por baixo.**
+  `resources/js/Pages/Contratos/Form.vue:248` ("Recomeçar o contrato em vez de corrigir"), `:251-269` (seção
+  "Recomeçar o contrato"), `:287-293` (seção "Renovar contrato" — contrato vencido, botão "Renovar contrato…"),
+  `:309-319` (seção "Renovar contrato" — encerramento agendado, botão "Renovar contrato…"). Nenhum desses
+  checa `progresso.liberado` antes de oferecer a ação; se clicados por um usuário retroativo (perfil/catálogo
+  incompletos), o gate do servidor bloqueia **depois** do clique e manda pro painel, descartando o que a
+  pessoa editou na tela — viola a regra de usabilidade do projeto ("nunca mandar sair da tela sem avisar
+  antes", `.claude/skills/recibos/SKILL.md`, seção "Padrões de usabilidade").
+  **Abordagem:** importar `usePage()` (padrão já usado em `Perfil/Editar.vue`, `ProdutosServicos/Index.vue`,
+  `Clientes/Index.vue`, `Painel.vue` desta mesma fase) e computar `progresso`; quando `!progresso?.liberado`,
+  trocar os 3 botões/seções por um aviso com link para `/perfil` (mesmo texto da mensagem do gate:
+  "Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças." — ou a de
+  perfil quando for o caso, mesma lógica de `GarantirProgressoDeConfiguracao::MENSAGENS`). **Sem harness de
+  teste para `.vue`** (convenção do projeto): verificar com `npm run build` e, se possível, smoke visual no
+  navegador — só é possível recriar o estado retroativo necessário depois que a Tarefa 11 tiver uma conta
+  nessa condição (ver nota abaixo sobre o SMOKE reaproveitado para isso, se o usuário topar).
+
+- [ ] **Passo 3: `CoachDeConfiguracao.vue` — faixa recolhível no celular (≤ 640 px), em vez do cartão fixo.**
+  `resources/js/Components/CoachDeConfiguracao.vue:15` (`class="fixed inset-x-4 top-16 z-40 ..."`). A spec
+  (`docs/superpowers/specs/2026-10-12-sequencia-de-configuracao-inicial-design.md`, seção 4) pede "em 390 px
+  vira uma faixa recolhível no topo do conteúdo, abaixo do cabeçalho, pra não cobrir a tela" — o código atual
+  (do próprio Passo 2 da Tarefa 7 do plano) não tem a versão recolhível; o cartão fixo pode cobrir o flash de
+  erro (`CamadaApp.vue`), o H1 e o botão "+ Novo..." que o holofote aponta, e o menu móvel aberto.
+  **Abordagem:** `<details>`/`<summary>` nativo (sem JS extra) para recolher/expandir; `class="relative ... sm:fixed sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:w-72"` (só vira `fixed` a partir de `sm:`, fica
+  no fluxo normal do documento em telas pequenas). Verificar com `npm run build` + smoke visual no navegador em
+  largura ≤ 390 px (`browser-agent`, redimensionar a janela/emular viewport).
+
+- [ ] **Passo 4: `Modal.vue` — `watch` sem `immediate: true` não prende foco/Esc em modal que já abre aberto.**
+  `resources/js/Components/Modal.vue:51` (`watch(() => props.aberto, async (aberto) => { ... })`). Como
+  `ModalBoasVindas.vue` passa `:aberto="true"` fixo (nunca muda de `false` para `true`), o `watch` nunca
+  dispara, então o modal de boas-vindas abre sem: foco inicial em um elemento interno, Esc fechando, Tab preso
+  dentro do diálogo, nem `overflow: hidden` no body. Bug pré-existente no componente (não introduzido pela
+  Fase 25), mas agora visível pra todo usuário no primeiro login. **Correção:** acrescentar
+  `{ immediate: true }` como terceiro argumento do `watch` em `Modal.vue:51`. Baixo risco — é o componente
+  genérico já usado por `BaixaEmLote`/`CancelarEmLote`/cadastros rápidos, então checar que nada deles dependia
+  do comportamento antigo (closures que só rodavam na transição `false→true`, não na montagem já aberta) antes
+  de considerar concluído. Verificar com `npm run build` + `php artisan test --compact` (não deve quebrar nada
+  de PHP) + smoke visual (abrir o modal de boas-vindas, apertar Esc, conferir que fecha e chama
+  `POST /perfil/apresentacao`).
+
+- [ ] **Passo 5: suíte completa + build.**
+
+Run: `php artisan test --compact && node --test resources/js/*.test.js && npm run build`
+Expected: PASS (0 falhas) nos dois, build sem erro.
+
+- [ ] **Passo 6: Pint (se algum `.php` mudou) e commit.**
+
+- [ ] **Passo 7: atualizar a skill** (seção "Fase 25") removendo os itens corrigidos da lista de pendências e
+  registrando o que foi feito, com data.
