@@ -33,3 +33,6 @@ Thumbs.db
 # Dados pessoais da seed do perfil inicial (CPF, endereço, hash de senha) — não versionar
 /database/seeders/dados/*.json
 !/database/seeders/dados/perfil-inicial.exemplo.json
+
+# Mockups descartáveis do companheiro visual de brainstorming (plugin superpowers) — nunca o conteúdo do projeto
+/.superpowers/
