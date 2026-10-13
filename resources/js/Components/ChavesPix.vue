@@ -95,7 +95,7 @@ const excluir = (id) => router.delete(`/perfil/chaves-pix/${id}`, {
         <p v-else class="text-sm text-grafite/80">Nenhuma chave cadastrada.</p>
 
         <div v-if="editando !== 'nova'">
-            <button type="button" class="botao-secundario" @click="abrir()">Nova chave PIX</button>
+            <button id="nova-chave-pix" type="button" class="botao-secundario" @click="abrir()">Nova chave PIX</button>
         </div>
     </section>
 </template>

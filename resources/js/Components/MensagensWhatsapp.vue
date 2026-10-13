@@ -174,7 +174,7 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
         <p v-else class="text-sm text-grafite/80">Nenhum modelo cadastrado — a janela de envio sugere um texto.</p>
 
         <div v-if="editando !== 'novo'">
-            <button type="button" class="botao-secundario" @click="abrir()">Novo modelo</button>
+            <button id="novo-modelo-mensagem" type="button" class="botao-secundario" @click="abrir()">Novo modelo</button>
         </div>
     </section>
 </template>

@@ -1,8 +1,9 @@
 <script setup>
 import { computed, reactive } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
+import CoachDeConfiguracao from '../../Components/CoachDeConfiguracao.vue';
 import Etiqueta from '../../Components/Etiqueta.vue';
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
 import MenuAcoes from '../../Components/MenuAcoes.vue';
@@ -26,13 +27,18 @@ const { linhas, resumo, carregando, falha, estado, irPara, filtrar, recarregar, 
     url: '/produtos-servicos/dados', filtro, componente: 'ProdutosServicos/Index', endereco: '/produtos-servicos',
 });
 const buscarAoDigitar = adiar(filtrar);
+
+// computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
+// computed continua reativo a essa troca.
+const progresso = computed(() => usePage().props.progresso);
 </script>
 
 <template>
     <CamadaApp>
+        <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-2xl font-semibold">Produtos e serviços</h1>
-            <Link href="/produtos-servicos/create" class="botao">Novo produto ou serviço</Link>
+            <Link id="novo-produto-servico" href="/produtos-servicos/create" class="botao">Novo produto ou serviço</Link>
         </div>
 
         <form class="mb-6 grid gap-4 sm:grid-cols-4" @submit.prevent="buscarAoDigitar.agora">

@@ -1,10 +1,12 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import CamadaApp from '../Layouts/CamadaApp.vue';
 import ListaDoPainel from '../Components/ListaDoPainel.vue';
 import BlocoVencendo from '../Components/BlocoVencendo.vue';
 import BotaoEnviar from '../Components/BotaoEnviar.vue';
 import BaixaInline from '../Components/BaixaInline.vue';
+import CoachDeConfiguracao from '../Components/CoachDeConfiguracao.vue';
 import PagamentoInline from '../Components/PagamentoInline.vue';
 
 defineProps({
@@ -20,10 +22,15 @@ defineProps({
     chavesPix: { type: Array, required: true },
     formasPagamento: { type: Array, required: true },
 });
+
+// computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
+// computed continua reativo a essa troca.
+const progresso = computed(() => usePage().props.progresso);
 </script>
 
 <template>
     <CamadaApp>
+        <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
         <h1 class="text-2xl font-semibold">{{ mes }}</h1>
         <p class="mt-1 text-lg tabular-nums">R$ {{ resumo.recebido }} recebidos de R$ {{ resumo.previsto }} previstos</p>
 

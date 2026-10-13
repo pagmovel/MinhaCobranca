@@ -1,12 +1,19 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import BuscaCnpj from '../../Components/BuscaCnpj.vue';
 import CamposEndereco from '../../Components/CamposEndereco.vue';
 import ChavesPix from '../../Components/ChavesPix.vue';
+import CoachDeConfiguracao from '../../Components/CoachDeConfiguracao.vue';
 import Feriados from '../../Components/Feriados.vue';
 import MensagensWhatsapp from '../../Components/MensagensWhatsapp.vue';
+
+// computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia (ex.: depois de
+// salvar o perfil), e só um computed continua reativo a essa troca — uma const simples ficaria com o valor do
+// primeiro carregamento da tela.
+const progresso = computed(() => usePage().props.progresso);
 
 const props = defineProps({
     perfil: { type: Object, required: true },
@@ -28,6 +35,7 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
 
 <template>
     <CamadaApp>
+        <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
         <h1 class="text-2xl font-semibold">Meu perfil</h1>
         <p class="mt-1 mb-6 text-sm text-grafite/80">Estes dados aparecem como prestador em todos os recibos novos.</p>
 
