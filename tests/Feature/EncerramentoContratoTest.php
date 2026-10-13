@@ -28,7 +28,7 @@ class EncerramentoContratoTest extends TestCase
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00:00'));
         // Antecedência de 40 dias: novembro (vence 20/11) já foi gerada em 15/10.
-        $this->usuario = User::factory()->create(['dias_antecedencia' => 40]);
+        $this->usuario = User::factory()->comPerfilPronto()->create(['dias_antecedencia' => 40]);
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
         $this->hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem de site']);
     }
@@ -320,7 +320,11 @@ class EncerramentoContratoTest extends TestCase
         $contrato = $this->contratoComCobrancas();
         $this->getJson("/contratos/{$contrato->id}/encerramento?fim=2026-10-18")->assertOk();
 
-        $outro = User::factory()->create();
+        // comPerfilPronto() + catálogo próprio: sem isso, o gate de progresso bloquearia antes de chegar na
+        // checagem de dono do contrato (que é 404), mascarando o que este teste quer provar.
+        $outro = User::factory()->comPerfilPronto()->create();
+        Cliente::factory()->for($outro)->create();
+        ProdutoServico::factory()->for($outro)->create();
         $this->actingAs($outro)->getJson("/contratos/{$contrato->id}/encerramento?fim=2026-10-18")->assertNotFound();
         $this->actingAs($outro)->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18', 'em_curso' => 'proporcional'])->assertNotFound();
         $this->actingAs($outro)->post("/contratos/{$contrato->id}/recomecar", $this->dadosDoContrato(['data_inicio' => '2026-10-19']))->assertNotFound();

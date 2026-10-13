@@ -7,6 +7,7 @@ use App\Enums\Periodicidade;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\Contrato;
+use App\Models\ProdutoServico;
 use App\Models\User;
 use App\Services\GeradorDeCobrancas;
 use Carbon\CarbonImmutable;
@@ -37,7 +38,7 @@ class ContratosTest extends TestCase
     /** @return array{0: User, 1: Cliente} */
     private function usuarioComCliente(): array
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         return [$usuario, Cliente::factory()->for($usuario)->create()];
     }
@@ -72,6 +73,10 @@ class ContratosTest extends TestCase
     {
         [$usuario] = $this->usuarioComCliente();
         $alheio = Cliente::factory()->create();
+        // $this->dados($alheio) cria o produto do catálogo de $alheio (dono do cliente informado), não do
+        // próprio $usuario; sem um produto seu, o catálogo dele ficaria incompleto e o middleware de progresso
+        // bloquearia antes da validação de dono do cliente, que é o que este teste quer provar.
+        ProdutoServico::factory()->for($usuario)->create();
 
         $this->actingAs($usuario)->post('/contratos', $this->dados($alheio))
             ->assertSessionHasErrors(['cliente_id' => 'O valor escolhido para cliente é inválido.']);

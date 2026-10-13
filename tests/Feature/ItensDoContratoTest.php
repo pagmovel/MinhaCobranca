@@ -21,7 +21,7 @@ class ItensDoContratoTest extends TestCase
     /** @return array{0: User, 1: Cliente} */
     private function usuarioComCliente(): array
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         return [$usuario, Cliente::factory()->for($usuario)->create()];
     }

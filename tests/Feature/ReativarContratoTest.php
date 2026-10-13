@@ -27,7 +27,7 @@ class ReativarContratoTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00:00'));
-        $this->usuario = User::factory()->create(['dias_antecedencia' => 40]);
+        $this->usuario = User::factory()->comPerfilPronto()->create(['dias_antecedencia' => 40]);
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
         $this->hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem de site']);
     }

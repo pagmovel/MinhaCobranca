@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChavePix;
 use App\Models\Cliente;
+use App\Models\ModeloMensagem;
 use App\Models\ProdutoServico;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -28,6 +30,9 @@ class CadastroRapidoTest extends TestCase
 
     public function test_produto_novo_volta_no_formato_da_autosugestao(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+
         $this->postJson('/produtos-servicos', [
             'nome' => 'Consultoria', 'tipo' => 'servico', 'unidade' => 'hora', 'preco' => '150,00',
         ])->assertCreated()->assertExactJson([
@@ -37,6 +42,8 @@ class CadastroRapidoTest extends TestCase
 
     public function test_produto_com_dados_invalidos_responde_422_com_os_campos(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
         ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Consultoria']);
 
         $this->postJson('/produtos-servicos', ['nome' => 'Consultoria', 'tipo' => 'servico', 'unidade' => '', 'preco' => 'abc'])
@@ -46,6 +53,9 @@ class CadastroRapidoTest extends TestCase
 
     public function test_cliente_novo_volta_no_formato_da_autosugestao(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+
         $this->postJson('/clientes', ['nome' => 'Padaria Pão Quente', 'documento' => '11.222.333/0001-81', 'modelo' => 'webiss'])
             ->assertCreated()->assertExactJson([
                 'id' => $this->usuario->clientes()->sole()->id, 'nome' => 'Padaria Pão Quente', 'nome_oficial' => null, 'documento' => '11.222.333/0001-81',
@@ -66,6 +76,9 @@ class CadastroRapidoTest extends TestCase
 
     public function test_formulario_tradicional_continua_redirecionando(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+
         // Cabeçalhos reais de uma visita do Inertia: não é pedido de JSON, então o redirect continua.
         $this->withHeaders(['X-Inertia' => 'true', 'X-Requested-With' => 'XMLHttpRequest', 'Accept' => 'text/html, application/xhtml+xml'])
             ->post('/produtos-servicos', ['nome' => 'Domínio', 'tipo' => 'servico', 'unidade' => 'un', 'preco' => '40,00'])
@@ -79,6 +92,10 @@ class CadastroRapidoTest extends TestCase
     public function test_formularios_de_lancamento_trazem_as_opcoes_do_cadastro_rapido(): void
     {
         $this->usuario->forceFill(['modelo_padrao' => 'danfse'])->save();
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+        Cliente::factory()->for($this->usuario)->create();
+        ProdutoServico::factory()->for($this->usuario)->create();
 
         foreach (['/contratos/create', '/cobrancas/create'] as $url) {
             $this->get($url)->assertInertia(fn (Assert $page) => $page
@@ -90,15 +107,13 @@ class CadastroRapidoTest extends TestCase
 
     public function test_tipos_de_chave_pix_chegam_a_toda_tela_com_forma_de_pagamento(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+        Cliente::factory()->for($this->usuario)->create();
+        ProdutoServico::factory()->for($this->usuario)->create();
+
         foreach (['/painel', '/cobrancas', '/contratos/create'] as $url) {
             $this->get($url)->assertInertia(fn (Assert $page) => $page->has('tiposChavePix', 5)->where('tiposChavePix.0.valor', 'cpf'));
-        }
-    }
-
-    public function test_formulario_abre_mesmo_sem_cliente_cadastrado(): void
-    {
-        foreach (['/contratos/create', '/cobrancas/create'] as $url) {
-            $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page->where('clienteAtual', null)->missing('temClientes'));
         }
     }
 

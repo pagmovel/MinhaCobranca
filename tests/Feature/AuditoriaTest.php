@@ -23,7 +23,7 @@ class AuditoriaTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-10 10:00:00'));
-        $this->usuario = User::factory()->create(['dias_antecedencia' => 10]);
+        $this->usuario = User::factory()->comPerfilPronto()->create(['dias_antecedencia' => 10]);
     }
 
     private function paga(User $usuario, string $pagoEm = '2026-06-17'): Cobranca

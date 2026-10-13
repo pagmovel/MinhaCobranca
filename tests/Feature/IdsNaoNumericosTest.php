@@ -38,7 +38,7 @@ class IdsNaoNumericosTest extends TestCase
 
     public function test_ids_nao_numericos_param_na_validacao(): void
     {
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
         $cliente = Cliente::factory()->for($usuario)->create();
         $this->actingAs($usuario);
 

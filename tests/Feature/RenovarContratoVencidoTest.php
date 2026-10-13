@@ -27,7 +27,7 @@ class RenovarContratoVencidoTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-13 10:00:00'));
-        $this->usuario = User::factory()->create();
+        $this->usuario = User::factory()->comPerfilPronto()->create();
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
         $this->hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['preco_centavos' => 26060]);
     }
@@ -173,7 +173,12 @@ class RenovarContratoVencidoTest extends TestCase
     public function test_contrato_de_outro_usuario_da_404(): void
     {
         $alheio = $this->contratoVencido();
-        $this->actingAs(User::factory()->create());
+        // comPerfilPronto() + catálogo próprio: sem isso, o gate de progresso bloquearia a rota de
+        // renovar-vencido antes de chegar na checagem de dono do contrato (que é 404).
+        $outro = User::factory()->comPerfilPronto()->create();
+        Cliente::factory()->for($outro)->create();
+        ProdutoServico::factory()->for($outro)->create();
+        $this->actingAs($outro);
 
         $this->renovar($alheio)->assertNotFound();
     }

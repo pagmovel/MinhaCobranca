@@ -3,9 +3,12 @@
 namespace Tests\Feature\Cobrancas;
 
 use App\Enums\StatusCobranca;
+use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\Contrato;
+use App\Models\ModeloMensagem;
+use App\Models\ProdutoServico;
 use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use Carbon\CarbonImmutable;
@@ -110,6 +113,10 @@ class TelasCobrancaTest extends TestCase
 
     public function test_formularios_de_avulsa_e_edicao(): void
     {
+        ChavePix::factory()->for($this->usuario)->create();
+        ModeloMensagem::factory()->for($this->usuario)->create();
+        ProdutoServico::factory()->for($this->usuario)->create();
+
         $editavel = $this->cobranca();
         $enviada = $this->cobranca();
         $enviada->enviado_em = now();

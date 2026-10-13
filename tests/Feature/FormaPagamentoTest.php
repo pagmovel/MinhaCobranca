@@ -6,6 +6,7 @@ use App\Enums\FormaPagamento;
 use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Contrato;
+use App\Models\ModeloMensagem;
 use App\Models\User;
 use App\Services\GeradorDeCobrancas;
 use Carbon\CarbonImmutable;
@@ -24,6 +25,7 @@ class FormaPagamentoTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-09 10:00:00'));
         $usuario = User::factory()->create();
+        ModeloMensagem::factory()->for($usuario)->create();
 
         return [$usuario, Cliente::factory()->for($usuario)->create(), ChavePix::factory()->for($usuario)->create()];
     }

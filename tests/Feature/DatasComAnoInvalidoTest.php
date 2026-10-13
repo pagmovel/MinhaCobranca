@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\StatusCobranca;
+use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\Contrato;
+use App\Models\ProdutoServico;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -26,7 +28,9 @@ class DatasComAnoInvalidoTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-11 10:00:00'));
-        $this->usuario = User::factory()->create();
+        $this->usuario = User::factory()->comPerfilPronto()->create();
+        Cliente::factory()->for($this->usuario)->create();
+        ProdutoServico::factory()->for($this->usuario)->create();
         $this->actingAs($this->usuario);
     }
 

@@ -27,7 +27,7 @@ class RenovarContratoTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00:00'));
-        $this->usuario = User::factory()->create(['dias_antecedencia' => 40]);
+        $this->usuario = User::factory()->comPerfilPronto()->create(['dias_antecedencia' => 40]);
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
         $this->hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem de site']);
     }
@@ -148,7 +148,11 @@ class RenovarContratoTest extends TestCase
         $contrato = $this->contratoComCobrancas();
         $this->post("/contratos/{$contrato->id}/encerrar", ['fim' => '2026-10-18'])->assertRedirect();
 
-        $outro = User::factory()->create();
+        // comPerfilPronto() + catálogo próprio: sem isso, o gate de progresso bloquearia a rota de renovar
+        // antes de chegar na checagem de dono do contrato (que é 404), mascarando o que este teste quer provar.
+        $outro = User::factory()->comPerfilPronto()->create();
+        Cliente::factory()->for($outro)->create();
+        ProdutoServico::factory()->for($outro)->create();
         $this->actingAs($outro);
         $this->getJson("/contratos/{$contrato->id}/renovacao")->assertNotFound();
         $this->post("/contratos/{$contrato->id}/renovar", ['data_fim' => ''])->assertNotFound();

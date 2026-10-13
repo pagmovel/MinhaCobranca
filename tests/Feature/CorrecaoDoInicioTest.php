@@ -26,7 +26,7 @@ class CorrecaoDoInicioTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(CarbonImmutable::parse('2026-10-10 10:00:00'));
-        $this->usuario = User::factory()->create(['dias_antecedencia' => 10]);
+        $this->usuario = User::factory()->comPerfilPronto()->create(['dias_antecedencia' => 10]);
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
         $this->hospedagem = ProdutoServico::factory()->for($this->usuario)->create();
     }
