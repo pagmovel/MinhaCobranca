@@ -6,6 +6,7 @@ import Campo from '../../Components/Campo.vue';
 import CoachDeConfiguracao from '../../Components/CoachDeConfiguracao.vue';
 import Etiqueta from '../../Components/Etiqueta.vue';
 import EstadoDaLista from '../../Components/EstadoDaLista.vue';
+import HolofoteDePendencia from '../../Components/HolofoteDePendencia.vue';
 import MenuAcoes from '../../Components/MenuAcoes.vue';
 import Paginador from '../../Components/Paginador.vue';
 import { botaoPrincipal, itemMenu } from '../../estilosLista.js';
@@ -36,6 +37,7 @@ const progresso = computed(() => usePage().props.progresso);
 <template>
     <CamadaApp>
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
+        <HolofoteDePendencia v-if="progresso && progresso.perfil && !progresso.catalogo" :pendencia="progresso.pendencias.find((p) => !p.feito)" />
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-2xl font-semibold">Produtos e serviços</h1>
             <Link id="novo-produto-servico" href="/produtos-servicos/create" class="botao">Novo produto ou serviço</Link>

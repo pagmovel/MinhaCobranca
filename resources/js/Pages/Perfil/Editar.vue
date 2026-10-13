@@ -8,6 +8,7 @@ import CamposEndereco from '../../Components/CamposEndereco.vue';
 import ChavesPix from '../../Components/ChavesPix.vue';
 import CoachDeConfiguracao from '../../Components/CoachDeConfiguracao.vue';
 import Feriados from '../../Components/Feriados.vue';
+import HolofoteDePendencia from '../../Components/HolofoteDePendencia.vue';
 import MensagensWhatsapp from '../../Components/MensagensWhatsapp.vue';
 
 // computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia (ex.: depois de
@@ -36,6 +37,8 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
 <template>
     <CamadaApp>
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
+        <HolofoteDePendencia v-if="progresso && !progresso.pendencias[0].feito" :pendencia="progresso.pendencias[0]" :form="form" />
+        <HolofoteDePendencia v-else-if="progresso && !progresso.perfil" :pendencia="progresso.pendencias.find((p) => !p.feito)" />
         <h1 class="text-2xl font-semibold">Meu perfil</h1>
         <p class="mt-1 mb-6 text-sm text-grafite/80">Estes dados aparecem como prestador em todos os recibos novos.</p>
 
