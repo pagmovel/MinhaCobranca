@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
@@ -11,6 +11,7 @@ import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
 import ReativarContrato from '../../Components/ReativarContrato.vue';
 import RenovarContrato from '../../Components/RenovarContrato.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
+import { mensagemBloqueioDeCriacao } from '../../progresso.js';
 
 const props = defineProps({
     contrato: { type: Object, default: null },
@@ -48,6 +49,14 @@ const form = useForm(props.contrato ? { ...props.contrato, data_inicio: baseInic
 });
 
 const semItens = Boolean(props.contrato && !props.contrato.itens.length);
+
+// computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
+// computed continua reativo a essa troca.
+const progresso = computed(() => usePage().props.progresso);
+// "Recomeçar"/"Renovar" criam um contrato novo por baixo (POST, gated no servidor por progresso:liberado);
+// sem isso, o clique só seria bloqueado depois, descartando o que a pessoa editou no formulário.
+const liberadoParaCriar = computed(() => Boolean(progresso.value?.liberado));
+const avisoBloqueioDeCriacao = computed(() => progresso.value && mensagemBloqueioDeCriacao(progresso.value));
 
 
 const dataBr = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
@@ -243,14 +252,18 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                         </button>
                         <button type="button" class="botao-secundario" @click="desfazerMudancaDePeriodos">Desfazer a mudança</button>
                     </div>
-                    <p v-if="form.data_inicio > contrato.data_inicio && contrato.cobrancas_pendentes.length" class="text-sm">
+                    <p v-if="liberadoParaCriar && form.data_inicio > contrato.data_inicio && contrato.cobrancas_pendentes.length" class="text-sm">
                         Essas cobranças são devidas e devem continuar?
                         <button type="button" class="underline" @click="modoEscolhido = 'recomecar'">Recomeçar o contrato em vez de corrigir</button>
                     </p>
                 </section>
                 <section v-else-if="mudaPeriodos" key="recomecar" class="grid gap-3 sm:col-span-6">
                     <h2 class="text-lg font-semibold">Recomeçar o contrato</h2>
-                    <template v-if="inicioSemRecomeco">
+                    <p v-if="!liberadoParaCriar" class="border border-carbono bg-white px-4 py-3 text-sm">
+                        {{ avisoBloqueioDeCriacao }}
+                        <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
+                    </p>
+                    <template v-else-if="inicioSemRecomeco">
                         <p class="text-sm">
                             O contrato novo precisa começar depois de {{ dataBr(contrato.data_inicio) }} — antes disso, os
                             períodos se sobreporiam aos já cobrados. Escolha um início posterior ou desfaça a mudança.
@@ -289,7 +302,11 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                 Este contrato venceu em {{ dataBr(contrato.data_fim) }} e não gera mais cobranças. Renovar encerra este
                 contrato e cria um novo, com os mesmos dados — ajuste os itens e os preços se precisar.
             </p>
-            <div v-if="!renovandoVencido" class="sm:col-span-6">
+            <p v-if="!liberadoParaCriar" class="sm:col-span-6 border border-carbono bg-white px-4 py-3 text-sm">
+                {{ avisoBloqueioDeCriacao }}
+                <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
+            </p>
+            <div v-else-if="!renovandoVencido" class="sm:col-span-6">
                 <button type="button" class="botao-secundario" @click="renovandoVencido = true">Renovar contrato…</button>
             </div>
             <template v-else>
@@ -312,6 +329,10 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
             </p>
             <p v-if="form.isDirty" class="text-sm">
                 Você mudou campos acima: salve o contrato antes de renovar, para não perder as mudanças.
+            </p>
+            <p v-else-if="!liberadoParaCriar" class="text-sm">
+                {{ avisoBloqueioDeCriacao }}
+                <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
             </p>
             <div v-else-if="!renovando">
                 <button type="button" class="botao-secundario" @click="renovando = true">Renovar contrato…</button>

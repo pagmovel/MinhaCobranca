@@ -1551,6 +1551,11 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
   do `definition()` da factory.
 - Prop Inertia compartilhada (`HandleInertiaRequests::share()`) para `progresso` e `mostrarApresentacao`: todas
   as telas (menu, coach, holofote, modal) leem do mesmo cálculo, sem re-requisição.
+- **Faixa recolhível no mobile com `<details>`/`<summary>` nativo** (Tarefa 11, 2026-10-13):
+  `CoachDeConfiguracao.vue` virou `<details open class="relative ... sm:fixed sm:right-4 sm:bottom-4 sm:w-72">`
+  — sem JS extra, fica no fluxo normal da página em telas ≤640px (não cobre o flash de erro, o H1 nem o botão
+  que o holofote aponta) e volta a card fixo a partir de `sm:`. Aceita ficar recolhível em qualquer largura
+  (a spec só exigia isso no mobile; não há motivo pra impedir no desktop).
 
 ### Pegadinhas
 - **`semPerfil()` (factory, Fase 1) nunca zera `name`**: `name` é obrigatório no cadastro
@@ -1584,4 +1589,19 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
   conta `smoke-fase25@recibos.test` — modal de boas-vindas (3 telas, Pular/Avançar, não reaparece depois),
   menu com 🔒 nos 4 itens até liberar, coach atualizando em tempo real a cada cadastro, holofote apontando o
   campo certo (pula `name`, já preenchido no cadastro), `/contratos/create` e `/cobrancas/create` abrindo só
-  depois do catálogo completo.
+  depois do catálogo completo. Conta removida do banco (PORTÃO-BANCO, 2026-10-13) depois de validada a
+  Tarefa 11; não existe mais conta de teste no banco de dev.
+- **`Contratos/Form.vue` tinha 3 ações que criam contrato por baixo (recomeçar/renovar/renovar-vencido) sem
+  checar `progresso.liberado`** (achado na revisão final, corrigido na Tarefa 11, 2026-10-13): o gate do
+  servidor só bloqueava depois do clique, descartando edição em andamento na tela (viola "nunca mandar sair da
+  tela sem avisar antes"). Corrigido com o mesmo padrão `usePage().props.progresso` das outras telas da fase,
+  reaproveitando a mensagem em `mensagemBloqueioDeCriacao()` (nova função pura em `progresso.js`, espelha
+  `GarantirProgressoDeConfiguracao::MENSAGENS` — perfil como causa raiz tem prioridade sobre catálogo).
+- **`Modal.vue`'s `watch(() => props.aberto, ...)` sem `immediate: true` não ativa foco/Esc em modal que já
+  monta aberto** (achado na revisão final, corrigido na Tarefa 11, 2026-10-13): `ModalBoasVindas.vue` passa
+  `:aberto="true"` fixo, então o watch nunca disparava — o modal de boas-vindas abria sem foco inicial, sem Esc
+  fechando e sem `overflow: hidden` no body. Corrigido com `{ immediate: true }` como 3º argumento. Antes de
+  aplicar, confirmado que os outros 7 consumidores de `Modal.vue` (`CadastroRapidoProduto`, `CadastroRapidoChavePix`,
+  `CadastroRapidoCliente`, `CatalogoItens`, `AvisarWhatsapp`, mais os dois via `CamposPagamento`/`CampoCliente`)
+  montam com `aberto` inicialmente `false` — o ramo `else` do watch roda uma vez a mais para eles, de forma
+  inofensiva (optional chaining em tudo que seria `null`).

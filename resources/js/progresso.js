@@ -14,3 +14,15 @@ export function itemBloqueado(href, progresso) {
 
     return bloco ? !progresso[bloco] : false;
 }
+
+// Mesmas mensagens de GarantirProgressoDeConfiguracao::MENSAGENS: quando o perfil é a causa raiz do bloqueio,
+// orienta por ele em vez do catálogo (a sequência pede perfil primeiro).
+const MENSAGENS = {
+    perfil: 'Complete seu perfil (dados do prestador, uma chave PIX e um modelo de mensagem) antes de cadastrar produtos, serviços ou clientes.',
+    liberado: 'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.',
+};
+
+/** Mensagem a mostrar quando uma ação que cria contrato/cobrança é oferecida sem o bloco "liberado" completo. */
+export function mensagemBloqueioDeCriacao(progresso) {
+    return progresso.perfil ? MENSAGENS.liberado : MENSAGENS.perfil;
+}

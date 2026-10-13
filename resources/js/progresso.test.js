@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { itemBloqueado } from './progresso.js';
+import { itemBloqueado, mensagemBloqueioDeCriacao } from './progresso.js';
 
 const progresso = { perfil: false, catalogo: false, liberado: false, pendencias: [] };
 
@@ -23,4 +23,18 @@ test('painel, perfil, relatórios, auditoria e admin nunca bloqueiam', () => {
 
 test('sem usuário logado (progresso nulo) nada bloqueia — a tela de login não usa isso', () => {
     assert.equal(itemBloqueado('/clientes', null), false);
+});
+
+test('mensagem de bloqueio de criação aponta o perfil quando ele está incompleto', () => {
+    assert.equal(
+        mensagemBloqueioDeCriacao({ ...progresso, perfil: false }),
+        'Complete seu perfil (dados do prestador, uma chave PIX e um modelo de mensagem) antes de cadastrar produtos, serviços ou clientes.',
+    );
+});
+
+test('mensagem de bloqueio de criação aponta o catálogo quando o perfil já está completo', () => {
+    assert.equal(
+        mensagemBloqueioDeCriacao({ ...progresso, perfil: true, liberado: false }),
+        'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.',
+    );
 });

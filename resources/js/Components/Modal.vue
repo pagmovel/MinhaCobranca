@@ -71,7 +71,7 @@ watch(() => props.aberto, async (aberto) => {
             document.getElementById(idTitulo)?.closest('.fixed.inset-0')?.style.setProperty('display', 'none');
         }, 500);
     }
-});
+}, { immediate: true });
 
 onBeforeUnmount(() => {
     clearTimeout(temporizadorDeTravamento);

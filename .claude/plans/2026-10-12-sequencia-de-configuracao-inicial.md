@@ -1551,7 +1551,8 @@ git commit -m "docs: fecha a Fase 25 (sequência obrigatória de configuração 
 
 ## Tarefa 11 — Pós-revisão: limpeza do SMOKE + correções aprovadas (2026-10-13)
 
-**Status:** pendente
+**Status:** validada — PHP 562/562, Node 102/102, `npm run build` ok; SMOKE removido do banco; 3 correções
+aprovadas aplicadas (commit a seguir).
 
 **Contexto:** depois de validar a Fase 25, uma revisão de branch inteira (subagente fresco, modelo Opus,
 commits `bd6068a..4431f36`) achou 0 Critical, 6 Important, 8 Minor. 2 Important já foram corrigidos no commit
@@ -1563,7 +1564,7 @@ Os itens abaixo ficaram como `Ruling` (registrados, não corrigidos) e o usuári
 (conexão, contagem, comando literal, esperar "sim" para ESSE comando específico; autorização de limpar ≠
 autorização do comando exato) antes de rodar.
 
-- [ ] **Passo 1: limpar a conta `smoke-fase25@recibos.test` (id 9).** Banco de dev, PostgreSQL
+- [x] **Passo 1: limpar a conta `smoke-fase25@recibos.test` (id 9).** Banco de dev, PostgreSQL
   `207.180.205.211:1`/`recibos`. Usar o mapa de FKs e o padrão de 3 `DELETE`s em transação já documentado em
   "Limpeza completa de um usuário (ex.: SMOKE) — mapa de FKs" na skill (`.claude/skills/recibos/SKILL.md`).
   **Reconferir a contagem real antes de montar o comando** (não presumir que id 9 só tem o que esta sessão
@@ -1571,8 +1572,10 @@ autorização do comando exato) antes de rodar.
   2026-10-13, mas o usuário pode ter mexido na conta nesse meio-tempo). Mostrar a contagem e o comando literal,
   esperar "sim", só então executar via `php artisan tinker --execute` com `DB::transaction()`. Conferir
   `count(*) = 0` depois em `chaves_pix`, `modelos_mensagem`, `produtos_servicos`, `clientes`, `users` (id 9).
+  **Concluído em 2026-10-13:** contagem reconferida (idêntica à registrada), "sim" dado para o comando exato,
+  executado via tinker, `count(*) = 0` confirmado nas 6 tabelas.
 
-- [ ] **Passo 2: `Contratos/Form.vue` — gate nos botões que criam contrato novo por baixo.**
+- [x] **Passo 2: `Contratos/Form.vue` — gate nos botões que criam contrato novo por baixo.**
   `resources/js/Pages/Contratos/Form.vue:248` ("Recomeçar o contrato em vez de corrigir"), `:251-269` (seção
   "Recomeçar o contrato"), `:287-293` (seção "Renovar contrato" — contrato vencido, botão "Renovar contrato…"),
   `:309-319` (seção "Renovar contrato" — encerramento agendado, botão "Renovar contrato…"). Nenhum desses
@@ -1588,8 +1591,16 @@ autorização do comando exato) antes de rodar.
   teste para `.vue`** (convenção do projeto): verificar com `npm run build` e, se possível, smoke visual no
   navegador — só é possível recriar o estado retroativo necessário depois que a Tarefa 11 tiver uma conta
   nessa condição (ver nota abaixo sobre o SMOKE reaproveitado para isso, se o usuário topar).
+  **Concluído em 2026-10-13:** `usePage()`/`progresso` computado; nova função pura `mensagemBloqueioDeCriacao()`
+  em `progresso.js` (TDD: 2 testes novos, RED→GREEN, espelha `GarantirProgressoDeConfiguracao::MENSAGENS`);
+  3 pontos gateados (botão "Recomeçar o contrato em vez de corrigir", seção "Recomeçar o contrato", as 2 seções
+  "Renovar contrato"). `npm run build` ok. **Ruling:** sem conta em estado retroativo no banco (apagada no
+  Passo 1) e sem autorização nova para recriar uma — mesmo critério que o usuário já escolheu na Tarefa 10
+  Passo 5 ("só suíte automatizada") — smoke visual não refeito; verificação ficou em `npm run build` + leitura
+  cuidadosa do template. Custo se errado: um dos 3 avisos renderiza com classe/texto quebrado — baixo, é só UI,
+  sem risco de dado.
 
-- [ ] **Passo 3: `CoachDeConfiguracao.vue` — faixa recolhível no celular (≤ 640 px), em vez do cartão fixo.**
+- [x] **Passo 3: `CoachDeConfiguracao.vue` — faixa recolhível no celular (≤ 640 px), em vez do cartão fixo.**
   `resources/js/Components/CoachDeConfiguracao.vue:15` (`class="fixed inset-x-4 top-16 z-40 ..."`). A spec
   (`docs/superpowers/specs/2026-10-12-sequencia-de-configuracao-inicial-design.md`, seção 4) pede "em 390 px
   vira uma faixa recolhível no topo do conteúdo, abaixo do cabeçalho, pra não cobrir a tela" — o código atual
@@ -1598,8 +1609,12 @@ autorização do comando exato) antes de rodar.
   **Abordagem:** `<details>`/`<summary>` nativo (sem JS extra) para recolher/expandir; `class="relative ... sm:fixed sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:w-72"` (só vira `fixed` a partir de `sm:`, fica
   no fluxo normal do documento em telas pequenas). Verificar com `npm run build` + smoke visual no navegador em
   largura ≤ 390 px (`browser-agent`, redimensionar a janela/emular viewport).
+  **Concluído em 2026-10-13:** `<aside>` → `<details open>`/`<summary>`, classe exatamente como proposta no
+  plano. `npm run build` ok. **Ruling:** mesma justificativa do Passo 2 — smoke visual em 390px não refeito por
+  falta de conta/estado pra testar outras telas da mesma leva; a troca de tag é mecânica e de baixo risco
+  (`<details>` é suportado em todos os navegadores relevantes do projeto).
 
-- [ ] **Passo 4: `Modal.vue` — `watch` sem `immediate: true` não prende foco/Esc em modal que já abre aberto.**
+- [x] **Passo 4: `Modal.vue` — `watch` sem `immediate: true` não prende foco/Esc em modal que já abre aberto.**
   `resources/js/Components/Modal.vue:51` (`watch(() => props.aberto, async (aberto) => { ... })`). Como
   `ModalBoasVindas.vue` passa `:aberto="true"` fixo (nunca muda de `false` para `true`), o `watch` nunca
   dispara, então o modal de boas-vindas abre sem: foco inicial em um elemento interno, Esc fechando, Tab preso
@@ -1611,13 +1626,24 @@ autorização do comando exato) antes de rodar.
   de considerar concluído. Verificar com `npm run build` + `php artisan test --compact` (não deve quebrar nada
   de PHP) + smoke visual (abrir o modal de boas-vindas, apertar Esc, conferir que fecha e chama
   `POST /perfil/apresentacao`).
+  **Concluído em 2026-10-13:** `{ immediate: true }` acrescentado. Conferido antes: os outros 7 consumidores
+  (`CadastroRapidoProduto`, `CadastroRapidoChavePix`, `CadastroRapidoCliente`, `CatalogoItens`, `AvisarWhatsapp`
+  via `BlocoVencendo`/`Cobrancas/Index`, mais os 2 via `CamposPagamento`/`CampoCliente`) montam com `aberto`
+  inicial `false` — o ramo `else` do watch roda uma vez extra de forma inofensiva (tudo com optional chaining).
+  `php artisan test --compact` 562/562. **Ruling:** smoke visual (Esc fechando o modal de boas-vindas) não
+  refeito — mesma justificativa dos Passos 2/3; risco residual é só desse fechamento não ter sido visto na
+  tela, mas a lógica é a mesma já usada (e testada visualmente) nos outros 7 modais antes desta mudança.
 
-- [ ] **Passo 5: suíte completa + build.**
+- [x] **Passo 5: suíte completa + build.**
 
 Run: `php artisan test --compact && node --test resources/js/*.test.js && npm run build`
 Expected: PASS (0 falhas) nos dois, build sem erro.
+**Resultado (2026-10-13):** PHP 562/562 (2797 assertions); Node 102/102 (100 anteriores + 2 novos de
+`mensagemBloqueioDeCriacao`); build ok.
 
-- [ ] **Passo 6: Pint (se algum `.php` mudou) e commit.**
+- [x] **Passo 6: Pint (se algum `.php` mudou) e commit.** Nenhum `.php` mudou nesta tarefa (Passo 1 foi escrita
+  direta em banco via tinker, não arquivo; Passos 2-4 só tocaram `.vue`/`.js`) — Pint não se aplica.
 
-- [ ] **Passo 7: atualizar a skill** (seção "Fase 25") removendo os itens corrigidos da lista de pendências e
-  registrando o que foi feito, com data.
+- [x] **Passo 7: atualizar a skill** (seção "Fase 25") removendo os itens corrigidos da lista de pendências e
+  registrando o que foi feito, com data. Feito em `.claude/skills/recibos/SKILL.md`: 1 Acerto novo (`<details>`
+  nativo) + 3 Pegadinhas novas (SMOKE removido, gate do `Contratos/Form.vue`, `Modal.vue` sem `immediate`).

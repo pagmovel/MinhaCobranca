@@ -10,13 +10,13 @@ const proxima = computed(() => props.progresso.pendencias.find((pendencia) => !p
 </script>
 
 <template>
-    <aside
+    <details
         v-if="!progresso.liberado"
-        class="fixed inset-x-4 top-16 z-40 border border-linha bg-white p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:w-72"
-        aria-label="Primeiros passos"
+        open
+        class="relative mb-4 border border-linha bg-white p-4 shadow-lg sm:fixed sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:z-40 sm:mb-0 sm:w-72"
     >
-        <p class="mb-2 text-sm font-semibold">Primeiros passos</p>
-        <ul class="flex flex-col gap-1 text-sm">
+        <summary class="cursor-pointer text-sm font-semibold">Primeiros passos</summary>
+        <ul class="mt-2 flex flex-col gap-1 text-sm">
             <li v-for="pendencia in progresso.pendencias" :key="pendencia.item">
                 <Link
                     v-if="!pendencia.feito"
@@ -28,5 +28,5 @@ const proxima = computed(() => props.progresso.pendencias.find((pendencia) => !p
                 <span v-else class="text-tinta-verde">✓ {{ pendencia.rotulo }}</span>
             </li>
         </ul>
-    </aside>
+    </details>
 </template>
