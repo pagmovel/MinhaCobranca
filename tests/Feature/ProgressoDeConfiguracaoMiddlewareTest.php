@@ -61,4 +61,56 @@ class ProgressoDeConfiguracaoMiddlewareTest extends TestCase
 
         $this->get('/cobrancas')->assertOk();
     }
+
+    public function test_bloco_liberado_incompleto_impede_criar_contrato_e_cobranca(): void
+    {
+        $usuario = User::factory()->comPerfilPronto()->create(); // perfil ok, catálogo vazio
+        $cliente = Cliente::factory()->for($usuario)->create();
+
+        $this->actingAs($usuario)->get('/contratos/create')
+            ->assertRedirect('/painel')
+            ->assertSessionHas('erro', 'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.');
+        $this->get('/cobrancas/create')->assertRedirect('/painel');
+
+        // Sem produto real: o middleware bloqueia antes de qualquer validação do corpo, então o payload não
+        // precisa (e não deve) referenciar um produto de verdade — criar um aqui completaria o catálogo e o
+        // POST passaria a ser legitimamente permitido, o que não é o que este teste quer provar.
+        $this->post('/contratos', [
+            'cliente_id' => $cliente->id, 'itens' => [['produto_servico_id' => 999999, 'quantidade' => '1', 'preco' => '10,00', 'principal' => true]],
+            'periodicidade' => 'mensal', 'modalidade' => 'prepago', 'dia_vencimento' => 10, 'data_inicio' => '2026-10-01', 'ativo' => true,
+        ])->assertRedirect('/painel');
+        $this->assertSame(0, $usuario->contratos()->count());
+    }
+
+    public function test_bloco_liberado_completo_libera_criar_contrato_e_cobranca(): void
+    {
+        $usuario = User::factory()->comPerfilPronto()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        ProdutoServico::factory()->for($usuario)->create();
+
+        $this->actingAs($usuario)->get('/contratos/create')->assertOk();
+        $this->get('/cobrancas/create')->assertOk();
+    }
+
+    /** recomecar/renovar/renovar-vencido criam contrato novo por baixo — também exigem "liberado" (Review Focus 2). */
+    public function test_bloco_liberado_incompleto_impede_recomecar_renovar_e_renovar_vencido(): void
+    {
+        $usuario = User::factory()->comPerfilPronto()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $produto = ProdutoServico::factory()->for($usuario)->create();
+        $this->actingAs($usuario)->post('/contratos', [
+            'cliente_id' => $cliente->id,
+            'itens' => [['produto_servico_id' => $produto->id, 'quantidade' => '1', 'preco' => '10,00', 'principal' => true]],
+            'periodicidade' => 'mensal', 'modalidade' => 'prepago', 'dia_vencimento' => 10, 'data_inicio' => '2026-10-01', 'ativo' => true,
+        ])->assertRedirect('/contratos');
+        $contrato = $usuario->contratos()->sole();
+
+        // Simula o progresso voltando a ficar incompleto depois do contrato já existir, pra provar que as 3
+        // ações (que criam contrato novo por baixo) também passam pelo gate — não só o "store" original.
+        $usuario->chavesPix()->delete();
+
+        $this->post("/contratos/{$contrato->id}/recomecar", [])->assertRedirect('/painel');
+        $this->post("/contratos/{$contrato->id}/renovar", [])->assertRedirect('/painel');
+        $this->post("/contratos/{$contrato->id}/renovar-vencido", [])->assertRedirect('/painel');
+    }
 }

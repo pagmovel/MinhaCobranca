@@ -170,10 +170,6 @@ class CobrancaController extends Controller
     {
         $usuario = $request->user();
 
-        if (! $usuario->perfilCompleto()) {
-            return back()->with('erro', 'Complete seu perfil para emitir recibos.');
-        }
-
         DB::transaction(function () use ($usuario, $request, $emissor) {
             $cobranca = $usuario->cobrancas()->create($request->dadosCobranca());
             $cobranca->itens()->createMany($request->itensDaCobranca());

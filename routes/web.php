@@ -55,13 +55,14 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::resource('clientes', ClienteController::class)->only(['create', 'store'])->middleware('progresso:perfil');
     Route::get('/contratos/retroativos', [ContratoController::class, 'retroativos']);
     Route::get('/contratos/dados', [ContratoController::class, 'dados']);
-    Route::resource('contratos', ContratoController::class)->except(['show', 'destroy']);
+    Route::resource('contratos', ContratoController::class)->except(['show', 'destroy', 'create', 'store']);
+    Route::resource('contratos', ContratoController::class)->only(['create', 'store'])->middleware('progresso:liberado');
     Route::get('/contratos/{contrato}/encerramento', [ContratoController::class, 'encerramento']);
     Route::post('/contratos/{contrato}/encerrar', [ContratoController::class, 'encerrar']);
-    Route::post('/contratos/{contrato}/recomecar', [ContratoController::class, 'recomecar']);
+    Route::post('/contratos/{contrato}/recomecar', [ContratoController::class, 'recomecar'])->middleware('progresso:liberado');
     Route::get('/contratos/{contrato}/renovacao', [ContratoController::class, 'renovacao']);
-    Route::post('/contratos/{contrato}/renovar', [ContratoController::class, 'renovar']);
-    Route::post('/contratos/{contrato}/renovar-vencido', [ContratoController::class, 'renovarVencido']);
+    Route::post('/contratos/{contrato}/renovar', [ContratoController::class, 'renovar'])->middleware('progresso:liberado');
+    Route::post('/contratos/{contrato}/renovar-vencido', [ContratoController::class, 'renovarVencido'])->middleware('progresso:liberado');
     Route::get('/contratos/{contrato}/reativacao', [ContratoController::class, 'reativacao']);
     Route::get('/produtos-servicos/busca', [ProdutoServicoController::class, 'busca']);
     Route::get('/produtos-servicos/dados', [ProdutoServicoController::class, 'dados']);
@@ -81,11 +82,11 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
 
     Route::get('/cobrancas', [CobrancaController::class, 'index']);
     Route::get('/cobrancas/dados', [CobrancaController::class, 'dados']);
-    Route::get('/cobrancas/create', [CobrancaController::class, 'create']);
+    Route::get('/cobrancas/create', [CobrancaController::class, 'create'])->middleware('progresso:liberado');
     Route::get('/cobrancas/aviso', [AvisoWhatsappController::class, 'dados']);
     Route::post('/cobrancas/avisadas', [AvisoWhatsappController::class, 'avisadas']);
     Route::get('/cobrancas/{cobranca}/edit', [CobrancaController::class, 'edit']);
-    Route::post('/cobrancas', [CobrancaController::class, 'store']);
+    Route::post('/cobrancas', [CobrancaController::class, 'store'])->middleware('progresso:liberado');
     Route::put('/cobrancas/{cobranca}', [CobrancaController::class, 'update']);
     Route::post('/cobrancas/lote/pagar', [CobrancaController::class, 'pagarEmLote']);
     Route::post('/cobrancas/lote/cancelar', [CobrancaController::class, 'cancelarEmLote']);

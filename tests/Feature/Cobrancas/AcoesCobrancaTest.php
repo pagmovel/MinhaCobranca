@@ -9,6 +9,7 @@ use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
 use App\Models\Contrato;
+use App\Models\ProdutoServico;
 use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use Carbon\CarbonImmutable;
@@ -24,7 +25,7 @@ class AcoesCobrancaTest extends TestCase
     private function prestadorComCliente(): array
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-09 10:00:00'));
-        $usuario = User::factory()->create();
+        $usuario = User::factory()->comPerfilPronto()->create();
 
         return [$usuario, Cliente::factory()->for($usuario)->create()];
     }
@@ -61,15 +62,18 @@ class AcoesCobrancaTest extends TestCase
         $this->assertSame(1, $cobranca->recibo->numero);
     }
 
-    public function test_avulsa_exige_perfil_completo_e_cliente_proprio(): void
+    public function test_avulsa_recusa_cliente_de_outro_usuario(): void
     {
         [$usuario, $cliente] = $this->prestadorComCliente();
+        // $this->dados() monta o item via itensPara($cliente), que cria o produto para o dono do cliente
+        // informado — aqui é o cliente de OUTRO usuário, então o catálogo do próprio $usuario (que só tem
+        // o $cliente de prestadorComCliente) ainda ficaria sem produto; sem ele, o middleware de progresso
+        // bloquearia a requisição antes de chegar na validação de dono do cliente, que é o que este teste quer provar.
+        ProdutoServico::factory()->for($usuario)->create();
         $this->actingAs($usuario);
+
         $this->post('/cobrancas', $this->dados(Cliente::factory()->create()))
             ->assertSessionHasErrors(['cliente_id' => 'O valor escolhido para cliente é inválido.']);
-
-        $usuario->update(['cep' => null]);
-        $this->post('/cobrancas', $this->dados($cliente))->assertSessionHas('erro', 'Complete seu perfil para emitir recibos.');
         $this->assertSame(0, Cobranca::count());
     }
 
