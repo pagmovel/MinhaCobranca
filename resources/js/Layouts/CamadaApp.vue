@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
+import { itemBloqueado } from '../progresso.js';
 
 const page = usePage();
 const usuario = computed(() => page.props.auth.user);
@@ -9,10 +10,10 @@ const menuAberto = ref(false);
 
 const itens = computed(() => [
     { href: '/painel', rotulo: 'Painel' },
-    { href: '/cobrancas', rotulo: 'Cobranças' },
-    { href: '/contratos', rotulo: 'Contratos' },
-    { href: '/clientes', rotulo: 'Clientes' },
-    { href: '/produtos-servicos', rotulo: 'Produtos e serviços' },
+    { href: '/cobrancas', rotulo: 'Cobranças', bloqueado: itemBloqueado('/cobrancas', page.props.progresso) },
+    { href: '/contratos', rotulo: 'Contratos', bloqueado: itemBloqueado('/contratos', page.props.progresso) },
+    { href: '/clientes', rotulo: 'Clientes', bloqueado: itemBloqueado('/clientes', page.props.progresso) },
+    { href: '/produtos-servicos', rotulo: 'Produtos e serviços', bloqueado: itemBloqueado('/produtos-servicos', page.props.progresso) },
     { href: '/relatorios', rotulo: 'Relatórios' },
     { href: '/auditoria', rotulo: 'Auditoria' },
     { href: '/perfil', rotulo: 'Meu perfil' },
@@ -48,7 +49,17 @@ const sair = () => router.post('/sair');
             <p class="hidden px-5 pt-6 pb-4 font-semibold md:block">Gerenciador de Cobranças</p>
             <ul class="flex flex-col py-2">
                 <li v-for="item in itens" :key="item.href">
+                    <span
+                        v-if="item.bloqueado"
+                        class="flex items-center justify-between px-5 py-2 text-sm text-grafite/50"
+                        :title="item.href === '/contratos' || item.href === '/cobrancas'
+                            ? 'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.'
+                            : 'Complete seu perfil (dados do prestador, uma chave PIX e um modelo de mensagem) antes de cadastrar produtos, serviços ou clientes.'"
+                    >
+                        🔒 {{ item.rotulo }}
+                    </span>
                     <Link
+                        v-else
                         :href="item.href"
                         class="flex items-center justify-between px-5 py-2 text-sm hover:bg-papel"
                         :class="ativo(item.href) ? 'bg-papel font-semibold text-carbono' : ''"
