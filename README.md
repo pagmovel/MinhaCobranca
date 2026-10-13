@@ -3,6 +3,13 @@
 Cobranças recorrentes com recibo em PDF A4 inspirado nos modelos de NFS-e (WebISS e DANFSe),
 para envio antecipado ao cliente e baixa manual quando o pagamento é confirmado.
 
+## Configuração inicial obrigatória
+
+Antes de cadastrar produtos/serviços, clientes, contratos ou cobranças, a conta precisa ter o perfil do
+prestador completo (dados, uma chave PIX e um modelo de mensagem) e pelo menos um produto/serviço e um
+cliente. Um modal de boas-vindas no primeiro acesso e um guia fixo na tela orientam os passos que faltam; os
+itens do menu ficam bloqueados até lá — nunca edição, exclusão ou listagem do que já existe.
+
 ## Requisitos
 PHP 8.4, Composer, Node 22.
 
