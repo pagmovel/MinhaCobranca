@@ -33,6 +33,7 @@ class User extends Authenticatable
         'dias_antecedencia' => 10,
         'dias_aviso' => 5,
         'dias_aviso_contrato' => 30,
+        'apresentacao_vista' => false,
     ];
 
     /** Campos sem os quais o recibo sairia com o prestador em branco. */
@@ -54,6 +55,7 @@ class User extends Authenticatable
             'dias_antecedencia' => 'integer',
             'dias_aviso' => 'integer',
             'dias_aviso_contrato' => 'integer',
+            'apresentacao_vista' => 'boolean',
         ];
     }
 

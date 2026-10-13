@@ -88,4 +88,13 @@ class PerfilController extends Controller
 
         return Storage::disk('local')->response($caminho);
     }
+
+    public function apresentacao(Request $request): RedirectResponse
+    {
+        $usuario = $request->user();
+        $usuario->apresentacao_vista = true;
+        $usuario->save();
+
+        return back();
+    }
 }

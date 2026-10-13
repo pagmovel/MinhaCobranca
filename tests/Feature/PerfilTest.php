@@ -140,4 +140,14 @@ class PerfilTest extends TestCase
         $this->get('/perfil')->assertRedirect('/entrar');
         $this->post('/perfil', $this->dados())->assertRedirect('/entrar');
     }
+
+    public function test_marca_apresentacao_vista(): void
+    {
+        $usuario = User::factory()->create();
+        $this->assertFalse($usuario->apresentacao_vista);
+
+        $this->actingAs($usuario)->post('/perfil/apresentacao')->assertRedirect();
+
+        $this->assertTrue($usuario->refresh()->apresentacao_vista);
+    }
 }
