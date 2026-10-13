@@ -60,7 +60,7 @@ para os módulos `.js` puros, Pint para formatação.
 
 ## Tarefa 1 — `ProgressoDeConfiguracao`
 
-**Status:** testada (commit 7712cb4)
+**Status:** validada (commit 7712cb4)
 
 **Arquivos:**
 - Criar: `app/Support/ProgressoDeConfiguracao.php`
@@ -285,8 +285,8 @@ git commit -m "feat: calcula o progresso de configuração inicial (perfil/catá
 
 ## Tarefa 2 — Coluna `apresentacao_vista` e `POST /perfil/apresentacao`
 
-**Status:** testada (commit 69e38f4) — ⚠️ migration ainda **não aplicada** no banco de dev/produção; precisa de
-`php artisan migrate` com autorização explícita (PORTÃO-BANCO) antes do smoke test da Tarefa 10.
+**Status:** validada (commit 69e38f4) — migration aplicada no banco de dev em 2026-10-13 (PORTÃO-BANCO,
+autorizado pelo usuário: conexão `207.180.205.211:1`/`recibos`, `users` com 7 linhas antes e depois).
 
 **Arquivos:**
 - Criar: `database/migrations/2026_10_12_150000_add_apresentacao_vista_to_users_table.php`
@@ -410,7 +410,7 @@ git commit -m "feat: coluna apresentacao_vista e rota para marcar o modal de boa
 
 ## Tarefa 3 — Middleware `progresso:perfil` em Produtos/Serviços e Clientes
 
-**Status:** testada (commit 2ee75dd)
+**Status:** validada (commit 2ee75dd)
 
 **Arquivos:**
 - Criar: `app/Http/Middleware/GarantirProgressoDeConfiguracao.php`
@@ -630,7 +630,7 @@ git commit -m "feat: trava de criação em produtos/serviços e clientes até o 
 
 ## Tarefa 4 — Middleware `progresso:liberado` em Contratos e Cobranças
 
-**Status:** testada (commits 0bacb37, 8da8a29) — suíte completa 560/560
+**Status:** validada (commits 0bacb37, 8da8a29) — suíte completa 560/560
 
 **Contexto importante:** `CobrancaController::store()` (linha 173-175) já tinha um guard próprio —
 `if (! $usuario->perfilCompleto()) { return back()->with('erro', 'Complete seu perfil para emitir recibos.'); }`.
@@ -924,7 +924,7 @@ git commit -m "fix: ajusta fixtures de teste para o novo gate de progresso de co
 
 ## Tarefa 5 — Prop compartilhada `progresso` e `mostrarApresentacao`
 
-**Status:** testada (commit 8d7f6b9) — suíte completa 562/562
+**Status:** validada (commit 8d7f6b9) — suíte completa 562/562
 
 **Arquivos:**
 - Modificar: `app/Http/Middleware/HandleInertiaRequests.php`
@@ -1001,7 +1001,7 @@ git commit -m "feat: compartilha o progresso de configuração e o aviso do moda
 
 ## Tarefa 6 — Menu com itens bloqueados (`CamadaApp.vue`)
 
-**Status:** testada (commit 630c839) — `node --test` 4/4, `npm run build` sem erro
+**Status:** validada (commit 630c839) — `node --test` 4/4, `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/progresso.js`, `resources/js/progresso.test.js`
@@ -1145,7 +1145,7 @@ git commit -m "feat: itens de Contratos/Cobranças/Clientes/Produtos no menu fic
 
 ## Tarefa 7 — IDs que faltam + `CoachDeConfiguracao.vue`
 
-**Status:** testada (commit 86b923e) — `npm run build` sem erro
+**Status:** validada (commit 86b923e) — `npm run build` sem erro
 
 **Arquivos:**
 - Modificar: `resources/js/Components/ChavesPix.vue:98`, `resources/js/Components/MensagensWhatsapp.vue:177`,
@@ -1259,7 +1259,7 @@ git commit -m "feat: coach flutuante com a lista de pendências da configuraçã
 
 ## Tarefa 8 — `HolofoteDePendencia.vue`
 
-**Status:** testada (commit d0528f4) — `node --test` 2/2, `npm run build` sem erro
+**Status:** validada (commit d0528f4) — `node --test` 2/2, `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/progressoHolofote.js`, `resources/js/progressoHolofote.test.js`
@@ -1391,7 +1391,7 @@ git commit -m "feat: holofote aponta o próximo campo ou botão pendente na conf
 
 ## Tarefa 9 — `ModalBoasVindas.vue`
 
-**Status:** testada (commit c7b0170) — `npm run build` sem erro
+**Status:** validada (commit c7b0170) — `npm run build` sem erro
 
 **Arquivos:**
 - Criar: `resources/js/Components/ModalBoasVindas.vue`
@@ -1482,26 +1482,31 @@ git commit -m "feat: modal de boas-vindas explica os blocos pendentes no primeir
 
 ## Tarefa 10 — Suíte completa e smoke test manual
 
-**Status:** pendente
+**Status:** validada — suíte 562/562 PHP + 100/100 JS + build OK; smoke de cadastro novo feito no navegador
+(conta `smoke-fase25@recibos.test`); smoke de usuário retroativo coberto só pela suíte automatizada (decisão do
+usuário, 2026-10-13: não mexer em dado real nem criar sintético só para esse smoke visual).
 
 **Arquivos:** nenhum (só verificação).
 
-- [ ] **Passo 1: suíte PHP completa.**
+- [x] **Passo 1: suíte PHP completa.**
 
 Run: `php artisan test --compact`
 Expected: PASS (0 falhas).
+Resultado: PASS 562/562.
 
-- [ ] **Passo 2: suíte JS completa.**
+- [x] **Passo 2: suíte JS completa.**
 
 Run: `node --test resources/js/*.test.js`
 Expected: PASS (0 falhas) — inclui os `.test.js` novos das Tarefas 6 e 8.
+Resultado: PASS 100/100.
 
-- [ ] **Passo 3: build de produção.**
+- [x] **Passo 3: build de produção.**
 
 Run: `npm run build`
 Expected: build sem erro.
+Resultado: build OK.
 
-- [ ] **Passo 4: smoke test no navegador (browser-agent, não Playwright) — usuário novo do zero.**
+- [x] **Passo 4: smoke test no navegador (browser-agent, não Playwright) — usuário novo do zero.**
   Cadastrar um usuário novo (via `/cadastro`), aprovar (ou usar um já aprovado), logar e confirmar:
   - Modal de boas-vindas aparece uma vez, com "Pular"/"Avançar" funcionando; some depois de clicar em "Entendi".
   - Menu mostra Cobranças/Contratos/Clientes/Produtos e serviços com 🔒, inertes (não navegam).
@@ -1512,18 +1517,30 @@ Expected: build sem erro.
     Cobranças no menu (🔒 some).
   - Abrir `/contratos/create` e `/cobrancas/create`: abrem normalmente agora.
 
-- [ ] **Passo 5: smoke test — usuário "antigo" (retroativo).**
+Resultado: confirmado ponta a ponta com a conta `smoke-fase25@recibos.test` (cadastrada via `/cadastro`,
+aprovada pelo usuário em 2026-10-13). Todos os itens do roteiro bateram, incluindo o holofote pulando `name`
+(já preenchido no cadastro) e indo direto pro "Passo 1 de 8 — CPF ou CNPJ".
+
+- [x] **Passo 5: smoke test — usuário "antigo" (retroativo).**
   Usar (ou simular via tinker, sem escrever nada além do que os testes automatizados já cobrem) um usuário com
   contratos/cobranças já existentes e sem chave PIX: confirmar que `/contratos`, `/cobrancas` (listas),
   editar/pagar/cancelar continuam abertos; só `/contratos/create` e `/cobrancas/create` ficam bloqueados até
   completar o progresso.
 
-- [ ] **Passo 6: atualizar este plano e a skill do projeto.**
+> **Ruling (decisão do usuário, 2026-10-13):** nenhuma conta do banco de dev está hoje nesse estado (contrato
+> existente + sem PIX), e uma conta nova não consegue chegar nele pela UI — o próprio gate de criar contrato
+> exige perfil completo, então "usuário retroativo" só existe em conta anterior à Fase 25. Simular exigiria
+> mexer numa conta real ou inserir dado sintético via tinker (PORTÃO-BANCO extra). O usuário optou por não
+> fazer nenhuma escrita a mais: Passo 5 fica coberto só pela suíte automatizada
+> (`ProgressoDeConfiguracaoMiddlewareTest::test_usuario_retroativo_continua_vendo_e_editando_o_que_ja_existe`,
+> já verde), sem confirmação visual ao vivo.
+
+- [x] **Passo 6: atualizar este plano e a skill do projeto.**
   Marcar todas as tarefas como `validada` (depois da confirmação do usuário nos Passos 4-5), e documentar em
   `.claude/skills/recibos/SKILL.md` (seção de Acertos) o padrão novo: progresso sem coluna, trava só em
   criar, `UserFactory::comPerfilPronto()` para testes que precisam passar pelo gate.
 
-- [ ] **Passo 7: commit final (se o Passo 6 tiver mudado algo).**
+- [x] **Passo 7: commit final (se o Passo 6 tiver mudado algo).**
 
 ```bash
 git add .claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md .claude/skills/recibos/SKILL.md

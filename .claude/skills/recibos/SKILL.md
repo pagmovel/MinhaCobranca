@@ -1532,3 +1532,51 @@ literal, esperar "sim" — autorização não é transitiva, mesmo que já tenha
 - `transform: rotate`, absoluto dentro da caixa `relative` e rodapé `position: fixed`:
   **[A VERIFICAR]** — sem renderizador de PDF na máquina; a conferência passou para o recibo real (T4.4) — conferência visual do usuário em
   `storage/app/private/verificacao/prova-dompdf.pdf`.
+
+## Fase 25 — sequência obrigatória de configuração inicial, com guia interativo (2026-10-13)
+
+Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
+`docs/superpowers/specs/2026-10-12-sequencia-de-configuracao-inicial-design.md`.
+
+### Acertos
+- **Progresso sem coluna nova**, `App\Support\ProgressoDeConfiguracao::de($usuario)` calcula `perfil`/`catalogo`/
+  `liberado`/`pendencias` a cada requisição (mesmo padrão de `Dinheiro`/`DiasUteis`): sem risco de cache
+  desatualizado, sem migração de dado histórico.
+- **Trava só em criar** (`GarantirProgressoDeConfiguracao`, alias `progresso:perfil`/`progresso:liberado`),
+  nunca em `index`/`edit`/`update`/`destroy` — `Route::resource(...)->except([...,'create','store'])` +
+  `Route::resource(...)->only(['create','store'])->middleware(...)` para o mesmo recurso não colidem (confirmado
+  em produção: nomes de rota gerados não se sobrepõem).
+- **`UserFactory::comPerfilPronto()`** (soma 1 `ChavePix` + 1 `ModeloMensagem`) é o estado padrão para qualquer
+  teste que precise passar pelo gate `progresso:perfil`/`progresso:liberado` — `dados_prestador` já vem pronto
+  do `definition()` da factory.
+- Prop Inertia compartilhada (`HandleInertiaRequests::share()`) para `progresso` e `mostrarApresentacao`: todas
+  as telas (menu, coach, holofote, modal) leem do mesmo cálculo, sem re-requisição.
+
+### Pegadinhas
+- **`semPerfil()` (factory, Fase 1) nunca zera `name`**: `name` é obrigatório no cadastro
+  (`CadastroController.php`), então uma conta recém-criada sempre tem nome, mesmo sem nenhum outro dado do
+  prestador. Testar "nada cadastrado" espera N-1 campos faltando, não N (`CAMPOS_DO_PRESTADOR` tem 9 campos).
+- **Coluna booleana nova precisa de 2 lugares, não só `casts()`**: além do cast, o valor-padrão precisa ir para
+  `User::$attributes` (mesmo padrão já usado por `dias_antecedencia`/`dias_aviso`/`dias_aviso_contrato`) —
+  senão `User::factory()->create()->coluna_nova` volta `null` em vez do default da migração, porque o Eloquent
+  não relê do banco depois do `save()` para pegar um default que não estava no array de atributos do objeto.
+- **Teste que cria o próprio fixture que prova o bloqueio pode se autossabotar**: um teste de
+  "`POST` bloqueado porque falta X" que cria um X real antes do POST (pra "parecer" um payload válido) deixa de
+  provar o bloqueio, porque criar o X de verdade *destrava* a condição que o teste queria testar. O middleware
+  de gate roda antes de qualquer validação do corpo — o payload não precisa citar um registro real.
+- **Padrão "`*_de_outro_usuario_da_404`" quebra em rota travada**: um teste que prova 404 (dono errado) numa
+  rota agora coberta por `progresso:liberado` (`recomecar`/`renovar`/`renovar-vencido`) com um usuário "outro"
+  sem perfil/catálogo próprios quebra, porque o gate intercepta **antes** da checagem de dono — devolve
+  redirect pro painel, não 404. Dar `comPerfilPronto()` + catálogo próprio ao usuário "outro" nesses testes
+  específicos (nunca ao `setUp()` compartilhado se outro teste do arquivo usa `sole()`/`firstOrFail()` nas
+  mesmas tabelas).
+- **Estado "usuário retroativo" (contrato/cobrança já existente, sem chave PIX) é estruturalmente inalcançável
+  via UI** depois desta fase — o próprio gate de criar exige perfil completo antes de liberar contrato/cobrança
+  novos. Só existe em conta anterior à Fase 25; para smoke test futuro, simular exige tinker (PORTÃO-BANCO) ou
+  mexer numa conta real — a suíte automatizada (`ProgressoDeConfiguracaoMiddlewareTest::test_usuario_retroativo_*`)
+  é a cobertura primária desse caso, não um smoke visual.
+- **Smoke test de cadastro novo**: confirmado ponta a ponta no navegador (`browser-agent`) em 2026-10-13 com
+  conta `smoke-fase25@recibos.test` — modal de boas-vindas (3 telas, Pular/Avançar, não reaparece depois),
+  menu com 🔒 nos 4 itens até liberar, coach atualizando em tempo real a cada cadastro, holofote apontando o
+  campo certo (pula `name`, já preenchido no cadastro), `/contratos/create` e `/cobrancas/create` abrindo só
+  depois do catálogo completo.
