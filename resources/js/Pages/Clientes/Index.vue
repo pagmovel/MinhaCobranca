@@ -36,12 +36,15 @@ const cobrancasDo = (cliente) => `/cobrancas?${new URLSearchParams({ cliente_id:
 // computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
 // computed continua reativo a essa troca.
 const progresso = computed(() => usePage().props.progresso);
+// A pendência desta própria tela (não a primeira pendência do catálogo em geral) — senão, com o produto já
+// cadastrado e o cliente ainda faltando, o holofote em /produtos-servicos apontaria para "cadastrar um cliente".
+const pendenciaCliente = computed(() => progresso.value?.pendencias.find((p) => p.item === 'cliente'));
 </script>
 
 <template>
     <CamadaApp>
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
-        <HolofoteDePendencia v-if="progresso && progresso.perfil && !progresso.catalogo" :pendencia="progresso.pendencias.find((p) => !p.feito)" />
+        <HolofoteDePendencia v-if="progresso && progresso.perfil && !pendenciaCliente.feito" :pendencia="pendenciaCliente" />
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-2xl font-semibold">Clientes</h1>
             <Link id="novo-cliente" href="/clientes/create" class="botao">Novo cliente</Link>

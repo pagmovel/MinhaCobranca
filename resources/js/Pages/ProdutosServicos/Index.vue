@@ -32,12 +32,15 @@ const buscarAoDigitar = adiar(filtrar);
 // computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
 // computed continua reativo a essa troca.
 const progresso = computed(() => usePage().props.progresso);
+// A pendência desta própria tela (não a primeira pendência do catálogo em geral) — senão, com o cliente já
+// cadastrado e o produto ainda faltando, o holofote em /clientes apontaria para "cadastrar um produto".
+const pendenciaProduto = computed(() => progresso.value?.pendencias.find((p) => p.item === 'produto_servico'));
 </script>
 
 <template>
     <CamadaApp>
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
-        <HolofoteDePendencia v-if="progresso && progresso.perfil && !progresso.catalogo" :pendencia="progresso.pendencias.find((p) => !p.feito)" />
+        <HolofoteDePendencia v-if="progresso && progresso.perfil && !pendenciaProduto.feito" :pendencia="pendenciaProduto" />
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-2xl font-semibold">Produtos e serviços</h1>
             <Link id="novo-produto-servico" href="/produtos-servicos/create" class="botao">Novo produto ou serviço</Link>

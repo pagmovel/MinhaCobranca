@@ -1545,7 +1545,7 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
 - **Trava só em criar** (`GarantirProgressoDeConfiguracao`, alias `progresso:perfil`/`progresso:liberado`),
   nunca em `index`/`edit`/`update`/`destroy` — `Route::resource(...)->except([...,'create','store'])` +
   `Route::resource(...)->only(['create','store'])->middleware(...)` para o mesmo recurso não colidem (confirmado
-  em produção: nomes de rota gerados não se sobrepõem).
+  via `php artisan route:list` e pela suíte de testes, em dev — ainda não deployado em produção).
 - **`UserFactory::comPerfilPronto()`** (soma 1 `ChavePix` + 1 `ModeloMensagem`) é o estado padrão para qualquer
   teste que precise passar pelo gate `progresso:perfil`/`progresso:liberado` — `dados_prestador` já vem pronto
   do `definition()` da factory.
@@ -1570,11 +1570,16 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
   redirect pro painel, não 404. Dar `comPerfilPronto()` + catálogo próprio ao usuário "outro" nesses testes
   específicos (nunca ao `setUp()` compartilhado se outro teste do arquivo usa `sole()`/`firstOrFail()` nas
   mesmas tabelas).
-- **Estado "usuário retroativo" (contrato/cobrança já existente, sem chave PIX) é estruturalmente inalcançável
-  via UI** depois desta fase — o próprio gate de criar exige perfil completo antes de liberar contrato/cobrança
-  novos. Só existe em conta anterior à Fase 25; para smoke test futuro, simular exige tinker (PORTÃO-BANCO) ou
-  mexer numa conta real — a suíte automatizada (`ProgressoDeConfiguracaoMiddlewareTest::test_usuario_retroativo_*`)
-  é a cobertura primária desse caso, não um smoke visual.
+- **Estado "usuário retroativo" não é alcançável por uma conta nova seguindo o fluxo normal do zero** (o gate de
+  criar exige perfil completo antes de liberar contrato/cobrança novos) — mas **não é estruturalmente
+  inalcançável via UI em geral**: `DELETE /perfil/chaves-pix/{id}` e `DELETE /perfil/mensagens/{id}` (achado na
+  revisão final, 2026-10-13) não têm trava de progresso, então excluir a última chave PIX ou o último modelo de
+  mensagem de uma conta já `liberado` e com contratos a devolve ao estado retroativo na hora — sem aviso, e
+  travando os 4 itens do menu de novo. Hoje nenhuma conta do banco de dev está nesse estado; para smoke test
+  futuro, dá pra chegar nele pela própria UI (criar contrato, depois excluir o modelo/chave) em vez de tinker —
+  mas isso grava dado, então ainda pede autorização do usuário. A suíte automatizada
+  (`ProgressoDeConfiguracaoMiddlewareTest::test_usuario_retroativo_*`) continua sendo a cobertura primária do
+  caso "conta herdada de antes da Fase 25".
 - **Smoke test de cadastro novo**: confirmado ponta a ponta no navegador (`browser-agent`) em 2026-10-13 com
   conta `smoke-fase25@recibos.test` — modal de boas-vindas (3 telas, Pular/Avançar, não reaparece depois),
   menu com 🔒 nos 4 itens até liberar, coach atualizando em tempo real a cada cadastro, holofote apontando o
