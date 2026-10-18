@@ -27,6 +27,19 @@ independentemente do banco configurado (`phpunit.xml`).
     php artisan app:criar-admin seu@email.com --nome="Seu Nome"
     npm run build
 
+## Produção na VPS (Easypanel) — atrás do BunkerWeb
+Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no serviço `bunker` do Easypanel
+(BunkerWeb, WAF), não neste serviço: Traefik → `bunkerweb:8080` → `meus_projetos_gerenciador_cobrancas_app:80`.
+
+- **Não apagar o domínio `meus-projetos-gerenciador-cobrancas.ymlmcr.easypanel.host`** deste serviço (direto em
+  `app`/`80`): é o acesso de reserva e é o que mantém o container na rede `easypanel`, onde o BunkerWeb o encontra.
+- **HTTPS vem do cabeçalho do proxy**: `trustProxies` (`bootstrap/app.php`) confia nas faixas privadas, e o
+  BunkerWeb recebe HTTP do Traefik — ele está configurado para repassar `X-Forwarded-Proto: https`. Se as páginas
+  passarem a gerar links `http://` (conteúdo misto), o problema está nesse cabeçalho, não no Laravel.
+- Métodos liberados no BunkerWeb: `GET|POST|HEAD|PUT|PATCH|DELETE`. Rota nova com outro método (ou webhook de
+  gateway de pagamento) precisa ser liberada lá também — senão volta 405/403 do BunkerWeb, não do Laravel.
+- Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
+
 ## Testes
     php artisan test
 
