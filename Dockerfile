@@ -10,15 +10,20 @@ COPY . .
 RUN npm run build
 
 # Etapa 2: PHP 8.4 + Apache
-FROM php:8.4-apache-bookworm
+# Versão fixa de propósito (2026-10-25): a 8.4.27 corrige o PHP2Shell (CVE-2026-109618 e CVE-2026-109619, execução
+# remota de código sem login). Com a tag móvel `8.4-apache-bookworm` o builder pode reaproveitar a imagem antiga
+# em cache. Ao sair um release de segurança, trocar o número aqui; não voltar para a tag móvel.
+FROM php:8.4.27-apache-bookworm
 
 # pdo_pgsql: banco; gd: QR Code do Pix (QRGdImagePNG) e imagens do dompdf; opcache: desempenho.
+# zz-seguranca.ini: session.upload_progress desligado (recomendação do php.net; o Laravel não usa sessão nativa).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_pgsql gd opcache \
     && rm -rf /var/lib/apt/lists/* \
-    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && echo 'session.upload_progress.enabled = 0' > "$PHP_INI_DIR/conf.d/zz-seguranca.ini"
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \

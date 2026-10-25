@@ -39,6 +39,12 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
 - Métodos liberados no BunkerWeb: `GET|POST|HEAD|PUT|PATCH|DELETE`. Rota nova com outro método (ou webhook de
   gateway de pagamento) precisa ser liberada lá também — senão volta 405/403 do BunkerWeb, não do Laravel.
 - Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
+- **Versão do PHP fixa no `Dockerfile`** (`php:8.4.27-apache-bookworm`, desde 2026-10-25, correção do PHP2Shell:
+  CVE-2026-109618 e CVE-2026-109619). A tag móvel `8.4-apache-bookworm` pode reaproveitar uma imagem antiga em cache.
+  Ao sair release de segurança do PHP: trocar o número no `Dockerfile`, conferir a tag no Docker Hub e fazer o deploy
+  pelo **Deploy** do painel, que reconstrói a imagem a partir do Git (trocar o número já invalida as camadas do PHP;
+  não precisa limpar cache). Reiniciar o container antigo não atualiza o PHP. Depois, `php -v` no console do container
+  deve mostrar a versão nova.
 
 ## Testes
     php artisan test

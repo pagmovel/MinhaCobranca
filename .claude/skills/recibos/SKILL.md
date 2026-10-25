@@ -1052,6 +1052,36 @@ o relatório mostra a parte que existe.
 - **Pendente (segurança):** as senhas do `recibos_app`, do superusuário `postgres` e o `APP_KEY` de dev apareceram
   em texto puro nos logs do deploy com Nixpacks — trocar.
 
+### Atualização de segurança do PHP — PHP2Shell (2026-10-25)
+Plano: `.claude/plans/2026-10-25-atualizacao-php-seguranca.md`. Fontes abertas na sessão: php.net (ChangeLog, avisos e
+JSON de releases), os dois GHSA em github.com/php/php-src, watchTowr, NCSC, Docker Hub.
+- **O que saiu em 21/10/2026:** PHP 8.5.12, **8.4.27**, 8.3.36 e 8.2.35 corrigem **CVE-2026-109618** (corrupção de
+  memória em falta de memória) e **CVE-2026-109619** (estado global velho reaproveitado entre requisições): execução
+  remota de código sem login, CVSS v4.0 9.2. Risco maior no **Apache com mod_php, que é a nossa imagem**. O php.net
+  diz que só atualizar corrige por completo. Exploração em curso: watchTowr diz que sim, o php.net disse não ter
+  achado exploit funcional na publicação — **[INCONCLUSIVO]** quão disseminado.
+- **O que mudou no projeto:** `Dockerfile` com a base **fixa** `php:8.4.27-apache-bookworm` (antes a tag móvel
+  `8.4-apache-bookworm`, que o builder pode reaproveitar do cache sem baixar a nova) e `conf.d/zz-seguranca.ini` com
+  `session.upload_progress.enabled = 0` (recomendação do php.net para o CVE-2026-115560, ainda sem correção; o Laravel
+  não usa sessão nativa e o código não tem `session_start`, `ini_set` nem `serialize_handler`).
+- **Conferido numa imagem construída de verdade:** PHP 8.4.27 (build de 21/10), `gd`, `pdo_pgsql`, `opcache` e
+  `mbstring`, Laravel 13.35 sobe, sem `.env` dentro da imagem, e o **Apache (`apache2handler`) responde com PHP
+  8.4.27 e `upload_progress` = 0**. Não existe teste automatizado disto: foi conferência manual.
+- **Não aplicar `memory_limit=-1` nem `fatal_error_backtraces=0`:** são mitigações do php.net só para quem **não
+  consegue** atualizar. Com PHP corrigido, `memory_limit=-1` tiraria um limite útil.
+- **Deploy na VPS (só o Marcos, ou autorização expressa dele):** **Deploy** do painel (reconstrói a imagem a partir
+  do Git; trocar o número da base já invalida as camadas do PHP, não precisa limpar cache); depois `php -v` no console
+  do container tem de mostrar 8.4.27. Reiniciar o container antigo não atualiza o PHP.
+- **Pegadinhas:**
+  1. **Docker desta máquina é o snap e não lê `/srv`:** `docker build` em `/srv/conteiners/...` falha com
+     `failed to read dockerfile: open Dockerfile: no such file or directory` (`transferring dockerfile: 2B`), mesmo com
+     o arquivo íntegro. Testado: a mesma coisa funciona dentro de `$HOME`. Contorno: copiar o que o `git ls-files` lista
+     (nunca o `.env`, que não é versionado) para uma pasta em `$HOME`, construir de lá e apagar a pasta e a imagem.
+  2. **Aviso de tarefa em segundo plano com "exit code 0" pode mentir:** o `0` era do `echo` depois do `docker build`.
+     Gravar o código do build no log (`rc=$?`) e terminar com `exit $rc`.
+  3. **`expose_php = On` até no `php.ini-production`** (linha 400): a resposta traz `X-Powered-By: PHP/8.4.27`.
+     Não alterado nesta tarefa (não faz parte da correção).
+
 ### Segurança do PostgreSQL de dev — instruções (2026-10-12)
 
 Esta sessão **não tem acesso ao painel EasyPanel nem SSH na VPS** `207.180.205.211` — só à conexão do banco pelo
