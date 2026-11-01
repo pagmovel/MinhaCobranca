@@ -239,8 +239,8 @@ class DescontoNaBaixaTest extends TestCase
         $this->assertSame(22281, $cobranca->valorPagoCentavos());
 
         $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
-        $this->assertSame(['pago_em' => '2026-10-20', 'desconto_centavos' => 1000], $auditoria->antes);
-        $this->assertSame(['pago_em' => '2026-10-25', 'desconto_centavos' => 2476], $auditoria->depois);
+        $this->assertSame(['pago_em' => '2026-10-20', 'desconto_centavos' => 1000, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0], $auditoria->antes);
+        $this->assertSame(['pago_em' => '2026-10-25', 'desconto_centavos' => 2476, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0], $auditoria->depois);
         $this->assertSame('Desconto combinado errado', $auditoria->motivo);
         $this->assertSame('Pagamento corrigido (antes: 20/10/2026, desconto de R$ 10,00 para R$ 24,76)', $auditoria->resumo);
     }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { nextTick, reactive, ref } from 'vue';
+import { nextTick, reactive } from 'vue';
 import {
     TEXTO_INTEGRAL,
     calcularBaixa,
@@ -8,123 +8,10 @@ import {
     camposDaRegra,
     dataDaBaixaEmLote,
     paraOForm,
+    pedidoDaCorrecao,
     previaDoLote,
-    usarDescontoDaBaixa,
     usarValoresDaBaixa,
 } from './usarDescontoDaBaixa.js';
-
-/** O que o `useForm` do Inertia oferece e a lógica usa: os dois campos, `errors` e `clearErrors`. */
-function criarForm(campos = {}) {
-    return reactive({
-        desconto_tipo: 'percentual',
-        desconto: '',
-        errors: {},
-        clearErrors(...nomes) {
-            nomes.forEach((nome) => delete this.errors[nome]);
-        },
-        ...campos,
-    });
-}
-
-test('o valor pago acompanha o desconto em % e em R$', async () => {
-    const form = criarForm();
-    const { valorPagoCentavos } = usarDescontoDaBaixa(form, () => 24757);
-
-    assert.equal(valorPagoCentavos.value, 24757);
-    form.desconto = '10';
-    assert.equal(valorPagoCentavos.value, 22281);
-    form.desconto_tipo = 'valor';
-    await nextTick();
-    form.desconto = '24,76';
-    assert.equal(valorPagoCentavos.value, 22281);
-});
-
-test('a vírgula no fim conta como o número antes dela (o valor pago não pisca)', () => {
-    const form = criarForm({ desconto: '12,' });
-    const { valorPagoCentavos } = usarDescontoDaBaixa(form, () => 24757);
-
-    form.desconto = '12';
-    const comNumero = valorPagoCentavos.value;
-    form.desconto = '12,';
-    assert.equal(valorPagoCentavos.value, comNumero);
-});
-
-test('desconto de 100% é integral e anuncia; cobrança de valor 0 não é', () => {
-    const valor = ref(24757);
-    const form = criarForm({ desconto: '100' });
-    const { descontoIntegral, anuncio } = usarDescontoDaBaixa(form, () => valor.value);
-
-    assert.equal(descontoIntegral.value, true);
-    assert.equal(anuncio.value, TEXTO_INTEGRAL);
-    valor.value = 0;
-    assert.equal(descontoIntegral.value, false);
-    assert.equal(anuncio.value, '');
-});
-
-test('em % o número trava em 100 e avisa; em R$ trava no valor da cobrança', async (t) => {
-    t.mock.timers.enable({ apis: ['setTimeout'] });
-    const form = criarForm();
-    const { aviso } = usarDescontoDaBaixa(form, () => 24757);
-
-    form.desconto = '150';
-    await nextTick();
-    assert.equal(form.desconto, '100');
-    assert.equal(aviso.value, 'Máximo: 100%');
-
-    form.desconto_tipo = 'valor';
-    await nextTick();
-    form.desconto = '300,00';
-    await nextTick();
-    assert.equal(form.desconto, '247,57');
-    assert.equal(aviso.value, 'Máximo: R$ 247,57');
-});
-
-test('dentro do limite o número fica como digitado, sem aviso', async () => {
-    const form = criarForm();
-    const { aviso } = usarDescontoDaBaixa(form, () => 24757);
-
-    form.desconto = '99,5';
-    await nextTick();
-    assert.equal(form.desconto, '99,5');
-    assert.equal(aviso.value, '');
-});
-
-test('trocar % ↔ R$ limpa o número e o aviso (10% não vira R$ 0,10)', async (t) => {
-    t.mock.timers.enable({ apis: ['setTimeout'] });
-    const form = criarForm();
-    const { aviso } = usarDescontoDaBaixa(form, () => 24757);
-
-    form.desconto = '150';
-    await nextTick();
-    assert.equal(aviso.value, 'Máximo: 100%');
-
-    form.desconto_tipo = 'valor';
-    await nextTick();
-    assert.equal(form.desconto, '');
-    assert.equal(aviso.value, '');
-});
-
-test('digitar limpa o erro que o servidor deu no desconto e no tipo', async () => {
-    const form = criarForm();
-    form.errors = { desconto: 'Desconto inválido.', desconto_tipo: 'Tipo de desconto inválido.', pago_em: 'x' };
-    const { erroDoDesconto } = usarDescontoDaBaixa(form, () => 24757);
-
-    assert.equal(erroDoDesconto.value, 'Desconto inválido.');
-    form.desconto = '5';
-    await nextTick();
-    assert.equal(erroDoDesconto.value, undefined);
-    assert.equal(form.errors.pago_em, 'x');
-});
-
-test('o valor da cobrança é lido na hora (a prop pode mudar)', () => {
-    const valor = ref(24757);
-    const form = criarForm({ desconto: '10' });
-    const { valorPagoCentavos } = usarDescontoDaBaixa(form, () => valor.value);
-
-    assert.equal(valorPagoCentavos.value, 22281);
-    valor.value = 10001;
-    assert.equal(valorPagoCentavos.value, 9001);
-});
 
 // Baixa com multa, juros e outros acréscimos (BaixaInline). Mesmos números do servidor (AcrescimosNaBaixaTest):
 // R$ 210,00 vencidos em 05/01/2026, contrato com desconto de 15%, multa de 2% e juros de 1% ao mês; em 01/11/2026 são 300 dias.
@@ -199,6 +86,20 @@ test('sem atraso multa, juros e outros valem zero, mesmo preenchidos', () => {
     assert.deepEqual(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, campos), {
         dias: 0, descontoCentavos: 3150, multaCentavos: 0, jurosCentavos: 0, outrosCentavos: 0, pagoCentavos: 17850,
     });
+});
+
+test('o desconto nunca passa do valor: R$ maior que a cobrança deixa o pago em zero, não negativo', () => {
+    const campos = { multa: vazio, juros: vazio, desconto: { tipo: 'valor', numero: '300,00' }, outros: '' };
+
+    assert.deepEqual(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, campos), {
+        dias: 0, descontoCentavos: 21000, multaCentavos: 0, jurosCentavos: 0, outrosCentavos: 0, pagoCentavos: 0,
+    });
+    // O desconto do contrato numa cobrança menor (R$ 100,00 com desconto de R$ 150,00) também fica no valor, com atraso ou não.
+    const comAtraso = calcularBaixa(10000, VENCIMENTO, HOJE, { ...campos, desconto: { tipo: 'valor', numero: '150,00' }, outros: '5,00' });
+    assert.deepEqual([comAtraso.descontoCentavos, comAtraso.pagoCentavos], [10000, 500]);
+    // Dentro do limite, nada muda.
+    assert.equal(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, { ...campos, desconto: { tipo: 'valor', numero: '210,00' } }).pagoCentavos, 0);
+    assert.equal(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, { ...campos, desconto: { tipo: 'valor', numero: '10,00' } }).pagoCentavos, 20000);
 });
 
 test('texto inválido ou vírgula no fim: o inválido não soma, a vírgula conta como o número antes dela', () => {
@@ -311,6 +212,79 @@ test('digitar limpa o erro do campo e do tipo; o erro de outro campo fica', () =
     limparErro('multa');
     assert.equal(erroDo('multa'), undefined);
     assert.equal(erroDo('juros'), 'x');
+});
+
+// Corrigir pagamento (Tarefa 5): o mesmo `usarValoresDaBaixa`, sem regra do contrato. O formulário abre com os valores gravados
+// (R$ 210,00 pagos em 01/11/2026 com multa R$ 4,20, juros R$ 21,00 e outros R$ 5,00): multa e outros em R$ nos campos; os juros
+// ficam em branco (o campo é "ao mês", o gravado é o total) e o gravado entra na conta. Trocar a data não recalcula nada.
+function criarFormDaCorrecao(pagoEm = HOJE) {
+    return reactive({
+        pago_em: pagoEm,
+        multa_tipo: 'valor', multa: '4,20',
+        juros_tipo: 'percentual', juros: '',
+        outros: '5,00',
+        desconto_tipo: 'valor', desconto: '',
+        errors: {},
+        clearErrors() {},
+    });
+}
+
+const correcao = (form) => usarValoresDaBaixa(form, {
+    valorCentavos: () => 21000,
+    vencimentoIso: () => VENCIMENTO,
+    regras: () => null,
+    jurosGravadoCentavos: () => 2100,
+});
+
+test('a correção abre com os gravados e o valor pago os soma', () => {
+    const { dias, valorPagoCentavos, calculados, etiqueta, diferenteDaRegra } = correcao(criarFormDaCorrecao());
+
+    assert.equal(dias.value, 300);
+    assert.equal(valorPagoCentavos.value, 21000 + 420 + 2100 + 500);
+    assert.deepEqual([calculados.value.multa, calculados.value.juros, calculados.value.outros], [420, 2100, 500]);
+    assert.equal(etiqueta('multa'), '');
+    assert.equal(diferenteDaRegra.value, false);
+});
+
+test('na correção, trocar a data não mexe nos campos nem nos gravados; sem atraso o valor pago deixa de somar os acréscimos', async () => {
+    const form = criarFormDaCorrecao();
+    const { dias, valorPagoCentavos } = correcao(form);
+
+    // Os juros gravados não são recalculados pelos dias (o servidor os mantém).
+    form.pago_em = '2026-02-01';
+    await nextTick();
+    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '', '5,00']);
+    assert.equal(valorPagoCentavos.value, 24020);
+
+    // O servidor zera multa, juros e outros sem atraso (o que está digitado fica na tela, mas não conta).
+    form.pago_em = VENCIMENTO;
+    await nextTick();
+    assert.equal(dias.value, 0);
+    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '', '5,00']);
+    assert.equal(valorPagoCentavos.value, 21000);
+});
+
+test('na correção, juros digitados (ao mês) substituem o gravado e seguem os dias; 0 tira os juros', () => {
+    const form = criarFormDaCorrecao();
+    const { valorPagoCentavos, calculados } = correcao(form);
+
+    form.juros_tipo = 'valor';
+    form.juros = '3,00';
+    assert.equal(calculados.value.juros, 3000);
+    assert.equal(valorPagoCentavos.value, 21000 + 420 + 3000 + 500);
+    form.juros = '0';
+    assert.equal(calculados.value.juros, 0);
+    assert.equal(valorPagoCentavos.value, 21000 + 420 + 500);
+});
+
+test('o pedido da correção só leva os juros quando o campo foi preenchido', () => {
+    const base = { pago_em: HOJE, multa_tipo: 'valor', multa: '4,20', outros: '5,00', desconto_tipo: 'valor', desconto: '', motivo: 'x', senha: 'y' };
+    const comJuros = { ...base, juros_tipo: 'valor', juros: '3,00' };
+
+    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: '' }), base);
+    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: ' ,' }), base);
+    assert.deepEqual(pedidoDaCorrecao(comJuros), comJuros);
+    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: '0' }), { ...base, juros_tipo: 'percentual', juros: '0' });
 });
 
 // Baixa em lote (Tarefa 4): os mesmos números de tests/Feature/Cobrancas/AcoesEmLoteTest.php, com o relógio em 01/11/2026.

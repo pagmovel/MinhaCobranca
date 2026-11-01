@@ -364,40 +364,52 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Vencimento prorrogado.');
     }
 
-    /** Baixa com a data ou o desconto errados: troca os dois (senha + motivo, registrado na auditoria). */
+    /**
+     * Baixa com a data, o desconto, a multa, os juros ou os outros acréscimos errados (senha + motivo, registrado na
+     * auditoria). Campo fora do pedido mantém o gravado e trocar a data não recalcula nada: corrige-se o que aconteceu de
+     * fato. Sem atraso na data nova, multa, juros e outros vão a zero (ver ValoresDaBaixa).
+     */
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {
-        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $registro = $request->user()->cobrancas()->with('contrato')->findOrFail($cobranca);
         $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']] + $this->confirmacao(), $this->mensagensDeConfirmacao());
 
         if ($registro->status !== StatusCobranca::Paga) {
             return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
         }
 
-        // Pedido sem os campos do desconto corrige só a data: o desconto atual fica (a tela sempre os manda).
-        $descontoDepois = $request->hasAny(['desconto', 'desconto_tipo'])
-            ? $this->descontoValidado($request, $registro->valor_centavos)
-            : $registro->desconto_centavos;
-        $antes = $registro->pago_em;
-        $descontoAntes = $registro->desconto_centavos;
+        $valores = ValoresDaBaixa::resolver(
+            $registro,
+            CarbonImmutable::parse($dados['pago_em']),
+            $request->validate(ValoresDaBaixa::regras(), ValoresDaBaixa::MENSAGENS),
+            ValoresDaBaixa::CORRECAO,
+        );
+        $antes = $this->valoresGravados($registro);
+        $dataAntes = $registro->pago_em;
 
-        DB::transaction(function () use ($registro, $request, $dados, $antes, $descontoAntes, $descontoDepois) {
+        DB::transaction(function () use ($registro, $request, $dados, $valores, $antes, $dataAntes) {
             $registro->pago_em = $dados['pago_em'];
-            $registro->desconto_centavos = $descontoDepois;
+            $registro->desconto_centavos = $valores['desconto_centavos'];
+            $registro->multa_centavos = $valores['multa_centavos'];
+            $registro->juros_centavos = $valores['juros_centavos'];
+            $registro->outros_centavos = $valores['outros_centavos'];
             $registro->save();
-            $resumo = 'Pagamento corrigido (antes: '.$antes->format('d/m/Y');
-            if ($descontoAntes !== $descontoDepois) {
-                $resumo .= ', desconto de R$ '.Dinheiro::formatar($descontoAntes).' para R$ '.Dinheiro::formatar($descontoDepois);
+            $depois = $this->valoresGravados($registro);
+
+            // O resumo cita só o que mudou.
+            $resumo = 'Pagamento corrigido (antes: '.$dataAntes->format('d/m/Y');
+            foreach (['desconto', 'multa', 'juros', 'outros'] as $nome) {
+                if ($antes["{$nome}_centavos"] !== $depois["{$nome}_centavos"]) {
+                    $resumo .= ", {$nome} de R$ ".Dinheiro::formatar($antes["{$nome}_centavos"]).' para R$ '.Dinheiro::formatar($depois["{$nome}_centavos"]);
+                }
             }
-            Auditoria::registrar($request, 'pagamento.corrigido', $registro, $resumo.')',
-                ['pago_em' => $antes->toDateString(), 'desconto_centavos' => $descontoAntes],
-                ['pago_em' => $registro->pago_em->toDateString(), 'desconto_centavos' => $descontoDepois], trim($dados['motivo']));
+            Auditoria::registrar($request, 'pagamento.corrigido', $registro, $resumo.')', $antes, $depois, trim($dados['motivo']));
         });
 
         return back()->with('sucesso', 'Pagamento corrigido. Se o recibo pago já foi enviado, envie de novo: ele sai com os dados novos.');
     }
 
-    /** Baixa na cobrança errada: volta a pendente (senha + motivo, registrado na auditoria). */
+    /** Baixa na cobrança errada: volta a pendente e zera desconto, multa, juros e outros (senha + motivo, registrado na auditoria). */
     public function desfazerBaixa(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
@@ -407,17 +419,16 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pagas têm a baixa desfeita.');
         }
 
-        $antes = $registro->pago_em;
-        $descontoAntes = $registro->desconto_centavos;
+        $antes = ['status' => 'paga', ...$this->valoresGravados($registro)];
+        $dataAntes = $registro->pago_em;
 
-        DB::transaction(function () use ($registro, $request, $dados, $antes, $descontoAntes) {
+        DB::transaction(function () use ($registro, $request, $dados, $antes, $dataAntes) {
             $registro->status = StatusCobranca::Pendente;
             $registro->pago_em = null;
-            $registro->desconto_centavos = 0;
+            $registro->desconto_centavos = $registro->multa_centavos = $registro->juros_centavos = $registro->outros_centavos = 0;
             $registro->save();
-            Auditoria::registrar($request, 'baixa.desfeita', $registro, 'Baixa desfeita (estava paga em '.$antes->format('d/m/Y').')',
-                ['status' => 'paga', 'pago_em' => $antes->toDateString(), 'desconto_centavos' => $descontoAntes],
-                ['status' => 'pendente', 'pago_em' => null, 'desconto_centavos' => 0], trim($dados['motivo']));
+            Auditoria::registrar($request, 'baixa.desfeita', $registro, 'Baixa desfeita (estava paga em '.$dataAntes->format('d/m/Y').')',
+                $antes, ['status' => 'pendente', ...$this->valoresGravados($registro)], trim($dados['motivo']));
         });
 
         return back()->with('sucesso', 'Baixa desfeita: a cobrança voltou a ficar em aberto.');
@@ -479,12 +490,20 @@ class CobrancaController extends Controller
         Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $valores['rotulo_desconto'], $emLote));
     }
 
-    /** Desconto da baixa em centavos, validado e conferido (0 ≤ desconto ≤ valor); sem desconto digitado, 0. */
-    private function descontoValidado(Request $request, int $valorCentavos): int
+    /**
+     * O que a baixa grava e a auditoria compara (`antes` e `depois`): a data e os quatro valores, em centavos.
+     *
+     * @return array{pago_em: ?string, desconto_centavos: int, multa_centavos: int, juros_centavos: int, outros_centavos: int}
+     */
+    private function valoresGravados(Cobranca $registro): array
     {
-        $dados = $request->validate(ValoresDaBaixa::regrasDoDesconto(), ValoresDaBaixa::MENSAGENS);
-
-        return ValoresDaBaixa::descontoDigitado($valorCentavos, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
+        return [
+            'pago_em' => $registro->pago_em?->toDateString(),
+            'desconto_centavos' => $registro->desconto_centavos,
+            'multa_centavos' => $registro->multa_centavos,
+            'juros_centavos' => $registro->juros_centavos,
+            'outros_centavos' => $registro->outros_centavos,
+        ];
     }
 
     /**

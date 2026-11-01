@@ -55,7 +55,11 @@ class AuditoriaTest extends TestCase
         ]], $this->registros());
         $auditoria = $this->usuario->auditorias()->sole();
         $this->assertSame(
-            [['pago_em' => '2026-06-17', 'desconto_centavos' => 0], ['pago_em' => '2026-05-17', 'desconto_centavos' => 0], '127.0.0.1'],
+            [
+                ['pago_em' => '2026-06-17', 'desconto_centavos' => 0, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0],
+                ['pago_em' => '2026-05-17', 'desconto_centavos' => 0, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0],
+                '127.0.0.1',
+            ],
             [$auditoria->antes, $auditoria->depois, $auditoria->ip],
         );
     }

@@ -214,7 +214,7 @@ usava); a trava e o aviso ficam porque `CorrecaoPagamentoInline` ainda os usa, e
 individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: digitação com a máscara, a trava e o aviso nos quatro campos, 390 px e 1280 px, a prévia com os totais e o aviso da data de vencimento
 (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
-### Tarefa 5 — Corrigir pagamento e desfazer baixa — **Estado: pendente**
+### Tarefa 5 — Corrigir pagamento e desfazer baixa — **Estado: testada**
 
 **Arquivos:** `CobrancaController::corrigirPagamento` e `desfazerBaixa`, `CorrecaoPagamentoInline.vue`,
 `Cobrancas/Index.vue`, `Cobranca::paraLista`, `tests/Feature/Cobrancas/AcrescimosNaBaixaTest.php`, `AuditoriaTest`.
@@ -222,15 +222,25 @@ individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: 
 **Interfaces:** consome `ValoresDaBaixa::resolver(…, 'correcao')`. `paraLista` ganha `multa_centavos`, `juros_centavos` e
 `outros_centavos`. Remover `descontoValidado` se não sobrar chamador.
 
-- [ ] **Passo 1: testes que falham:** `test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois`;
+- [x] **Passo 1: testes que falham:** `test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois`;
   `test_corrigir_sem_os_campos_mantem_o_gravado`; `test_corrigir_data_nao_recalcula`;
   `test_corrigir_para_data_sem_atraso_zera_acrescimos`; `test_corrigir_exige_senha_e_motivo`;
   `test_desfazer_zera_os_quatro_valores`.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** servidor; `antes`/`depois` de `pagamento.corrigido` e `baixa.desfeita` com os quatro valores.
-- [ ] **Passo 4:** tela com os campos, abrindo com os valores gravados em R$, e o valor pago novo.
-- [ ] **Passo 5:** testes + JS + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: corrigir pagamento muda multa, juros e outros; desfazer zera`.
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** servidor; `antes`/`depois` de `pagamento.corrigido` e `baixa.desfeita` com os quatro valores.
+- [x] **Passo 4:** tela com os campos, abrindo com os valores gravados em R$, e o valor pago novo.
+- [x] **Passo 5:** testes + JS + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: corrigir pagamento muda multa, juros e outros; desfazer zera`.
+
+**Registro (2026-11-01):** os testes do passo 1 estão em `AcrescimosNaBaixaTest` (mais `test_corrigir_acrescimo_invalido_da_erro_no_campo_e_nao_grava` e `test_lista_traz_multa_juros_e_outros_gravados`;
+suíte PHP de 805 para 813). `corrigirPagamento` valida `pago_em` + senha + motivo, confere a situação (só paga) e então `ValoresDaBaixa::resolver(..., 'correcao')`; `antes`/`depois` de
+`pagamento.corrigido` e de `baixa.desfeita` levam os quatro valores (`valoresGravados`), e o resumo cita só o que mudou (`desconto de R$ 0,00 para R$ 5,00, multa de ...`). `descontoValidado` saiu (sem chamador).
+JS: de 281 para 278 (saíram os 8 testes de `usarDescontoDaBaixa()`, entraram 1 do clamp e 4 da correção). **Desvios:** (1) R8 cumprido: `usarDescontoDaBaixa()` foi apagada, com seus testes e os imports sem uso
+(`travarDesconto`, `criarAvisoTemporario`, `formatarCentavos`); o arquivo `usarDescontoDaBaixa.js` segue com `calcularBaixa`, `previaDoLote` e `usarValoresDaBaixa`, então não foi apagado. (2) O clamp do desconto
+(`desconto ≤ valor`) foi para `calcularBaixa`; o de `previaDoLote` saiu. (3) **Juros na correção:** o juros digitado é sempre "ao mês" (o servidor multiplica pelos dias), mas o gravado é o total; abrir o campo com
+"21,00" e reenviar viraria R$ 210,00 em 300 dias. A tela abre os **juros em branco**, mostra o gravado ao lado ("= R$ 21,00") e **não envia o campo quando está em branco** (`pedidoDaCorrecao`): o servidor mantém
+o gravado (ausente). Digitar 0 tira os juros; digitar % ou R$ recalcula pelos dias. Multa, outros e desconto abrem com o gravado em R$ e seguem sempre no pedido. Sem mudar o `ValoresDaBaixa`. Falta conferir no
+navegador: digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento dos campos e o aviso de "sem atraso" (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
 ### Tarefa 6 — Lista e painel — **Estado: pendente**
 

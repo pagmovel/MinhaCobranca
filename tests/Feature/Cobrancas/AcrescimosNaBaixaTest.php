@@ -11,6 +11,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -364,6 +365,168 @@ class AcrescimosNaBaixaTest extends TestCase
         $this->assertCount(5, $this->getJson($endereco)->json('linhas'));
 
         $this->assertSame($comUma, $contar());
+    }
+
+    /**
+     * O cenário já pago em 01/11/2026 (300 dias de atraso), com multa R$ 4,20, juros R$ 21,00, outros R$ 5,00 e desconto
+     * `$desconto` gravados.
+     *
+     * @return array{0: User, 1: Cobranca}
+     */
+    private function cenarioPago(int $desconto = 0): array
+    {
+        [$usuario, $cobranca] = $this->cenario();
+        $cobranca->forceFill([
+            'status' => StatusCobranca::Paga, 'pago_em' => '2026-11-01',
+            'desconto_centavos' => $desconto, 'multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500,
+        ])->save();
+
+        return [$usuario, $cobranca];
+    }
+
+    private function corrigir(Cobranca $cobranca, array $campos): TestResponse
+    {
+        return $this->post("/cobrancas/{$cobranca->id}/corrigir-pagamento", array_merge(['senha' => 'password', 'motivo' => 'Valores combinados errados'], $campos));
+    }
+
+    public function test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago();
+
+        $this->corrigir($cobranca, [
+            'pago_em' => '2026-11-01',
+            'multa_tipo' => 'valor', 'multa' => '10,00',
+            'juros_tipo' => 'percentual', 'juros' => '2',
+            'outros' => '',
+            'desconto_tipo' => 'valor', 'desconto' => '5,00',
+        ])->assertSessionHasNoErrors()->assertSessionHas('sucesso');
+
+        $this->assertSame([500, 1000, 4200, 0], $this->gravados($cobranca));
+        $this->assertSame(25700, $cobranca->valorPagoCentavos());
+
+        $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
+        $this->assertSame(['pago_em' => '2026-11-01', 'desconto_centavos' => 0, 'multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500], $auditoria->antes);
+        $this->assertSame(['pago_em' => '2026-11-01', 'desconto_centavos' => 500, 'multa_centavos' => 1000, 'juros_centavos' => 4200, 'outros_centavos' => 0], $auditoria->depois);
+        $this->assertSame('Valores combinados errados', $auditoria->motivo);
+        $this->assertSame(
+            'Pagamento corrigido (antes: 01/11/2026, desconto de R$ 0,00 para R$ 5,00, multa de R$ 4,20 para R$ 10,00, juros de R$ 21,00 para R$ 42,00, outros de R$ 5,00 para R$ 0,00)',
+            $auditoria->resumo,
+        );
+    }
+
+    public function test_corrigir_sem_os_campos_mantem_o_gravado(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago(desconto: 300);
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01'])->assertSessionHasNoErrors();
+
+        $this->assertSame([300, 420, 2100, 500], $this->gravados($cobranca));
+        $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
+        $this->assertSame($auditoria->antes, $auditoria->depois);
+        $this->assertSame('Pagamento corrigido (antes: 01/11/2026)', $auditoria->resumo);
+
+        // Só o campo enviado muda; os que não vieram ficam como estão.
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'outros' => '1,00'])->assertSessionHasNoErrors();
+        $this->assertSame([300, 420, 2100, 100], $this->gravados($cobranca));
+    }
+
+    public function test_corrigir_data_nao_recalcula(): void
+    {
+        [, $cobranca] = $this->cenarioPago();
+
+        // 27 dias de atraso: a conta do contrato daria juros de R$ 1,89, mas o que se corrige é o que aconteceu de fato.
+        $this->corrigir($cobranca, ['pago_em' => '2026-02-01'])->assertSessionHasNoErrors();
+
+        $cobranca->refresh();
+        $this->assertSame('2026-02-01', $cobranca->pago_em->toDateString());
+        $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
+    }
+
+    public function test_corrigir_para_data_sem_atraso_zera_acrescimos(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago(desconto: 300);
+
+        $this->corrigir($cobranca, [
+            'pago_em' => '2026-01-05',
+            'multa_tipo' => 'percentual', 'multa' => '2',
+            'juros_tipo' => 'valor', 'juros' => '3,00',
+            'outros' => '5,00',
+        ])->assertSessionHasNoErrors();
+
+        // O desconto não é acréscimo: continua. Multa, juros e outros vão a zero, mesmo preenchidos.
+        $this->assertSame([300, 0, 0, 0], $this->gravados($cobranca));
+        $this->assertSame(20700, $cobranca->valorPagoCentavos());
+
+        $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
+        $this->assertSame(['pago_em' => '2026-01-05', 'desconto_centavos' => 300, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0], $auditoria->depois);
+        $this->assertSame(
+            'Pagamento corrigido (antes: 01/11/2026, multa de R$ 4,20 para R$ 0,00, juros de R$ 21,00 para R$ 0,00, outros de R$ 5,00 para R$ 0,00)',
+            $auditoria->resumo,
+        );
+    }
+
+    public function test_corrigir_exige_senha_e_motivo(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago();
+        $pedido = ['pago_em' => '2026-02-01', 'multa_tipo' => 'valor', 'multa' => '10,00', 'juros_tipo' => 'valor', 'juros' => '1,00', 'outros' => '2,00'];
+
+        $this->corrigir($cobranca, $pedido + ['senha' => 'errada'])->assertSessionHasErrors(['senha' => 'Senha incorreta.']);
+        $this->corrigir($cobranca, $pedido + ['motivo' => ' '])->assertSessionHasErrors('motivo');
+
+        $cobranca->refresh();
+        $this->assertSame('2026-11-01', $cobranca->pago_em->toDateString());
+        $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
+        $this->assertSame(0, $usuario->auditorias()->count());
+    }
+
+    public function test_corrigir_acrescimo_invalido_da_erro_no_campo_e_nao_grava(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago();
+        $data = ['pago_em' => '2026-02-01'];
+
+        $this->corrigir($cobranca, $data + ['multa_tipo' => 'percentual', 'multa' => '100,01'])->assertSessionHasErrors(['multa' => self::PERCENTUAL_INVALIDO]);
+        $this->corrigir($cobranca, $data + ['juros_tipo' => 'valor', 'juros' => '100.000.000,00'])->assertSessionHasErrors(['juros' => self::REAIS_INVALIDO]);
+        $this->corrigir($cobranca, $data + ['outros' => 'abc'])->assertSessionHasErrors(['outros' => self::REAIS_INVALIDO]);
+        $this->corrigir($cobranca, $data + ['multa' => '1'])->assertSessionHasErrors(['multa_tipo' => 'Escolha se a multa é em % ou em R$.']);
+
+        $cobranca->refresh();
+        $this->assertSame('2026-11-01', $cobranca->pago_em->toDateString());
+        $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
+        $this->assertSame(0, $usuario->auditorias()->count());
+    }
+
+    public function test_desfazer_zera_os_quatro_valores(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago(desconto: 300);
+
+        $this->post("/cobrancas/{$cobranca->id}/desfazer-baixa", ['senha' => 'password', 'motivo' => 'Baixa na cobrança errada'])
+            ->assertSessionHasNoErrors();
+
+        $cobranca->refresh();
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->status);
+        $this->assertNull($cobranca->pago_em);
+        $this->assertSame([0, 0, 0, 0], $this->gravados($cobranca));
+        $this->assertSame(21000, $cobranca->valorPagoCentavos());
+
+        $auditoria = $usuario->auditorias()->where('acao', 'baixa.desfeita')->sole();
+        $this->assertSame(
+            ['status' => 'paga', 'pago_em' => '2026-11-01', 'desconto_centavos' => 300, 'multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500],
+            $auditoria->antes,
+        );
+        $this->assertSame(
+            ['status' => 'pendente', 'pago_em' => null, 'desconto_centavos' => 0, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0],
+            $auditoria->depois,
+        );
+    }
+
+    public function test_lista_traz_multa_juros_e_outros_gravados(): void
+    {
+        [, $cobranca] = $this->cenarioPago(desconto: 300);
+
+        $linha = $this->getJson('/cobrancas/dados?status=paga&mes=2026-01')->assertOk()->json('linhas.0');
+
+        $this->assertSame($cobranca->id, $linha['id']);
+        $this->assertSame([300, 420, 2100, 500], [$linha['desconto_centavos'], $linha['multa_centavos'], $linha['juros_centavos'], $linha['outros_centavos']]);
     }
 
     public function test_resolver_no_lote_segue_a_tabela_da_spec(): void

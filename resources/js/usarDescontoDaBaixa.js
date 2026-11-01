@@ -1,49 +1,12 @@
 import { computed, watch } from 'vue';
-import { criarAvisoTemporario } from './avisoTemporario.js';
 import { diasDeAtraso, entradaDaRegra, jurosEmCentavos, multaEmCentavos, regraDaEntrada, regraDoCampo } from './condicoes.js';
-import { aparar, descontoEmCentavos, semSeparadorFinal, travarDesconto } from './desconto.js';
-import { formatarCentavos } from './itens.js';
+import { aparar, descontoEmCentavos, semSeparadorFinal } from './desconto.js';
 
 export const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
 
-/**
- * Lógica do campo de desconto da correção do pagamento (CorrecaoPagamentoInline) sobre um `useForm` com `desconto_tipo` e
- * `desconto`: valor pago ao vivo, trava em 100%, trocar % ↔ R$ limpa o número, aviso que some. `valorCentavos` é uma função
- * (a prop pode mudar). A trava roda num `watch` do número, não num `@input`: a ordem entre `v-model` e `v-mascara` mudaria o
- * texto que o `@input` enxerga.
- * A BaixaInline e a BaixaEmLote não usam esta função: o `CampoValorOuPercentual` já trava e avisa (a trava não roda duas
- * vezes). Esta sai quando a correção também adotar o componente.
- */
-export function usarDescontoDaBaixa(form, valorCentavos) {
-    const emReais = computed(() => form.desconto_tipo === 'valor');
-    // A vírgula no fim ("12,") é digitação em curso: conta como o número antes dela, senão o valor pago pisca.
-    const descontoCentavos = computed(() => descontoEmCentavos(valorCentavos(), form.desconto_tipo, semSeparadorFinal(form.desconto)) ?? 0);
-    const valorPagoCentavos = computed(() => valorCentavos() - descontoCentavos.value);
-    const descontoIntegral = computed(() => valorCentavos() > 0 && descontoCentavos.value === valorCentavos());
-    const { aviso, mostrar, limpar } = criarAvisoTemporario();
-    const anuncio = computed(() => aviso.value || (descontoIntegral.value ? TEXTO_INTEGRAL : ''));
-    const erroDoDesconto = computed(() => form.errors.desconto || form.errors.desconto_tipo);
-
-    // Trocar % ↔ R$ limpa o número: 10% não pode virar R$ 0,10.
-    watch(() => form.desconto_tipo, () => {
-        limpar();
-        form.desconto = '';
-    });
-
-    watch(() => form.desconto, () => {
-        form.clearErrors('desconto', 'desconto_tipo');
-        const { entrada, travou } = travarDesconto(valorCentavos(), form.desconto_tipo, form.desconto);
-        if (travou) {
-            form.desconto = entrada;
-            mostrar(emReais.value ? `Máximo: R$ ${formatarCentavos(valorCentavos())}` : 'Máximo: 100%');
-        }
-    });
-
-    return { emReais, valorPagoCentavos, descontoIntegral, aviso, anuncio, erroDoDesconto };
-}
-
-// Baixa individual com multa, juros e outros acréscimos (BaixaInline). A trava e o aviso de máximo ficam no
-// CampoValorOuPercentual; aqui só a conta, a regra do contrato e o que muda quando a data muda.
+// Baixa individual (BaixaInline) e correção do pagamento (CorrecaoPagamentoInline) com multa, juros e outros acréscimos.
+// A trava e o aviso de máximo ficam no CampoValorOuPercentual; aqui só a conta, a regra do contrato e o que muda quando a
+// data muda.
 
 const NOMES = ['multa', 'juros', 'desconto'];
 const SEM_REGRA = { tipo: 'percentual', numero: '' };
@@ -83,12 +46,13 @@ export const camposAoTrocarAData = (atuais, anteriores, novos) => Object.fromEnt
 /**
  * A conta da baixa com o que está nos campos (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros` em R$), pelas
  * mesmas regras do servidor. Texto inválido vale 0; a vírgula no fim ("12,") conta como o número antes dela. Sem atraso,
- * multa, juros e outros valem 0.
+ * multa, juros e outros valem 0. O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como
+ * no servidor), então o valor pago não fica negativo.
  */
 export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos) {
     const dias = diasDeAtraso(vencimentoIso, dataIso);
     const regra = (nome) => regraDoCampo(campos[nome].tipo, campos[nome].numero);
-    const descontoCentavos = descontoEmCentavos(valorCentavos, campos.desconto.tipo, semSeparadorFinal(campos.desconto.numero)) ?? 0;
+    const descontoCentavos = Math.min(valorCentavos, descontoEmCentavos(valorCentavos, campos.desconto.tipo, semSeparadorFinal(campos.desconto.numero)) ?? 0);
     const multaCentavos = dias > 0 ? multaEmCentavos(valorCentavos, regra('multa')?.tipo, regra('multa')?.valor) : 0;
     const jurosCentavos = dias > 0 ? jurosEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor, dias) : 0;
     const outrosCentavos = dias > 0 ? (regraDaEntrada('valor', semSeparadorFinal(campos.outros)) ?? 0) : 0;
@@ -125,12 +89,9 @@ export function previaDoLote(linhas, datas, campos) {
         const doContrato = camposDaRegra(vencimentoIso, datas[i], regras);
         const usados = { outros: campos.outros };
         NOMES.forEach((nome) => { usados[nome] = emBranco(campos[nome].numero) ? doContrato[nome] : campos[nome]; });
-        const baixa = calcularBaixa(valorCentavos, vencimentoIso, datas[i], usados);
-        // O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como no servidor).
-        const descontoCentavos = Math.min(valorCentavos, baixa.descontoCentavos);
-        const acrescimosCentavos = baixa.multaCentavos + baixa.jurosCentavos + baixa.outrosCentavos;
+        const { descontoCentavos, multaCentavos, jurosCentavos, outrosCentavos, pagoCentavos } = calcularBaixa(valorCentavos, vencimentoIso, datas[i], usados);
 
-        return { valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos: valorCentavos - descontoCentavos + acrescimosCentavos };
+        return { valorCentavos, acrescimosCentavos: multaCentavos + jurosCentavos + outrosCentavos, descontoCentavos, pagoCentavos };
     });
     const somar = (campo) => calculadas.reduce((total, linha) => total + linha[campo], 0);
 
@@ -141,15 +102,25 @@ export function previaDoLote(linhas, datas, campos) {
 }
 
 /**
- * Lógica dos campos da BaixaInline sobre um `useForm` com `pago_em`, os sete campos da baixa (`multa_tipo`, `multa`,
- * `juros_tipo`, `juros`, `outros`, `desconto_tipo`, `desconto`) e `errors`. O formulário abre com `paraOForm(camposDaRegra(...))`.
- * Trocar a data recalcula só os campos que ainda são os da regra; `recalcular` devolve todos à regra.
- * `valorCentavos`, `vencimentoIso` e `regras` são funções (as props podem mudar).
+ * Lógica dos campos da BaixaInline e da CorrecaoPagamentoInline sobre um `useForm` com `pago_em`, os sete campos da baixa
+ * (`multa_tipo`, `multa`, `juros_tipo`, `juros`, `outros`, `desconto_tipo`, `desconto`) e `errors`. A baixa abre com
+ * `paraOForm(camposDaRegra(...))`; trocar a data recalcula só os campos que ainda são os da regra e `recalcular` devolve todos
+ * à regra. A correção passa `regras: () => null` (corrige-se o que aconteceu, não há regra a seguir: trocar a data não mexe
+ * nos campos) e `jurosGravadoCentavos`: o juros gravado não volta ao campo, que é "ao mês", então com o campo em branco o
+ * servidor o mantém (a tela não o envia, ver `pedidoDaCorrecao`) e a conta o usa enquanto houver atraso.
+ * `valorCentavos`, `vencimentoIso`, `regras` e `jurosGravadoCentavos` são funções (as props podem mudar).
  */
-export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras }) {
+export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras, jurosGravadoCentavos = () => 0 }) {
     const daRegra = (dataIso) => camposDaRegra(vencimentoIso(), dataIso, regras());
     const doDia = computed(() => daRegra(form.pago_em));
-    const baixa = computed(() => calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, camposDoForm(form)));
+    const baixa = computed(() => {
+        const conta = calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, camposDoForm(form));
+        const gravado = jurosGravadoCentavos();
+
+        return gravado > 0 && conta.dias > 0 && emBranco(form.juros)
+            ? { ...conta, jurosCentavos: gravado, pagoCentavos: conta.pagoCentavos + gravado }
+            : conta;
+    });
     const temRegra = computed(() => regras() != null);
     const diferenteDaRegra = computed(() => temRegra.value && visiveis(baixa.value.dias).some((nome) => !igual(doForm(form)[nome], doDia.value[nome])));
     const descontoIntegral = computed(() => valorCentavos() > 0 && baixa.value.pagoCentavos === 0);
@@ -162,7 +133,9 @@ export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras 
     }));
 
     watch(() => form.pago_em, (nova, anterior) => {
-        Object.assign(form, paraOForm(camposAoTrocarAData(doForm(form), daRegra(anterior), daRegra(nova))));
+        if (temRegra.value) {
+            Object.assign(form, paraOForm(camposAoTrocarAData(doForm(form), daRegra(anterior), daRegra(nova))));
+        }
     });
 
     return {
@@ -179,4 +152,18 @@ export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras 
         erroDo: (nome) => form.errors[nome] || form.errors[`${nome}_tipo`],
         limparErro: (nome) => form.clearErrors(nome, `${nome}_tipo`),
     };
+}
+
+/**
+ * O pedido da correção do pagamento: o formulário inteiro, menos os juros quando o campo está em branco. Os juros digitados
+ * são "ao mês" (o servidor os multiplica pelos dias), então o gravado não volta ao campo; sem o campo no pedido o servidor
+ * mantém o gravado, e em branco valeria "sem juros". Para tirar os juros, digita-se 0.
+ */
+export function pedidoDaCorrecao(dados) {
+    if (!emBranco(dados.juros)) {
+        return dados;
+    }
+    const { juros: _juros, juros_tipo: _jurosTipo, ...pedido } = dados;
+
+    return pedido;
 }
