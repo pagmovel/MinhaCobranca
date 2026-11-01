@@ -304,4 +304,6 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 
 ## Registro de execução
 
-(preenchido durante a execução)
+- 2026-11-01: spec e plano aprovados pelo Marcos. Execução por subagentes, com as regras globais de subagentes (context-mode,
+  ponytail lite, modelo informado e nunca Opus nem Fable, sem acesso à VPS). Implementação ainda não iniciada: depende do merge da
+  Fase 26.
