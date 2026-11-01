@@ -182,7 +182,7 @@ aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `Corr
 `CampoValorOuPercentual` e apagam a função); a `BaixaInline` já não a usa, então a trava não roda duas vezes. Falta conferir no navegador (390 px e
 1280 px, digitação com a máscara, "Recalcular", o valor calculado embaixo de cada campo): fica para a Tarefa 10.
 
-### Tarefa 4 — Baixa em lote — **Estado: pendente**
+### Tarefa 4 — Baixa em lote — **Estado: testada**
 
 **Arquivos:** `CobrancaController::pagarEmLote` e `conferirDescontoDoLote`, `BaixaEmLote.vue`, `resources/js/desconto.js`
 (`previaDoLote`), `tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
@@ -191,18 +191,28 @@ aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `Corr
 (`{valorCentavos, vencimentoIso, regras}`), a data de cada uma e os campos do topo, e devolve por linha
 `{valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos}` e os totais.
 
-- [ ] **Passo 1: testes que falham:** `test_em_branco_usa_o_contrato_de_cada_cobranca` (dois contratos com multas diferentes,
+- [x] **Passo 1: testes que falham:** `test_em_branco_usa_o_contrato_de_cada_cobranca` (dois contratos com multas diferentes,
   clientes diferentes); `test_preenchido_vale_para_todas`; `test_percentual_calculado_por_cobranca_e_reais_igual_em_cada`;
   `test_zero_zera_em_todas`; `test_so_cobranca_em_atraso_recebe_acrescimo`; `test_modo_vencimento_nao_gera_acrescimo`
   (ponto 5); `test_modo_vencimento_a_vencer_recebe_desconto_do_contrato` (ponto 5);
   `test_multa_invalida_recusa_o_lote_sem_gravar_nada`; `test_lote_sem_regra_fica_igual` (mesmos valores de antes);
   auditoria com o texto da restrição global em cada cobrança. JS: `previaDoLote` com o mesmo exemplo do PHP, soma igual.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** servidor. Resolver todas as cobranças **antes** da transação, como o desconto já faz: recusa não grava nada.
-- [ ] **Passo 4:** `BaixaEmLote.vue` conforme spec §2, com `CampoValorOuPercentual`, ajuda e aviso exatos da spec, e a prévia com
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** servidor. Resolver todas as cobranças **antes** da transação, como o desconto já faz: recusa não grava nada.
+- [x] **Passo 4:** `BaixaEmLote.vue` conforme spec §2, com `CampoValorOuPercentual`, ajuda e aviso exatos da spec, e a prévia com
   Vencimento, Valor, Acréscimos, Desconto e Pago. Em branco é diferente de zero, inclusive no envio.
-- [ ] **Passo 5:** testes + JS + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: lote aplica o contrato de cada cobrança e aceita valores para todas`.
+- [x] **Passo 5:** testes + JS + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: lote aplica o contrato de cada cobrança e aceita valores para todas`.
+
+**Registro (2026-11-01):** os testes do passo 1 estão em `AcoesEmLoteTest` (43 no arquivo; `em_branco` roda com o campo ausente e com o campo vazio, e `multa_invalida` com 9 entradas, nas duas datas),
+mais `test_desconto_do_contrato_em_reais_acima_do_valor_fica_no_valor` e `test_soma_gravada_do_lote_bate_com_a_previa_da_tela`; o JS tem 12 testes novos de `previaDoLote` e `dataDaBaixaEmLote`
+com os mesmos números (R$ 210,00 e R$ 100,00 vencidos em 05/01/2026, relógio em 01/11/2026, soma paga R$ 548,70). `pagarEmLote` conferiu o limite do desconto em R$ pela menor
+(`conferirDescontoDoLote`, como antes) e resolveu todas as cobranças (`ValoresDaBaixa::resolver`, modo `lote`) **antes** da transação; a gravação e a auditoria saíram para `registrarBaixa`,
+que a baixa individual também usa. **Desvios:** (1) `previaDoLote` mora em `usarDescontoDaBaixa.js` e não em `desconto.js`, porque precisa de `camposDaRegra` e `calcularBaixa` e `condicoes.js` já
+importa `desconto.js` (importação circular); `desconto.js` perdeu a versão antiga e `menorValor` ficou. (2) R8: do `usarDescontoDaBaixa()` saiu só o `complementoDoMaximo` (único pedaço que só o lote
+usava); a trava e o aviso ficam porque `CorrecaoPagamentoInline` ainda os usa, e a Tarefa 5 apaga a função. (3) A auditoria do lote com acréscimo começa por "Baixa registrada" (texto da spec, igual ao
+individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: digitação com a máscara, a trava e o aviso nos quatro campos, 390 px e 1280 px, a prévia com os totais e o aviso da data de vencimento
+(a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
 ### Tarefa 5 — Corrigir pagamento e desfazer baixa — **Estado: pendente**
 

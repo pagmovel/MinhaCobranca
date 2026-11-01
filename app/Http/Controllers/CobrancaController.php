@@ -19,6 +19,7 @@ use App\Support\Desconto;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -243,37 +244,35 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Cobrança cancelada. O recibo passa a sair como cancelado.');
     }
 
-    /** T17.19: baixa de várias cobranças de uma vez (prévia fica na tela, aqui só executa). */
+    /**
+     * T17.19: baixa de várias cobranças de uma vez (prévia fica na tela, aqui só executa). Fase 27: desconto, multa, juros e
+     * outros em branco → cada cobrança usa o próprio contrato; preenchido (inclusive 0) → vale para todas (ver ValoresDaBaixa).
+     */
     public function pagarEmLote(Request $request): RedirectResponse
     {
         $dados = $request->validate([
             'ids' => ['required', 'array', 'max:200'],
             'ids.*' => ['integer'],
             'modo' => ['required', Rule::in(['vencimento', 'hoje'])],
-            ...ValoresDaBaixa::regrasDoDesconto(),
+            ...ValoresDaBaixa::regras(),
         ], ValoresDaBaixa::MENSAGENS);
 
         $hoje = CarbonImmutable::today();
-        $tipo = $dados['desconto_tipo'] ?? Desconto::PERCENTUAL;
-        $entrada = $dados['desconto'] ?? null;
         $pedidas = count($dados['ids']);
-        $cobrancas = $request->user()->cobrancas()->whereIn('id', $dados['ids'])->where('status', StatusCobranca::Pendente)->get();
+        $cobrancas = $request->user()->cobrancas()->with('contrato')->whereIn('id', $dados['ids'])->where('status', StatusCobranca::Pendente)->get();
 
         // Antes de gravar qualquer uma: lote recusado não baixa nada.
-        $this->conferirDescontoDoLote($cobrancas, $tipo, $entrada);
+        $this->conferirDescontoDoLote($cobrancas, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
+        $baixas = $cobrancas->map(function (Cobranca $registro) use ($dados, $hoje) {
+            // "Usar o vencimento": a que ainda não venceu é baixada hoje (nunca no futuro) e fica com o desconto do contrato.
+            $pagoEm = $dados['modo'] === 'hoje' ? $hoje : $registro->vencimento->min($hoje);
 
-        DB::transaction(function () use ($cobrancas, $dados, $hoje, $tipo, $entrada, $request) {
-            foreach ($cobrancas as $registro) {
-                $pagoEm = $dados['modo'] === 'hoje' ? $hoje : $registro->vencimento->min($hoje);
-                $registro->status = StatusCobranca::Paga;
-                $registro->pago_em = $pagoEm;
-                $registro->desconto_centavos = Desconto::centavos($registro->valor_centavos, $tipo, $entrada);
-                $registro->save();
-                Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa(
-                    $registro,
-                    Desconto::rotulo($registro->valor_centavos, $registro->desconto_centavos, $tipo, $entrada),
-                    emLote: true,
-                ));
+            return [$registro, $pagoEm, ValoresDaBaixa::resolver($registro, $pagoEm, $dados, ValoresDaBaixa::LOTE)];
+        });
+
+        DB::transaction(function () use ($baixas, $request) {
+            foreach ($baixas as [$registro, $pagoEm, $valores]) {
+                $this->registrarBaixa($registro, $pagoEm, $valores, $request, emLote: true);
             }
         });
 
@@ -458,18 +457,26 @@ class CobrancaController extends Controller
             ValoresDaBaixa::INDIVIDUAL,
         );
 
-        DB::transaction(function () use ($registro, $dados, $valores, $request) {
-            $registro->status = StatusCobranca::Paga;
-            $registro->pago_em = $dados['pago_em'];
-            $registro->desconto_centavos = $valores['desconto_centavos'];
-            $registro->multa_centavos = $valores['multa_centavos'];
-            $registro->juros_centavos = $valores['juros_centavos'];
-            $registro->outros_centavos = $valores['outros_centavos'];
-            $registro->save();
-            Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $valores['rotulo_desconto']));
-        });
+        DB::transaction(fn () => $this->registrarBaixa($registro, $dados['pago_em'], $valores, $request));
 
         return back()->with('sucesso', 'Baixa registrada.');
+    }
+
+    /**
+     * Grava a baixa de uma cobrança (individual ou do lote) e a auditoria. Quem chama abre a transação.
+     *
+     * @param  array{desconto_centavos: int, multa_centavos: int, juros_centavos: int, outros_centavos: int, rotulo_desconto: string}  $valores
+     */
+    private function registrarBaixa(Cobranca $registro, CarbonInterface|string $pagoEm, array $valores, Request $request, bool $emLote = false): void
+    {
+        $registro->status = StatusCobranca::Paga;
+        $registro->pago_em = $pagoEm;
+        $registro->desconto_centavos = $valores['desconto_centavos'];
+        $registro->multa_centavos = $valores['multa_centavos'];
+        $registro->juros_centavos = $valores['juros_centavos'];
+        $registro->outros_centavos = $valores['outros_centavos'];
+        $registro->save();
+        Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $valores['rotulo_desconto'], $emLote));
     }
 
     /** Desconto da baixa em centavos, validado e conferido (0 ≤ desconto ≤ valor); sem desconto digitado, 0. */
@@ -483,7 +490,8 @@ class CobrancaController extends Controller
     /**
      * Texto da auditoria da baixa (individual ou em lote). Sem acréscimos, o da Fase 26: sem desconto o de sempre, com
      * desconto mostra o desconto e o valor pago. Com multa, juros ou outros acréscimos, mostra só os que existem e sempre o
-     * desconto, mesmo R$ 0,00. `$rotuloDoDesconto` é o texto do desconto ("10% = R$ 24,76").
+     * desconto, mesmo R$ 0,00, com o mesmo texto da baixa individual também no lote (spec §1). `$rotuloDoDesconto` é o texto
+     * do desconto ("10% = R$ 24,76").
      */
     private function resumoDaBaixa(Cobranca $registro, string $rotuloDoDesconto, bool $emLote = false): string
     {
@@ -498,7 +506,7 @@ class CobrancaController extends Controller
                 ->map(fn (int $centavos, string $nome) => "{$nome} R$ ".Dinheiro::formatar($centavos))
                 ->implode(', ');
 
-            return "{$titulo} ({$valor}, {$acrescimos}, desconto {$rotuloDoDesconto}, pago {$pago}, em {$pagoEm})";
+            return "Baixa registrada ({$valor}, {$acrescimos}, desconto {$rotuloDoDesconto}, pago {$pago}, em {$pagoEm})";
         }
 
         if ($registro->desconto_centavos === 0) {

@@ -6,7 +6,9 @@ import {
     calcularBaixa,
     camposAoTrocarAData,
     camposDaRegra,
+    dataDaBaixaEmLote,
     paraOForm,
+    previaDoLote,
     usarDescontoDaBaixa,
     usarValoresDaBaixa,
 } from './usarDescontoDaBaixa.js';
@@ -75,25 +77,6 @@ test('em % o número trava em 100 e avisa; em R$ trava no valor da cobrança', a
     await nextTick();
     assert.equal(form.desconto, '247,57');
     assert.equal(aviso.value, 'Máximo: R$ 247,57');
-});
-
-// Lote: o valor de referência é o da menor cobrança e o aviso diz isso.
-test('com o complemento, o aviso do máximo em R$ cita a menor cobrança; em % continua igual', async (t) => {
-    t.mock.timers.enable({ apis: ['setTimeout'] });
-    const form = criarForm({ desconto_tipo: 'valor' });
-    const { aviso } = usarDescontoDaBaixa(form, () => 10001, { complementoDoMaximo: ' (valor da menor cobrança)' });
-
-    form.desconto = '150,00';
-    await nextTick();
-    assert.equal(form.desconto, '100,01');
-    assert.equal(aviso.value, 'Máximo: R$ 100,01 (valor da menor cobrança)');
-
-    form.desconto_tipo = 'percentual';
-    await nextTick();
-    form.desconto = '150';
-    await nextTick();
-    assert.equal(form.desconto, '100');
-    assert.equal(aviso.value, 'Máximo: 100%');
 });
 
 test('dentro do limite o número fica como digitado, sem aviso', async () => {
@@ -328,4 +311,116 @@ test('digitar limpa o erro do campo e do tipo; o erro de outro campo fica', () =
     limparErro('multa');
     assert.equal(erroDo('multa'), undefined);
     assert.equal(erroDo('juros'), 'x');
+});
+
+// Baixa em lote (Tarefa 4): os mesmos números de tests/Feature/Cobrancas/AcoesEmLoteTest.php, com o relógio em 01/11/2026.
+// A (R$ 210,00, contrato 15% / multa 2% / juros 1%) e B (R$ 100,00, multa R$ 5,00 / juros R$ 3,00 ao mês) venceram em 05/01/2026
+// (300 dias); C é do contrato A e vence em 05/12/2026; D não tem contrato.
+const REGRAS_B = { desconto: null, multa: { tipo: 'valor', valor: 500 }, juros: { tipo: 'valor', valor: 300 } };
+const linha = (valorCentavos, vencimentoIso, regras) => ({ valorCentavos, vencimentoIso, regras });
+const A = linha(21000, VENCIMENTO, REGRAS);
+const B = linha(10000, VENCIMENTO, REGRAS_B);
+const C = linha(21000, '2026-12-05', REGRAS);
+const D = linha(5000, VENCIMENTO, null);
+const hoje = (linhas) => linhas.map(() => HOJE);
+const branco = { desconto: vazio, multa: vazio, juros: vazio, outros: '' };
+const pt = (numero) => ({ tipo: 'percentual', numero });
+const rs = (numero) => ({ tipo: 'valor', numero });
+const prever = (linhas, campos, datas = hoje(linhas)) => previaDoLote(linhas, datas, campos);
+const resumo = (linhaDaPrevia) => [linhaDaPrevia.descontoCentavos, linhaDaPrevia.acrescimosCentavos, linhaDaPrevia.pagoCentavos];
+
+test('lote em branco: cada cobrança usa o próprio contrato, e os totais somam as linhas', () => {
+    assert.deepEqual(prever([A, B, C], branco), {
+        linhas: [
+            { valorCentavos: 21000, acrescimosCentavos: 2520, descontoCentavos: 0, pagoCentavos: 23520 },
+            { valorCentavos: 10000, acrescimosCentavos: 3500, descontoCentavos: 0, pagoCentavos: 13500 },
+            // C ainda não venceu: sem multa nem juros, e recebe o desconto de 15% do contrato.
+            { valorCentavos: 21000, acrescimosCentavos: 0, descontoCentavos: 3150, pagoCentavos: 17850 },
+        ],
+        totais: { valorCentavos: 52000, acrescimosCentavos: 6020, descontoCentavos: 3150, pagoCentavos: 54870 },
+    });
+});
+
+test('lote preenchido: o digitado vale para todas, até para a que não tem contrato', () => {
+    const campos = { desconto: pt('10'), multa: pt('3'), juros: rs('1,00'), outros: '5,00' };
+    const { linhas } = prever([A, B, D], campos);
+
+    assert.deepEqual(linhas.map(resumo), [[2100, 2130, 21030], [1000, 1800, 10800], [500, 1650, 6150]]);
+});
+
+test('lote: percentual é calculado em cada cobrança e R$ é o mesmo valor em todas', () => {
+    const duas = [linha(10001, VENCIMENTO, null), linha(24757, VENCIMENTO, null)];
+
+    assert.deepEqual(prever(duas, { ...branco, multa: pt('10'), juros: pt('1') }).linhas.map(resumo), [[0, 2000, 12001], [0, 4952, 29709]]);
+    assert.deepEqual(prever(duas, { ...branco, multa: rs('5,00') }).linhas.map(resumo), [[0, 500, 10501], [0, 500, 25257]]);
+    assert.equal(prever(duas, { ...branco, multa: pt('10') }).totais.acrescimosCentavos, 3476);
+});
+
+test('lote: 0 digitado zera a regra do contrato em todas; em branco (ou só espaço) não', () => {
+    const zero = { desconto: pt('0'), multa: pt('0'), juros: rs('0'), outros: '0' };
+
+    assert.deepEqual(prever([A, C], zero).linhas.map(resumo), [[0, 0, 21000], [0, 0, 21000]]);
+    assert.deepEqual(prever([C], { ...branco, desconto: pt('  ') }).linhas.map(resumo), [[3150, 0, 17850]]);
+    assert.deepEqual(prever([C], { ...branco, desconto: pt('') }).linhas.map(resumo), [[3150, 0, 17850]]);
+});
+
+test('lote: só a cobrança em atraso na data recebe multa, juros e outros', () => {
+    const campos = { desconto: vazio, multa: rs('5,00'), juros: rs('3,00'), outros: '5,00' };
+    const venceHoje = linha(21000, HOJE, null);
+    const aVencer = linha(21000, '2026-12-05', null);
+
+    assert.deepEqual(prever([D, venceHoje, aVencer], campos).linhas.map(resumo), [[0, 4000, 9000], [0, 0, 21000], [0, 0, 21000]]);
+});
+
+test('lote: a data de cada cobrança é a do vencimento, ou hoje para a que ainda não venceu (nunca no futuro)', () => {
+    assert.equal(dataDaBaixaEmLote('vencimento', VENCIMENTO, HOJE), VENCIMENTO);
+    assert.equal(dataDaBaixaEmLote('vencimento', '2026-12-05', HOJE), HOJE);
+    assert.equal(dataDaBaixaEmLote('vencimento', HOJE, HOJE), HOJE);
+    assert.equal(dataDaBaixaEmLote('hoje', VENCIMENTO, HOJE), HOJE);
+    assert.equal(dataDaBaixaEmLote('hoje', '2026-12-05', HOJE), HOJE);
+});
+
+test('lote com a data de vencimento: sem multa nem juros (nem os digitados), e o desconto do contrato vale', () => {
+    const datas = [A, B, C].map((cobranca) => dataDaBaixaEmLote('vencimento', cobranca.vencimentoIso, HOJE));
+    const digitado = { desconto: vazio, multa: pt('5'), juros: pt('5'), outros: '9,00' };
+
+    assert.deepEqual(prever([A, B, C], branco, datas).linhas.map(resumo), [[3150, 0, 17850], [0, 0, 10000], [3150, 0, 17850]]);
+    assert.deepEqual(prever([A, B, C], digitado, datas).linhas.map(resumo), [[3150, 0, 17850], [0, 0, 10000], [3150, 0, 17850]]);
+});
+
+test('lote sem regra e sem valores sai igual ao de hoje', () => {
+    assert.deepEqual(prever([D, linha(10001, '2026-12-05', null)], branco), {
+        linhas: [
+            { valorCentavos: 5000, acrescimosCentavos: 0, descontoCentavos: 0, pagoCentavos: 5000 },
+            { valorCentavos: 10001, acrescimosCentavos: 0, descontoCentavos: 0, pagoCentavos: 10001 },
+        ],
+        totais: { valorCentavos: 15001, acrescimosCentavos: 0, descontoCentavos: 0, pagoCentavos: 15001 },
+    });
+});
+
+test('lote: desconto em R$ acima do valor (regra do contrato numa cobrança menor) fica no valor, como o servidor', () => {
+    const contrato = { desconto: { tipo: 'valor', valor: 30000 }, multa: null, juros: null };
+
+    assert.deepEqual(prever([linha(20000, '2026-12-05', contrato)], branco).linhas.map(resumo), [[20000, 0, 0]]);
+});
+
+test('lote: 100% e R$ igual à menor cobrança deixam o valor pago em zero', () => {
+    const duas = [linha(10001, VENCIMENTO, null), linha(24757, VENCIMENTO, null)];
+
+    assert.deepEqual(prever(duas, { ...branco, desconto: pt('100') }).totais, { valorCentavos: 34758, acrescimosCentavos: 0, descontoCentavos: 34758, pagoCentavos: 0 });
+    assert.deepEqual(prever(duas, { ...branco, desconto: rs('100,01') }).linhas.map(resumo), [[10001, 0, 0], [10001, 0, 14756]]);
+});
+
+test('lote: vírgula ou ponto dão o mesmo valor e a vírgula final é digitação em curso; texto inválido não soma (a tela não pisca)', () => {
+    const duas = [linha(10001, VENCIMENTO, null), linha(24757, VENCIMENTO, null)];
+    const esperado = prever(duas, { ...branco, multa: pt('12.5') });
+
+    assert.deepEqual(prever(duas, { ...branco, multa: pt('12,5') }), esperado);
+    assert.deepEqual(prever(duas, { ...branco, multa: pt('12,') }).totais, prever(duas, { ...branco, multa: pt('12') }).totais);
+    // Inválido é "preenchido": não volta para o contrato (o servidor recusaria o lote).
+    assert.deepEqual(prever([A], { ...branco, multa: pt('abc'), juros: rs('abc'), outros: 'abc' }).linhas.map(resumo), [[0, 0, 21000]]);
+});
+
+test('lote sem cobranças tem totais zerados', () => {
+    assert.deepEqual(prever([], branco), { linhas: [], totais: { valorCentavos: 0, acrescimosCentavos: 0, descontoCentavos: 0, pagoCentavos: 0 } });
 });

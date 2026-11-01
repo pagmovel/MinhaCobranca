@@ -1903,3 +1903,22 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
 - **Renderização sem navegador** (técnica da Fase 26; num script fora do projeto, importar `vite` e `@vitejs/plugin-vue/dist/index.mjs` por caminho absoluto, porque o pacote não é resolvido): com
   atraso e regra saem Multa/Juros com "contrato", "= R$ 4,20" e "= R$ 21,00", valor pago R$ 235,20 e "300 dias de atraso"; a vencer só o Desconto com "= R$ 31,50"; sem regra, campos vazios. **Não conferido:**
   digitação com a máscara, a trava, "12," enviado como "12" sem o `transform`, "Recalcular", o alinhamento (as colunas ganharam `gap-1` e os botões `mt-5`) e 390 px/1280 px. Fica na Tarefa 10.
+
+### Acertos (Tarefa 4 — baixa em lote)
+- **Servidor:** `pagarEmLote` valida `ValoresDaBaixa::regras()` (desconto, multa, juros e outros), confere o limite em R$ do desconto pela menor pendente (`conferirDescontoDoLote`, igual à Fase 26) e resolve **todas** as pendentes
+  (`resolver(..., 'lote')`, com `with('contrato')`) **antes** da transação: valor inválido recusa o lote sem gravar nem auditar nada, até com a data de vencimento (sem atraso). A gravação e a auditoria ficaram em
+  `registrarBaixa`, que a baixa individual também chama. **Em branco ≠ 0:** campo ausente ou `''` usa o contrato de cada cobrança; qualquer número, inclusive `0`, vale para todas (0 zera o desconto do contrato da que ainda vai
+  vencer). Multa, juros e outros só entram nas cobranças em atraso **na data dela**; com "usar a data de vencimento" a vencida é baixada no vencimento (sem acréscimo, desconto do contrato vale) e a que ainda não venceu é baixada
+  hoje (também com o desconto do contrato).
+- **Auditoria:** com algum acréscimo o lote usa o mesmo texto da individual, `Baixa registrada (R$ 210,00, multa R$ 4,20, ..., desconto R$ 0,00, pago R$ 240,20, em 01/11/2026)`; sem acréscimos segue `Baixa em lote ...` (Fase 26).
+- **Prévia = servidor:** `previaDoLote(linhas, datas, campos)` fica em `usarDescontoDaBaixa.js` (precisa de `camposDaRegra` e `calcularBaixa`; em `desconto.js` seria importação circular com `condicoes.js`) e `dataDaBaixaEmLote(modo, vencimentoIso, hojeIso)`
+  repete a data do servidor. Por linha `{valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos}`, totais somam as linhas. Texto inválido digitado conta como preenchido e vale 0 (não volta ao contrato: o servidor recusaria).
+  O desconto da regra em R$ é limitado ao valor também na prévia (o do contrato numa cobrança menor). Os testes PHP e JS usam os mesmos números (soma paga R$ 548,70).
+- **`BaixaEmLote.vue`** usa `CampoValorOuPercentual` nos quatro campos (`outros` com `somente-reais`; desconto com `valor-maximo-centavos` = menor cobrança e `complemento-do-maximo`; teto de R$ 99.999.999,99 nos outros), a ajuda "Em branco: cada
+  cobrança usa o próprio contrato. Preenchido: vale para todas." e o aviso da data de vencimento da spec. Sem `transform` no envio: o `@change` do campo já tira a vírgula final e o branco segue como `''`. Os campos ficam em grade de duas
+  colunas a partir de `sm` e uma no celular; a prévia tem Cobrança, Vencimento, Valor, Acréscimos, Desconto e Pago e rola dentro do modal.
+- **R8:** do `usarDescontoDaBaixa()` saiu o `complementoDoMaximo` (só o lote usava). A trava e o aviso continuam porque `CorrecaoPagamentoInline` ainda os usa; a Tarefa 5 apaga a função. Os testes antigos de `previaDoLote` (em `desconto.test.js`) e do
+  complemento foram trocados pelos novos, com os mesmos cenários (arredondamento por cobrança, R$ igual, 100%, vírgula final, inválido, sem cobranças).
+- **Pegadinha de teste:** o índice único `(contrato_id, periodo_inicio)` barra duas cobranças do mesmo contrato com o mesmo início de período: no helper do teste, `periodo_inicio` = vencimento.
+- **Renderização sem navegador** (técnica da Fase 26): saem os quatro campos com `aria-describedby`, a prévia com os totais (R$ 470,00 / 63,00 de desconto / 407,00 pago) e o aviso. `CorrecaoPagamentoInline` continua renderizando com valor pago R$ 222,81.
+  **Não conferido:** digitação com a máscara, a trava, 390 px e 1280 px. Fica na Tarefa 10.

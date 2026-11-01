@@ -1,21 +1,20 @@
 import { computed, watch } from 'vue';
 import { criarAvisoTemporario } from './avisoTemporario.js';
 import { diasDeAtraso, entradaDaRegra, jurosEmCentavos, multaEmCentavos, regraDaEntrada, regraDoCampo } from './condicoes.js';
-import { descontoEmCentavos, semSeparadorFinal, travarDesconto } from './desconto.js';
+import { aparar, descontoEmCentavos, semSeparadorFinal, travarDesconto } from './desconto.js';
 import { formatarCentavos } from './itens.js';
 
 export const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
 
 /**
- * Lógica dos campos de desconto da baixa em lote e da correção (BaixaEmLote e CorrecaoPagamentoInline) sobre um `useForm` com
- * `desconto_tipo` e `desconto`: valor pago ao vivo, trava em 100%, trocar % ↔ R$ limpa o número, aviso que some.
- * `valorCentavos` é uma função (a prop pode mudar; no lote, a menor cobrança). A trava roda num `watch` do número, não
- * num `@input`: a ordem entre `v-model` e `v-mascara` mudaria o texto que o `@input` enxerga.
- * `complementoDoMaximo`: texto depois de "Máximo: R$ X,XX" (no lote, " (valor da menor cobrança)").
- * A BaixaInline não usa esta função: o `CampoValorOuPercentual` já trava e avisa (a trava não roda duas vezes). Esta sai
- * quando o lote e a correção também adotarem o componente.
+ * Lógica do campo de desconto da correção do pagamento (CorrecaoPagamentoInline) sobre um `useForm` com `desconto_tipo` e
+ * `desconto`: valor pago ao vivo, trava em 100%, trocar % ↔ R$ limpa o número, aviso que some. `valorCentavos` é uma função
+ * (a prop pode mudar). A trava roda num `watch` do número, não num `@input`: a ordem entre `v-model` e `v-mascara` mudaria o
+ * texto que o `@input` enxerga.
+ * A BaixaInline e a BaixaEmLote não usam esta função: o `CampoValorOuPercentual` já trava e avisa (a trava não roda duas
+ * vezes). Esta sai quando a correção também adotar o componente.
  */
-export function usarDescontoDaBaixa(form, valorCentavos, { complementoDoMaximo = '' } = {}) {
+export function usarDescontoDaBaixa(form, valorCentavos) {
     const emReais = computed(() => form.desconto_tipo === 'valor');
     // A vírgula no fim ("12,") é digitação em curso: conta como o número antes dela, senão o valor pago pisca.
     const descontoCentavos = computed(() => descontoEmCentavos(valorCentavos(), form.desconto_tipo, semSeparadorFinal(form.desconto)) ?? 0);
@@ -36,7 +35,7 @@ export function usarDescontoDaBaixa(form, valorCentavos, { complementoDoMaximo =
         const { entrada, travou } = travarDesconto(valorCentavos(), form.desconto_tipo, form.desconto);
         if (travou) {
             form.desconto = entrada;
-            mostrar(emReais.value ? `Máximo: R$ ${formatarCentavos(valorCentavos())}${complementoDoMaximo}` : 'Máximo: 100%');
+            mostrar(emReais.value ? `Máximo: R$ ${formatarCentavos(valorCentavos())}` : 'Máximo: 100%');
         }
     });
 
@@ -73,6 +72,9 @@ export const paraOForm = (campos) => Object.fromEntries(NOMES.flatMap((nome) => 
 
 const doForm = (form) => Object.fromEntries(NOMES.map((nome) => [nome, { tipo: form[`${nome}_tipo`], numero: form[nome] }]));
 
+/** Os campos do formulário como `calcularBaixa` os lê: `{ multa, juros, desconto }` como `{ tipo, numero }` e `outros` em R$. */
+export const camposDoForm = (form) => ({ ...doForm(form), outros: form.outros });
+
 /** Depois de trocar a data: o campo que ainda era o da regra anterior passa para o da nova; o que a pessoa mexeu fica. */
 export const camposAoTrocarAData = (atuais, anteriores, novos) => Object.fromEntries(
     NOMES.map((nome) => [nome, igual(atuais[nome], anteriores[nome]) ? novos[nome] : atuais[nome]]),
@@ -102,6 +104,43 @@ export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos) {
 }
 
 /**
+ * A data da baixa de cada cobrança no lote: hoje para todas (`hoje`) ou o vencimento de cada uma (`vencimento`), mas a que
+ * ainda não venceu é baixada hoje, nunca no futuro. Como o servidor (`CobrancaController::pagarEmLote`).
+ */
+export const dataDaBaixaEmLote = (modo, vencimentoIso, hojeIso) => (modo === 'hoje' || vencimentoIso > hojeIso ? hojeIso : vencimentoIso);
+
+/** Em branco (vazio, só espaço ou só a vírgula do fim) o lote usa o contrato de cada cobrança; qualquer número, inclusive 0, vale. */
+const emBranco = (numero) => aparar(semSeparadorFinal(numero)) === '';
+
+/**
+ * Prévia da baixa em lote, pela mesma regra do servidor (`ValoresDaBaixa`, modo `lote`): o campo digitado no topo vale para
+ * todas as cobranças (% calculado em cada uma, R$ igual em cada); em branco, cada uma usa o próprio contrato na data dela.
+ * `linhas` são `{ valorCentavos, vencimentoIso, regras }`, `datas` a data da baixa de cada uma (ISO) e `campos` os do
+ * formulário do topo (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros`). Multa, juros e outros só entram nas
+ * que estão em atraso na data. Devolve por linha `{ valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos }` e os
+ * mesmos quatro nos totais, que somam as linhas.
+ */
+export function previaDoLote(linhas, datas, campos) {
+    const calculadas = linhas.map(({ valorCentavos, vencimentoIso, regras }, i) => {
+        const doContrato = camposDaRegra(vencimentoIso, datas[i], regras);
+        const usados = { outros: campos.outros };
+        NOMES.forEach((nome) => { usados[nome] = emBranco(campos[nome].numero) ? doContrato[nome] : campos[nome]; });
+        const baixa = calcularBaixa(valorCentavos, vencimentoIso, datas[i], usados);
+        // O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como no servidor).
+        const descontoCentavos = Math.min(valorCentavos, baixa.descontoCentavos);
+        const acrescimosCentavos = baixa.multaCentavos + baixa.jurosCentavos + baixa.outrosCentavos;
+
+        return { valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos: valorCentavos - descontoCentavos + acrescimosCentavos };
+    });
+    const somar = (campo) => calculadas.reduce((total, linha) => total + linha[campo], 0);
+
+    return {
+        linhas: calculadas,
+        totais: { valorCentavos: somar('valorCentavos'), acrescimosCentavos: somar('acrescimosCentavos'), descontoCentavos: somar('descontoCentavos'), pagoCentavos: somar('pagoCentavos') },
+    };
+}
+
+/**
  * Lógica dos campos da BaixaInline sobre um `useForm` com `pago_em`, os sete campos da baixa (`multa_tipo`, `multa`,
  * `juros_tipo`, `juros`, `outros`, `desconto_tipo`, `desconto`) e `errors`. O formulário abre com `paraOForm(camposDaRegra(...))`.
  * Trocar a data recalcula só os campos que ainda são os da regra; `recalcular` devolve todos à regra.
@@ -110,7 +149,7 @@ export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos) {
 export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras }) {
     const daRegra = (dataIso) => camposDaRegra(vencimentoIso(), dataIso, regras());
     const doDia = computed(() => daRegra(form.pago_em));
-    const baixa = computed(() => calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, { ...doForm(form), outros: form.outros }));
+    const baixa = computed(() => calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, camposDoForm(form)));
     const temRegra = computed(() => regras() != null);
     const diferenteDaRegra = computed(() => temRegra.value && visiveis(baixa.value.dias).some((nome) => !igual(doForm(form)[nome], doDia.value[nome])));
     const descontoIntegral = computed(() => valorCentavos() > 0 && baixa.value.pagoCentavos === 0);

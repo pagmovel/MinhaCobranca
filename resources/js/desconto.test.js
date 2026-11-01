@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { descontoEmCentavos, menorValor, previaDoLote, semSeparadorFinal, travarDesconto } from './desconto.js';
+import { descontoEmCentavos, menorValor, semSeparadorFinal, travarDesconto } from './desconto.js';
 
 // Mesmos casos de tests/Unit/DescontoTest.php: a tela e o servidor precisam concordar.
 const casosValidos = [
@@ -77,57 +77,6 @@ test('campo vazio ou ainda inválido não trava', () => {
     assert.deepEqual(travarDesconto(24757, 'percentual', ''), { entrada: '', travou: false });
     assert.deepEqual(travarDesconto(24757, 'valor', ''), { entrada: '', travou: false });
     assert.deepEqual(travarDesconto(24757, 'percentual', '1e3'), { entrada: '1e3', travou: false });
-});
-
-// Mesmo caso de tests/Feature/Cobrancas/AcoesEmLoteTest.php: a soma da prévia é a soma gravada pelo servidor.
-test('prévia do lote em % arredonda por cobrança e os totais somam as linhas', () => {
-    assert.deepEqual(previaDoLote([10001, 24757], 'percentual', '10'), {
-        linhas: [
-            { valor: 10001, desconto: 1000, pago: 9001 },
-            { valor: 24757, desconto: 2476, pago: 22281 },
-        ],
-        totais: { valor: 34758, desconto: 3476, pago: 31282 },
-    });
-});
-
-test('prévia do lote em R$ tira o mesmo valor de cada cobrança', () => {
-    assert.deepEqual(previaDoLote([10001, 24757], 'valor', '20,00'), {
-        linhas: [
-            { valor: 10001, desconto: 2000, pago: 8001 },
-            { valor: 24757, desconto: 2000, pago: 22757 },
-        ],
-        totais: { valor: 34758, desconto: 4000, pago: 30758 },
-    });
-    // R$ igual à menor: a menor fica com pago 0 (o servidor audita como integral).
-    assert.deepEqual(previaDoLote([10001, 24757], 'valor', '100,01').totais, { valor: 34758, desconto: 20002, pago: 14756 });
-});
-
-test('prévia do lote sem desconto não desconta nada, em % e em R$', () => {
-    for (const tipo of ['percentual', 'valor']) {
-        for (const entrada of ['', '0', '  ']) {
-            assert.deepEqual(previaDoLote([10001, 24757], tipo, entrada).totais, { valor: 34758, desconto: 0, pago: 34758 });
-        }
-    }
-});
-
-test('prévia do lote: vírgula ou ponto dão o mesmo desconto e a vírgula final é digitação em curso', () => {
-    const esperado = previaDoLote([10001, 24757], 'percentual', '12.5');
-
-    assert.deepEqual(previaDoLote([10001, 24757], 'percentual', '12,5'), esperado);
-    assert.deepEqual(previaDoLote([10001, 24757], 'percentual', '12,').totais, previaDoLote([10001, 24757], 'percentual', '12').totais);
-});
-
-test('prévia do lote com 100% deixa o valor pago em zero', () => {
-    assert.deepEqual(previaDoLote([10001, 24757], 'percentual', '100').totais, { valor: 34758, desconto: 34758, pago: 0 });
-});
-
-test('prévia do lote com entrada ainda inválida não desconta (a tela não pisca)', () => {
-    assert.deepEqual(previaDoLote([10001], 'percentual', 'abc').totais, { valor: 10001, desconto: 0, pago: 10001 });
-    assert.deepEqual(previaDoLote([10001], 'valor', 'abc').totais, { valor: 10001, desconto: 0, pago: 10001 });
-});
-
-test('prévia do lote sem cobranças tem totais zerados', () => {
-    assert.deepEqual(previaDoLote([], 'percentual', '10'), { linhas: [], totais: { valor: 0, desconto: 0, pago: 0 } });
 });
 
 // O limite do R$ no lote é a menor cobrança; sem cobrança elegível o valor de referência é 0 (nunca Infinity, que o BigInt recusa).

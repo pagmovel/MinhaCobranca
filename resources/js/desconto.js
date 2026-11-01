@@ -53,21 +53,6 @@ export const semSeparadorFinal = (entrada) => String(entrada ?? '').replace(/[.,
 /** Menor valor do lote (limite do desconto em R$); 0 sem cobrança, porque o BigInt de `descontoEmCentavos` recusa Infinity. */
 export const menorValor = (valoresCentavos) => (valoresCentavos.length ? Math.min(...valoresCentavos) : 0);
 
-/**
- * Prévia da baixa em lote: o mesmo percentual (arredondado por cobrança) ou o mesmo valor em R$ em cada cobrança,
- * como o servidor grava, e os totais somam as linhas.
- */
-export function previaDoLote(valoresCentavos, tipo, entrada) {
-    const linhas = valoresCentavos.map((valor) => {
-        const desconto = descontoEmCentavos(valor, tipo, semSeparadorFinal(entrada)) ?? 0;
-
-        return { valor, desconto, pago: valor - desconto };
-    });
-    const somar = (campo) => linhas.reduce((total, linha) => total + linha[campo], 0);
-
-    return { linhas, totais: { valor: somar('valor'), desconto: somar('desconto'), pago: somar('pago') } };
-}
-
 /** O desconto nunca passa de 100% do valor: acima disso a entrada vira o limite. */
 export function travarDesconto(valorCentavos, tipo, entrada) {
     const texto = aparar(entrada);
