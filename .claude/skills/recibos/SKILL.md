@@ -219,6 +219,10 @@ o relatório mostra a parte que existe.
   ambiente de shell não resolveram esse domínio (**[A VERIFICAR]** a causa exata), mas o Chrome real do
   `browser-use` resolve normalmente. Para testar via shell sem o navegador, usar
   `curl -H "Host: Recibos.test" http://127.0.0.1/`.
+- **Linux diferencia maiúsculas (2026-11-01): `config/inertia.php` aponta as páginas para `resources/js/Pages`.** O
+  padrão do pacote procura em `js/pages` (minúsculo); no Windows passava, no Linux dava 18 falhas "Inertia page
+  component file [X] does not exist" em `assertInertia`. O `mergeConfigFrom` é raso: a chave `pages` vem inteira
+  (com `ensure_pages_exist` falso e `extensions`), senão o padrão dessa chave some.
 
 ## Acertos
 - T0.2: mensagens de validação em `lang/pt_BR/validation.php` só com as regras usadas; o resto cai
