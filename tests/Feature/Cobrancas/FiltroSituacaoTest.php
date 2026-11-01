@@ -5,6 +5,7 @@ namespace Tests\Feature\Cobrancas;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -132,5 +133,37 @@ class FiltroSituacaoTest extends TestCase
             ['situacao' => 'paga', 'quantidade' => 2, 'soma_centavos' => 800],
         ]);
         $dados->assertJsonPath('total_geral', ['quantidade' => 5, 'soma_centavos' => 1900]);
+    }
+
+    /**
+     * Fase 27: o valor pago soma também multa, juros e outros; a pendente com regra no contrato (que hoje valeria mais
+     * ou menos) segue com o valor cheio nas abas, nos totais e no rodapé.
+     */
+    public function test_pagas_somam_o_valor_pago_com_acrescimos_e_as_pendentes_com_regra_o_valor_cheio(): void
+    {
+        $cliente = $this->usuario->clientes()->firstOrFail();
+        $this->usuario->cobrancas()->where('status', StatusCobranca::Paga)->firstOrFail()
+            ->forceFill(['multa_centavos' => 50, 'juros_centavos' => 30, 'outros_centavos' => 20])->save(); // 4,00 + 1,00 = pago 5,00
+        $comDesconto = Cobranca::factory()->for($this->usuario)->for($cliente)->create(['vencimento' => '2026-10-20', 'valor_centavos' => 1000]);
+        $comDesconto->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-16', 'desconto_centavos' => 200])->save(); // pago 8,00
+        $contrato = Contrato::factory()->comCondicoes()->for($this->usuario)->for($cliente)->create(['ativo' => false]);
+        Cobranca::factory()->for($this->usuario)->for($cliente)->create(['contrato_id' => $contrato->id, 'vencimento' => '2026-10-05', 'valor_centavos' => 1000]); // vencida: hoje valeria mais
+
+        $dados = $this->actingAs($this->usuario)->getJson('/cobrancas/dados')->assertOk();
+
+        $dados->assertJsonPath('abas', [
+            ['chave' => 'todas', 'quantidade' => 7, 'soma_centavos' => 3500],
+            ['chave' => 'vencida', 'quantidade' => 3, 'soma_centavos' => 1300],
+            ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
+            ['chave' => 'paga', 'quantidade' => 2, 'soma_centavos' => 1300],
+        ]);
+        $dados->assertJsonPath('totais', [
+            ['situacao' => 'vencida', 'quantidade' => 2, 'soma_centavos' => 1200],
+            ['situacao' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['situacao' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
+            ['situacao' => 'paga', 'quantidade' => 2, 'soma_centavos' => 1300],
+        ]);
+        $dados->assertJsonPath('total_geral', ['quantidade' => 6, 'soma_centavos' => 3400]);
     }
 }

@@ -21,8 +21,11 @@ defineProps({ cobranca: { type: Object, required: true } });
         <div class="flex flex-wrap items-center gap-3">
             <div>
                 <span class="text-lg font-semibold tabular-nums">R$ {{ cobranca.valor }}</span>
-                <p v-if="cobranca.situacao === 'paga' && cobranca.desconto_centavos > 0" class="font-estreita text-xs whitespace-nowrap text-grafite/80 tabular-nums">
+                <p v-if="cobranca.pago_diferente" class="font-estreita text-xs whitespace-nowrap text-grafite/80 tabular-nums">
                     pago R$ {{ cobranca.valor_pago }}
+                </p>
+                <p v-if="cobranca.linha_do_dia" class="font-estreita text-xs whitespace-nowrap text-grafite/80 tabular-nums">
+                    {{ cobranca.linha_do_dia }}
                 </p>
             </div>
             <Carimbo :situacao="cobranca.situacao" />

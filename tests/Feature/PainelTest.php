@@ -153,6 +153,48 @@ class PainelTest extends TestCase
         $this->assertEqualsCanonicalizing(['75,00', '50,00', '0,00'], array_column($recebidas->json('linhas'), 'valor_pago'));
     }
 
+    /** Fase 27: o recebido soma também multa, juros e outros; o previsto continua com o valor cheio. */
+    public function test_recebido_do_mes_e_as_recebidas_somam_os_acrescimos(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $paga = function (string $pagoEm, int $valor, array $valores) use ($usuario, $cliente) {
+            $cobranca = Cobranca::factory()->for($usuario)->for($cliente)->create(['vencimento' => '2026-10-03', 'valor_centavos' => $valor]);
+            $cobranca->forceFill(array_merge(['status' => StatusCobranca::Paga, 'pago_em' => $pagoEm], $valores))->save();
+        };
+        $paga('2026-10-02', 21000, ['multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500]); // pago 240,20
+        $paga('2026-10-05', 5000, []);                                                                              // 50,00, como antes
+        $paga('2026-10-06', 10000, ['desconto_centavos' => 1000, 'outros_centavos' => 300]);                        // 93,00
+        $paga('2026-09-30', 7000, ['multa_centavos' => 140]);                                                       // pago em setembro: fora
+
+        $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
+            ->where('resumo.recebido', '383,20')
+            ->where('resumo.previsto', '430,00'));
+        $recebidas = $this->getJson('/painel/dados?lista=recebidas')->assertOk()
+            ->assertJsonPath('total_geral', ['quantidade' => 3, 'soma_centavos' => 38320]);
+        $this->assertEqualsCanonicalizing(['240,20', '50,00', '93,00'], array_column($recebidas->json('linhas'), 'valor_pago'));
+    }
+
+    /** Fase 27: o painel mostra o valor do dia de cada pendente com regra, mas soma as pendentes pelo valor cheio. */
+    public function test_pendentes_do_painel_trazem_a_linha_do_dia_e_somam_o_valor_cheio(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $contrato = Contrato::factory()->comCondicoes()->for($usuario)->for($cliente)->create(['ativo' => false]);
+        $comRegra = Cobranca::factory()->for($usuario)->for($cliente)->create([
+            'contrato_id' => $contrato->id, 'vencimento' => '2026-10-20', 'valor_centavos' => 10000, 'enviado_em' => now(),
+        ]);
+        $avulsa = Cobranca::factory()->for($usuario)->for($cliente)->create(['vencimento' => '2026-10-21', 'valor_centavos' => 5000, 'enviado_em' => now()]);
+
+        $aguardando = $this->actingAs($usuario)->getJson('/painel/dados?lista=aguardando')->assertOk()
+            ->assertJsonPath('total_geral', ['quantidade' => 2, 'soma_centavos' => 15000]);
+        $linhas = collect($aguardando->json('linhas'))->keyBy('id');
+
+        $this->assertSame('até 20/10: R$ 85,00', $linhas[$comRegra->id]['linha_do_dia']);
+        $this->assertNull($linhas[$avulsa->id]['linha_do_dia']);
+        $this->assertFalse($linhas[$comRegra->id]['pago_diferente']);
+    }
+
     public function test_aviso_de_contrato_perto_do_fim(): void
     {
         $usuario = User::factory()->create(['dias_aviso_contrato' => 10]);

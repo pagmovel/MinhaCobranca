@@ -340,8 +340,11 @@ async function fecharFaixa() {
                             </td>
                             <td class="order-1 text-lg font-semibold whitespace-nowrap tabular-nums xl:px-3 xl:py-3 xl:text-right xl:text-base">
                                 R$ {{ cobranca.valor }}
-                                <p v-if="cobranca.situacao === 'paga' && cobranca.desconto_centavos > 0" class="font-estreita text-xs font-normal text-grafite/80">
+                                <p v-if="cobranca.pago_diferente" class="font-estreita text-xs font-normal text-grafite/80">
                                     pago R$ {{ cobranca.valor_pago }}
+                                </p>
+                                <p v-if="cobranca.linha_do_dia" class="font-estreita text-xs font-normal text-grafite/80">
+                                    {{ cobranca.linha_do_dia }}
                                 </p>
                             </td>
                             <td class="order-2 whitespace-nowrap xl:px-3 xl:py-3">

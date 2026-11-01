@@ -243,24 +243,26 @@ A primeira solução (juros em branco que não ia no pedido) foi trocada: na cor
 Falta conferir no
 navegador: digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento dos campos e o aviso de "sem atraso" (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
-### Tarefa 6 — Lista e painel — **Estado: pendente**
+### Tarefa 6 — Lista e painel — **Estado: testada**
 
-**Arquivos:** `Cobranca::paraLista`, `resources/js/Pages/Cobrancas/Index.vue`, `resources/js/Components/LinhaCobranca.vue`,
-`tests/Feature/Cobrancas/DadosDaListaTest.php`, `tests/Feature/PainelTest.php`.
+**Arquivos:** `Cobranca::paraLista`, `app/Services/ListaDeCobrancas.php`, `resources/js/Pages/Cobrancas/Index.vue`, `resources/js/Components/LinhaCobranca.vue`,
+`tests/Feature/Cobrancas/DadosDaListaTest.php`, `tests/Feature/Cobrancas/FiltroSituacaoTest.php`, `tests/Feature/PainelTest.php`.
 
 **Interfaces:** `paraLista` ganha `linha_do_dia` (`string|null`): `até 05/01: R$ 85,00` ou `hoje R$ 235,20`; `null` sem regra, em
 paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só muda de fórmula.
 
-- [ ] **Passo 1: testes que falham:** `linha_do_dia` nos dois textos; `null` sem regra (ponto 3) e em cobrança sem contrato;
+- [x] **Passo 1: testes que falham:** `linha_do_dia` nos dois textos; `null` sem regra (ponto 3) e em cobrança sem contrato;
   soma das pendentes continua com o valor cheio; soma das pagas e `resumo.recebido` usam o valor pago com acréscimos; sem
   regra e sem valores, as somas ficam iguais.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** servidor.
-- [ ] **Passo 4:** tela: `linha_do_dia` embaixo do valor, menor; "pago R$ …" quando valor pago ≠ valor. Tirar a cópia do bloco entre
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** servidor.
+- [x] **Passo 4:** tela: `linha_do_dia` embaixo do valor, menor; "pago R$ …" quando valor pago ≠ valor. Tirar a cópia do bloco entre
   `Index.vue` e `LinhaCobranca.vue` (achado da Fase 26): `paraLista` ganha `pago_diferente` (`bool`: paga e valor pago ≠ valor), e o `v-if` dos
   dois lê só esse campo.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: lista e painel mostram o valor do dia`.
+- [x] **Passo 5:** testes + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: lista e painel mostram o valor do dia`.
+
+**Registro (Tarefa 6):** o teste da soma das pagas com acréscimos pegou um defeito da Tarefa 1: `ListaDeCobrancas::montar` lia as cobranças com `get([...colunas])` sem `multa_centavos`, `juros_centavos` e `outros_centavos`, e o Eloquent completa a coluna que falta com o `$attributes` (0), então `totais` e `total_geral` da lista ignoravam os acréscimos (a aba "Pagas" e o painel usavam `VALOR_PAGO_SQL` e estavam certos). Corrigido incluindo as três colunas. Falta conferir no navegador (Tarefa 10): a linha embaixo do valor em 390 px e 1280 px.
 
 ### Tarefa 7 — Relatórios — **Estado: pendente**
 

@@ -1745,7 +1745,7 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
   `resumo.recebido` e o `total_geral` de "Recebidas no mês". `Cobranca::VALOR_PAGO_SQL` é a conta em SQL (reusada nos relatórios); no painel entra por
   `DB::raw` em `sum()`, **antes** do `ORDER BY` (PostgreSQL). `paraLista` traz `valor_pago`.
 - **Tela:** "pago R$ …" (menor, embaixo do valor cheio) só com `situacao === 'paga'` e `desconto_centavos > 0`, em `Cobrancas/Index.vue` e
-  `LinhaCobranca.vue`. Paga sem desconto sai idêntica a antes; 100% mostra "pago R$ 0,00".
+  `LinhaCobranca.vue` *(Fase 27, Tarefa 6: o `v-if` das duas lê só `pago_diferente`)*. Paga sem desconto sai idêntica a antes; 100% mostra "pago R$ 0,00".
 - **Pegadinha de teste:** sem filtro de situação a lista é só do mês (a vencida de setembro entra nas **abas**, não nos `totais` nem no `total_geral`).
   No esperado de `total_geral`, não copiar o da aba "Todas".
 
@@ -1941,3 +1941,14 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   Na rodada de correção (R10) mudou também `test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois`, da própria Tarefa 5: os juros passaram de `percentual 2` (= R$ 42,00 em 300 dias) para `valor 42,00`, mesmo resultado.
 - **Renderização sem navegador** (técnica da Fase 26; no script, `import()` do `vue` e de `vue/server-renderer` pelo caminho do projeto: `ssrLoadModule('vue')` dá "module is not defined"): a correção abre com a data atual, multa 4,20, outros 5,00,
   juros "21,00" (campo só em R$, rótulo "Juros (total)") e valor pago R$ 240,20 (igual ao gravado); paga no vencimento mostra só o desconto (R$ 178,50). **Não conferido:** digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento. Fica na Tarefa 10.
+
+### Acertos (Tarefa 6 — lista e painel)
+- **`paraLista` ganha dois campos que a tela só lê:** `pago_diferente` (paga e valor pago ≠ valor, por desconto **ou** acréscimos) e `linha_do_dia` (`Cobranca::linhaDoDia($hoje)`: `até 05/01: R$ 85,00` até o vencimento, **inclusive o dia dele**, ou `hoje R$ 235,20` com atraso;
+  `null` se não é pendente, sem contrato, sem regra ou se o valor do dia é igual ao valor, como multa sem atraso). O `v-if` do bloco "pago R$ …" deixou de ser copiado em `Cobrancas/Index.vue` e `LinhaCobranca.vue`: os dois leem `pago_diferente`.
+  Previstas (vêm de `PrevisaoDeCobrancas`, não de `paraLista`) não têm os campos: `undefined` esconde a linha. A conta é a `condicoesNaData` de sempre, então a linha não faz consulta por linha (o contrato já vem carregado).
+- **Somas não mudam de regra:** pendentes seguem com o valor cheio (abas, `totais`, `total_geral`, "Aguardando"); pagas somam o valor pago com acréscimos.
+- **Defeito da Tarefa 1 achado aqui: `get([...colunas])` esconde coluna nova.** `ListaDeCobrancas::montar` lia `get(['id', 'vencimento', 'status', 'valor_centavos', 'desconto_centavos'])`; sem `multa_centavos`, `juros_centavos` e `outros_centavos` o Eloquent usa o
+  `$attributes` (0) **sem erro**, e `valorPagoCentavos()` da lista leve ignorava os acréscimos, então `totais` e `total_geral` ficavam errados enquanto a aba "Pagas" (SQL) e o painel estavam certos. Ao ler com colunas escolhidas, listar toda coluna que a conta usa;
+  teste que soma pagas com acréscimos nos três lugares (aba, totais, rodapé) pega: `FiltroSituacaoTest::test_pagas_somam_o_valor_pago_com_acrescimos_e_as_pendentes_com_regra_o_valor_cheio`.
+- **Teste:** contrato inativo (a previsão não entra) com `comCondicoes()`; 300 dias antes de 15/10/2026 dá multa R$ 4,20 + juros R$ 21,00 sobre R$ 210,00 = `hoje R$ 235,20`. `?status=pendente` respeita o mês: para pegar uma de 2025 usar `mes=2025-12&ate=2026-10`.
+- **Renderização sem navegador** (`LinhaCobranca`, técnica da Fase 26): saem `até 05/01: R$ 85,00`, `hoje R$ 235,20` e `pago R$ 107,50` (e nada quando os campos vêm vazios). **Não conferido:** a linha embaixo do valor em 390 px e 1280 px na tabela. Fica na Tarefa 10.

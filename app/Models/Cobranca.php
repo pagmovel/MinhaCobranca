@@ -141,6 +141,27 @@ class Cobranca extends Model
         ];
     }
 
+    /**
+     * O que a lista mostra embaixo do valor de uma pendente com regra no contrato: `até 05/01: R$ 85,00` (desconto até o
+     * vencimento, inclusive) ou `hoje R$ 235,20` (com multa e juros). Nulo se não é pendente ou o valor do dia é o valor.
+     */
+    public function linhaDoDia(CarbonImmutable $hoje): ?string
+    {
+        if ($this->status !== StatusCobranca::Pendente) {
+            return null;
+        }
+
+        $condicoes = $this->condicoesNaData($hoje);
+
+        if ($condicoes['total_centavos'] === $this->valor_centavos) {
+            return null;
+        }
+
+        $valor = Dinheiro::formatar($condicoes['total_centavos']);
+
+        return $condicoes['dias'] === 0 ? "até {$this->vencimento->format('d/m')}: R$ {$valor}" : "hoje R$ {$valor}";
+    }
+
     public function editavel(): bool
     {
         return $this->status === StatusCobranca::Pendente && $this->enviado_em === null;
@@ -165,6 +186,9 @@ class Cobranca extends Model
             'juros_centavos' => $this->juros_centavos,
             'outros_centavos' => $this->outros_centavos,
             'valor_pago' => Dinheiro::formatar($this->valorPagoCentavos()),
+            // Paga com valor pago diferente do valor (desconto ou acréscimos): a tela mostra "pago R$ …".
+            'pago_diferente' => $this->status === StatusCobranca::Paga && $this->valorPagoCentavos() !== $this->valor_centavos,
+            'linha_do_dia' => $this->linhaDoDia($hoje),
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'pago_em_iso' => $this->pago_em?->toDateString(),
