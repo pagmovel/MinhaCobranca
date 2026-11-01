@@ -13,6 +13,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -50,9 +51,9 @@ class PainelController extends Controller
             'prestadorNome' => $usuario->nome_fantasia ?: $usuario->name,
             'resumo' => [
                 'previsto' => Dinheiro::formatar((int) $doMes()->sum('valor_centavos')),
-                // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento.
+                // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento — o valor pago, já sem o desconto.
                 'recebido' => Dinheiro::formatar((int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)
-                    ->whereBetween('pago_em', [$inicio, $fim])->sum('valor_centavos')),
+                    ->whereBetween('pago_em', [$inicio, $fim])->sum(DB::raw(Cobranca::VALOR_PAGO_SQL))),
             ],
         ]);
     }
@@ -78,7 +79,7 @@ class PainelController extends Controller
             'recebidas' => $consulta->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$hoje->startOfMonth(), $hoje->endOfMonth()]),
         };
         // Soma antes de ordenar: no PostgreSQL, sum() com ORDER BY de coluna é erro.
-        $soma = (int) $consulta->toBase()->sum('valor_centavos');
+        $soma = (int) $consulta->toBase()->sum($filtros['lista'] === 'recebidas' ? DB::raw(Cobranca::VALOR_PAGO_SQL) : 'valor_centavos');
         if ($filtros['lista'] === 'recebidas') {
             $consulta->orderByDesc('pago_em')->orderByDesc('id');
         } else {

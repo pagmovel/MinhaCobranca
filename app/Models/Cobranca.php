@@ -24,6 +24,9 @@ class Cobranca extends Model
     /** @use HasFactory<CobrancaFactory> */
     use HasFactory;
 
+    /** A conta de {@see valorPagoCentavos()} para somar no SQL (vale em SQLite e PostgreSQL). */
+    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos';
+
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
     protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma', 'desconto_centavos' => 0];
 
@@ -114,6 +117,7 @@ class Cobranca extends Model
             'valor' => Dinheiro::formatar($this->valor_centavos),
             'valor_centavos' => $this->valor_centavos,
             'desconto_centavos' => $this->desconto_centavos,
+            'valor_pago' => Dinheiro::formatar($this->valorPagoCentavos()),
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'enviado' => $this->enviado_em !== null,

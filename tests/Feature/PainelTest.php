@@ -131,6 +131,28 @@ class PainelTest extends TestCase
             ->where('resumo.previsto', '120,00'));
     }
 
+    /** Fase 26: o recebido é o valor pago (valor − desconto); o previsto continua com o valor cheio. */
+    public function test_recebido_do_mes_e_as_recebidas_somam_o_valor_pago(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $paga = function (string $pagoEm, int $valor, int $desconto) use ($usuario, $cliente) {
+            $cobranca = Cobranca::factory()->for($usuario)->for($cliente)->create(['vencimento' => '2026-10-03', 'valor_centavos' => $valor]);
+            $cobranca->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => $pagoEm, 'desconto_centavos' => $desconto])->save();
+        };
+        $paga('2026-10-02', 10000, 2500); // pago 75,00
+        $paga('2026-10-05', 5000, 0);     // sem desconto: 50,00, como antes da fase
+        $paga('2026-10-06', 4000, 4000);  // desconto integral: 0,00
+        $paga('2026-09-30', 7000, 1000);  // pago em setembro: fora do recebido, mas o vencimento é de outubro
+
+        $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
+            ->where('resumo.recebido', '125,00')
+            ->where('resumo.previsto', '260,00'));
+        $recebidas = $this->getJson('/painel/dados?lista=recebidas')->assertOk()
+            ->assertJsonPath('total_geral', ['quantidade' => 3, 'soma_centavos' => 12500]);
+        $this->assertEqualsCanonicalizing(['75,00', '50,00', '0,00'], array_column($recebidas->json('linhas'), 'valor_pago'));
+    }
+
     public function test_aviso_de_contrato_perto_do_fim(): void
     {
         $usuario = User::factory()->create(['dias_aviso_contrato' => 10]);

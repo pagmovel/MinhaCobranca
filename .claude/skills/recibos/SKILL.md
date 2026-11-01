@@ -1742,6 +1742,17 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   `watch`). Tela nova com desconto reaproveita; não copiar os `watch`.
 - `Cobranca::paraLista` traz `desconto_centavos` (a lista passa `valor-centavos` e `desconto-centavos` ao componente).
 
+### Acertos (Tarefa 5 — lista de cobranças e painel)
+- **Só a situação "paga" soma o valor pago** (as outras seguem com o valor cheio, o "Previsto" do painel também). Na lista são
+  **quatro** pontos que somam e precisam andar juntos: o `valor_centavos` de `leves` (alimenta `totais` e `total_geral`) e o
+  `$agregar` da aba "Pagas"; se mexer só num, a aba e o rodapé divergem. No painel: `resumo.recebido` e o `total_geral` de
+  "Recebidas no mês". `Cobranca::VALOR_PAGO_SQL` é a conta em SQL (a Tarefa 6 reusa); no painel entra por `DB::raw` em `sum()`,
+  **antes** do `ORDER BY` (PostgreSQL). `paraLista` traz `valor_pago` (formatado).
+- **Tela:** "pago R$ …" (menor, embaixo do valor cheio) só com `situacao === 'paga'` e `desconto_centavos > 0`: coluna Valor de
+  `Cobrancas/Index.vue` e `LinhaCobranca.vue` (painel). Paga sem desconto sai idêntica a antes; 100% mostra "pago R$ 0,00".
+- **Pegadinha de teste:** sem filtro de situação a lista é só do mês (a vencida de setembro entra nas **abas**, que ignoram o
+  mês nas vencidas, mas não nos `totais` nem no `total_geral`). Ao escrever o esperado de `total_geral`, não copiar o da aba "Todas".
+
 ### Pegadinhas
 - **Teste antigo travava o formato do `antes`/`depois`:** `AuditoriaTest` comparava `['pago_em' => …]` exato; acrescentar
   `desconto_centavos` exigiu atualizar a asserção. Ao acrescentar chave em dado de auditoria, procurar `->antes`/`->depois` nos testes.

@@ -52,12 +52,13 @@ final class ListaDeCobrancas
         $incluirPrevistasNaLista = in_array($status, [null, 'a_vencer', 'pendente'], true);
 
         // ponytail: a lista leve fica inteira na memória (até 36 meses); agregar no SQL se passar de dezenas de milhares de linhas.
-        $leves = $consulta->get(['id', 'vencimento', 'status', 'valor_centavos'])
+        $leves = $consulta->get(['id', 'vencimento', 'status', 'valor_centavos', 'desconto_centavos'])
             ->map(fn (Cobranca $cobranca) => [
                 'id' => $cobranca->id,
                 'vencimento' => $cobranca->vencimento->toDateString(),
                 'situacao' => $cobranca->situacao($hoje),
-                'valor_centavos' => $cobranca->valor_centavos,
+                // Valor das somas: a paga conta o que entrou (valor − desconto); as demais, o valor cheio.
+                'valor_centavos' => $cobranca->status === StatusCobranca::Paga ? $cobranca->valorPagoCentavos() : $cobranca->valor_centavos,
                 'prevista' => null,
             ])
             ->concat($incluirPrevistasNaLista ? array_map(fn (array $prevista) => [
@@ -112,8 +113,8 @@ final class ListaDeCobrancas
             ->when($filtros['cliente_id'] !== null, fn ($q) => $q->where('cliente_id', $filtros['cliente_id']))
             ->when($filtros['contrato_id'] !== null, fn ($q) => $q->where('contrato_id', $filtros['contrato_id']));
 
-        $agregar = function ($consulta): array {
-            $linha = $consulta->toBase()->selectRaw('count(*) as quantidade, coalesce(sum(valor_centavos), 0) as soma')->first();
+        $agregar = function ($consulta, string $valorSql = 'valor_centavos'): array {
+            $linha = $consulta->toBase()->selectRaw("count(*) as quantidade, coalesce(sum({$valorSql}), 0) as soma")->first();
 
             return ['quantidade' => (int) $linha->quantidade, 'soma_centavos' => (int) $linha->soma];
         };
@@ -123,8 +124,9 @@ final class ListaDeCobrancas
         $venceHoje = $agregar($base()->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]));
         $aVencerReal = $agregar($base()->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay())
             ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]));
+        // A aba "Pagas" soma o valor pago (valor − desconto), coerente com o "recebido" do painel.
         $paga = $agregar($base()->where('status', StatusCobranca::Paga)
-            ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]));
+            ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]), Cobranca::VALOR_PAGO_SQL);
 
         $aVencer = [
             'quantidade' => $aVencerReal['quantidade'] + count($previstas),

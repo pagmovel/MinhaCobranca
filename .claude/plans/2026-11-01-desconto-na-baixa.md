@@ -177,7 +177,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
   (decisão do controlador). (5) Texto do desfazer cita o desconto que será desfeito. (6) Só a renderização inicial dos
   dois componentes foi conferida (SSR do Vite, sem navegador); interação e layout em 390 px ficam para a Tarefa 8.
 
-### Tarefa 5 — Lista de cobranças e painel — **Estado: pendente**
+### Tarefa 5 — Lista de cobranças e painel — **Estado: testada**
 
 **Arquivos:** `app/Models/Cobranca.php` (`paraLista`), `app/Services/ListaDeCobrancas.php` (linhas 55, 77, 116),
 `app/Http/Controllers/PainelController.php` (linhas 55 e 78), `resources/js/Pages/Cobrancas/Index.vue`,
@@ -187,15 +187,26 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 **Interfaces:** `paraLista` ganha `desconto_centavos` e `valor_pago` (formatado). Soma de pagas em SQL:
 `sum(valor_centavos - desconto_centavos)`.
 
-- [ ] **Passo 1: testes que falham:** aba/rodapé "Pagas" soma o valor pago e as demais o valor cheio
+- [x] **Passo 1: testes que falham:** aba/rodapé "Pagas" soma o valor pago e as demais o valor cheio
   (`FiltroSituacaoTest`); recebido do mês no painel = valor − desconto (`PainelTest`); cobrança paga sem desconto
   mantém as somas de antes (ponto de revisão 5).
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** servidor (`leves` passa a buscar `desconto_centavos`; `paga` soma o valor pago).
-- [ ] **Passo 4:** tela: paga com desconto mostra o valor cheio e, embaixo e menor, "pago R$ …"; mesma coisa em
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** servidor (`leves` passa a buscar `desconto_centavos`; `paga` soma o valor pago).
+- [x] **Passo 4:** tela: paga com desconto mostra o valor cheio e, embaixo e menor, "pago R$ …"; mesma coisa em
   "Recebidas no mês" do painel.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: lista e painel somam o valor pago das cobranças pagas`.
+- [x] **Passo 5:** testes + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: lista e painel somam o valor pago das cobranças pagas`.
+
+  Registro: (1) Só a situação "paga" soma o valor pago; as demais seguem com o valor cheio. Vale nos quatro lugares da
+  lista (`leves` → totais por situação e rodapé; `$agregar` das abas com `Cobranca::VALOR_PAGO_SQL`) e nos dois do painel
+  (resumo `recebido` e `total_geral` de "Recebidas no mês"). O `previsto` do painel continua com o valor cheio.
+  (2) `Cobranca::VALOR_PAGO_SQL` (`valor_centavos - desconto_centavos`) é a conta em SQL, para a Tarefa 6 reusar; no
+  painel entra por `DB::raw` dentro de `sum()`, antes do `ORDER BY` (PostgreSQL). **Não conferido no PostgreSQL**
+  (`desconto_centavos` ainda não existe no banco local; migrar é do portão). (3) `paraLista` ganhou `valor_pago`.
+  (4) Tela: "pago R$ …" só quando `situacao === 'paga'` e `desconto_centavos > 0`, em `Cobrancas/Index.vue` (coluna Valor)
+  e em `LinhaCobranca.vue` (as três listas do painel, na prática só "Recebidas no mês"); `Painel.vue` não mudou, o
+  resumo vem pronto do servidor. (5) Só a renderização de `LinhaCobranca` foi conferida (SSR do Vite, sem navegador:
+  com desconto, 100%, sem desconto e pendente); a coluna da lista (xl e 390 px) fica para a Tarefa 8.
 
 ### Tarefa 6 — Relatórios — **Estado: pendente**
 
