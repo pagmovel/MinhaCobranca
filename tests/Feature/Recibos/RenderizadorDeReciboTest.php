@@ -329,6 +329,32 @@ class RenderizadorDeReciboTest extends TestCase
         $this->assertStringContainsString('Valor atualizado em 09/10/2026: multa R$ 2,00; juros R$ 0,67.', $html);
     }
 
+    /** @return array<string, array{array<string, null>, string}> o que o contrato não tem e o trecho que o recibo diz depois do vencimento */
+    public static function contratosComMultaOuJuros(): array
+    {
+        $semJuros = ['juros_tipo' => null, 'juros_valor' => null];
+        $semMulta = ['multa_tipo' => null, 'multa_valor' => null];
+
+        return [
+            'só multa' => [$semJuros, 'R$ 100,00 + multa.'],
+            'só juros' => [$semMulta, 'R$ 100,00 + juros.'],
+            'multa e juros' => [[], 'R$ 100,00 + multa e juros.'],
+            'nenhum dos dois' => [$semJuros + $semMulta, 'R$ 100,00.'],
+        ];
+    }
+
+    #[DataProvider('contratosComMultaOuJuros')]
+    public function test_pendente_antes_do_vencimento_cita_no_recibo_so_o_encargo_que_o_contrato_tem(array $contrato, string $depois): void
+    {
+        $recibo = $this->reciboDoContrato(contrato: $contrato);
+
+        $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+        $frase = "Pagando até 20/10/2026: R$ 85,00. Depois: {$depois}";
+
+        $this->assertSame(['Valor por extenso: oitenta e cinco reais.', $frase], $dados['informacoes']);
+        $this->assertStringContainsString($frase, view($recibo->modelo->view(), $dados)->render());
+    }
+
     public function test_paga_com_acrescimos_mostra_valor_pago_detalhe_e_extenso_pelo_liquido(): void
     {
         $recibo = $this->reciboDoContrato([

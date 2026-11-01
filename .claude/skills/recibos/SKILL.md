@@ -1972,7 +1972,7 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   (`valorDoDia`, só se `contrato?->regrasDePagamento()` existe) usa `condicoesNaData($agora)`: desconto até o vencimento, multa e juros depois. Pendente sem regra e cancelada seguem como na Fase 26. `desconto` e `valor_pago` só saem
   preenchidos com desconto > 0 ou valor líquido ≠ valor (nunca `valor_pago` igual ao valor sem desconto); "Valor Total" é sempre o original; o valor por extenso segue o líquido (corrige também a paga com desconto da Fase 26, que
   dizia o valor cheio).
-- **Textos:** `Cobranca::fraseDaCondicao($data)` (pendente) e `detalheDosAcrescimos()` (paga), nos textos da spec §3, só com os valores maiores que zero; o `+ multa e juros` da frase "Pagando até…" só aparece se o contrato tem multa **ou** juros.
+- **Textos:** `Cobranca::fraseDaCondicao($data)` (pendente) e `detalheDosAcrescimos()` (paga), nos textos da spec §3, só com os valores maiores que zero; o trecho depois do valor original da frase "Pagando até…" é `+ multa`, `+ juros` ou `+ multa e juros`, conforme o contrato (R12, Tarefa 9); sem nenhum dos dois, não há trecho.
   O aviso `O boleto foi emitido com o valor original.` vem do renderizador (só pendente com regra, boleto e valor do dia ≠ original). `informacoes` é uma lista: extenso, frase, detalhe, aviso.
 - **PIX:** `pagamento()` recebe o `valorDoDia`; com regra o payload e o QR levam o valor do dia, sem regra o `valor_centavos` do snapshot (como sempre). Valor do dia 0 (desconto integral) → `['forma' => null]`, sem QR nem copia e cola.
 - **Prova de igualdade permanente:** `ReciboIdenticoSemRegraTest` compara o HTML dos dois modelos, sem regra e sem valores, com as fixtures de `tests/Feature/Recibos/fixtures/` (gravadas com o código da Fase 26, antes de mexer em `dados()`).
@@ -1983,3 +1983,15 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
 - **Pegadinha de teste:** helper de teste com `[...base] + $extra` deixa a base vencer (o `vencimento` pedido era ignorado); usar `array_merge`. Aconteceu duas vezes nesta tarefa.
 - **Amostras novas:** `AmostrasVisuaisTest::test_valor_do_dia_e_acrescimos_cabem_em_uma_pagina_nos_dois_modelos` grava `amostra-{modelo}-fase27-{caso}.pdf` (a vencer e vencida × PIX e boleto; paga com acréscimos; paga com desconto e acréscimos) em
   `storage/app/private/verificacao/`. A conferência visual é do Marcos.
+
+### Acertos (Tarefa 9 — mensagem de WhatsApp)
+- **`AvisoWhatsappController::dados`:** `total_centavos` = soma de `condicoesNaData(hoje)['total_centavos']` das pendentes (hoje = `CarbonImmutable::today()`, como a lista; precisa de `with('contrato')`); `itens` seguem com o valor original. Resposta nova `condicao`
+  = frases únicas de `fraseDaCondicao(hoje)` juntadas por espaço (vazia sem regra). **A consulta passou a ordenar por `vencimento` e `id`:** sem `ORDER BY` a ordem do `get()` não é garantida (no SQLite dos testes saiu por vencimento sem a consulta pedir), e `condicao`, `itens` e
+  "a chave PIX da primeira" dependem dela.
+- **`{condicao}` em `mensagemWhatsapp.js`:** `condicao` entra em `montarMensagem` e nas variáveis; `MENSAGEM_SUGERIDA` é `Total: {total} {condicao}`. Vazia, a variável leva junto **um** espaço que vem antes dela (` {condicao}`), então não sobra espaço solto antes
+  da quebra de linha nem duplo no meio; só vale para `{condicao}` (as outras variáveis vazias seguem como eram). Modelo salvo sem `{condicao}` não muda. O teste antigo de `MENSAGEM_SUGERIDA` (sem `condicao`) passou sem alteração, e prova isso.
+- **Legenda no módulo, não no `.vue`:** `VARIAVEIS` (token + legenda) saiu de `MensagensWhatsapp.vue` para `mensagemWhatsapp.js` (não há harness de `.vue`); o teste exige `{condicao}` na lista e que `montarMensagem` reconheça todo token (nenhum fica literal).
+  Variável nova: acrescentar à `VARIAVEIS` e ao mapa de `montarMensagem`; o teste pega quem puser na legenda e esquecer o mapa. A prévia da tela de modelos (`EXEMPLO`) usa um caso com desconto (total R$ 76,41 e a frase) para a pessoa ver o que `{condicao}` faz.
+- **R12 (a frase do recibo é a mesma):** `Cobranca::fraseDaCondicao` cita só o encargo que o contrato tem (`+ multa`, `+ juros`, `+ multa e juros`, nenhum). Asserção antiga alterada só por isso: `CondicoesDaCobrancaTest` (o teste `so_cita_multa_e_juros_se_o_contrato_tem`,
+  cujo caso "só multa" esperava `+ multa e juros`, virou `cita_so_o_encargo_que_o_contrato_tem` com os casos só multa, só juros e nenhum). A prova de igualdade do recibo sem regra (`ReciboIdenticoSemRegraTest`) não mudou.
+- **Não conferido (sem navegador):** a janela de aviso com a frase e o total do dia, a prévia na tela de modelos e 390 px.

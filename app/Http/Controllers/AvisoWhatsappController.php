@@ -23,10 +23,13 @@ class AvisoWhatsappController extends Controller
         $dados = $request->validate(['ids' => ['required', 'array', 'max:50'], 'ids.*' => ['integer']]);
 
         $cobrancas = $request->user()->cobrancas()->where('status', StatusCobranca::Pendente)
-            ->whereIn('id', $dados['ids'])->with(['cliente', 'itens', 'chavePix'])->get();
+            ->whereIn('id', $dados['ids'])->with(['cliente', 'itens', 'chavePix', 'contrato'])->orderBy('vencimento')->orderBy('id')->get();
 
         abort_if($cobrancas->isEmpty(), 404);
         abort_if($cobrancas->pluck('cliente_id')->unique()->count() > 1, 422, 'As cobranças escolhidas são de clientes diferentes.');
+
+        // Como a lista: o valor do dia usa a data de hoje no app (desconto até o vencimento, multa e juros depois).
+        $hoje = CarbonImmutable::today();
 
         $itens = $cobrancas->flatMap(function (Cobranca $cobranca) {
             if ($cobranca->itens->isNotEmpty()) {
@@ -46,7 +49,6 @@ class AvisoWhatsappController extends Controller
 
         // Pré-seleciona o modelo marcado para a situação mais urgente do grupo (pedido do usuário, 2026-10-11):
         // vencida > vence hoje > a vencer. Sem modelo cadastrado para essa situação, não sugere nada (cai no padrão).
-        $hoje = CarbonImmutable::today();
         $situacaoDoGrupo = $cobrancas->map(fn (Cobranca $cobranca) => $cobranca->situacao($hoje))
             ->sort(fn ($a, $b) => self::PRIORIDADE_SITUACAO[$a] <=> self::PRIORIDADE_SITUACAO[$b])->first();
         $modeloSugerido = $request->user()->modelosMensagem()->where('tipo_situacao', $situacaoDoGrupo)->first();
@@ -59,7 +61,8 @@ class AvisoWhatsappController extends Controller
             'razao_social' => $cobrancas->first()->cliente->nome,
             'itens' => $itens->values(),
             'vencimentos' => $cobrancas->pluck('vencimento')->unique()->sort()->map(fn ($data) => $data->toDateString())->values(),
-            'total_centavos' => $cobrancas->sum('valor_centavos'),
+            'total_centavos' => $cobrancas->sum(fn (Cobranca $cobranca) => $cobranca->condicoesNaData($hoje)['total_centavos']),
+            'condicao' => $cobrancas->map(fn (Cobranca $cobranca) => $cobranca->fraseDaCondicao($hoje))->filter()->unique()->implode(' '),
             'chave_pix' => $comPix ? $comPix->chavePix->tipo->formatar($comPix->chavePix->chave) : '',
             'modelo_sugerido_id' => $modeloSugerido?->id,
         ]);

@@ -145,8 +145,8 @@ e `CorrecaoPagamentoInline` (ajuda, erro, `aria-describedby`, máscara por tipo)
 | Valor Líquido | valor pago | valor do dia |
 | Linha em informações | `Acréscimos por atraso: multa R$ 4,20; juros R$ 21,00; outros R$ 5,00.` | antes do vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.`; depois: `Valor atualizado em 01/11/2026: multa R$ 4,20; juros R$ 21,00.` |
 
-- Na linha "antes do vencimento", o trecho `+ multa e juros` só aparece se o contrato tiver multa ou juros. No detalhe,
-  só os valores maiores que zero.
+- Na linha "antes do vencimento", o trecho depois do valor original é `+ multa`, `+ juros` ou `+ multa e juros`, conforme o
+  contrato tenha só multa, só juros ou os dois; sem nenhum dos dois, não há trecho. No detalhe, só os valores maiores que zero.
 - **Valor por extenso** segue o Valor Líquido quando ele difere do total (corrige também o caso de desconto da Fase 26).
 - Sem regra e sem valores, o recibo sai **idêntico** ao atual, e isso é coberto por teste. Nenhum campo muda de posição.
 - **Sem v3:** os novos dados só aparecem quando existem. Mesma exceção consciente da Fase 26 à regra de versões.

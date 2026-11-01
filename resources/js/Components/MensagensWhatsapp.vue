@@ -1,31 +1,13 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
-import { montarMensagem } from '../mensagemWhatsapp.js';
+import { VARIAVEIS, montarMensagem } from '../mensagemWhatsapp.js';
 
 const props = defineProps({
     modelos: { type: Array, required: true },
     tiposAviso: { type: Array, required: true },
     prestador: { type: String, default: '' },
 });
-
-const VARIAVEIS = [
-    { token: '{saudacao}', legenda: 'Bom dia / Boa tarde / Boa noite, pela hora de quem envia' },
-    { token: '{cliente}', legenda: 'nome do cliente (apelido, senão o nome)' },
-    { token: '{contato}', legenda: 'pessoa de contato (vazio se não houver uma cadastrada)' },
-    { token: '{apelido}', legenda: 'só o apelido (vazio se não houver um cadastrado)' },
-    { token: '{razao_social}', legenda: 'nome oficial do cliente' },
-    {
-        token: '{contato|apelido|razao_social}',
-        legenda: 'o nome mais informal disponível: contato, senão apelido, senão razão social',
-    },
-    { token: '{item}', legenda: 'nome do(s) item(ns), em frase' },
-    { token: '{itens}', legenda: 'lista dos itens vencendo' },
-    { token: '{vencimento}', legenda: 'data(s) de vencimento' },
-    { token: '{total}', legenda: 'valor total' },
-    { token: '{chave_pix}', legenda: 'sua chave PIX (quando a cobrança usa PIX)' },
-    { token: '{prestador}', legenda: 'seu nome ou razão social' },
-];
 
 // Dados fictícios só para a prévia — a janela de envio real usa os dados da cobrança.
 const EXEMPLO = {
@@ -35,7 +17,8 @@ const EXEMPLO = {
     razaoSocial: 'Fulano da Silva Comércio LTDA',
     itens: [{ nome: 'Hospedagem do domínio exemplo.com.br', valorCentavos: 8990 }],
     vencimentos: ['2026-10-15'],
-    totalCentavos: 8990,
+    totalCentavos: 7641,
+    condicao: 'Pagando até 15/10/2026: R$ 76,41. Depois: R$ 89,90 + multa e juros.',
     chavePix: 'cobranca@suaempresa.com.br',
 };
 

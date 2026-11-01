@@ -319,7 +319,7 @@ mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa
 informações" (~10pt) levava o recibo à página 2. Correção: com mais de uma informação, as linhas da descrição têm 8pt em vez de 8,4pt (sem regra continua 8,4pt, e a prova de igualdade confirma). `array_merge` no helper `pdf()` de
 `AmostrasVisuaisTest` (com `+` a base vencia o `vencimento` pedido). Suíte: PHPUnit 862, JS 278 (sem `.vue`/`.js` alterado).
 
-### Tarefa 9 — Mensagem de WhatsApp — **Estado: pendente**
+### Tarefa 9 — Mensagem de WhatsApp — **Estado: testada**
 
 **Arquivos:** `app/Http/Controllers/AvisoWhatsappController.php`, `resources/js/mensagemWhatsapp.js` e teste,
 `resources/js/Components/AvisarWhatsapp.vue`, `MensagensWhatsapp.vue`, `tests/Feature/AvisoWhatsappTest.php`.
@@ -327,12 +327,18 @@ informações" (~10pt) levava o recibo à página 2. Correção: com mais de uma
 **Interfaces:** consome `condicoesNaData` e `fraseDaCondicao`. A resposta ganha `condicao` (`string`, frases únicas juntadas por espaço).
 `montarMensagem` recebe `condicao`; `{condicao}` entra nas variáveis. `MENSAGEM_SUGERIDA` usa `Total: {total} {condicao}`.
 
-- [ ] **Passo 1: testes que falham:** `total_centavos` soma o valor do dia (vencida com regra; a vencer com desconto; sem regra igual);
+- [x] **Passo 1: testes que falham:** `total_centavos` soma o valor do dia (vencida com regra; a vencer com desconto; sem regra igual);
   `condicao` com a frase; modelo antigo sem `{condicao}` continua igual; `{condicao}` vazia não deixa texto literal; legenda nova.
-- [ ] **Passo 2:** rodar `AvisoWhatsappTest` e `mensagemWhatsapp.test.js` → FALHAM.
-- [ ] **Passo 3:** implementar; `{itens}` continua com os valores originais.
-- [ ] **Passo 4:** testes + build → PASSAM. Pint.
-- [ ] **Passo 5:** commit `feat: mensagem de WhatsApp com o valor do dia e a variável {condicao}`.
+- [x] **Passo 2:** rodar `AvisoWhatsappTest` e `mensagemWhatsapp.test.js` → FALHAM.
+- [x] **Passo 3:** implementar; `{itens}` continua com os valores originais.
+- [x] **Passo 4:** testes + build → PASSAM. Pint.
+- [x] **Passo 5:** commit `feat: mensagem de WhatsApp com o valor do dia e a variável {condicao}`.
+
+**Registro (Tarefa 9):** `total_centavos` soma `condicoesNaData(hoje)['total_centavos']` das pendentes (hoje = `CarbonImmutable::today()`, como a lista) e `{itens}` fica com os valores originais; `condicao` junta as frases únicas de `fraseDaCondicao`
+por espaço, na ordem do vencimento (a consulta ganhou `orderBy('vencimento')->orderBy('id')`: sem `ORDER BY` a ordem não é garantida: no SQLite dos testes saiu por vencimento sem a consulta pedir). **R12** (decisão do controlador): `fraseDaCondicao` diz `+ multa`, `+ juros` ou
+`+ multa e juros` conforme o contrato; testes para os quatro casos (os três e nenhum dos dois) no modelo, no recibo e na mensagem; a spec §3 ganhou a frase. `{condicao}` vazia leva embora o espaço antes dela (senão `Total: R$ 89,90 ` ficaria com espaço solto
+antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mudar. A legenda (`VARIAVEIS`) mudou de `MensagensWhatsapp.vue` para `mensagemWhatsapp.js` para ser testável: o teste exige que toda variável da legenda seja reconhecida
+(não fique literal). A prévia da tela de modelos agora usa o exemplo com desconto (total R$ 76,41 e a frase). Suíte: PHPUnit 876, JS 283, `npm run build` ok. Não conferido (sem navegador): a janela de aviso e a prévia na tela, 390 px.
 
 ### Tarefa 10 — Wizard, conferência e documentação — **Estado: pendente**
 

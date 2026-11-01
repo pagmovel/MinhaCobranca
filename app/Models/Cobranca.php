@@ -164,7 +164,7 @@ class Cobranca extends Model
 
     /**
      * A frase do recibo para uma pendente com regra no contrato. Até o vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois:
-     * R$ 100,00 + multa e juros.` (o trecho `+ multa e juros` só se o contrato tem multa ou juros). Depois dele: `Valor atualizado
+     * R$ 100,00 + multa e juros.` (o trecho é `+ multa`, `+ juros` ou `+ multa e juros`, conforme o contrato; nenhum dos dois, sem trecho). Depois dele: `Valor atualizado
      * em 01/11/2026: multa R$ 4,20; juros R$ 21,00.`. Nulo se não é pendente ou se o valor do dia é o valor.
      */
     public function fraseDaCondicao(CarbonImmutable $data): ?string
@@ -181,7 +181,8 @@ class Cobranca extends Model
 
         if ($condicoes['dias'] === 0) {
             $regras = $this->contrato->regrasDePagamento();
-            $depois = 'R$ '.Dinheiro::formatar($this->valor_centavos).($regras['multa'] !== null || $regras['juros'] !== null ? ' + multa e juros' : '');
+            $encargos = collect(['multa', 'juros'])->filter(fn (string $nome) => $regras[$nome] !== null)->implode(' e ');
+            $depois = 'R$ '.Dinheiro::formatar($this->valor_centavos).($encargos !== '' ? " + {$encargos}" : '');
 
             return "Pagando até {$this->vencimento->format('d/m/Y')}: R$ ".Dinheiro::formatar($condicoes['total_centavos']).". Depois: {$depois}.";
         }

@@ -178,13 +178,16 @@ class CondicoesDaCobrancaTest extends TestCase
         );
     }
 
-    public function test_frase_antes_do_vencimento_so_cita_multa_e_juros_se_o_contrato_tem(): void
+    public function test_frase_antes_do_vencimento_cita_so_o_encargo_que_o_contrato_tem(): void
     {
         $soDesconto = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'percentual', 'desconto_pontualidade_valor' => 1500]);
         $soMulta = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 500, 'multa_tipo' => 'valor', 'multa_valor' => 300]);
+        $soJuros = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 500, 'juros_tipo' => 'percentual', 'juros_valor' => 100]);
+        $data = CarbonImmutable::parse('2025-12-20');
 
-        $this->assertSame('Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00.', $soDesconto->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')));
-        $this->assertSame('Pagando até 05/01/2026: R$ 95,00. Depois: R$ 100,00 + multa e juros.', $soMulta->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')));
+        $this->assertSame('Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00.', $soDesconto->fraseDaCondicao($data));
+        $this->assertSame('Pagando até 05/01/2026: R$ 95,00. Depois: R$ 100,00 + multa.', $soMulta->fraseDaCondicao($data));
+        $this->assertSame('Pagando até 05/01/2026: R$ 95,00. Depois: R$ 100,00 + juros.', $soJuros->fraseDaCondicao($data));
     }
 
     public function test_frase_depois_do_vencimento_diz_a_data_e_so_os_acrescimos_maiores_que_zero(): void
