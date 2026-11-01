@@ -2,13 +2,190 @@
 
 namespace Tests\Feature\Cobrancas;
 
+use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
+use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
 class DescontoNaBaixaTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    /** Cobrança pendente de R$ 247,57 do usuário logado; o relógio fica em 01/11/2026. */
+    private function usuarioComCobranca(): array
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $usuario = User::factory()->create();
+        $cobranca = Cobranca::factory()->create(['user_id' => $usuario->id, 'valor_centavos' => 24757]);
+        $this->actingAs($usuario);
+
+        return [$usuario, $cobranca];
+    }
+
+    private function resumoDaAuditoria(User $usuario): string
+    {
+        return $usuario->auditorias()->where('acao', 'cobranca.paga')->sole()->resumo;
+    }
+
+    public function test_baixa_com_desconto_percentual_grava_e_audita(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => '10'])
+            ->assertSessionHas('sucesso', 'Baixa registrada.');
+
+        $cobranca->refresh();
+        $this->assertSame(StatusCobranca::Paga, $cobranca->status);
+        $this->assertSame(2476, $cobranca->desconto_centavos);
+        $this->assertSame(22281, $cobranca->valorPagoCentavos());
+        $this->assertSame(
+            'Baixa registrada (R$ 247,57, desconto 10% = R$ 24,76, pago R$ 222,81, em 01/11/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_baixa_com_desconto_em_reais(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '24,76'])
+            ->assertSessionHas('sucesso');
+
+        $this->assertSame(2476, $cobranca->fresh()->desconto_centavos);
+        $this->assertSame(
+            'Baixa registrada (R$ 247,57, desconto R$ 24,76, pago R$ 222,81, em 01/11/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_baixa_com_desconto_integral_audita_como_integral(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => '100'])
+            ->assertSessionHas('sucesso');
+
+        $cobranca->refresh();
+        $this->assertSame(24757, $cobranca->desconto_centavos);
+        $this->assertSame(0, $cobranca->valorPagoCentavos());
+        $this->assertSame(
+            'Baixa com desconto integral (100% = R$ 247,57, pago R$ 0,00, em 01/11/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_desconto_em_reais_igual_ao_valor_tambem_e_integral(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '247,57'])
+            ->assertSessionHas('sucesso');
+
+        $this->assertSame(
+            'Baixa com desconto integral (100% = R$ 247,57, pago R$ 0,00, em 01/11/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_desconto_acima_do_valor_e_recusado(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => '150'])
+            ->assertSessionHasErrors(['desconto' => 'O desconto não pode passar do valor da cobrança.']);
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '247,58'])
+            ->assertSessionHasErrors(['desconto' => 'O desconto não pode passar do valor da cobrança.']);
+
+        $cobranca->refresh();
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->status);
+        $this->assertSame(0, $cobranca->desconto_centavos);
+        $this->assertSame(0, $usuario->auditorias()->count());
+    }
+
+    public function test_desconto_com_formato_ou_tipo_invalido_e_recusado(): void
+    {
+        [, $cobranca] = $this->usuarioComCobranca();
+        $url = "/cobrancas/{$cobranca->id}/pagar";
+
+        $this->post($url, ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => 'abc'])
+            ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
+        $this->post($url, ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '-5'])
+            ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
+        $this->post($url, ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => '1e3'])
+            ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
+        $this->post($url, ['pago_em' => '2026-11-01', 'desconto' => '10'])
+            ->assertSessionHasErrors('desconto_tipo');
+        $this->post($url, ['pago_em' => '2026-11-01', 'desconto_tipo' => 'dobro', 'desconto' => '10'])
+            ->assertSessionHasErrors('desconto_tipo');
+
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->fresh()->status);
+    }
+
+    public function test_baixa_sem_desconto_mantem_texto_de_hoje(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+        $segunda = Cobranca::factory()->create(['user_id' => $usuario->id, 'valor_centavos' => 24757]);
+
+        // A tela manda o tipo e o campo vazio; um "0" digitado também não é desconto.
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => ''])
+            ->assertSessionHas('sucesso');
+        $this->post("/cobrancas/{$segunda->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '0'])
+            ->assertSessionHas('sucesso');
+
+        $this->assertSame(0, $cobranca->fresh()->desconto_centavos);
+        $this->assertSame(0, $segunda->fresh()->desconto_centavos);
+        $this->assertSame(
+            ['Baixa registrada (R$ 247,57, paga em 01/11/2026)', 'Baixa registrada (R$ 247,57, paga em 01/11/2026)'],
+            $usuario->auditorias()->where('acao', 'cobranca.paga')->pluck('resumo')->all(),
+        );
+    }
+
+    public function test_pedido_antigo_sem_campos_de_desconto_continua_valendo(): void
+    {
+        [, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01'])->assertSessionHas('sucesso');
+
+        $this->assertSame(0, $cobranca->fresh()->desconto_centavos);
+    }
+
+    public function test_desconto_centavos_enviado_direto_e_ignorado(): void
+    {
+        [, $cobranca] = $this->usuarioComCobranca();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_centavos' => 5000])
+            ->assertSessionHas('sucesso');
+
+        $this->assertSame(0, $cobranca->fresh()->desconto_centavos);
+    }
+
+    public function test_cobranca_ja_paga_nao_troca_o_desconto_pela_baixa(): void
+    {
+        [, $cobranca] = $this->usuarioComCobranca();
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '10,00']);
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'valor', 'desconto' => '50,00'])
+            ->assertSessionHas('erro', 'Só cobranças pendentes recebem baixa.');
+
+        $this->assertSame(1000, $cobranca->fresh()->desconto_centavos);
+    }
+
+    public function test_cobranca_alheia_da_404_antes_da_validacao(): void
+    {
+        [$usuario, $propria] = $this->usuarioComCobranca();
+        $alheia = Cobranca::factory()->create(['valor_centavos' => 24757]);
+
+        // A rota existe para a própria cobrança; o 404 abaixo vem do isolamento, não de rota ausente.
+        $this->post("/cobrancas/{$propria->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => '10'])
+            ->assertSessionHas('sucesso');
+
+        $this->post("/cobrancas/{$alheia->id}/pagar", ['pago_em' => '2026-11-01', 'desconto_tipo' => 'percentual', 'desconto' => 'abc'])
+            ->assertNotFound();
+        $this->assertSame(StatusCobranca::Pendente, $alheia->fresh()->status);
+        $this->assertSame(1, $usuario->auditorias()->count());
+    }
 
     public function test_cobranca_sem_desconto_paga_o_valor_cheio(): void
     {

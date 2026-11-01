@@ -14,6 +14,7 @@ use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Services\ListaDeCobrancas;
 use App\Support\BlocoDePaginas;
+use App\Support\Desconto;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
@@ -400,15 +401,63 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');
         }
 
-        DB::transaction(function () use ($registro, $dados, $request) {
+        $descontoCentavos = $this->descontoValidado($request, $registro->valor_centavos);
+
+        DB::transaction(function () use ($registro, $dados, $descontoCentavos, $request) {
             $registro->status = StatusCobranca::Paga;
             $registro->pago_em = $dados['pago_em'];
+            $registro->desconto_centavos = $descontoCentavos;
             $registro->save();
-            Auditoria::registrar($request, 'cobranca.paga', $registro, 'Baixa registrada (R$ '
-                .Dinheiro::formatar($registro->valor_centavos).', paga em '.CarbonImmutable::parse($dados['pago_em'])->format('d/m/Y').')');
+            Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $request));
         });
 
         return back()->with('sucesso', 'Baixa registrada.');
+    }
+
+    /**
+     * Desconto da baixa em centavos, conferido de novo no servidor (a tela já trava em 100%):
+     * 0 ≤ desconto ≤ valor. Sem desconto digitado, 0.
+     */
+    private function descontoValidado(Request $request, int $valorCentavos): int
+    {
+        $dados = $request->validate([
+            'desconto_tipo' => ['nullable', 'required_with:desconto', Rule::in([Desconto::PERCENTUAL, Desconto::VALOR])],
+            'desconto' => ['nullable', 'string', 'max:20'],
+        ], [
+            'desconto_tipo.required_with' => 'Escolha se o desconto é em % ou em R$.',
+            'desconto_tipo.in' => 'Tipo de desconto inválido.',
+        ]);
+
+        $centavos = Desconto::centavos($valorCentavos, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
+
+        if ($centavos === null) {
+            throw ValidationException::withMessages(['desconto' => 'Desconto inválido.']);
+        }
+
+        if ($centavos > $valorCentavos) {
+            throw ValidationException::withMessages(['desconto' => 'O desconto não pode passar do valor da cobrança.']);
+        }
+
+        return $centavos;
+    }
+
+    /** Texto da auditoria da baixa: sem desconto, o de sempre; com desconto, mostra o desconto e o valor pago. */
+    private function resumoDaBaixa(Cobranca $registro, Request $request): string
+    {
+        $valor = 'R$ '.Dinheiro::formatar($registro->valor_centavos);
+        $pagoEm = $registro->pago_em->format('d/m/Y');
+
+        if ($registro->desconto_centavos === 0) {
+            return "Baixa registrada ({$valor}, paga em {$pagoEm})";
+        }
+
+        if ($registro->desconto_centavos === $registro->valor_centavos) {
+            return "Baixa com desconto integral (100% = {$valor}, pago R$ 0,00, em {$pagoEm})";
+        }
+
+        $desconto = Desconto::rotulo($registro->valor_centavos, $registro->desconto_centavos, (string) $request->input('desconto_tipo'), $request->input('desconto'));
+
+        return "Baixa registrada ({$valor}, desconto {$desconto}, pago R$ ".Dinheiro::formatar($registro->valorPagoCentavos()).", em {$pagoEm})";
     }
 
     /** Chamado pelo botão Enviar depois que a folha de compartilhamento (ou o download) concluiu. */

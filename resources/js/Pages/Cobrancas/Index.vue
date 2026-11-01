@@ -396,7 +396,7 @@ async function fecharFaixa() {
                         <Transition name="surgir">
                             <tr v-if="faixa?.id === cobranca.id && naFaixa.includes(faixa.acao)" class="block xl:table-row">
                                 <td :id="`faixa-${cobranca.id}`" colspan="8" class="block border-t border-carbono/10 bg-papel px-4 py-3 xl:table-cell">
-                                    <BaixaInline v-if="faixa.acao === 'baixa'" :cobranca-id="cobranca.id" na-faixa @fechar="fecharFaixa" />
+                                    <BaixaInline v-if="faixa.acao === 'baixa'" :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" na-faixa @fechar="fecharFaixa" />
                                     <PagamentoInline
                                         v-else-if="faixa.acao === 'pagamento'"
                                         :cobranca-id="cobranca.id"

@@ -1697,6 +1697,20 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   R$ lê como `Dinheiro::paraCentavos` (`'5'` → R$ 5,00, `'1.234,56'`, `'R$ 260'`), nunca "centavos = dígitos".
 - `Desconto::rotulo()` mostra o percentual sempre com vírgula e sem zeros à direita (`'12.5'` e `'12,50'` → `12,5%`).
 
+### Acertos (Tarefa 2 — baixa individual)
+- **Servidor:** `CobrancaController::pagar` chama `descontoValidado($request, $valorCentavos): int` (privado, reusado na
+  Tarefa 4) **depois** do `findOrFail` e da checagem de status (alheia = 404 antes de validar; paga recusa antes do
+  desconto). `desconto_tipo` é `nullable`, `required_with:desconto` e `in`; sem os campos (pedido antigo) o desconto é 0.
+  Grava `desconto_centavos` por atribuição direta, na transação da baixa. Auditoria em `resumoDaBaixa()`: sem desconto o
+  texto de sempre; `desconto === valor` (em % **ou** em R$) sai como "desconto integral (100% = …)".
+- **Tela (`BaixaInline.vue`, props `valorCentavos` obrigatória):** `formatadores.percentual` (`mascaras.js`) é a máscara do
+  %; o `v-mascara` troca de `'valor'` para `'percentual'` por expressão. Trocar o seletor **limpa** o número. A trava
+  (`travarDesconto`) roda num `watch` do número, não em `@input`: o `v-model` registra o ouvinte no `created` e a diretiva
+  no `mounted`, então um `@input` veria o texto ainda sem máscara. Aviso "Máximo: …" some em ~2 s; o `aria-live` é um
+  `<p class="sr-only">` sempre presente (o visível, com `v-if`, fica `aria-hidden`), e anuncia também o desconto integral.
+- **"12," não é erro de digitação:** `descontoEmCentavos('12,')` é `null`; a tela tira a vírgula final antes de calcular,
+  senão o valor pago voltava ao cheio e piscava enquanto a pessoa digitava os decimais.
+
 ### Pegadinhas
 - **`Dinheiro::paraCentavos` lança `TypeError` (500) com número gigante** (`'99999999999999999999'`: `(int) × 100` vira
   float e o retorno é `?int`). `Desconto::centavos` captura e devolve `null`; a raiz continua em `Dinheiro` (afeta também
@@ -1707,3 +1721,6 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   escritos à mão.
 - **`$attributes` é obrigatório para coluna nova com default:** sem `desconto_centavos => 0` ali, o objeto recém-criado
   pela factory vem com `null` até ser relido (mesma pegadinha de `User`, Fase 25).
+- **Comportamento de tela sem teste automático:** não há jsdom nem Vue Test Utils (e dependência nova exige aprovação).
+  "Trocar % ↔ R$ limpa o número", a trava e o aviso só se conferem no navegador; manter a lógica pura em `desconto.js` /
+  `mascaras.js` (com `node --test`) e deixar no componente só a ligação. Pendente: conferência visual (Tarefa 8).

@@ -85,7 +85,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
   mesmos casos valem nos dois tipos e nas duas linguagens (PHP e JS conferidos com 8.000 entradas sorteadas, 0
   diferenças). Os dois cortam só espaço ASCII nas pontas (o `trim()` do JS tira o NBSP, o do PHP não).
 
-### Tarefa 2 — Baixa individual com valor e desconto — **Estado: pendente**
+### Tarefa 2 — Baixa individual com valor e desconto — **Estado: testada**
 
 **Arquivos:** `app/Http/Controllers/CobrancaController.php` (`pagar`), `resources/js/Components/BaixaInline.vue`,
 `resources/js/Pages/Painel.vue:65`, `resources/js/Pages/Cobrancas/Index.vue:399`, teste
@@ -101,22 +101,28 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 - Produz: `BaixaInline` com prop nova `valorCentavos: Number` (obrigatória); envia `{ pago_em, desconto_tipo,
   desconto }`.
 
-- [ ] **Passo 1: testes que falham** (`DescontoNaBaixaTest`):
+- [x] **Passo 1: testes que falham** (`DescontoNaBaixaTest`):
   `test_baixa_com_desconto_percentual_grava_e_audita` (valor 24757, 10% → `desconto_centavos` 2476, auditoria com o
   texto exato da restrição global); `test_baixa_com_desconto_em_reais`; `test_baixa_com_desconto_integral_audita_como_integral`
   (100% → pago 0, texto "Baixa com desconto integral (…)"); `test_desconto_acima_do_valor_e_recusado` (erro em
   `desconto`, cobrança continua pendente); `test_baixa_sem_desconto_mantem_texto_de_hoje`;
   `test_cobranca_alheia_da_404_antes_da_validacao` (primeiro a própria com sucesso, depois a alheia com desconto
   inválido → 404).
-- [ ] **Passo 2:** `php artisan test --compact tests/Feature/Cobrancas/DescontoNaBaixaTest.php` → FALHAM.
-- [ ] **Passo 3:** `pagar` chama `descontoValidado` depois do `findOrFail` e da checagem de status; grava
+- [x] **Passo 2:** `php artisan test --compact tests/Feature/Cobrancas/DescontoNaBaixaTest.php` → FALHAM.
+- [x] **Passo 3:** `pagar` chama `descontoValidado` depois do `findOrFail` e da checagem de status; grava
   `desconto_centavos` por atribuição direta (fora do fillable) na mesma transação; auditoria com `Desconto::rotulo`.
-- [ ] **Passo 4:** `BaixaInline.vue` conforme spec §2: valor só leitura, campo + seletor `%`/`R$` (máscara `valor`
+- [x] **Passo 4:** `BaixaInline.vue` conforme spec §2: valor só leitura, campo + seletor `%`/`R$` (máscara `valor`
   quando R$), `watch` do tipo **limpa** o número, `travarDesconto` a cada `input` com aviso `aria-live` "Máximo: 100%" /
   "Máximo: R$ …" por ~2 s, valor pago com `.destacar`, aviso laranja no integral, erro embaixo do campo. Painel e lista
   passam `:valor-centavos="cobranca.valor_centavos"`.
-- [ ] **Passo 5:** testes da tarefa + `node --test resources/js/` → PASSAM. Pint. `npm run build`.
-- [ ] **Passo 6:** commit `feat: baixa mostra o valor e aceita desconto em % ou R$`.
+- [x] **Passo 5:** testes da tarefa + `node --test resources/js/` → PASSAM. Pint. `npm run build`.
+- [x] **Passo 6:** commit `feat: baixa mostra o valor e aceita desconto em % ou R$`.
+
+  Registro: (1) o plano não previa a máscara do percentual — `formatadores.percentual` (`mascaras.js`, com teste) é a
+  máscara que a spec §2 pede ("percentual com até 2 casas"). (2) A trava roda num `watch` do número, não num `@input`:
+  a ordem entre `v-model`, `@input` e a diretiva `v-mascara` muda o que cada um enxerga, e o `watch` só vê o valor já
+  formatado. (3) "Trocar limpa o número", a trava e o aviso são comportamento de tela: não há teste de componente
+  (sem jsdom/Vue Test Utils e sem dependência nova); ficam para a conferência no navegador da Tarefa 8.
 
 ### Tarefa 3 — Baixa em lote com percentual — **Estado: pendente**
 
