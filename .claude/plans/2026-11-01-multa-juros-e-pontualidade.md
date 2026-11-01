@@ -340,28 +340,72 @@ por espaço, na ordem do vencimento (a consulta ganhou `orderBy('vencimento')->o
 antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mudar. A legenda (`VARIAVEIS`) mudou de `MensagensWhatsapp.vue` para `mensagemWhatsapp.js` para ser testável: o teste exige que toda variável da legenda seja reconhecida
 (não fique literal). A prévia da tela de modelos agora usa o exemplo com desconto (total R$ 76,41 e a frase). Suíte: PHPUnit 876, JS 283, `npm run build` ok. Não conferido (sem navegador): a janela de aviso e a prévia na tela, 390 px.
 
-### Tarefa 10 — Wizard, conferência e documentação — **Estado: pendente**
+### Tarefa 10 — Wizard, conferência e documentação — **Estado: concluída** (para virar `testada` faltam o Passo 4 e o merge, do controlador com o Marcos)
 
-**Arquivos:** `.claude/skills/recibos/SKILL.md`, `.claude/plans/2026-10-10-roteiro-modulos.md`, README (só se algo de uso mudou).
+**Arquivos:** `.claude/skills/recibos/SKILL.md`, `.claude/plans/2026-10-10-roteiro-modulos.md`, README (só se algo de uso mudou: nada mudou, o README não descreve baixa nem contrato).
 
-- [ ] **Passo 1:** suíte da Fase 25 sem mudar asserção: `php artisan test --compact tests/Feature/ProgressoDeConfiguracaoTest.php
-  tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php` e `node --test resources/js/progressoHolofote.test.js
-  resources/js/progresso.test.js` → PASSAM. `git diff main -- tests/Feature/ProgressoDeConfiguracao*` vazio.
-- [ ] **Passo 2:** `php artisan test --compact` e `node --test 'resources/js/**/*.test.js'` → verdes; `npm run build` ok.
-- [ ] **Passo 3: PORTÃO-BANCO (Postgres local):** mostrar conexão, contagem (`contratos`, `cobrancas`), o comando literal
-  `php artisan migrate`, e só rodar com o "sim" do Marcos. Recontar depois.
-- [ ] **Passo 4: conferência no navegador** (pedir autorização antes; avisar que o browser-agent não está instalado, só o Playwright;
+- [x] **Passo 1:** suíte da Fase 25 sem mudar asserção: `php artisan test --compact tests/Feature/ProgressoDeConfiguracaoTest.php
+  tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php` (11 testes, 65 asserções) e `node --test resources/js/progressoHolofote.test.js
+  resources/js/progresso.test.js` (8 testes) → PASSAM. O diff desses testes contra `git merge-base main HEAD` (`6ce0e5c`) é vazio. Comparar com o `merge-base`, não com o `main`, que pode avançar com trabalho de outra sessão.
+- [x] **Passo 2:** `php artisan test --compact` → 876 testes, 3901 asserções; `node --test 'resources/js/**/*.test.js'` → 283; `npm run build` ok.
+- [x] **Passo 3: PORTÃO-BANCO (Postgres local):** cumprido pelo controlador, com a autorização antecipada do Marcos para migrations no banco local (2026-11-01): as duas migrações aditivas rodaram no Postgres local (host 127.0.0.1, `APP_ENV` local).
+- [ ] **Passo 4: conferência no navegador** (do controlador, com o Marcos; pedir autorização antes; avisar que o browser-agent não está instalado, só o Playwright;
   conta de teste, nunca dados reais): contrato com condições; baixa em dia e em atraso, troca de data, "Recalcular"; lote com clientes
-  diferentes; correção; lista e painel; reenvio e PIX; 390 px sem rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido.
-- [ ] **Passo 5:** PDFs de amostra em `storage/app/private/verificacao/` para a conferência visual do Marcos, inclusive PIX com o valor do dia.
-- [ ] **Passo 6:** documentação, estados deste plano, commit `docs: registra a Fase 27 (multa, juros e pontualidade)`; com tudo
-  `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos de que o deploy roda as duas migrações aditivas e de que, ao definir
-  regra num contrato, os recibos pendentes dele passam a sair com o valor do dia.
+  diferentes; correção; lista e painel; reenvio e PIX; 390 px sem rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido. Conferir também o que as revisões deixaram para o navegador:
+  digitação com a máscara, a trava e o aviso; "12," enviado como "12" na baixa (sem `transform`); o exemplo ao vivo do contrato; o erro de renovação no `Form.vue` (só compilado); o alinhamento (`gap-1`, `mt-5`); a janela de aviso do WhatsApp com a frase e a prévia dos modelos.
+  **Corrigir antes do merge:** `CampoValorOuPercentual.vue:37`, `slots.calculado` é verdadeiro mesmo com o `<p v-if>` oculto, e o `aria-describedby` aponta para um id inexistente.
+- [x] **Passo 5:** PDFs de amostra em `storage/app/private/verificacao/` (regerados pela suíte; fora do git) para a conferência visual do Marcos, inclusive PIX com o valor do dia: `amostra-{webiss,danfse}-fase27-{a-vencer-pix,a-vencer-boleto,vencida-pix,vencida-boleto,paga-acrescimos,paga-desconto-e-acrescimos}.pdf`,
+  12 arquivos, 1 página cada (`pdfinfo`). Texto conferido com `pdftotext -layout` em WebISS e DANFSe: a vencer = líquido R$ 221,51 e `Pagando até 21/09/2026: R$ 221,51. Depois: R$ 260,60 + multa e juros.`; vencida = líquido R$ 268,50 e
+  `Valor atualizado em 13/09/2026: multa R$ 5,21; juros R$ 2,69.`; boleto = `O boleto foi emitido com o valor original.`; PIX com `221.51` e `268.50` no copia e cola; paga com acréscimos = líquido R$ 282,28 e `Acréscimos por atraso: multa R$ 4,95; juros R$ 24,76; outros R$ 5,00.`;
+  paga com desconto e acréscimos = Desc. Cond. R$ 24,76 e líquido R$ 257,52.
+- [x] **Passo 6 (documentação):** skill (seção "Fase 27" consolidada por tema, exceção ao `-v2` e aviso de deploy), roteiro (linha da Fase 27), estados e registro deste plano; commit `docs: registra a Fase 27 (multa, juros e pontualidade)`.
+  **Falta (controlador):** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos de que o deploy roda as duas migrações **aditivas** (sem migração de dados) e de que, ao definir
+  regra num contrato, os recibos **pendentes** dele passam a sair com o valor do dia (um PIX já enviado fica com o valor antigo).
 
 ## Registro de execução
 
 - 2026-11-01: spec e plano aprovados pelo Marcos. Execução por subagentes, com as regras globais de subagentes (context-mode,
-  ponytail lite, modelo informado e nunca Opus nem Fable, sem acesso à VPS). Implementação ainda não iniciada: depende do merge da
-  Fase 26.
+  ponytail lite, modelo informado e nunca Opus nem Fable, sem acesso à VPS). A Fase 26 já estava no `main`; linha de base: PHPUnit 659, JS 170.
 - 2026-11-01: Tarefa 2 testada (PHPUnit 752, JS 258, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).
 - 2026-11-01: Tarefa 3 testada (PHPUnit 784, JS 277, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).
+- 2026-11-01: Tarefas 1 e 4 a 9 testadas, cada uma com revisão limpa do controlador (T7: PHPUnit 830, JS 278; T8: 862 e 278; T9: 876 e 283). Nenhuma conferência no navegador.
+- 2026-11-01: Tarefa 10 concluída: suíte da Fase 25 verde sem mudar asserção, PHPUnit 876, JS 283, `npm run build` ok, 12 PDFs de amostra conferidos por texto, documentação consolidada. Faltam o Passo 4 e o merge.
+
+### Decisões do controlador (R1 a R12)
+
+| # | Decisão | Custo se errada |
+|---|---|---|
+| R1 | A Tarefa 3 confere por busca todo chamador de `paraLista` e carrega o contrato em cada um, não só nos dois `with` citados (sem isso, uma consulta por linha) | nenhum |
+| R2 | Mudar só as condições de pagamento no contrato não aciona a correção de cronograma nem refaz cobranças (condição não muda período nem valor original) | ajustar a comparação do formulário |
+| R3 | Pedir ao Marcos o "sim" das duas migrações aditivas no Postgres local ao fim da T1, sem parar as tarefas seguintes (usam SQLite); depois ele deu autorização antecipada e o controlador as rodou | nenhum dado alterado sem o "sim" |
+| R4 | Com qualquer acréscimo, a auditoria sempre mostra o desconto, mesmo R$ 0,00 (texto exato da spec); sem acréscimos valem os textos da Fase 26 | ajustar uma condição do texto |
+| R5 | Implementadores e revisores em sonnet; haiku só em correção mecânica; revisão final em sonnet, por ser o mais capaz permitido (regra global do Marcos) | revisão final menos profunda |
+| R6 | Teto de R$ 99.999.999,99 (`ValorEmReais::MAXIMO_CENTAVOS`) para multa e juros em R$, na regra única `regraDaEntrada` (PHP e JS), e por herança no contrato e na baixa; "R$ sem teto" da spec vale em relação ao valor da cobrança | contrato com multa ou juros em R$ acima de ~R$ 100 milhões é recusado |
+| R7 | Renovar contrato vencido recusa desconto em R$ acima do novo total (spec §1 regra 5), na rodada 1 | nenhum |
+| R8 | A trava e o aviso antigos de `usarDescontoDaBaixa.js` ficam até a T4 e a T5 migrarem o lote e a correção para `CampoValorOuPercentual`; cada uma remove o que deixar de usar | duas travas numa tela por uma tarefa |
+| R9 | A auditoria do lote com acréscimo é `Baixa registrada (...)`, literal da spec ("o lote usa o mesmo texto em cada cobrança") | um lote mistura "Baixa registrada" e "Baixa em lote", perdendo o marcador de origem; troca de uma linha e 3 expectativas |
+| R10 | Em "Corrigir pagamento", o juros é o total em R$ (sem seletor, sem "ao mês") e abre com o gravado; o `resolver` em modo `correcao` trata o digitado como centavos totais. Baixa e lote seguem com juros ao mês (a spec §1/§2 se contradizia) | a correção não recalcula juros por % ao mês |
+| R11 | Letra do WebISS de 8,4 pt para 8 pt só com mais de uma informação, para manter 1 página; não altera nenhum recibo existente (provado com as 12 fixtures) | ajuste de tamanho de letra ou de linhas |
+| R12 | A frase do recibo antes do vencimento diz `+ multa`, `+ juros` ou `+ multa e juros` conforme o contrato (a mensagem usa a mesma frase) | três ramos de texto a mais |
+
+### Para o Marcos decidir
+
+1. **Lote com várias frases em `{condicao}`:** um lote com várias datas gera uma frase por (data, valor); a frase da vencida não diz a que item se refere.
+2. **Mensagem sugerida emendada:** `MENSAGEM_SUGERIDA` fica `Total: {total} {condicao}`, então a frase vem na mesma linha ("Total: R$ 76,41 Pagando até ...") e repete o valor.
+3. **Ordenação do aviso mudando a chave PIX:** a consulta do aviso passou a ordenar por `vencimento` e `id`; em lote com chaves PIX diferentes, a "primeira" pode mudar (antes a ordem era indefinida; sem teste com id maior e vencimento menor).
+4. **Juros da correção como total em R$ (R10):** confirmar que corrigir pagamento não recalcula juros por % ao mês.
+
+Também com o Marcos: R9 (lote que mistura os dois textos de auditoria) e R11 (letra do WebISS), a olhar nos PDFs `amostra-*-fase27-*.pdf`.
+
+### Menores adiados (das revisões; o ledger `.superpowers/` não é versionado)
+
+- **T1:** `condicoes.test.js` diz "mesmos casos", mas "reais gigante" só está no PHP (JS 1e22, divergência da Fase 26); a migração de contratos repete a lista de colunas e o `down()` não foi executado; `diaDoCalendario` não valida mês nem dia (a entrada vem do servidor).
+- **T2:** a etiqueta "contrato" é `<span>` próprio (texto 10,4px a 60%, fora do `aria-describedby`); a trava em R$ do contrato só age ao digitar, sem aviso quando o total cai abaixo do desconto, e o erro do servidor não some ao editar o campo; o teto de R$ de multa/juros não entra na trava de digitação
+  (só o desconto tem `valorMaximoCentavos`) e o exemplo ao vivo some sem aviso acima dele; o formulário do contrato depende do `@change` para tirar a vírgula final; `ContratoRequest::CONDICOES` e `Contrato::CONDICOES` têm o mesmo nome para coisas diferentes.
+- **T3:** o servidor valida multa/juros/outros mesmo sem atraso e a tela os esconde (valor inválido digitado antes de trocar a data daria erro em campo invisível); faltam testes do separador final ("12,") em multa/juros e do pagamento antes do vencimento com desconto do contrato; só trocar o seletor % | R$ já mostra "Valores diferentes do contrato" (cosmético).
+- **T4:** a prévia usa a data do aparelho (`toLocaleDateString`) e o servidor `today()` (mesmo padrão da `BaixaInline`); sem teste de cobrança alheia ou não pendente no mesmo pedido com acréscimos; o aviso da data de vencimento aparece mesmo sem regra (literal da spec).
+- **T5:** o `.vue` da correção não tem teste automatizado (só o hook); `juros_tipo=percentual` por API na correção vale uma vez sobre o valor, como a multa (a tela só manda valor; não recusar); specs e plano da Fase 26 e a linha 10 da spec da Fase 27 ainda citam `usarDescontoDaBaixa.js` (histórico).
+- **T6:** sem teste de `linhaDoDia` perto da meia-noite (UTC × São Paulo).
+- **T7:** `ReceitaTest::cenarioComAcrescimosPorProduto` sem cobrança cancelada nem de outro usuário com multa/juros (o código está certo); a classe de defeito do `get([...])` parcial depende de comentário e teste (apareceu duas vezes).
+- **T8:** `fraseDaCondicao` repete o prólogo de `linhaDoDia` e `condicoesNaData` roda 2 vezes por render; sem fixture de pendente em contrato com regra e valor do dia igual ao original (só multa antes do vencimento); o PIX usa `valor_centavos` vivo; comentário Blade novo no `webiss-v2` numa linha enorme.
+- **T9:** as legendas de `{total}` e `{itens}` mudaram de texto e a spec §3 ainda cita a legenda em `MensagensWhatsapp.vue` (agora em `mensagemWhatsapp.js`); sem teste de pedido misto (paga ou cancelada junto de pendente).
