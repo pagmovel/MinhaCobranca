@@ -3,6 +3,7 @@ import { computed, useSlots, watch } from 'vue';
 import { criarAvisoTemporario } from '../avisoTemporario.js';
 import { semSeparadorFinal, travarDesconto } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
+import { slotTemConteudo } from '../slotRenderizado.js';
 import Etiqueta from './Etiqueta.vue';
 
 /**
@@ -13,7 +14,8 @@ import Etiqueta from './Etiqueta.vue';
  * (ex.: "contrato", quando o valor veio da regra do contrato). `complementoDoMaximo`: texto depois de "Máximo: R$ X,XX"
  * (no lote, " (valor da menor cobrança)"). Evento `digitar`: a pessoa mexeu no número ou no tipo (o pai limpa o erro do
  * servidor, como o `clearErrors` do formulário). Slot `calculado` (recebe `id`): o valor calculado ao lado do campo, por
- * exemplo "= R$ 4,20"; o elemento do slot usa esse `id` para entrar no `aria-describedby`.
+ * exemplo "= R$ 4,20"; o elemento do slot usa esse `id` para entrar no `aria-describedby`
+ * (o id só entra se o slot renderizar algo: `<p v-if>` falso não conta).
  */
 const props = defineProps({
     id: { type: String, required: true },
@@ -32,12 +34,13 @@ const numero = defineModel({ type: String, default: '' });
 const tipo = defineModel('tipo', { type: String, default: 'percentual' });
 
 const emReais = computed(() => props.somenteReais || tipo.value === 'valor');
-const descricao = computed(() => [
+// Função chamada no template, não `computed`: o slot tem de ser invocado dentro do render para o Vue acompanhá-lo.
+const descricao = () => [
     props.etiqueta && `${props.id}-etiqueta`,
-    slots.calculado && `${props.id}-calculado`,
+    slotTemConteudo(slots.calculado?.({ id: `${props.id}-calculado` })) && `${props.id}-calculado`,
     props.ajuda && `${props.id}-ajuda`,
     props.erro && `${props.id}-erro`,
-].filter(Boolean).join(' ') || undefined);
+].filter(Boolean).join(' ') || undefined;
 const { aviso, mostrar, limpar } = criarAvisoTemporario();
 
 // A trava roda num `watch` do número, não num `@input`: o `v-model` registra o ouvinte no `created` e a máscara no
@@ -76,7 +79,7 @@ const trocarTipo = (novo) => {
                 :placeholder="emReais ? '0,00' : '0'"
                 class="entrada w-24 min-w-0 grow"
                 :aria-invalid="erro ? 'true' : undefined"
-                :aria-describedby="descricao"
+                :aria-describedby="descricao()"
                 @input="emit('digitar')"
                 @change="numero = semSeparadorFinal(numero)"
             >
