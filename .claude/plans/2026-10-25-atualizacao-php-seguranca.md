@@ -34,7 +34,7 @@
 - **T2.1 — README e skill `recibos`** (seção Deploy): versão fixa, como subir a versão, passos do deploy. Estado: concluída.
 
 ## Fase 3 — deploy (só o Marcos)
-- **T3.1 — commit e push** (o Easypanel puxa do Git). Estado: pendente, aguarda o "sim" do Marcos.
+- **T3.1 — commit e push** (o Easypanel puxa do Git). Estado: concluída (`bac0ef1`, no `main`).
 - **T3.2 — Deploy na VPS pelo painel** (reconstrói a imagem a partir do Git) e conferência de `php -v` no container.
   Estado: testada (2026-10-25). Deploy feito pelo Marcos. Conferência só de leitura, por SSH autorizado na mensagem.
   Container `meus_projetos_gerenciador_cobrancas-app-1` criado às 10:13. Resultados:
@@ -47,6 +47,8 @@
     barradas pelo ModSecurity (403), 4 com 400 e 6 que chegaram ao Laravel e voltaram 303. A amostra é payload de
     Next.js (`__proto__:then`), não PHP2Shell.
 
-## Fora do escopo (decisão a tomar)
-- Trocar Apache + mod_php por PHP-FPM reduziria a exposição, mas muda a imagem inteira; não foi pedido.
-- PHP da máquina local é 8.5.4, anterior à 8.5.12 (vulnerável). Não é produção; atualizar fica com o Marcos.
+## Fora do escopo
+- Trocar Apache + mod_php por PHP-FPM: **decidido não fazer** (Marcos, 2026-11-01). A correção já está em produção, e a troca
+  seria só um reforço opcional. Só atualizar o PHP corrige estas falhas, segundo o php.net.
+- PHP da máquina local: o pacote Ubuntu `8.5.4-0ubuntu1.5` traz os patches dos dois CVEs (backport, visto no changelog
+  do pacote), então não está vulnerável a eles, apesar do número da versão. Não é produção.
