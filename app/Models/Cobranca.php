@@ -120,6 +120,7 @@ class Cobranca extends Model
             'valor_pago' => Dinheiro::formatar($this->valorPagoCentavos()),
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
+            'pago_em_iso' => $this->pago_em?->toDateString(),
             'enviado' => $this->enviado_em !== null,
             'avisado_em' => $this->avisado_em?->format('d/m'),
             'editavel' => $this->editavel(),

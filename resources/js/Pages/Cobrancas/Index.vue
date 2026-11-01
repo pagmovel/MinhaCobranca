@@ -423,6 +423,7 @@ async function fecharFaixa() {
                                         :enviada="cobranca.enviado"
                                         :valor-centavos="cobranca.valor_centavos"
                                         :desconto-centavos="cobranca.desconto_centavos"
+                                        :pago-em-iso="cobranca.pago_em_iso"
                                         :modo-inicial="faixa.acao"
                                         @fechar="fecharFaixa"
                                     />

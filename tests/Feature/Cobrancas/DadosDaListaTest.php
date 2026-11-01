@@ -134,6 +134,18 @@ class DadosDaListaTest extends TestCase
         $this->assertSame(['100,00', '100,00', 0], [$linhas[1]['valor'], $linhas[1]['valor_pago'], $linhas[1]['desconto_centavos']]);
     }
 
+    public function test_cobranca_paga_traz_a_data_do_pagamento_para_a_correcao(): void
+    {
+        $paga = Cobranca::factory()->for($this->usuario)->for($this->cliente)->create(['vencimento' => '2026-10-05']);
+        $paga->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-28'])->save();
+        $pendente = Cobranca::factory()->for($this->usuario)->for($this->cliente)->create(['vencimento' => '2026-10-20']);
+
+        $linhas = collect($this->dados()->assertOk()->json('linhas'))->keyBy('id');
+
+        $this->assertSame('2026-10-28', $linhas[$paga->id]['pago_em_iso']);
+        $this->assertNull($linhas[$pendente->id]['pago_em_iso']);
+    }
+
     public function test_filtro_de_contrato_mostra_so_as_cobrancas_daquele_contrato(): void
     {
         // Encerrados: sem isso, a previsão calculada pelo próprio contrato entra na lista e confunde a contagem.

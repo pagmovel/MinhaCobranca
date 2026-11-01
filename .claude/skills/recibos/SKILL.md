@@ -1827,3 +1827,4 @@ navegador (ambos com o Marcos), depois o merge. **Deploy:** as duas migrações 
   `vue/server-renderer`; o `Modal` sai em `ctx.teleports.body`. O `Modal` usa `document` num `watch` imediato: atribuir um `document` mínimo (`activeElement`,
   `body.style`, `addEventListener`...) **depois** de carregar o Vue (antes o `runtime-dom` quebra com `doc.createElement is not a function`) e registrar uma
   diretiva `mascara` vazia.
+- **"Corrigir pagamento" abria com a data de hoje, não com a do pagamento:** quem abria só para mudar o desconto confirmava e mudava `pago_em` sem notar (a cobrança podia mudar de mês). Defeito anterior à Fase 26, achado na conferência no navegador. Corrigido: `Cobranca::paraLista` manda `pago_em_iso` e o componente recebe `pagoEmIso`. Ao criar formulário com data, iniciar pela data gravada, não por `new Date()`.

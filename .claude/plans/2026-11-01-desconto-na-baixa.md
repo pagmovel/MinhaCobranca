@@ -213,3 +213,7 @@ desconto — WebISS e DANFSe × pendente, pendente com PIX e paga — e exigia `
 ### Correção final da revisão (2026-11-01)
 
 NBSP trocado pelo escape de U+00A0 em `desconto.js` e no teste; frase "0 diferenças" corrigida (plano e skill); novo teste do lote com cobrança de outro usuário; estado "Tarefas 1 a 7 e 3b testadas; a 8 concluída" na skill e no roteiro.
+
+### Correção da data em "Corrigir pagamento" (2026-11-01, commit `fix: corrigir pagamento abre com a data atual do pagamento`)
+
+Defeito achado na conferência no navegador: o campo abria com a data de hoje. Teste `test_cobranca_paga_traz_a_data_do_pagamento_para_a_correcao` (vermelho com `Undefined array key "pago_em_iso"`, verde depois); suíte inteira verde (659 PHPUnit, 170 JS).

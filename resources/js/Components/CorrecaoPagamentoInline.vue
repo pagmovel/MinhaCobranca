@@ -14,6 +14,8 @@ const props = defineProps({
     // Valor da cobrança e desconto atual: o formulário abre em R$ com o desconto de hoje, para corrigir só a data sem mexer nele.
     valorCentavos: { type: Number, required: true },
     descontoCentavos: { type: Number, default: 0 },
+    // Data atual do pagamento (ISO): o formulário abre nela, para não mudar o mês sem querer.
+    pagoEmIso: { type: String, required: true },
 });
 const emit = defineEmits(['fechar']);
 
@@ -21,7 +23,7 @@ const idDesconto = useId();
 const modo = ref(props.modoInicial);
 const hoje = new Date().toLocaleDateString('sv-SE');
 const form = useForm({
-    pago_em: hoje,
+    pago_em: props.pagoEmIso,
     desconto_tipo: 'valor',
     desconto: props.descontoCentavos > 0 ? formatarCentavos(props.descontoCentavos) : '',
     motivo: '',
