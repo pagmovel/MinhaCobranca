@@ -57,7 +57,7 @@ contrato. Valor pago continua derivado.
 
 ---
 
-### Tarefa 1 — Dados e regra de cálculo — **Estado: pendente**
+### Tarefa 1 — Dados e regra de cálculo — **Estado: testada**
 
 **Arquivos:**
 - Criar: migrações `add_condicoes_de_pagamento_to_contratos_table` e `add_acrescimos_to_cobrancas_table`,
@@ -83,7 +83,7 @@ contrato. Valor pago continua derivado.
   dias)`, `descontoDoContrato(valor, tipo, regra)`, `regraDaEntrada(tipo, entrada)`, `entradaDaRegra(tipo, regra)`,
   `condicoesNaData(valor, vencimentoIso, dataIso, regras)` → mesmos campos em camelCase. Reusa `descontoEmCentavos`.
 
-- [ ] **Passo 1: testes que falham**, os mesmos casos em PHP e em JS, valor 21000:
+- [x] **Passo 1: testes que falham**, os mesmos casos em PHP e em JS, valor 21000:
   multa 200 → 420; multa de 500 centavos → 500; `10050` a 100 → 101 (meio centavo para cima).
   Juros 100: 0 dia → 0; 1 → 7; 15 → 105; 30 → 210; 300 → 2100; `45000` a 10, 1 dia → 2 (meio centavo).
   Juros de 3000 centavos ao mês: 1 dia → 100; 15 → 1500; 45 centavos ao mês, 1 dia → 2.
@@ -96,11 +96,11 @@ contrato. Valor pago continua derivado.
   8500; em 04/02 (30 dias) → desconto 0, multa 200, juros 100, total 10300. Sem contrato → total 10000.
   `valorPagoCentavos` com valor 21000, desconto 1000, multa 420, juros 2100, outros 500 → 23020; soma por
   `VALOR_PAGO_SQL` igual.
-- [ ] **Passo 2:** `php artisan test --compact tests/Unit/CondicoesDePagamentoTest.php tests/Feature/Cobrancas/CondicoesDaCobrancaTest.php`
+- [x] **Passo 2:** `php artisan test --compact tests/Unit/CondicoesDePagamentoTest.php tests/Feature/Cobrancas/CondicoesDaCobrancaTest.php`
   e `node --test resources/js/condicoes.test.js` → FALHAM (classe e módulo inexistentes).
-- [ ] **Passo 3:** migrações conforme spec §1 (colunas de contrato nulas; de cobrança com padrão 0), models, classe e módulo.
-- [ ] **Passo 4:** os mesmos comandos → PASSAM. Suíte inteira verde (a fórmula nova não muda quem tem zero). Pint.
-- [ ] **Passo 5:** commit `feat: regra única de multa, juros e desconto por pontualidade (PHP e JS)`.
+- [x] **Passo 3:** migrações conforme spec §1 (colunas de contrato nulas; de cobrança com padrão 0), models, classe e módulo.
+- [x] **Passo 4:** os mesmos comandos → PASSAM. Suíte inteira verde (a fórmula nova não muda quem tem zero). Pint.
+- [x] **Passo 5:** commit `feat: regra única de multa, juros e desconto por pontualidade (PHP e JS)`.
 
 ### Tarefa 2 — Condições no contrato — **Estado: pendente**
 

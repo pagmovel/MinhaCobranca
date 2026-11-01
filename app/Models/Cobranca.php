@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
+use App\Support\CondicoesDePagamento;
 use App\Support\Dinheiro;
 use Carbon\CarbonImmutable;
 use Database\Factories\CobrancaFactory;
@@ -25,10 +26,13 @@ class Cobranca extends Model
     use HasFactory;
 
     /** A conta de {@see valorPagoCentavos()} para somar no SQL (vale em SQLite e PostgreSQL). */
-    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos';
+    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos + multa_centavos + juros_centavos + outros_centavos';
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma', 'desconto_centavos' => 0];
+    protected $attributes = [
+        'status' => 'pendente', 'forma_pagamento' => 'nenhuma',
+        'desconto_centavos' => 0, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0,
+    ];
 
     protected function casts(): array
     {
@@ -42,6 +46,9 @@ class Cobranca extends Model
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
             'desconto_centavos' => 'integer',
+            'multa_centavos' => 'integer',
+            'juros_centavos' => 'integer',
+            'outros_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
         ];
     }
@@ -97,7 +104,41 @@ class Cobranca extends Model
     /** Derivado, nunca gravado: o que entra no caixa quando a cobrança é paga. */
     public function valorPagoCentavos(): int
     {
-        return $this->valor_centavos - $this->desconto_centavos;
+        return $this->valor_centavos - $this->desconto_centavos + $this->acrescimosCentavos();
+    }
+
+    /** Multa, juros e outros acréscimos gravados na baixa. */
+    public function acrescimosCentavos(): int
+    {
+        return $this->multa_centavos + $this->juros_centavos + $this->outros_centavos;
+    }
+
+    /**
+     * O valor da cobrança numa data, pela regra atual do contrato: até o vencimento, o desconto por pontualidade;
+     * depois dele, multa e juros. Sem contrato ou sem regra, o valor original.
+     *
+     * @return array{dias: int, desconto_centavos: int, multa_centavos: int, juros_centavos: int, total_centavos: int}
+     */
+    public function condicoesNaData(CarbonImmutable $data): array
+    {
+        $regras = $this->contrato?->regrasDePagamento();
+        $dias = CondicoesDePagamento::diasDeAtraso($this->vencimento, $data);
+        $desconto = $multa = $juros = 0;
+
+        if ($dias === 0) {
+            $desconto = CondicoesDePagamento::descontoCentavos($this->valor_centavos, $regras['desconto']['tipo'] ?? null, $regras['desconto']['valor'] ?? null);
+        } else {
+            $multa = CondicoesDePagamento::multaCentavos($this->valor_centavos, $regras['multa']['tipo'] ?? null, $regras['multa']['valor'] ?? null);
+            $juros = CondicoesDePagamento::jurosCentavos($this->valor_centavos, $regras['juros']['tipo'] ?? null, $regras['juros']['valor'] ?? null, $dias);
+        }
+
+        return [
+            'dias' => $dias,
+            'desconto_centavos' => $desconto,
+            'multa_centavos' => $multa,
+            'juros_centavos' => $juros,
+            'total_centavos' => $this->valor_centavos - $desconto + $multa + $juros,
+        ];
     }
 
     public function editavel(): bool

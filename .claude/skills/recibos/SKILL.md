@@ -1828,3 +1828,23 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
   `body.style`, `addEventListener`...) **depois** de carregar o Vue (antes o `runtime-dom` quebra com `doc.createElement is not a function`) e registrar uma
   diretiva `mascara` vazia.
 - **"Corrigir pagamento" abria com a data de hoje, não com a do pagamento:** quem abria só para mudar o desconto confirmava e mudava `pago_em` sem notar (a cobrança podia mudar de mês). Defeito anterior à Fase 26, achado na conferência no navegador. Corrigido: `Cobranca::paraLista` manda `pago_em_iso` e o componente recebe `pagoEmIso`. Ao criar formulário com data, iniciar pela data gravada, não por `new Date()`.
+
+## Fase 27 — multa, juros, outros acréscimos e desconto por pontualidade (2026-11-01)
+
+Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/superpowers/specs/2026-11-01-multa-juros-e-pontualidade-design.md`.
+
+### Acertos (Tarefa 1 — dados e regra de cálculo)
+- **Dados:** `contratos` ganha `desconto_pontualidade_*`, `multa_*` e `juros_*` (`_tipo` string e `_valor` inteiro, tudo nulo = sem regra; % em pontos-base, R$ em
+  centavos); `cobrancas` ganha `multa_centavos`, `juros_centavos` e `outros_centavos` (padrão 0, fora do `#[Fillable]`, também em `Cobranca::$attributes`).
+  `VALOR_PAGO_SQL` e `valorPagoCentavos()` = valor − desconto + multa + juros + outros (`acrescimosCentavos()` soma os três gravados).
+- **Uma regra, duas linguagens:** `App\Support\CondicoesDePagamento` e `resources/js/condicoes.js`, com os **mesmos casos** em `CondicoesDePagamentoTest` e
+  `condicoes.test.js`. Multa e desconto reaproveitam `Desconto::centavos` (a regra gravada vira texto por `entradaDaRegra` e volta), sem copiar a fórmula;
+  `Desconto::pontosBase` ficou público e `textoDoPercentual` foi extraído de `rotulo`; no JS saíram `export` em `aparar`, `pontosBase` e `CEM_POR_CENTO`.
+- **Dias de atraso = data de calendário, em UTC:** `diasDeAtraso` compara `toDateString()` dos dois lados (PHP) e `Date.UTC` de "AAAA-MM-DD" (JS). A hora do dia e o
+  horário de verão não entram; o teste JS roda igual com `TZ=America/Sao_Paulo` e `TZ=Asia/Tokyo`. Quem chama passa a data no fuso do app (`today()`), não um
+  instante em UTC.
+- **Juros:** `%` = `intdiv(valor × pontosBase × dias + 150000, 300000)`; R$ = `intdiv(centavos × dias + 15, 30)`. O produto passa de 2^53, então o JS usa `BigInt`
+  (o PHP cabe no inteiro de 64 bits até R$ 99.999.999,99 × 100% × 73 mil dias). Comparados PHP × JS com 4.000 entradas sorteadas: 0 divergências.
+- **Valor do dia (`Cobranca::condicoesNaData`):** até o vencimento (inclusive) só o desconto; depois só multa e juros; sem contrato (`contrato_id` nulo) ou sem regra, o
+  valor original. O desconto é limitado ao valor (`min`), então o total nunca fica negativo. `Contrato::regrasDePagamento()` trata tipo nulo ou valor 0 como sem regra.
+- **Teste de factory:** `ContratoFactory::comCondicoes()` = 15% / multa 2% / juros 1%. Para um contrato com só uma regra, partir da factory sem o estado e passar os campos.

@@ -32,4 +32,17 @@ class ContratoFactory extends Factory
             'ativo' => true,
         ];
     }
+
+    /** Desconto de 15% até o vencimento, multa de 2% e juros de 1% ao mês. */
+    public function comCondicoes(): static
+    {
+        return $this->state([
+            'desconto_pontualidade_tipo' => 'percentual',
+            'desconto_pontualidade_valor' => 1500,
+            'multa_tipo' => 'percentual',
+            'multa_valor' => 200,
+            'juros_tipo' => 'percentual',
+            'juros_valor' => 100,
+        ]);
+    }
 }

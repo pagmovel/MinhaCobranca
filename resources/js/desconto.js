@@ -3,13 +3,13 @@ import { formatadores } from './mascaras.js';
 /** Mesmas contas do servidor (App\Support\Desconto), só para mostrar e travar o desconto enquanto digita. */
 const PERCENTUAL = 'percentual';
 const VALOR = 'valor';
-const CEM_POR_CENTO = 10000; // em pontos-base (% × 100)
+export const CEM_POR_CENTO = 10000; // em pontos-base (% × 100)
 
 /** Como o trim() do PHP: só espaços ASCII (o do JS também tira o NBSP, e o servidor trataria a entrada de outro jeito). */
-const aparar = (texto) => String(texto ?? '').replace(/^[ \t\n\r\0\v]+|[ \t\n\r\0\v]+$/g, '');
+export const aparar = (texto) => String(texto ?? '').replace(/^[ \t\n\r\0\v]+|[ \t\n\r\0\v]+$/g, '');
 
 /** "12,5" ou "12.5" → 1250; null fora do formato (até 3 dígitos inteiros e 2 decimais, sem sinal). */
-function pontosBase(texto) {
+export function pontosBase(texto) {
     const partes = texto.match(/^(\d{1,3})(?:[.,](\d{1,2}))?$/);
 
     return partes ? Number(partes[1]) * 100 + Number((partes[2] ?? '').padEnd(2, '0')) : null;
