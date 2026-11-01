@@ -262,9 +262,9 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 - [x] **Passo 5:** testes + build → PASSAM. Pint.
 - [x] **Passo 6:** commit `feat: lista e painel mostram o valor do dia`.
 
-**Registro (Tarefa 6):** o teste da soma das pagas com acréscimos pegou um defeito da Tarefa 1: `ListaDeCobrancas::montar` lia as cobranças com `get([...colunas])` sem `multa_centavos`, `juros_centavos` e `outros_centavos`, e o Eloquent completa a coluna que falta com o `$attributes` (0), então `totais` e `total_geral` da lista ignoravam os acréscimos (a aba "Pagas" e o painel usavam `VALOR_PAGO_SQL` e estavam certos). Corrigido incluindo as três colunas. Falta conferir no navegador (Tarefa 10): a linha embaixo do valor em 390 px e 1280 px.
+**Registro (Tarefa 6):** o teste da soma das pagas com acréscimos pegou um defeito da Tarefa 1: `ListaDeCobrancas::montar` lia as cobranças com `get([...colunas])` sem `multa_centavos`, `juros_centavos` e `outros_centavos`, e a coluna que falta fica `null` (o `newFromBuilder` chama `setRawAttributes`, que substitui o `$attributes`; o `null` vira 0 na soma, sem erro), então `totais` e `total_geral` da lista ignoravam os acréscimos (a aba "Pagas" e o painel usavam `VALOR_PAGO_SQL` e estavam certos). Corrigido incluindo as três colunas. Falta conferir no navegador (Tarefa 10): a linha embaixo do valor em 390 px e 1280 px.
 
-### Tarefa 7 — Relatórios — **Estado: pendente**
+### Tarefa 7 — Relatórios — **Estado: testada**
 
 **Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porProduto`), `tests/Feature/Relatorios/*`.
 
@@ -272,14 +272,19 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 `Multas recebidas`, `Juros recebidos` e `Outros acréscimos`, positivas, antes de `Descontos concedidos`, com `previsto` 0 e
 `contratos` 0, só quando houver valor no período.
 
-- [ ] **Passo 1: testes que falham:** faturamento (recebido com acréscimos; coluna; previsto e inadimplência cheios); por cliente
+- [x] **Passo 1: testes que falham:** faturamento (recebido com acréscimos; coluna; previsto e inadimplência cheios); por cliente
   (recebido e média); por produto (linhas e total igual ao `resumo.recebido` do painel no mesmo período); CSV byte a byte
   (`FaturamentoTest::test_csv_para_o_excel_em_portugues`); sem acréscimos, valores iguais aos de antes e sem linhas novas;
   contas a receber sem mudança.
-- [ ] **Passo 2:** `php artisan test --compact tests/Feature/Relatorios` → FALHAM.
-- [ ] **Passo 3:** implementar, sem `ORDER BY` junto de agregado (PostgreSQL).
-- [ ] **Passo 4:** testes → PASSAM. Pint.
-- [ ] **Passo 5:** commit `feat: relatórios mostram multas, juros e outros acréscimos`.
+- [x] **Passo 2:** `php artisan test --compact tests/Feature/Relatorios` → FALHAM.
+- [x] **Passo 3:** implementar, sem `ORDER BY` junto de agregado (PostgreSQL).
+- [x] **Passo 4:** testes → PASSAM. Pint.
+- [x] **Passo 5:** commit `feat: relatórios mostram multas, juros e outros acréscimos`.
+
+**Registro (Tarefa 7):** o `get([...])` do faturamento tinha o mesmo defeito da lista: sem `multa_centavos`, `juros_centavos` e `outros_centavos` no select o Recebido ignorava os acréscimos
+(o teste do CSV mostrou `950,00` onde devia sair `990,00`); as três colunas entraram no select e a coluna nova usa `acrescimosCentavos()`. Por produto, as linhas de acréscimos e a de descontos saem de
+uma consulta só (`toBase()`, sem `ORDER BY`), e um teste com `DB::listen` falha se alguma consulta de relatório juntar agregado e `ORDER BY`. Por cliente já usava `VALOR_PAGO_SQL`: só o teste e o texto
+mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa vencida de contrato com regra). Suíte: PHPUnit 830, JS 278. Sem `.vue`/`.js` alterado: sem `npm run build`.
 
 ### Tarefa 8 — Recibo e PIX — **Estado: pendente**
 
