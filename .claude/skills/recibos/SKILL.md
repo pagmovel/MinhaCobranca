@@ -171,6 +171,8 @@ o relatório mostra a parte que existe.
   banco `recibos`, dono e usuário da aplicação `recibos_app` (senha gerada, só no `.env`);
   `REVOKE CONNECT ... FROM PUBLIC`. O mesmo servidor tem o banco `meus_projetos` (dev, de outro
   projeto) — não tocar. O SQLite `database/database.sqlite` ficou como histórico.
+  **Desde 2026-11-01, na máquina Linux, o `.env` local aponta para outro banco:** o Postgres do Docker local, com a
+  cópia dos dados reais de produção (seção "Banco local na máquina Linux" no fim do Deploy).
 - **Segurança do servidor PostgreSQL (pendente, fora do repositório):** conexão **sem SSL** pela
   internet (`pg_stat_ssl.ssl = false`), superusuário `postgres` exposto em IP público. A aplicação
   não usa o superusuário.
@@ -1239,9 +1241,42 @@ outro contrato real do mesmo cliente.
   Confirmado depois por recontagem: tudo zerado, contrato 7 (real) intacto.
 
 ### Pendências depois da migração
-- `.env` local continua apontando pro `postgres_dev` — correto, é o banco de desenvolvimento; não mexer.
+- ~~`.env` local continua apontando pro `postgres_dev`~~ — **superado em 2026-11-01**: na máquina Linux o `.env`
+  local aponta para o Postgres do Docker local (seção abaixo). O `postgres_dev` remoto continua existindo.
 - O usuário real (id 1) e os dados dele continuam **também** no `postgres_dev` (não foram removidos de lá, só
   copiados) — intencional, dev continua servindo de ambiente de teste.
+
+### Banco local na máquina Linux: cópia de produção (2026-11-01)
+Pedido do usuário: copiar o banco de produção da VPS e restaurar no Postgres do Docker local, e apontar o `.env`
+local para ele.
+- **Onde:** container `postgres` (imagem `postgres:17-ptbr`, PostgreSQL **17.11**), `127.0.0.1:5432`, banco
+  **`cobrancas`**, usuário `postgres`. A senha é a `POSTGRES_PASSWORD` do container (`docker inspect postgres`); está
+  só no `.env`, nunca em arquivo versionado. Os bancos `appdb`, `layout_generator` e `postgres` do mesmo container são
+  de outros projetos — não tocar.
+- **Dados reais de clientes (LGPD).** Em 2026-11-01: 12 usuários, 6 clientes, 6 contratos, 60 cobranças, 60 recibos,
+  26 migrações — idênticos à produção, conferidos tabela por tabela. **O PORTÃO-BANCO vale integralmente** para este
+  banco (conexão, contagem, comando literal, "sim" por comando), inclusive `migrate`. Testes continuam só em SQLite em
+  memória (`phpunit.xml`).
+- **`.env` local:** não existia nesta máquina; foi criado do `.env.example` (permissão 600) com `DB_CONNECTION=pgsql`,
+  `DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=cobrancas`, `DB_USERNAME=postgres`. `APP_KEY` local nova, gerada
+  no formato `base64:` + 32 bytes — seguro porque o app não guarda nada criptografado com ela (senhas em bcrypt,
+  `SESSION_ENCRYPT=false`); a sessão copiada de produção só deixa de valer. O `composer install` desta máquina foi
+  feito pelo usuário depois (antes não havia `vendor/`).
+- **Como refazer a cópia** (VPS só com autorização expressa do usuário na mensagem; restaurar é escrita → portão):
+  1. `ssh -o BatchMode=yes root@207.180.205.211 'P=$(docker ps --format "{{.Names}}" | grep -i postgres_prod | head -1);
+     docker exec "$P" pg_dump -U meus_projetos -d cobrancas --format=plain --no-owner --no-privileges' > <scratchpad>/cobrancas-producao.sql`
+     (com `umask 077`; o role `postgres` não existe na produção, o superusuário é `meus_projetos`).
+  2. Banco novo vazio (ou apagar o antigo, com portão): `docker exec postgres createdb -U postgres cobrancas`.
+  3. `docker exec -i postgres psql -U postgres -d cobrancas -v ON_ERROR_STOP=1 --single-transaction < <arquivo>`.
+  4. Comparar `count(*)` de cada tabela com a produção e **apagar o arquivo do dump** (CPF, endereços, hashes).
+- **Pegadinhas:**
+  - Produção é PostgreSQL **18.6** e o local é **17**: restaurar de versão nova para antiga não tem suporte oficial.
+    Funcionou porque o dump em SQL texto só usa `SET`s que existem na 17 (`transaction_timeout` é da 17) e o `psql`
+    17.11 entende o `\restrict` que o `pg_dump` 18 grava. Antes de restaurar de novo, conferir a estrutura do dump
+    **pulando os blocos `COPY`** (filtro largo casa texto dentro dos dados).
+  - Dentro do container o `pg_hba` dá `trust` para `127.0.0.1`, mas o PHP do host chega pela rede do Docker: **pede
+    senha**.
+  - `php -I` não existe (o `-I` de isolamento é do Python).
 
 ## Renovar contrato vencido (2026-10-12)
 **Achado real (não suposto):** o campo simples "Fim do contrato (opcional)" no formulário de edição grava `data_fim`
