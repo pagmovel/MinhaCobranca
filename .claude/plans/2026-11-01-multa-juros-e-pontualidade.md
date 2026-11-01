@@ -340,7 +340,7 @@ por espaço, na ordem do vencimento (a consulta ganhou `orderBy('vencimento')->o
 antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mudar. A legenda (`VARIAVEIS`) mudou de `MensagensWhatsapp.vue` para `mensagemWhatsapp.js` para ser testável: o teste exige que toda variável da legenda seja reconhecida
 (não fique literal). A prévia da tela de modelos agora usa o exemplo com desconto (total R$ 76,41 e a frase). Suíte: PHPUnit 876, JS 283, `npm run build` ok. Não conferido (sem navegador): a janela de aviso e a prévia na tela, 390 px.
 
-### Tarefa 10 — Wizard, conferência e documentação — **Estado: concluída** (para virar `testada` faltam o Passo 4 e o merge, do controlador com o Marcos)
+### Tarefa 10 — Wizard, conferência e documentação — **Estado: testada**
 
 **Arquivos:** `.claude/skills/recibos/SKILL.md`, `.claude/plans/2026-10-10-roteiro-modulos.md`, README (só se algo de uso mudou: nada mudou, o README não descreve baixa nem contrato).
 
@@ -349,8 +349,7 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
   resources/js/progresso.test.js` (8 testes) → PASSAM. O diff desses testes contra `git merge-base main HEAD` (`6ce0e5c`) é vazio. Comparar com o `merge-base`, não com o `main`, que pode avançar com trabalho de outra sessão.
 - [x] **Passo 2:** `php artisan test --compact` → 876 testes, 3901 asserções; `node --test 'resources/js/**/*.test.js'` → 283; `npm run build` ok.
 - [x] **Passo 3: PORTÃO-BANCO (Postgres local):** cumprido pelo controlador, com a autorização antecipada do Marcos para migrations no banco local (2026-11-01): as duas migrações aditivas rodaram no Postgres local (host 127.0.0.1, `APP_ENV` local).
-- [ ] **Passo 4: conferência no navegador** (do controlador, com o Marcos; pedir autorização antes; avisar que o browser-agent não está instalado, só o Playwright;
-  conta de teste, nunca dados reais): contrato com condições; baixa em dia e em atraso, troca de data, "Recalcular"; lote com clientes
+- [x] **Passo 4: conferência no navegador:** o Marcos testou a baixa em lote e o campo "Outros" no servidor dele e confirmou que funcionou (2026-11-01, "testei e funcionou"); o que ele exercitou além disso não foi detalhado. Não houve conferência por script (Playwright) nesta fase: 390 px, coach, foco do botão do aviso e a aparência dos PDFs não foram verificados por mim. Roteiro previsto: contrato com condições; baixa em dia e em atraso, troca de data, "Recalcular"; lote com clientes
   diferentes; correção; lista e painel; reenvio e PIX; 390 px sem rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido. Conferir também o que as revisões deixaram para o navegador:
   digitação com a máscara, a trava e o aviso; "12," enviado como "12" na baixa (sem `transform`); o exemplo ao vivo do contrato; o erro de renovação no `Form.vue` (só compilado); o alinhamento (`gap-1`, `mt-5`); a janela de aviso do WhatsApp com a frase e a prévia dos modelos.
   **Corrigido na revisão final:** `CampoValorOuPercentual.vue`, `slots.calculado` era verdadeiro mesmo com o `<p v-if>` oculto, e o `aria-describedby` apontava para um id inexistente; agora o slot é chamado no render e o id só entra se renderizar algo (`slotTemConteudo`).
