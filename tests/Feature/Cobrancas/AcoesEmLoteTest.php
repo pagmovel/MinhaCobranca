@@ -5,9 +5,11 @@ namespace Tests\Feature\Cobrancas;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /** T17.19: seleção de várias cobranças e ação em lote (baixar, cancelar), com prévia na tela e auditoria por item. */
@@ -306,6 +308,310 @@ class AcoesEmLoteTest extends TestCase
             'Baixa em lote com desconto integral (100% = R$ 247,57, pago R$ 0,00, em 01/10/2026)',
             $this->usuario->auditorias()->where('acao', 'cobranca.paga')->sole()->resumo,
         );
+    }
+
+    /**
+     * Fase 27, Tarefa 4. Cenário: o relógio em 01/11/2026 e cobranças vencidas em 05/01/2026 (300 dias de atraso).
+     * Contrato A (cliente A): desconto 15%, multa 2%, juros 1% ao mês. Contrato B (outro cliente): multa R$ 5,00 e juros R$ 3,00 ao mês.
+     *
+     * @return array{0: Cobranca, 1: Cobranca} R$ 210,00 do contrato A e R$ 100,00 do contrato B
+     */
+    private function cenarioDeAtraso(): array
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $contratoA = Contrato::factory()->comCondicoes()->create(['user_id' => $this->usuario->id]);
+        $contratoB = Contrato::factory()->create(['user_id' => $this->usuario->id, 'multa_tipo' => 'valor', 'multa_valor' => 500, 'juros_tipo' => 'valor', 'juros_valor' => 300]);
+
+        return [$this->cobrancaDoContrato($contratoA, 21000), $this->cobrancaDoContrato($contratoB, 10000)];
+    }
+
+    private function cobrancaDoContrato(Contrato $contrato, int $valor, string $vencimento = '2026-01-05'): Cobranca
+    {
+        return Cobranca::factory()->create([
+            'user_id' => $this->usuario->id,
+            'cliente_id' => $contrato->cliente_id,
+            'contrato_id' => $contrato->id,
+            'periodo_inicio' => $vencimento, // o índice único é (contrato, início do período)
+            'vencimento' => $vencimento,
+            'valor_centavos' => $valor,
+        ]);
+    }
+
+    /** @return array{0: int, 1: int, 2: int, 3: int} desconto, multa, juros e outros gravados */
+    private function gravados(Cobranca $cobranca): array
+    {
+        $cobranca->refresh();
+
+        return [$cobranca->desconto_centavos, $cobranca->multa_centavos, $cobranca->juros_centavos, $cobranca->outros_centavos];
+    }
+
+    /** @return array<string, array{0: array<string, string>}> o que a tela manda com os campos em branco, e o pedido sem eles */
+    public static function camposEmBranco(): array
+    {
+        return [
+            'ausentes' => [[]],
+            'em branco' => [['desconto_tipo' => 'percentual', 'desconto' => '', 'multa_tipo' => 'percentual', 'multa' => '', 'juros_tipo' => 'percentual', 'juros' => '', 'outros' => '']],
+        ];
+    }
+
+    /** @param  array<string, string>  $campos */
+    #[DataProvider('camposEmBranco')]
+    public function test_em_branco_usa_o_contrato_de_cada_cobranca(array $campos): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'hoje'] + $campos)
+            ->assertSessionHasNoErrors()->assertSessionHas('sucesso', '2 cobrança(s) baixada(s).');
+
+        $this->assertSame([0, 420, 2100, 0], $this->gravados($a));
+        $this->assertSame([0, 500, 3000, 0], $this->gravados($b));
+        $this->assertSame([23520, 13500], [$a->valorPagoCentavos(), $b->valorPagoCentavos()]);
+    }
+
+    public function test_preenchido_vale_para_todas(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $avulsa = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 5000]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', [
+            'ids' => [$a->id, $b->id, $avulsa->id], 'modo' => 'hoje',
+            'desconto_tipo' => 'percentual', 'desconto' => '10',
+            'multa_tipo' => 'percentual', 'multa' => '3',
+            'juros_tipo' => 'valor', 'juros' => '1,00',
+            'outros' => '5,00',
+        ])->assertSessionHasNoErrors();
+
+        // O digitado vence o contrato (a multa de 2% do A, o juros de R$ 3,00 do B) e vale até para a que não tem contrato.
+        $this->assertSame([2100, 630, 1000, 500], $this->gravados($a));
+        $this->assertSame([1000, 300, 1000, 500], $this->gravados($b));
+        $this->assertSame([500, 150, 1000, 500], $this->gravados($avulsa));
+    }
+
+    /** Percentual é calculado em cada cobrança (arredondado por ela); R$ é o mesmo valor em todas. */
+    public function test_percentual_calculado_por_cobranca_e_reais_igual_em_cada(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $a = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 10001]);
+        $b = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 24757]);
+        $c = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 10001]);
+        $d = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 24757]);
+        $this->actingAs($this->usuario);
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'hoje', 'multa_tipo' => 'percentual', 'multa' => '10', 'juros_tipo' => 'percentual', 'juros' => '1'])
+            ->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id, $d->id], 'modo' => 'hoje', 'multa_tipo' => 'valor', 'multa' => '5,00'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame([[0, 1000, 1000, 0], [0, 2476, 2476, 0]], [$this->gravados($a), $this->gravados($b)]);
+        $this->assertSame([[0, 500, 0, 0], [0, 500, 0, 0]], [$this->gravados($c), $this->gravados($d)]);
+        $this->assertSame(3476, $a->multa_centavos + $b->multa_centavos);
+    }
+
+    /** Zero digitado não é em branco: zera a regra do contrato em todas (inclusive o desconto da que ainda vai vencer). */
+    public function test_zero_zera_em_todas(): void
+    {
+        [$vencida] = $this->cenarioDeAtraso();
+        $contrato = $vencida->contrato;
+        $aVencer = $this->cobrancaDoContrato($contrato, 21000, '2026-12-05');
+        $controle = $this->cobrancaDoContrato($contrato, 21000, '2026-12-06');
+        $this->actingAs($this->usuario);
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$vencida->id, $aVencer->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '0', 'multa_tipo' => 'percentual', 'multa' => '0', 'juros_tipo' => 'valor', 'juros' => '0', 'outros' => '0'])
+            ->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$controle->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => ''])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame([[0, 0, 0, 0], [0, 0, 0, 0]], [$this->gravados($vencida), $this->gravados($aVencer)]);
+        $this->assertSame([3150, 0, 0, 0], $this->gravados($controle));
+    }
+
+    /** Multa e juros só nas em atraso; "outros" (pedido do Marcos, 2026-11-01) vale em todas, qualquer que seja a data. */
+    public function test_so_cobranca_em_atraso_recebe_multa_e_juros_e_outros_vale_em_todas(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $vencida = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 21000]);
+        $venceHoje = $this->cobranca(['vencimento' => '2026-11-01', 'valor_centavos' => 21000]);
+        $aVencer = $this->cobranca(['vencimento' => '2026-12-05', 'valor_centavos' => 21000]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', [
+            'ids' => [$vencida->id, $venceHoje->id, $aVencer->id], 'modo' => 'hoje',
+            'multa_tipo' => 'valor', 'multa' => '5,00', 'juros_tipo' => 'valor', 'juros' => '3,00', 'outros' => '5,00',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame([0, 500, 3000, 500], $this->gravados($vencida));
+        $this->assertSame([[0, 0, 0, 500], [0, 0, 0, 500]], [$this->gravados($venceHoje), $this->gravados($aVencer)]);
+        $this->assertSame([21500, 21500], [$venceHoje->valorPagoCentavos(), $aVencer->valorPagoCentavos()]);
+    }
+
+    /** Com "usar a data de vencimento" a vencida é baixada no vencimento, sem multa nem juros (nem os digitados); "outros" fica. */
+    public function test_modo_vencimento_nao_gera_multa_nem_juros_mas_soma_outros(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'vencimento'])->assertSessionHasNoErrors();
+        $this->assertSame('2026-01-05', $a->fresh()->pago_em->toDateString());
+        $this->assertSame([3150, 0, 0, 0], $this->gravados($a));
+        $this->assertSame([0, 0, 0, 0], $this->gravados($b));
+
+        [$c] = $this->cenarioDeAtraso();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'vencimento', 'multa_tipo' => 'percentual', 'multa' => '5', 'juros_tipo' => 'percentual', 'juros' => '5', 'outros' => '9,00'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame([3150, 0, 0, 900], $this->gravados($c));
+    }
+
+    /** O mesmo R$ em cada linha, com a data de vencimento (todas sem atraso) e com a de hoje (a que vai vencer também). */
+    public function test_outros_soma_em_todas_com_vencimento_e_com_hoje(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $aVencer = $this->cobrancaDoContrato($a->contrato, 21000, '2026-12-05');
+        $this->actingAs($this->usuario);
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $aVencer->id], 'modo' => 'vencimento', 'outros' => '5,00'])->assertSessionHasNoErrors();
+
+        // A e B são baixadas no vencimento (o desconto do contrato vale, sem multa nem juros); a que vai vencer é baixada hoje.
+        $this->assertSame([[3150, 0, 0, 500], [0, 0, 0, 500], [3150, 0, 0, 500]], [$this->gravados($a), $this->gravados($b), $this->gravados($aVencer)]);
+        $this->assertSame([18350, 10500, 18350], [$a->valorPagoCentavos(), $b->valorPagoCentavos(), $aVencer->valorPagoCentavos()]);
+
+        [$c, $d] = $this->cenarioDeAtraso();
+        $deHoje = $this->cobrancaDoContrato($c->contrato, 21000, '2026-12-06');
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id, $d->id, $deHoje->id], 'modo' => 'hoje', 'outros' => '5,00'])->assertSessionHasNoErrors();
+
+        // Em atraso: multa e juros do contrato, mais "outros"; a que vai vencer: desconto do contrato e "outros".
+        $this->assertSame([[0, 420, 2100, 500], [0, 500, 3000, 500], [3150, 0, 0, 500]], [$this->gravados($c), $this->gravados($d), $this->gravados($deHoje)]);
+        $this->assertSame([24020, 14000, 18350], [$c->valorPagoCentavos(), $d->valorPagoCentavos(), $deHoje->valorPagoCentavos()]);
+    }
+
+    /** Ponto 5 da revisão: a que ainda vai vencer é baixada com a data de hoje e recebe o desconto do contrato. */
+    public function test_modo_vencimento_a_vencer_recebe_desconto_do_contrato(): void
+    {
+        [$vencida] = $this->cenarioDeAtraso();
+        $aVencer = $this->cobrancaDoContrato($vencida->contrato, 21000, '2026-12-05');
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$vencida->id, $aVencer->id], 'modo' => 'vencimento'])
+            ->assertSessionHasNoErrors();
+
+        $aVencer->refresh();
+        $vencida->refresh();
+        $this->assertSame(['2026-11-01', 3150, 17850], [$aVencer->pago_em->toDateString(), $aVencer->desconto_centavos, $aVencer->valorPagoCentavos()]);
+        $this->assertSame(['2026-01-05', 3150, 17850], [$vencida->pago_em->toDateString(), $vencida->desconto_centavos, $vencida->valorPagoCentavos()]);
+    }
+
+    /** @return array<string, array{0: array<string, string>, 1: string, 2: string}> campos, o campo do erro e a mensagem */
+    public static function acrescimosInvalidos(): array
+    {
+        $percentual = 'Percentual inválido: use de 0 a 100, com até 2 casas decimais.';
+        $reais = 'Valor inválido: use reais, como 15,00, de no máximo R$ 99.999.999,99.';
+
+        return [
+            'multa acima de 100%' => [['multa_tipo' => 'percentual', 'multa' => '150'], 'multa', $percentual],
+            'multa com 3 casas' => [['multa_tipo' => 'percentual', 'multa' => '2,555'], 'multa', $percentual],
+            'multa em reais com texto' => [['multa_tipo' => 'valor', 'multa' => 'abc'], 'multa', $reais],
+            'multa em reais acima do teto' => [['multa_tipo' => 'valor', 'multa' => '100.000.000,00'], 'multa', $reais],
+            'juros acima de 100%' => [['juros_tipo' => 'percentual', 'juros' => '101'], 'juros', $percentual],
+            'juros em reais negativo' => [['juros_tipo' => 'valor', 'juros' => '-5'], 'juros', $reais],
+            'outros com texto' => [['outros' => 'abc'], 'outros', $reais],
+            'outros acima do teto' => [['outros' => '100.000.000,00'], 'outros', $reais],
+            'multa sem tipo' => [['multa' => '2'], 'multa_tipo', 'Escolha se a multa é em % ou em R$.'],
+            'juros com tipo inválido' => [['juros_tipo' => 'taxa', 'juros' => '2'], 'juros_tipo', 'Tipo de juros inválido.'],
+        ];
+    }
+
+    /**
+     * Qualquer valor inválido recusa o lote inteiro, mesmo ao lado de um valor bom, e até com a data de vencimento (sem atraso):
+     * nada é baixado nem auditado.
+     *
+     * @param  array<string, string>  $invalido
+     */
+    #[DataProvider('acrescimosInvalidos')]
+    public function test_multa_invalida_recusa_o_lote_sem_gravar_nada(array $invalido, string $campo, string $mensagem): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $this->actingAs($this->usuario);
+
+        foreach (['hoje', 'vencimento'] as $modo) {
+            $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => $modo, 'desconto_tipo' => 'percentual', 'desconto' => '5'] + $invalido)
+                ->assertSessionHasErrors([$campo => $mensagem]);
+        }
+
+        foreach ([$a, $b] as $cobranca) {
+            $this->assertSame([StatusCobranca::Pendente, null, 0, 0, 0, 0], [$cobranca->fresh()->status, $cobranca->fresh()->pago_em, ...$this->gravados($cobranca)]);
+        }
+        $this->assertSame(0, $this->usuario->auditorias()->count());
+    }
+
+    public function test_lote_sem_regra_fica_igual(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $semRegra = Contrato::factory()->create(['user_id' => $this->usuario->id]);
+        $deContrato = $this->cobrancaDoContrato($semRegra, 1000);
+        $avulsa = $this->cobranca(['vencimento' => '2026-01-06', 'valor_centavos' => 2000]);
+        $semDados = $this->cobranca(['vencimento' => '2026-01-07', 'valor_centavos' => 3000]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', [
+            'ids' => [$deContrato->id, $avulsa->id], 'modo' => 'hoje',
+            'desconto_tipo' => 'percentual', 'desconto' => '', 'multa_tipo' => 'percentual', 'multa' => '', 'juros_tipo' => 'percentual', 'juros' => '', 'outros' => '',
+        ])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$semDados->id], 'modo' => 'hoje'])->assertSessionHasNoErrors();
+
+        foreach ([$deContrato, $avulsa, $semDados] as $cobranca) {
+            $this->assertSame([0, 0, 0, 0], $this->gravados($cobranca));
+            $this->assertSame($cobranca->valor_centavos, $cobranca->valorPagoCentavos());
+        }
+        $this->assertSame(
+            ['Baixa em lote (R$ 10,00, paga em 01/11/2026)', 'Baixa em lote (R$ 20,00, paga em 01/11/2026)', 'Baixa em lote (R$ 30,00, paga em 01/11/2026)'],
+            $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('alvo_id')->pluck('resumo')->all(),
+        );
+    }
+
+    /** O texto da spec, em cada cobrança do lote: só os acréscimos maiores que zero, o desconto sempre. */
+    public function test_auditoria_de_cada_cobranca_do_lote_traz_os_acrescimos(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $semRegra = Contrato::factory()->create(['user_id' => $this->usuario->id]);
+        $aVencer = $this->cobrancaDoContrato($semRegra, 7000, '2026-12-05');
+        $semAcrescimo = $this->cobrancaDoContrato($semRegra, 8000, '2026-12-06');
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $aVencer->id], 'modo' => 'hoje', 'outros' => '5,00'])
+            ->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$semAcrescimo->id], 'modo' => 'hoje'])->assertSessionHasNoErrors();
+
+        $resumos = $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('alvo_id')->pluck('resumo')->all();
+        $this->assertSame(
+            [
+                'Baixa registrada (R$ 210,00, multa R$ 4,20, juros R$ 21,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 240,20, em 01/11/2026)',
+                'Baixa registrada (R$ 100,00, multa R$ 5,00, juros R$ 30,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 140,00, em 01/11/2026)',
+                'Baixa registrada (R$ 70,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 75,00, em 01/11/2026)',
+                'Baixa em lote (R$ 80,00, paga em 01/11/2026)',
+            ],
+            $resumos,
+        );
+    }
+
+    /** O desconto em R$ do contrato, numa cobrança de valor menor (proporcional), fica no valor: nunca negativo, e audita como integral. */
+    public function test_desconto_do_contrato_em_reais_acima_do_valor_fica_no_valor(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
+        $contrato = Contrato::factory()->create(['user_id' => $this->usuario->id, 'desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 30000]);
+        $cobranca = $this->cobrancaDoContrato($contrato, 20000, '2026-12-05');
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'vencimento'])->assertSessionHasNoErrors();
+
+        $this->assertSame([20000, 0, 0, 0], $this->gravados($cobranca));
+        $this->assertSame(0, $cobranca->valorPagoCentavos());
+        $this->assertSame('Baixa em lote com desconto integral (100% = R$ 200,00, pago R$ 0,00, em 01/11/2026)', $this->usuario->auditorias()->sole()->resumo);
+    }
+
+    /** A soma que a prévia da tela mostra (JS: previaDoLote) é a gravada: mesmos números de usarValoresDaBaixa.test.js. */
+    public function test_soma_gravada_do_lote_bate_com_a_previa_da_tela(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $c = $this->cobrancaDoContrato($a->contrato, 21000, '2026-12-05');
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $c->id], 'modo' => 'hoje'])->assertSessionHasNoErrors();
+
+        $this->assertSame([23520, 13500, 17850], [$a->refresh()->valorPagoCentavos(), $b->refresh()->valorPagoCentavos(), $c->refresh()->valorPagoCentavos()]);
+        $this->assertSame(54870, $this->usuario->cobrancas()->get()->sum(fn (Cobranca $cobranca) => $cobranca->valorPagoCentavos()));
     }
 
     public function test_cancelar_em_lote_so_as_pendentes_e_registra_auditoria(): void

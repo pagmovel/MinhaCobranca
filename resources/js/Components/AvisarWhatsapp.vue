@@ -39,6 +39,7 @@ function atualizarTexto() {
         itens: dados.value.itens.map((item) => ({ nome: item.nome, valorCentavos: item.valor_centavos })),
         vencimentos: dados.value.vencimentos,
         totalCentavos: dados.value.total_centavos,
+        condicao: dados.value.condicao,
         prestador: props.prestador,
         chavePix: dados.value.chave_pix,
         contato: dados.value.contato,

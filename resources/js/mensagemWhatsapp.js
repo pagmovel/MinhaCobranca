@@ -6,7 +6,30 @@ const LIMITE_PRATICO = 1000;
 /** Usado quando não há modelo cadastrado nem padrão. Em bloco (não numa frase), para não exigir concordância verbal
  * com a quantidade de itens — "estám vencendo" era o bug corrigido (achado da revisão, T24.9). */
 export const MENSAGEM_SUGERIDA = 'Olá {cliente}! Segue o lembrete de vencimento ({vencimento}):\n{itens}\n\n'
-    + 'Total: {total}\n\nQualquer dúvida, estou à disposição.\n\n{prestador}';
+    + 'Total: {total} {condicao}\n\nQualquer dúvida, estou à disposição.\n\n{prestador}';
+
+/** Legenda das variáveis (tela de modelos). Teste: toda variável daqui é reconhecida por `montarMensagem`. */
+export const VARIAVEIS = [
+    { token: '{saudacao}', legenda: 'Bom dia / Boa tarde / Boa noite, pela hora de quem envia' },
+    { token: '{cliente}', legenda: 'nome do cliente (apelido, senão o nome)' },
+    { token: '{contato}', legenda: 'pessoa de contato (vazio se não houver uma cadastrada)' },
+    { token: '{apelido}', legenda: 'só o apelido (vazio se não houver um cadastrado)' },
+    { token: '{razao_social}', legenda: 'nome oficial do cliente' },
+    {
+        token: '{contato|apelido|razao_social}',
+        legenda: 'o nome mais informal disponível: contato, senão apelido, senão razão social',
+    },
+    { token: '{item}', legenda: 'nome do(s) item(ns), em frase' },
+    { token: '{itens}', legenda: 'lista dos itens vencendo, com o valor de cada um' },
+    { token: '{vencimento}', legenda: 'data(s) de vencimento' },
+    { token: '{total}', legenda: 'valor a pagar hoje (com o desconto, a multa e os juros do contrato)' },
+    {
+        token: '{condicao}',
+        legenda: 'a condição do contrato em uma frase, como no recibo (vazia sem regra no contrato)',
+    },
+    { token: '{chave_pix}', legenda: 'sua chave PIX (quando a cobrança usa PIX)' },
+    { token: '{prestador}', legenda: 'seu nome ou razão social' },
+];
 
 function linhaDoItem(item) {
     return `- ${item.nome}: R$ ${formatarCentavos(item.valorCentavos)}`;
@@ -59,7 +82,7 @@ const PADRAO_VARIAVEL = /\{([a-z_]+(?:\|[a-z_]+)*)\}/gi;
  * inteira fica literal (mesma regra de erro de digitação); se todas forem reconhecidas mas vazias, vira "".
  */
 export function montarMensagem(texto, {
-    cliente, itens, vencimentos, totalCentavos, prestador, chavePix, contato, apelido, razaoSocial, agora,
+    cliente, itens, vencimentos, totalCentavos, condicao, prestador, chavePix, contato, apelido, razaoSocial, agora,
 }) {
     const valores = {
         cliente,
@@ -71,12 +94,16 @@ export function montarMensagem(texto, {
         itens: itens.map(linhaDoItem).join('\n'),
         vencimento: juntarVencimentos(vencimentos),
         total: `R$ ${formatarCentavos(totalCentavos)}`,
+        condicao: condicao ?? '',
         chave_pix: chavePix ?? '',
         saudacao: saudacao(agora ?? new Date()),
         prestador,
     };
 
-    return texto.replace(PADRAO_VARIAVEL, (trecho, grupo) => {
+    // {condicao} vazia leva embora o espaço que a separava do texto de antes ("Total: {total} {condicao}"): sem sobra.
+    const modelo = valores.condicao === '' ? texto.replaceAll(' {condicao}', '{condicao}') : texto;
+
+    return modelo.replace(PADRAO_VARIAVEL, (trecho, grupo) => {
         const opcoes = grupo.split('|');
         if (!opcoes.every((opcao) => opcao in valores)) {
             return trecho;

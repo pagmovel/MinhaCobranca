@@ -60,13 +60,19 @@ final class Desconto
             return $reais;
         }
 
+        return self::textoDoPercentual($pontosBase).'% = '.$reais;
+    }
+
+    /** Pontos-base como se digita: 1250 → "12,5", 1500 → "15", 5 → "0,05" (vírgula, sem zeros à direita). */
+    public static function textoDoPercentual(int $pontosBase): string
+    {
         $decimais = rtrim(str_pad((string) ($pontosBase % 100), 2, '0', STR_PAD_LEFT), '0');
 
-        return intdiv($pontosBase, 100).($decimais === '' ? '' : ','.$decimais).'% = '.$reais;
+        return intdiv($pontosBase, 100).($decimais === '' ? '' : ','.$decimais);
     }
 
     /** "12,5" ou "12.5" → 1250; até 3 dígitos inteiros e 2 decimais, sem sinal. */
-    private static function pontosBase(string $texto): ?int
+    public static function pontosBase(string $texto): ?int
     {
         if (! preg_match('/^(\d{1,3})(?:[.,](\d{1,2}))?$/', $texto, $partes)) {
             return null;

@@ -350,6 +350,21 @@ class EncerramentoContratoTest extends TestCase
         $this->assertSame(14384, $this->cobrancaDe($contrato, '2026-10-01')->valor_centavos);
     }
 
+    public function test_recomecar_leva_as_condicoes_do_formulario_ao_contrato_novo(): void
+    {
+        $contrato = $this->contratoComCobrancas();
+
+        $this->post("/contratos/{$contrato->id}/recomecar", $this->dadosDoContrato([
+            'data_inicio' => '2026-10-19', 'em_curso' => 'proporcional',
+            'desconto_pontualidade_tipo' => 'percentual', 'desconto_pontualidade' => '10',
+            'multa_tipo' => 'valor', 'multa' => '7,50',
+        ]))->assertRedirect();
+
+        $novo = $this->usuario->contratos()->whereKeyNot($contrato->id)->sole();
+        $this->assertSame(['percentual', 1000, 'valor', 750, null, null], array_values($novo->only(Contrato::CONDICOES)));
+        $this->assertSame([null, null, null, null, null, null], array_values($contrato->fresh()->only(Contrato::CONDICOES)));
+    }
+
     /**
      * Recomeçar com início antes de um período já pago no contrato antigo não pode cobrá-lo de novo no novo contrato
      * — a página pediria para "não cancelar" o em curso, mas setembro já estava fechado (pago), não em curso.

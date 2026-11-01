@@ -79,6 +79,52 @@ class RenovarContratoVencidoTest extends TestCase
         $this->assertTrue($item->principal);
     }
 
+    public function test_renovar_vencido_leva_as_condicoes(): void
+    {
+        $antigo = $this->contratoVencido([
+            'desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 1000,
+            'multa_tipo' => 'percentual', 'multa_valor' => 200,
+            'juros_tipo' => 'percentual', 'juros_valor' => 150,
+        ]);
+
+        $this->actingAs($this->usuario)->renovar($antigo)->assertSessionHasNoErrors();
+
+        $novo = $this->usuario->contratos()->where('id', '!=', $antigo->id)->sole();
+        $this->assertSame(
+            ['valor', 1000, 'percentual', 200, 'percentual', 150],
+            array_values($novo->only(Contrato::CONDICOES)),
+        );
+        // O contrato antigo guarda as dele: o histórico não muda.
+        $this->assertSame(1000, $antigo->fresh()->desconto_pontualidade_valor);
+    }
+
+    public function test_renovar_vencido_recusa_desconto_em_reais_acima_do_novo_valor_do_contrato(): void
+    {
+        // Desconto de R$ 350,00 copiado do contrato antigo; os itens renovados somam R$ 300,00.
+        $antigo = $this->contratoVencido(['desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 35000]);
+
+        $this->actingAs($this->usuario)->renovar($antigo)
+            ->assertSessionHasErrors(['desconto_pontualidade' => 'O desconto não pode passar do valor do contrato (R$ 300,00).']);
+
+        $this->assertSame(1, $this->usuario->contratos()->count());
+        $this->assertTrue($antigo->fresh()->ativo);
+
+        // Igual ao novo valor passa (como no cadastro).
+        $antigo->update(['desconto_pontualidade_valor' => 30000]);
+        $this->renovar($antigo)->assertSessionHasNoErrors();
+        $this->assertSame(2, $this->usuario->contratos()->count());
+    }
+
+    public function test_renovar_vencido_sem_condicoes_cria_contrato_sem_condicoes(): void
+    {
+        $antigo = $this->contratoVencido();
+
+        $this->actingAs($this->usuario)->renovar($antigo)->assertSessionHasNoErrors();
+
+        $novo = $this->usuario->contratos()->where('id', '!=', $antigo->id)->sole();
+        $this->assertSame([null, null, null, null, null, null], array_values($novo->only(Contrato::CONDICOES)));
+    }
+
     public function test_recusa_quando_o_contrato_ainda_nao_venceu(): void
     {
         $futuro = Contrato::factory()->for($this->usuario)->for($this->cliente)

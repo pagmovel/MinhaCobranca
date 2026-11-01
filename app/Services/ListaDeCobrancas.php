@@ -52,12 +52,12 @@ final class ListaDeCobrancas
         $incluirPrevistasNaLista = in_array($status, [null, 'a_vencer', 'pendente'], true);
 
         // ponytail: a lista leve fica inteira na memória (até 36 meses); agregar no SQL se passar de dezenas de milhares de linhas.
-        $leves = $consulta->get(['id', 'vencimento', 'status', 'valor_centavos', 'desconto_centavos'])
+        $leves = $consulta->get(['id', 'vencimento', 'status', 'valor_centavos', 'desconto_centavos', 'multa_centavos', 'juros_centavos', 'outros_centavos'])
             ->map(fn (Cobranca $cobranca) => [
                 'id' => $cobranca->id,
                 'vencimento' => $cobranca->vencimento->toDateString(),
                 'situacao' => $cobranca->situacao($hoje),
-                // Valor das somas: a paga conta o que entrou (valor − desconto); as demais, o valor cheio.
+                // Valor das somas: a paga conta o que entrou (valor − desconto + acréscimos); as demais, o valor cheio.
                 'valor_centavos' => $cobranca->status === StatusCobranca::Paga ? $cobranca->valorPagoCentavos() : $cobranca->valor_centavos,
                 'prevista' => null,
             ])
@@ -86,7 +86,7 @@ final class ListaDeCobrancas
         $bloco = BlocoDePaginas::de($leves, $filtros['pagina'], $filtros['por_pagina']);
 
         // Só as linhas do bloco carregam recibo, cliente e histórico.
-        $completas = $usuario->cobrancas()->with(['cliente:id,nome,apelido', 'recibo', 'auditorias'])
+        $completas = $usuario->cobrancas()->with(['cliente:id,nome,apelido', 'recibo', 'auditorias', 'contrato'])
             ->findMany($bloco['itens']->whereNull('prevista')->pluck('id'))
             ->keyBy('id');
 
@@ -124,7 +124,7 @@ final class ListaDeCobrancas
         $venceHoje = $agregar($base()->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]));
         $aVencerReal = $agregar($base()->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay())
             ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]));
-        // A aba "Pagas" soma o valor pago (valor − desconto), coerente com o "recebido" do painel.
+        // A aba "Pagas" soma o valor pago (com desconto e acréscimos), coerente com o "recebido" do painel.
         $paga = $agregar($base()->where('status', StatusCobranca::Paga)
             ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]), Cobranca::VALOR_PAGO_SQL);
 

@@ -3,13 +3,13 @@ import { formatadores } from './mascaras.js';
 /** Mesmas contas do servidor (App\Support\Desconto), só para mostrar e travar o desconto enquanto digita. */
 const PERCENTUAL = 'percentual';
 const VALOR = 'valor';
-const CEM_POR_CENTO = 10000; // em pontos-base (% × 100)
+export const CEM_POR_CENTO = 10000; // em pontos-base (% × 100)
 
 /** Como o trim() do PHP: só espaços ASCII (o do JS também tira o NBSP, e o servidor trataria a entrada de outro jeito). */
-const aparar = (texto) => String(texto ?? '').replace(/^[ \t\n\r\0\v]+|[ \t\n\r\0\v]+$/g, '');
+export const aparar = (texto) => String(texto ?? '').replace(/^[ \t\n\r\0\v]+|[ \t\n\r\0\v]+$/g, '');
 
 /** "12,5" ou "12.5" → 1250; null fora do formato (até 3 dígitos inteiros e 2 decimais, sem sinal). */
-function pontosBase(texto) {
+export function pontosBase(texto) {
     const partes = texto.match(/^(\d{1,3})(?:[.,](\d{1,2}))?$/);
 
     return partes ? Number(partes[1]) * 100 + Number((partes[2] ?? '').padEnd(2, '0')) : null;
@@ -52,21 +52,6 @@ export const semSeparadorFinal = (entrada) => String(entrada ?? '').replace(/[.,
 
 /** Menor valor do lote (limite do desconto em R$); 0 sem cobrança, porque o BigInt de `descontoEmCentavos` recusa Infinity. */
 export const menorValor = (valoresCentavos) => (valoresCentavos.length ? Math.min(...valoresCentavos) : 0);
-
-/**
- * Prévia da baixa em lote: o mesmo percentual (arredondado por cobrança) ou o mesmo valor em R$ em cada cobrança,
- * como o servidor grava, e os totais somam as linhas.
- */
-export function previaDoLote(valoresCentavos, tipo, entrada) {
-    const linhas = valoresCentavos.map((valor) => {
-        const desconto = descontoEmCentavos(valor, tipo, semSeparadorFinal(entrada)) ?? 0;
-
-        return { valor, desconto, pago: valor - desconto };
-    });
-    const somar = (campo) => linhas.reduce((total, linha) => total + linha[campo], 0);
-
-    return { linhas, totais: { valor: somar('valor'), desconto: somar('desconto'), pago: somar('pago') } };
-}
 
 /** O desconto nunca passa de 100% do valor: acima disso a entrada vira o limite. */
 export function travarDesconto(valorCentavos, tipo, entrada) {

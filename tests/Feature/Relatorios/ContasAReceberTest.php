@@ -5,6 +5,7 @@ namespace Tests\Feature\Relatorios;
 use App\Enums\StatusCobranca;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -43,5 +44,21 @@ class ContasAReceberTest extends TestCase
             ->assertJsonPath('linhas.0', ['cliente' => 'Ana Contabilidade', 'vencidas' => 15000, 'atraso' => 30, 'ate30' => 2000, 'ate60' => 3000, 'ate90' => 0, 'depois' => 0])
             ->assertJsonPath('linhas.1', ['cliente' => 'Bruno Mecânica', 'vencidas' => 0, 'atraso' => 0, 'ate30' => 0, 'ate60' => 0, 'ate90' => 1000, 'depois' => 4000])
             ->assertJsonPath('totais', ['cliente' => 'Total', 'vencidas' => 15000, 'atraso' => null, 'ate30' => 2000, 'ate60' => 3000, 'ate90' => 1000, 'depois' => 4000]);
+    }
+
+    /** Fase 27: contas a receber continua com o valor original, mesmo com contrato que cobra multa e juros depois do vencimento. */
+    public function test_pendente_vencida_de_contrato_com_condicoes_segue_com_o_valor_original(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-15 10:00:00'));
+        $usuario = User::factory()->create();
+        $ana = Cliente::factory()->for($usuario)->create(['nome' => 'Ana Contabilidade']);
+        $contrato = Contrato::factory()->for($usuario)->for($ana)->comCondicoes()->create(['ativo' => false]);
+        Cobranca::factory()->for($usuario)->for($ana)->create([
+            'contrato_id' => $contrato->id, 'vencimento' => '2026-01-05', 'valor_centavos' => 21000, // vencida há 283 dias: hoje valeria mais que isto
+        ]);
+
+        $this->actingAs($usuario)->getJson('/relatorios/a-receber/dados')->assertOk()
+            ->assertJsonPath('linhas.0', ['cliente' => 'Ana Contabilidade', 'vencidas' => 21000, 'atraso' => 283, 'ate30' => 0, 'ate60' => 0, 'ate90' => 0, 'depois' => 0])
+            ->assertJsonPath('totais.vencidas', 21000);
     }
 }

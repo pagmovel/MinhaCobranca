@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MENSAGEM_SUGERIDA, mensagemMuitoLonga, montarLinkWaMe, montarMensagem, numeroWhatsapp } from './mensagemWhatsapp.js';
+import { MENSAGEM_SUGERIDA, VARIAVEIS, mensagemMuitoLonga, montarLinkWaMe, montarMensagem, numeroWhatsapp } from './mensagemWhatsapp.js';
 
 const dados = (extra) => ({
     cliente: 'Padaria do João',
@@ -168,4 +168,44 @@ test('MENSAGEM_SUGERIDA: itens em bloco, sem concordância verbal (achado da rev
         + '- Hospedagem: R$ 89,90\n- Domínio: R$ 40,00\n\n'
         + 'Total: R$ 129,90\n\nQualquer dúvida, estou à disposição.\n\nMarcos Ronaldo',
     );
+});
+
+const FRASE = 'Pagando até 15/10/2026: R$ 76,41. Depois: R$ 89,90 + multa e juros.';
+
+test('{condicao}: entra a frase que o servidor mandou', () => {
+    assert.equal(montarMensagem('Total: {total} {condicao}', dados({ totalCentavos: 7641, condicao: FRASE })), `Total: R$ 76,41 ${FRASE}`);
+});
+
+test('{condicao} vazia: não sobra texto literal, espaço duplo nem espaço solto antes da quebra de linha', () => {
+    assert.equal(montarMensagem('Total: {total} {condicao}\n\nAté mais', dados()), 'Total: R$ 89,90\n\nAté mais');
+    assert.equal(montarMensagem('Total: {total} {condicao}\n\nAté mais', dados({ condicao: '' })), 'Total: R$ 89,90\n\nAté mais');
+    assert.equal(montarMensagem('Total {total} {condicao} — {prestador}', dados()), 'Total R$ 89,90 — Marcos Ronaldo');
+    assert.equal(montarMensagem('{condicao}', dados()), '');
+});
+
+test('modelo antigo, sem {condicao}, fica igual com ou sem a frase', () => {
+    const modelo = 'Olá {cliente}! {itens} Vence em {vencimento}. Total: {total}.  Duas   lacunas e espaço no fim ';
+
+    assert.equal(montarMensagem(modelo, dados({ condicao: FRASE })), montarMensagem(modelo, dados()));
+    assert.equal(montarMensagem(modelo, dados()), 'Olá Padaria do João! - Hospedagem de site: R$ 89,90 Vence em 15/10/2026. Total: R$ 89,90.  Duas   lacunas e espaço no fim ');
+});
+
+test('MENSAGEM_SUGERIDA: a frase da condição vem logo depois do total; sem ela, a mensagem é a de antes', () => {
+    const comFrase = montarMensagem(MENSAGEM_SUGERIDA, dados({ totalCentavos: 7641, condicao: FRASE }));
+
+    assert.ok(comFrase.includes(`Total: R$ 76,41 ${FRASE}\n\nQualquer dúvida`));
+    assert.equal(
+        montarMensagem(MENSAGEM_SUGERIDA, dados()),
+        'Olá Padaria do João! Segue o lembrete de vencimento (15/10/2026):\n- Hospedagem de site: R$ 89,90\n\n'
+        + 'Total: R$ 89,90\n\nQualquer dúvida, estou à disposição.\n\nMarcos Ronaldo',
+    );
+});
+
+test('a legenda lista {condicao}, e toda variável da legenda é reconhecida pela montagem', () => {
+    assert.ok(VARIAVEIS.some((variavel) => variavel.token === '{condicao}'));
+
+    for (const { token, legenda } of VARIAVEIS) {
+        assert.notEqual(legenda, '', token);
+        assert.notEqual(montarMensagem(token, dados({ condicao: FRASE })), token, `${token} ficou literal`);
+    }
 });

@@ -4,6 +4,7 @@ import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import CamadaApp from '../../Layouts/CamadaApp.vue';
 import Campo from '../../Components/Campo.vue';
 import CampoCliente from '../../Components/CampoCliente.vue';
+import CampoValorOuPercentual from '../../Components/CampoValorOuPercentual.vue';
 import CamposPagamento from '../../Components/CamposPagamento.vue';
 import DescricaoComplementar from '../../Components/DescricaoComplementar.vue';
 import EncerramentoContrato from '../../Components/EncerramentoContrato.vue';
@@ -11,6 +12,8 @@ import PerguntaRetroativos from '../../Components/PerguntaRetroativos.vue';
 import ReativarContrato from '../../Components/ReativarContrato.vue';
 import RenovarContrato from '../../Components/RenovarContrato.vue';
 import SecaoItens from '../../Components/SecaoItens.vue';
+import { exemploDasCondicoes, regraDoCampo } from '../../condicoes.js';
+import { formatarCentavos, totalDosItens } from '../../itens.js';
 import { mensagemBloqueioDeCriacao } from '../../progresso.js';
 
 const props = defineProps({
@@ -46,9 +49,24 @@ const form = useForm(props.contrato ? { ...props.contrato, data_inicio: baseInic
     ativo: true,
     forma_pagamento: 'nenhuma',
     chave_pix_id: '',
+    desconto_pontualidade_tipo: 'percentual',
+    desconto_pontualidade: '',
+    multa_tipo: 'percentual',
+    multa: '',
+    juros_tipo: 'percentual',
+    juros: '',
 });
 
 const semItens = Boolean(props.contrato && !props.contrato.itens.length);
+
+// O valor do contrato é a soma dos itens do formulário (o servidor a recalcula): o exemplo das condições e o teto do
+// desconto em R$ usam o total de agora, não o gravado.
+const totalDoContrato = computed(() => totalDosItens(form.itens));
+const exemploDasCondicoesAgora = computed(() => exemploDasCondicoes(totalDoContrato.value, {
+    desconto: regraDoCampo(form.desconto_pontualidade_tipo, form.desconto_pontualidade),
+    multa: regraDoCampo(form.multa_tipo, form.multa),
+    juros: regraDoCampo(form.juros_tipo, form.juros),
+}));
 
 // computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
 // computed continua reativo a essa troca.
@@ -207,6 +225,47 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                 :erro="form.errors.gerar_retroativas"
             />
             <CamposPagamento :form="form" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
+            <fieldset class="grid min-w-0 gap-4 sm:col-span-6 sm:grid-cols-6">
+                <legend class="mb-2 text-sm font-semibold">Condições de pagamento</legend>
+                <p class="text-xs text-grafite/70 sm:col-span-6">
+                    Opcionais: em branco ou 0 é sem regra. Valem para as cobranças em aberto deste contrato; as já pagas não mudam.
+                </p>
+                <CampoValorOuPercentual
+                    id="desconto_pontualidade"
+                    v-model="form.desconto_pontualidade"
+                    v-model:tipo="form.desconto_pontualidade_tipo"
+                    rotulo="Desconto até o vencimento"
+                    ajuda="Abatido do valor se pagar até o vencimento."
+                    :erro="form.errors.desconto_pontualidade || form.errors.desconto_pontualidade_tipo"
+                    :valor-maximo-centavos="totalDoContrato || undefined"
+                    class="sm:col-span-2"
+                />
+                <CampoValorOuPercentual
+                    id="multa"
+                    v-model="form.multa"
+                    v-model:tipo="form.multa_tipo"
+                    rotulo="Multa por atraso"
+                    ajuda="Cobrada uma vez, depois do vencimento."
+                    :erro="form.errors.multa || form.errors.multa_tipo"
+                    class="sm:col-span-2"
+                />
+                <CampoValorOuPercentual
+                    id="juros"
+                    v-model="form.juros"
+                    v-model:tipo="form.juros_tipo"
+                    rotulo="Juros ao mês"
+                    ajuda="Proporcionais aos dias de atraso."
+                    :erro="form.errors.juros || form.errors.juros_tipo"
+                    class="sm:col-span-2"
+                />
+                <Transition name="surgir">
+                    <p v-if="exemploDasCondicoesAgora" class="text-xs text-grafite sm:col-span-6">
+                        Exemplo com o valor deste contrato (R$ {{ formatarCentavos(totalDoContrato) }}):
+                        em dia R$ <span :key="exemploDasCondicoesAgora.emDiaCentavos" class="destacar inline-block px-1 font-semibold tabular-nums">{{ formatarCentavos(exemploDasCondicoesAgora.emDiaCentavos) }}</span>
+                        · {{ exemploDasCondicoesAgora.dias }} dias de atraso R$ <span :key="exemploDasCondicoesAgora.atrasadoCentavos" class="destacar inline-block px-1 font-semibold tabular-nums">{{ formatarCentavos(exemploDasCondicoesAgora.atrasadoCentavos) }}</span>
+                    </p>
+                </Transition>
+            </fieldset>
             <div v-if="contrato && !contrato.ativo" class="grid gap-2 sm:col-span-6">
                 <label class="flex items-center gap-2 text-sm">
                     <input v-model="form.reativar" type="checkbox"> Reativar contrato
@@ -314,6 +373,11 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                     <input id="renovacao_data_inicio" v-model="formRenovacaoVencido.data_inicio" type="date" class="entrada">
                 </Campo>
                 <SecaoItens :form="formRenovacaoVencido" escopo="renovacao_" />
+                <!-- O desconto em R$ é o do contrato antigo, que fica fora desta seção: o erro traz as duas saídas. -->
+                <p v-if="formRenovacaoVencido.errors.desconto_pontualidade" class="text-sm text-tinta-vermelha sm:col-span-6">
+                    {{ formRenovacaoVencido.errors.desconto_pontualidade }}
+                    Aumente os preços dos itens acima, ou reduza o desconto em "Condições de pagamento" e salve o contrato antes de renovar.
+                </p>
                 <div class="flex items-center gap-2 sm:col-span-6">
                     <button type="button" class="botao" :disabled="formRenovacaoVencido.processing" @click="confirmarRenovacaoVencido">
                         Confirmar renovação

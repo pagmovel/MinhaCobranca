@@ -3,6 +3,8 @@
 defineProps({
     texto: { type: String, required: true },
     tom: { type: String, default: 'neutro' },
+    // Compacta: cabe na altura de um rótulo de campo (ex.: "contrato" ao lado do rótulo), sem aumentar a linha.
+    compacta: { type: Boolean, default: false },
 });
 
 const tons = {
@@ -15,5 +17,8 @@ const tons = {
 </script>
 
 <template>
-    <span class="inline-block rounded-sm border px-2 py-0.5 font-estreita text-xs whitespace-nowrap" :class="tons[tom]">{{ texto }}</span>
+    <span
+        class="inline-block rounded-sm border font-estreita whitespace-nowrap"
+        :class="[tons[tom], compacta ? 'px-1 text-[0.65rem] leading-none' : 'px-2 py-0.5 text-xs']"
+    >{{ texto }}</span>
 </template>

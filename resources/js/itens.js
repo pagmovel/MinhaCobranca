@@ -20,6 +20,9 @@ export function totalDoItem(quantidade, preco) {
     return q === null || p === null ? 0 : Number((BigInt(q) * BigInt(p) + 500n) / 1000n);
 }
 
+/** Valor do contrato: a soma dos totais dos itens, como o servidor a recalcula. */
+export const totalDosItens = (itens) => itens.reduce((soma, item) => soma + totalDoItem(item.quantidade, item.preco), 0);
+
 export function formatarCentavos(valor) {
     const sinal = String(valor).startsWith('-') ? '-' : '';
     const texto = String(valor).replace('-', '').padStart(3, '0');

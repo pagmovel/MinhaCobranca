@@ -26,7 +26,8 @@ final class Relatorios
         $cobrancas = $usuario->cobrancas()
             ->where('status', '!=', StatusCobranca::Cancelada)
             ->where(fn ($consulta) => $consulta->where('vencimento', '<=', $fim)->orWhereBetween('pago_em', [$de, $fim]))
-            ->get(['vencimento', 'pago_em', 'status', 'valor_centavos', 'desconto_centavos']);
+            // Toda coluna que a conta usa: com `get([...])` a ausente vira null (sem erro) e o recebido ignora os acréscimos.
+            ->get(['vencimento', 'pago_em', 'status', 'valor_centavos', 'desconto_centavos', 'multa_centavos', 'juros_centavos', 'outros_centavos']);
 
         // O que os contratos ainda vão emitir, por mês (m/Y). Só depois de hoje: até hoje a geração já criou as de verdade.
         $naoEmitido = collect($this->previsao->entre($usuario, $de->max($hoje->addDay()), $fim))
@@ -39,7 +40,7 @@ final class Relatorios
             $fimMes = $mes->endOfMonth();
             $corte = $fimMes->startOfDay()->min($hoje);
             $previstoNaoEmitido = (int) ($naoEmitido[$mes->format('m/Y')] ?? 0);
-            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => $previstoNaoEmitido, 'nao_emitido' => $previstoNaoEmitido, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0];
+            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => $previstoNaoEmitido, 'nao_emitido' => $previstoNaoEmitido, 'recebido' => 0, 'descontos' => 0, 'acrescimos' => 0, 'inadimplencia' => 0];
 
             foreach ($cobrancas as $cobranca) {
                 /** @var Cobranca $cobranca */
@@ -49,6 +50,7 @@ final class Relatorios
                 if ($cobranca->status === StatusCobranca::Paga && $cobranca->pago_em?->betweenIncluded($inicioMes, $fimMes)) {
                     $linha['recebido'] += $cobranca->valorPagoCentavos();
                     $linha['descontos'] += $cobranca->desconto_centavos;
+                    $linha['acrescimos'] += $cobranca->acrescimosCentavos();
                 }
                 if ($inicioMes->lte($hoje) && $cobranca->vencimento->lt($corte)
                     && ($cobranca->pago_em === null || $cobranca->pago_em->gt($corte))) {
@@ -61,13 +63,14 @@ final class Relatorios
 
         return $this->tabela(
             'Faturamento por período',
-            'Mês a mês: previsto (vencimentos, incluindo o que os contratos ainda vão emitir), recebido (o valor pago nos pagamentos do mês), os descontos dados nessas baixas e o que estava em atraso no fim do mês.',
+            'Mês a mês: previsto (vencimentos, incluindo o que os contratos ainda vão emitir), recebido (o valor pago nos pagamentos do mês, com multa, juros e outros acréscimos), os descontos e os acréscimos dessas baixas e o que estava em atraso no fim do mês.',
             [
                 self::coluna('mes', 'Mês', 'texto'),
                 self::coluna('previsto', 'Previsto'),
                 self::coluna('nao_emitido', 'Ainda não emitido'),
                 self::coluna('recebido', 'Recebido'),
                 self::coluna('descontos', 'Descontos'),
+                self::coluna('acrescimos', 'Acréscimos'),
                 self::coluna('inadimplencia', 'Em atraso no fim do mês', soma: false),
             ],
             $linhas,
@@ -109,7 +112,7 @@ final class Relatorios
 
         return $this->tabela(
             'Receita por cliente',
-            'Recebido no período (o valor pago, já sem os descontos), contratos ativos, valor médio por cobrança paga e cobranças vencidas em aberto hoje.',
+            'Recebido no período (o valor pago: sem os descontos e com multa, juros e outros acréscimos), contratos ativos, valor médio por cobrança paga e cobranças vencidas em aberto hoje.',
             [
                 self::coluna('cliente', 'Cliente', 'texto'),
                 self::coluna('recebido', 'Recebido'),
@@ -176,15 +179,20 @@ final class Relatorios
             ];
         }
 
-        // Os itens somam o valor cheio; o desconto não é rateado entre eles. Esta linha o tira de uma vez, e o total fica igual ao recebido do painel.
-        $descontos = (int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$de, $fim])->sum('desconto_centavos');
-        if ($descontos > 0) {
-            $linhas[] = ['item' => 'Descontos concedidos', 'recebido' => -$descontos, 'previsto' => 0, 'contratos' => 0];
+        // Os itens somam o valor cheio; desconto e acréscimos não são rateados entre eles. Estas linhas os somam de uma vez (os acréscimos
+        // com sinal positivo, o desconto com negativo), e o total fica igual ao recebido do painel. Uma consulta, sem ORDER BY junto do agregado.
+        $baixas = $usuario->cobrancas()->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$de, $fim])->toBase()
+            ->selectRaw('sum(multa_centavos) as multas, sum(juros_centavos) as juros, sum(outros_centavos) as outros, sum(desconto_centavos) as descontos')->first();
+        $valoresDasBaixas = ['Multas recebidas' => (int) $baixas->multas, 'Juros recebidos' => (int) $baixas->juros, 'Outros acréscimos' => (int) $baixas->outros, 'Descontos concedidos' => -(int) $baixas->descontos];
+        foreach ($valoresDasBaixas as $rotulo => $valor) {
+            if ($valor !== 0) {
+                $linhas[] = ['item' => $rotulo, 'recebido' => $valor, 'previsto' => 0, 'contratos' => 0];
+            }
         }
 
         return $this->tabela(
             'Receita por produto ou serviço',
-            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período, incluindo o que os contratos ainda vão emitir), com os contratos ativos que usam cada item. Os itens somam o valor cheio; a linha Descontos concedidos tira o que foi abatido nas baixas, e o total fica igual ao recebido do painel.',
+            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período, incluindo o que os contratos ainda vão emitir), com os contratos ativos que usam cada item. Os itens somam o valor cheio; as linhas Multas recebidas, Juros recebidos e Outros acréscimos somam o que foi cobrado a mais nas baixas e Descontos concedidos tira o que foi abatido, e o total fica igual ao recebido do painel.',
             [
                 self::coluna('item', 'Produto ou serviço', 'texto'),
                 self::coluna('recebido', 'Recebido'),

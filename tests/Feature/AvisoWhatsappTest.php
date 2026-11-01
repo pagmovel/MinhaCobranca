@@ -9,10 +9,12 @@ use App\Enums\TipoChavePix;
 use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\ModeloMensagem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AvisoWhatsappTest extends TestCase
@@ -178,6 +180,108 @@ class AvisoWhatsappTest extends TestCase
             'vencimentos' => ['2026-10-15', '2026-10-20'],
             'total_centavos' => 7000,
         ]);
+    }
+
+    /** Cobrança de R$ 100,00 do cliente do teste, ligada a um contrato; sem `$contrato`, o de 15% / multa 2% / juros 1% ao mês. */
+    private function cobrancaDeContrato(array $extra = [], ?array $contrato = null): Cobranca
+    {
+        $fabrica = $contrato === null ? Contrato::factory()->comCondicoes() : Contrato::factory();
+        $registro = $fabrica->create(array_merge(['user_id' => $this->usuario->id, 'cliente_id' => $this->cliente->id, 'ativo' => false], $contrato ?? []));
+
+        return $this->cobranca(array_merge(['contrato_id' => $registro->id, 'valor_centavos' => 10000], $extra));
+    }
+
+    public function test_total_soma_o_valor_do_dia_da_vencida_com_regra_e_os_itens_ficam_com_o_valor_original(): void
+    {
+        // Hoje é 11/10/2026: 30 dias de atraso, multa 2% = R$ 2,00 e juros 1% ao mês = R$ 1,00.
+        $cobranca = $this->cobrancaDeContrato(['vencimento' => '2026-09-11']);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")->assertOk()->assertJson([
+            'itens' => [['nome' => 'Serviço avulso', 'valor_centavos' => 10000]],
+            'total_centavos' => 10300,
+        ]);
+    }
+
+    public function test_total_da_a_vencer_e_da_que_vence_hoje_leva_o_desconto_do_contrato(): void
+    {
+        $aVencer = $this->cobrancaDeContrato(['vencimento' => '2026-10-15']);
+        $venceHoje = $this->cobrancaDeContrato(['vencimento' => '2026-10-11']);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$aVencer->id}")->assertJson(['total_centavos' => 8500]);
+        $this->getJson("/cobrancas/aviso?ids[]={$venceHoje->id}")->assertJson(['total_centavos' => 8500]);
+    }
+
+    public function test_total_sem_regra_no_contrato_ou_sem_contrato_continua_o_valor_original(): void
+    {
+        $semRegra = $this->cobrancaDeContrato(['vencimento' => '2026-09-11'], []);
+        $avulsa = $this->cobranca(['vencimento' => '2026-09-11', 'valor_centavos' => 10000]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$semRegra->id}&ids[]={$avulsa->id}")
+            ->assertJson(['total_centavos' => 20000, 'condicao' => '']);
+    }
+
+    public function test_total_do_lote_soma_o_valor_do_dia_de_cada_cobranca(): void
+    {
+        $vencida = $this->cobrancaDeContrato(['vencimento' => '2026-09-11']);
+        $aVencer = $this->cobrancaDeContrato(['vencimento' => '2026-10-15']);
+        $avulsa = $this->cobranca(['vencimento' => '2026-10-20', 'valor_centavos' => 4000]);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$vencida->id}&ids[]={$aVencer->id}&ids[]={$avulsa->id}")->assertOk()->assertJson([
+            'itens' => [
+                ['valor_centavos' => 10000],
+                ['valor_centavos' => 10000],
+                ['valor_centavos' => 4000],
+            ],
+            'total_centavos' => 10300 + 8500 + 4000,
+        ]);
+    }
+
+    public function test_condicao_traz_a_frase_do_recibo_da_cobranca(): void
+    {
+        $aVencer = $this->cobrancaDeContrato(['vencimento' => '2026-10-15']);
+        $vencida = $this->cobrancaDeContrato(['vencimento' => '2026-09-11']);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$aVencer->id}")
+            ->assertJson(['condicao' => 'Pagando até 15/10/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.']);
+        $this->getJson("/cobrancas/aviso?ids[]={$vencida->id}")
+            ->assertJson(['condicao' => 'Valor atualizado em 11/10/2026: multa R$ 2,00; juros R$ 1,00.']);
+    }
+
+    public function test_condicao_do_lote_junta_as_frases_diferentes_por_espaco_e_nao_repete_a_igual(): void
+    {
+        $umaAVencer = $this->cobrancaDeContrato(['vencimento' => '2026-10-15']);
+        $outraAVencer = $this->cobrancaDeContrato(['vencimento' => '2026-10-15']);
+        $vencida = $this->cobrancaDeContrato(['vencimento' => '2026-09-11']);
+        $avulsa = $this->cobranca(['vencimento' => '2026-10-20']);
+
+        $resposta = $this->getJson("/cobrancas/aviso?ids[]={$avulsa->id}&ids[]={$umaAVencer->id}&ids[]={$vencida->id}&ids[]={$outraAVencer->id}");
+
+        // Na ordem do vencimento, em qualquer ordem em que os ids cheguem.
+        $resposta->assertJson([
+            'condicao' => 'Valor atualizado em 11/10/2026: multa R$ 2,00; juros R$ 1,00. Pagando até 15/10/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.',
+        ]);
+    }
+
+    /** @return array<string, array{array<string, mixed>, string}> campos do contrato e o trecho que a frase diz depois do vencimento */
+    public static function contratosComMultaOuJuros(): array
+    {
+        $desconto = ['desconto_pontualidade_tipo' => 'percentual', 'desconto_pontualidade_valor' => 1500];
+
+        return [
+            'só multa' => [$desconto + ['multa_tipo' => 'percentual', 'multa_valor' => 200], 'R$ 100,00 + multa.'],
+            'só juros' => [$desconto + ['juros_tipo' => 'percentual', 'juros_valor' => 100], 'R$ 100,00 + juros.'],
+            'multa e juros' => [$desconto + ['multa_tipo' => 'percentual', 'multa_valor' => 200, 'juros_tipo' => 'percentual', 'juros_valor' => 100], 'R$ 100,00 + multa e juros.'],
+            'nenhum dos dois' => [$desconto, 'R$ 100,00.'],
+        ];
+    }
+
+    #[DataProvider('contratosComMultaOuJuros')]
+    public function test_condicao_antes_do_vencimento_cita_so_o_encargo_que_o_contrato_tem(array $contrato, string $depois): void
+    {
+        $cobranca = $this->cobrancaDeContrato(['vencimento' => '2026-10-15'], $contrato);
+
+        $this->getJson("/cobrancas/aviso?ids[]={$cobranca->id}")
+            ->assertJson(['condicao' => "Pagando até 15/10/2026: R$ 85,00. Depois: {$depois}"]);
     }
 
     public function test_ids_de_clientes_diferentes_e_recusado(): void

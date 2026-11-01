@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FormaPagamento;
 use App\Enums\StatusCobranca;
+use App\Support\CondicoesDePagamento;
 use App\Support\Dinheiro;
 use Carbon\CarbonImmutable;
 use Database\Factories\CobrancaFactory;
@@ -25,10 +26,13 @@ class Cobranca extends Model
     use HasFactory;
 
     /** A conta de {@see valorPagoCentavos()} para somar no SQL (vale em SQLite e PostgreSQL). */
-    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos';
+    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos + multa_centavos + juros_centavos + outros_centavos';
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma', 'desconto_centavos' => 0];
+    protected $attributes = [
+        'status' => 'pendente', 'forma_pagamento' => 'nenhuma',
+        'desconto_centavos' => 0, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0,
+    ];
 
     protected function casts(): array
     {
@@ -42,6 +46,9 @@ class Cobranca extends Model
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
             'desconto_centavos' => 'integer',
+            'multa_centavos' => 'integer',
+            'juros_centavos' => 'integer',
+            'outros_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
         ];
     }
@@ -97,7 +104,119 @@ class Cobranca extends Model
     /** Derivado, nunca gravado: o que entra no caixa quando a cobrança é paga. */
     public function valorPagoCentavos(): int
     {
-        return $this->valor_centavos - $this->desconto_centavos;
+        return $this->valor_centavos - $this->desconto_centavos + $this->acrescimosCentavos();
+    }
+
+    /** Multa, juros e outros acréscimos gravados na baixa. */
+    public function acrescimosCentavos(): int
+    {
+        return $this->multa_centavos + $this->juros_centavos + $this->outros_centavos;
+    }
+
+    /**
+     * O valor da cobrança numa data, pela regra atual do contrato: até o vencimento, o desconto por pontualidade;
+     * depois dele, multa e juros. Sem contrato ou sem regra, o valor original.
+     *
+     * @return array{dias: int, desconto_centavos: int, multa_centavos: int, juros_centavos: int, total_centavos: int}
+     */
+    public function condicoesNaData(CarbonImmutable $data): array
+    {
+        $regras = $this->contrato?->regrasDePagamento();
+        $dias = CondicoesDePagamento::diasDeAtraso($this->vencimento, $data);
+        $desconto = $multa = $juros = 0;
+
+        if ($dias === 0) {
+            $desconto = CondicoesDePagamento::descontoCentavos($this->valor_centavos, $regras['desconto']['tipo'] ?? null, $regras['desconto']['valor'] ?? null);
+        } else {
+            $multa = CondicoesDePagamento::multaCentavos($this->valor_centavos, $regras['multa']['tipo'] ?? null, $regras['multa']['valor'] ?? null);
+            $juros = CondicoesDePagamento::jurosCentavos($this->valor_centavos, $regras['juros']['tipo'] ?? null, $regras['juros']['valor'] ?? null, $dias);
+        }
+
+        return [
+            'dias' => $dias,
+            'desconto_centavos' => $desconto,
+            'multa_centavos' => $multa,
+            'juros_centavos' => $juros,
+            'total_centavos' => $this->valor_centavos - $desconto + $multa + $juros,
+        ];
+    }
+
+    /**
+     * O que a lista mostra embaixo do valor de uma pendente com regra no contrato: `até 05/01: R$ 85,00` (desconto até o
+     * vencimento, inclusive) ou `hoje R$ 235,20` (com multa e juros). Nulo se não é pendente ou o valor do dia é o valor.
+     */
+    public function linhaDoDia(CarbonImmutable $hoje): ?string
+    {
+        if ($this->status !== StatusCobranca::Pendente) {
+            return null;
+        }
+
+        $condicoes = $this->condicoesNaData($hoje);
+
+        if ($condicoes['total_centavos'] === $this->valor_centavos) {
+            return null;
+        }
+
+        $valor = Dinheiro::formatar($condicoes['total_centavos']);
+
+        return $condicoes['dias'] === 0 ? "até {$this->vencimento->format('d/m')}: R$ {$valor}" : "hoje R$ {$valor}";
+    }
+
+    /**
+     * A frase do recibo para uma pendente com regra no contrato. Até o vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois:
+     * R$ 100,00 + multa e juros.` (o trecho é `+ multa`, `+ juros` ou `+ multa e juros`, conforme o contrato; nenhum dos dois, sem trecho). Depois dele: `Valor atualizado
+     * em 01/11/2026: multa R$ 4,20; juros R$ 21,00.`. Nulo se não é pendente ou se o valor do dia é o valor.
+     */
+    public function fraseDaCondicao(CarbonImmutable $data): ?string
+    {
+        if ($this->status !== StatusCobranca::Pendente) {
+            return null;
+        }
+
+        $condicoes = $this->condicoesNaData($data);
+
+        if ($condicoes['total_centavos'] === $this->valor_centavos) {
+            return null;
+        }
+
+        if ($condicoes['dias'] === 0) {
+            $regras = $this->contrato->regrasDePagamento();
+            $encargos = collect(['multa', 'juros'])->filter(fn (string $nome) => $regras[$nome] !== null)->implode(' e ');
+            $depois = 'R$ '.Dinheiro::formatar($this->valor_centavos).($encargos !== '' ? " + {$encargos}" : '');
+
+            return "Pagando até {$this->vencimento->format('d/m/Y')}: R$ ".Dinheiro::formatar($condicoes['total_centavos']).". Depois: {$depois}.";
+        }
+
+        return "Valor atualizado em {$data->format('d/m/Y')}: ".self::listarValores(['multa' => $condicoes['multa_centavos'], 'juros' => $condicoes['juros_centavos']]).'.';
+    }
+
+    /**
+     * O que o recibo da paga diz dos acréscimos gravados na baixa: `Acréscimos por atraso: multa R$ 4,20; outros R$ 5,00.`
+     * Só com "outros" (que vale em qualquer data, então pode ter sido paga em dia): `Outros acréscimos: R$ 5,00.` Nulo sem acréscimo.
+     */
+    public function detalheDosAcrescimos(): ?string
+    {
+        if ($this->status !== StatusCobranca::Paga || $this->acrescimosCentavos() === 0) {
+            return null;
+        }
+
+        if ($this->multa_centavos === 0 && $this->juros_centavos === 0) {
+            return 'Outros acréscimos: R$ '.Dinheiro::formatar($this->outros_centavos).'.';
+        }
+
+        return 'Acréscimos por atraso: '.self::listarValores(['multa' => $this->multa_centavos, 'juros' => $this->juros_centavos, 'outros' => $this->outros_centavos]).'.';
+    }
+
+    /**
+     * `multa R$ 4,20; juros R$ 21,00`: só os valores maiores que zero.
+     *
+     * @param  array<string, int>  $centavosPorRotulo
+     */
+    private static function listarValores(array $centavosPorRotulo): string
+    {
+        return collect($centavosPorRotulo)->filter()
+            ->map(fn (int $centavos, string $rotulo) => "{$rotulo} R$ ".Dinheiro::formatar($centavos))
+            ->implode('; ');
     }
 
     public function editavel(): bool
@@ -113,11 +232,20 @@ class Cobranca extends Model
             'cliente' => $this->cliente->exibicao(),
             'cliente_oficial' => $this->cliente->nomeOficial(),
             'vencimento' => $this->vencimento->format('d/m/Y'),
+            'vencimento_iso' => $this->vencimento->toDateString(),
+            // As regras do contrato (null sem contrato ou sem regra): a baixa as mostra preenchidas. O contrato vem carregado.
+            'regras' => $this->contrato?->regrasDePagamento(),
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),
             'valor_centavos' => $this->valor_centavos,
             'desconto_centavos' => $this->desconto_centavos,
+            'multa_centavos' => $this->multa_centavos,
+            'juros_centavos' => $this->juros_centavos,
+            'outros_centavos' => $this->outros_centavos,
             'valor_pago' => Dinheiro::formatar($this->valorPagoCentavos()),
+            // Paga com valor pago diferente do valor (desconto ou acréscimos): a tela mostra "pago R$ …".
+            'pago_diferente' => $this->status === StatusCobranca::Paga && $this->valorPagoCentavos() !== $this->valor_centavos,
+            'linha_do_dia' => $this->linhaDoDia($hoje),
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
             'pago_em_iso' => $this->pago_em?->toDateString(),

@@ -62,7 +62,7 @@ const progresso = computed(() => usePage().props.progresso);
         </ListaDoPainel>
 
         <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" titulo="Aguardando pagamento" vazio="Nenhuma cobrança enviada esperando pagamento.">
-            <BaixaInline :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" />
+            <BaixaInline :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" :vencimento-iso="cobranca.vencimento_iso" :regras="cobranca.regras" />
             <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
             <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
         </ListaDoPainel>

@@ -116,9 +116,9 @@
     <table>
         <tr>
             <td style="height: 170pt;">
-                {{-- Uma div por linha já quebrada (LinhasDoRecibo): o dompdf ignora line-height nas linhas que ele quebra. --}}
+                {{-- Uma div por linha já quebrada (LinhasDoRecibo): o dompdf ignora line-height nas linhas que ele quebra. Com informações a mais (Fase 27: condição, acréscimos, aviso do boleto) a linha tem 8pt em vez de 8,4pt: com 25 linhas e PIX o recibo ia para a página 2. --}}
                 @foreach ($servico['linhas'] as $linhaDescricao)
-                    <div style="height: 8.4pt; font-size: 7pt;">{{ $linhaDescricao }}</div>
+                    <div style="height: {{ count($informacoes) > 1 ? 8 : 8.4 }}pt; font-size: 7pt;">{{ $linhaDescricao }}</div>
                 @endforeach
                 <div style="margin-top: 4pt; font-size: 7.5pt;">{{ $servico['obs_periodo'] }}</div>
             </td>

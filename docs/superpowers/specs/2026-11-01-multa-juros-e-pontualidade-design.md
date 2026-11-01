@@ -67,15 +67,18 @@ mesmos casos de teste:
 | Sem regra no contrato ou cobrança avulsa | valor original |
 
 **Regras:**
-1. **Sem atraso, sem acréscimo.** Com data de pagamento até o vencimento, multa, juros e outros são zerados pelo servidor,
-   mesmo se vierem preenchidos.
+1. **Sem atraso, sem multa e sem juros.** Com data de pagamento até o vencimento, multa e juros são zerados pelo servidor,
+   mesmo se vierem preenchidos. **"Outros" vale em qualquer data** (pedido do Marcos, 2026-11-01, ao testar a tela:
+   "baixa em qualquer data tem que permitir adicionar valor no campo outros"): é lançamento manual, sem relação com atraso
+   e sem regra no contrato; continua só em R$, com o teto de R$ 99.999.999,99.
 2. **Vale a regra atual do contrato** para o que está em aberto. O que já foi baixado não muda, pois os valores ficam
    gravados. Consequência aceita: um PIX já enviado fica com o valor antigo.
 3. **Cobrança avulsa** não tem regra e só aceita lançamento manual na baixa.
 4. **Desconto** continua sobre o valor original e limitado a ele (`0 ≤ desconto ≤ valor`). Para perdoar a multa, zera-se o
    campo dela.
-5. **Limites:** cada percentual vai até 100% e até 2 casas decimais; R$ sem teto. No contrato, desconto em R$ acima do
-   valor do contrato é recusado.
+5. **Limites:** cada percentual vai até 100% e até 2 casas decimais; R$ de multa e juros (e de desconto) vão até
+   R$ 99.999.999,99, o mesmo teto dos preços, só para a conta caber no inteiro (não é limite do valor da cobrança). No
+   contrato, desconto em R$ acima do valor do contrato é recusado, inclusive ao renovar contrato vencido com itens novos.
 6. **Sem trava legal.** A multa não é limitada a 2%. `[A VERIFICAR]`: pela memória, o CDC, art. 52, §1º, limita a multa de
    mora a 2% em relações de consumo; a fonte não foi consultada. O sistema atende também empresas, então a escolha do
    percentual é de quem preenche o contrato.
@@ -85,6 +88,7 @@ mesmos casos de teste:
 
 **Entrada na baixa:** `multa_tipo`, `multa`, `juros_tipo`, `juros`, `outros`, além de `desconto_tipo` e `desconto`, da
 Fase 26. `multa` e `juros` em % ou R$; `juros` digitado é sempre ao mês. Formatos e mensagens seguem o desconto.
+Na correção, os juros são o total em R$, pois o gravado é o total.
 
 | Campo no pedido | Baixa individual | Lote | Corrigir pagamento |
 |---|---|---|---|
@@ -93,8 +97,10 @@ Fase 26. `multa` e `juros` em % ou R$; `juros` digitado é sempre ao mês. Forma
 | `0` | sem valor | zera em todas | sem valor |
 | Preenchido | esse valor | vale para todas | esse valor |
 
-"Outros" não tem regra: ausente ou vazio é 0 na baixa e no lote. No lote, % é calculado por cobrança e R$ é igual em cada uma. Multa, juros e outros só se aplicam às cobranças em atraso
-na data; desconto digitado vale para todas, com a trava em R$ pela menor cobrança, da Fase 26.
+"Outros" não tem regra: ausente ou vazio é 0 na baixa e no lote, e o preenchido vale em qualquer data (2026-11-01, pedido
+do Marcos). No lote, % é calculado por cobrança e R$ é igual em cada uma. Multa e juros só se aplicam às cobranças em atraso
+na data; `outros` digitado soma em todas as pendentes selecionadas, com a data de vencimento ou a de hoje, o mesmo R$ em cada
+uma; desconto digitado vale para todas, com a trava em R$ pela menor cobrança, da Fase 26.
 
 **Auditoria `cobranca.paga`:** `Baixa registrada (R$ 210,00, multa R$ 4,20, juros R$ 21,00, outros R$ 5,00, desconto
 R$ 0,00, pago R$ 240,20, em 01/11/2026)`. Sem acréscimos, o texto continua como o da Fase 26. O lote usa o mesmo texto em
@@ -109,7 +115,8 @@ contrato (R$ 100,00): em dia R$ 85,00 · 30 dias de atraso R$ 103,00`. Vazio e `
 não entram no progresso da Fase 25.
 
 **Baixa individual** (`BaixaInline.vue`): os campos seguem a data de pagamento.
-- Até o vencimento: Valor, Desconto (com a regra do contrato), Valor pago.
+- Até o vencimento: Valor, Outros, Desconto (com a regra do contrato), Valor pago. O campo "Outros" aparece também aqui
+  (2026-11-01, pedido do Marcos), com a ajuda "Taxas ou valores à parte, em R$. Vale em qualquer data."
 - Com atraso: Valor, Multa, Juros, Outros, Desconto (vazio, para negociação), Valor pago, com os dias de atraso e o valor
   calculado ao lado de cada campo.
 - A regra do contrato vem preenchida e editável, com a etiqueta "contrato". Sem regra, os campos vêm vazios e a ajuda
@@ -120,10 +127,18 @@ não entram no progresso da Fase 25.
 **Baixa em lote** (`BaixaEmLote.vue`): Multa, Juros, Outros e Desconto no topo, com a ajuda "Em branco: cada cobrança usa o
 próprio contrato. Preenchido: vale para todas." A prévia lista Vencimento, Valor, Acréscimos, Desconto e Pago, com totais
 iguais à soma gravada. Com "usar a data de vencimento de cada cobrança", aviso: "Com essa data não há multa nem juros; o
-desconto do contrato vale."
+desconto do contrato vale." O "Outros" digitado soma em todas as linhas da prévia, também nas sem atraso (2026-11-01, pedido
+do Marcos), e a ajuda do campo diz que vale para todas, em qualquer data. Multa ou juros digitados que não entram em nenhuma
+cobrança (ninguém em atraso na data da baixa) ganham um aviso visível, laranja, logo abaixo dos campos (2026-11-01, relato do
+Marcos: "ao adicionar um acréscimo não está calculando"): com a data de vencimento e alguma cobrança vencida, "Com a data de
+vencimento não há atraso, então a multa e os juros digitados não entram no cálculo." e o botão "Usar a data de hoje"; sem
+nenhuma em atraso, nem hoje, "Nenhuma cobrança selecionada está em atraso, então a multa e os juros digitados não entram no
+cálculo.", sem botão. A regra e o servidor não mudam.
 
 **Corrigir pagamento** (`CorrecaoPagamentoInline.vue`): os mesmos campos, abrindo com os valores **gravados** em R$. Trocar
-a data não recalcula, pois ali se corrige o que aconteceu de fato.
+a data não recalcula, pois ali se corrige o que aconteceu de fato. Na correção, os juros são o total em R$, pois o gravado é o total.
+O campo "Outros" fica visível e editável em qualquer data (2026-11-01, pedido do Marcos); o aviso "Nessa data não há atraso:
+multa e juros ficam zerados." só aparece quando há multa ou juros preenchidos que seriam zerados.
 
 **Lista e painel:** pendente com regra mostra, embaixo do valor, `até 05/01: R$ 85,00` ou `hoje R$ 235,20`. Sem regra, nada
 muda. Paga continua com `pago R$ …` sempre que o valor pago diferir do valor. Abas e rodapé das pendentes continuam com
@@ -141,10 +156,10 @@ e `CorrecaoPagamentoInline` (ajuda, erro, `aria-describedby`, máscara por tipo)
 | Valor Total | valor original | valor original |
 | Desc. Cond. | desconto gravado | desconto do contrato, até o vencimento |
 | Valor Líquido | valor pago | valor do dia |
-| Linha em informações | `Acréscimos por atraso: multa R$ 4,20; juros R$ 21,00; outros R$ 5,00.` | antes do vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.`; depois: `Valor atualizado em 01/11/2026: multa R$ 4,20; juros R$ 21,00.` |
+| Linha em informações | `Acréscimos por atraso: multa R$ 4,20; juros R$ 21,00; outros R$ 5,00.` Só com `outros` (pode ter sido paga em dia, 2026-11-01): `Outros acréscimos: R$ 5,00.` | antes do vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.`; depois: `Valor atualizado em 01/11/2026: multa R$ 4,20; juros R$ 21,00.` |
 
-- Na linha "antes do vencimento", o trecho `+ multa e juros` só aparece se o contrato tiver multa ou juros. No detalhe,
-  só os valores maiores que zero.
+- Na linha "antes do vencimento", o trecho depois do valor original é `+ multa`, `+ juros` ou `+ multa e juros`, conforme o
+  contrato tenha só multa, só juros ou os dois; sem nenhum dos dois, não há trecho. No detalhe, só os valores maiores que zero.
 - **Valor por extenso** segue o Valor Líquido quando ele difere do total (corrige também o caso de desconto da Fase 26).
 - Sem regra e sem valores, o recibo sai **idêntico** ao atual, e isso é coberto por teste. Nenhum campo muda de posição.
 - **Sem v3:** os novos dados só aparecem quando existem. Mesma exceção consciente da Fase 26 à regra de versões.
@@ -198,9 +213,9 @@ Campos novos do contrato são opcionais e não entram em `ProgressoDeConfiguraca
 - `CondicoesDePagamento` (PHP) e `condicoes.js` (`node --test`) com os mesmos casos: 0, 1, 15, 30 e 300 dias; pagamento no
   próprio vencimento; % e R$; arredondamento; desconto em R$ maior que o valor; sem regra.
 - Contrato: grava, valida e audita as condições; contrato existente continua válido sem elas.
-- Baixa individual: pré-preenchido, editado, vazio, zero, sem atraso zerando; 404 para alheia antes da validação; textos
+- Baixa individual: pré-preenchido, editado, vazio, zero, sem atraso zerando (multa e juros; `outros` fica em qualquer data); 404 para alheia antes da validação; textos
   exatos da auditoria.
-- Lote: em branco usa o contrato de cada cobrança; preenchido vale para todas; só em atraso recebe acréscimo; contratos
+- Lote: em branco usa o contrato de cada cobrança; preenchido vale para todas; só em atraso recebe multa e juros (`outros` vale em qualquer data); contratos
   diferentes e clientes diferentes; prévia igual ao gravado; recusa sem gravar nada.
 - Corrigir: muda os quatro com senha e motivo e não recalcula. Desfazer: zera os quatro.
 - Lista, painel e relatórios: somas, CSV byte a byte, total por produto igual ao painel; sem regra, valores iguais aos de

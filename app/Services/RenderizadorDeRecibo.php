@@ -27,11 +27,18 @@ final class RenderizadorDeRecibo
         $carimbo = $this->carimbo($cobranca, $agora);
         $inicio = CarbonImmutable::parse($servico['periodo_inicio']);
         $periodo = $inicio->format('d/m/Y').' a '.CarbonImmutable::parse($servico['periodo_fim'])->format('d/m/Y');
-        $extenso = ValorPorExtenso::converter($servico['valor_centavos']);
         $itens = $servico['itens'] ?? [];
         $texto = TextoDoRecibo::compor($itens, $servico['descricao']);
-        // Dado vivo, como situação e pago_em: só a cobrança paga com desconto preenche os campos de desconto e valor líquido.
-        $comDesconto = $cobranca->status === StatusCobranca::Paga && $cobranca->desconto_centavos > 0;
+        // Dado vivo, como situação e pago_em. Paga: o que foi gravado na baixa. Pendente com regra no contrato: o valor de hoje.
+        $valorDoDia = $this->valorDoDia($cobranca, $agora);
+        [$desconto, $liquido] = match (true) {
+            $cobranca->status === StatusCobranca::Paga => [$cobranca->desconto_centavos, $cobranca->valorPagoCentavos()],
+            $valorDoDia !== null => [$valorDoDia['desconto_centavos'], $valorDoDia['total_centavos']],
+            default => [0, $cobranca->valor_centavos],
+        };
+        // Sem desconto e sem acréscimo os campos ficam nulos e o recibo sai como sempre saiu (o template usa o valor cheio).
+        $comValores = $desconto > 0 || $liquido !== $cobranca->valor_centavos;
+        $extenso = ValorPorExtenso::converter($comValores ? $liquido : $servico['valor_centavos']);
 
         return [
             'numero' => $recibo->numeroFormatado(),
@@ -61,14 +68,21 @@ final class RenderizadorDeRecibo
                 'obs_periodo' => 'Obs.: Período de '.$periodo,
             ],
             'valor' => Dinheiro::formatar($servico['valor_centavos']),
-            'desconto' => $comDesconto ? Dinheiro::formatar($cobranca->desconto_centavos) : null,
-            'valor_pago' => $comDesconto ? Dinheiro::formatar($cobranca->valorPagoCentavos()) : null,
+            'desconto' => $desconto > 0 ? Dinheiro::formatar($desconto) : null,
+            'valor_pago' => $comValores ? Dinheiro::formatar($liquido) : null,
             'valor_extenso' => $extenso,
-            'informacoes' => ['Valor por extenso: '.$extenso.'.'],
+            'informacoes' => array_values(array_filter([
+                'Valor por extenso: '.$extenso.'.',
+                $cobranca->fraseDaCondicao($agora),
+                $cobranca->detalheDosAcrescimos(),
+                // A linha digitável do boleto não muda com a data: quem paga o valor do dia precisa saber disso.
+                $comValores && $valorDoDia !== null && $cobranca->forma_pagamento === FormaPagamento::Boleto
+                    ? 'O boleto foi emitido com o valor original.' : null,
+            ])),
             'gerado_em' => $agora->format('d/m/Y H:i'),
             'logo' => $this->logo($snapshot['prestador']['logo'] ?? null),
             'aplicativo' => config('app.name'),
-            'pagamento' => $this->pagamento($recibo, $snapshot),
+            'pagamento' => $this->pagamento($recibo, $snapshot, $valorDoDia),
         ];
     }
 
@@ -79,8 +93,19 @@ final class RenderizadorDeRecibo
             ->setOption('isFontSubsettingEnabled', true);
     }
 
-    /** Forma de pagamento é viva (lida da cobrança); valor e prestador vêm do snapshot, como o resto do recibo. */
-    private function pagamento(Recibo $recibo, array $snapshot): array
+    /** Pendente com regra no contrato: as condições de hoje ({@see Cobranca::condicoesNaData()}). Senão, nulo (vale o valor do recibo). */
+    private function valorDoDia(Cobranca $cobranca, CarbonImmutable $agora): ?array
+    {
+        return $cobranca->status === StatusCobranca::Pendente && $cobranca->contrato?->regrasDePagamento() !== null
+            ? $cobranca->condicoesNaData($agora)
+            : null;
+    }
+
+    /**
+     * Forma de pagamento é viva (lida da cobrança); prestador e valor vêm do snapshot, como o resto do recibo. Com regra no
+     * contrato, o PIX cobra o valor do dia (`$valorDoDia`).
+     */
+    private function pagamento(Recibo $recibo, array $snapshot, ?array $valorDoDia): array
     {
         $cobranca = $recibo->cobranca;
 
@@ -98,7 +123,10 @@ final class RenderizadorDeRecibo
 
         $chave = $cobranca->forma_pagamento === FormaPagamento::Pix ? $cobranca->chavePix : null;
 
-        if ($chave === null) {
+        $valor = $valorDoDia['total_centavos'] ?? $snapshot['servico']['valor_centavos'];
+
+        // Desconto integral: não há o que cobrar, então nem QR nem copia e cola.
+        if ($chave === null || ($valorDoDia !== null && $valor === 0)) {
             return ['forma' => null];
         }
 
@@ -106,7 +134,7 @@ final class RenderizadorDeRecibo
             $chave->chave,
             (string) $snapshot['prestador']['nome'],
             (string) ($snapshot['prestador']['cidade'] ?? ''),
-            $snapshot['servico']['valor_centavos'],
+            $valor,
             sprintf('REC%d%06d', $recibo->ano, $recibo->numero),
         );
 

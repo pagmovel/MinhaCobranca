@@ -18,6 +18,8 @@ use App\Services\CalculadoraDePeriodos;
 use App\Services\EncerradorDeContratos;
 use App\Services\RenovadorDeContratos;
 use App\Support\BlocoDePaginas;
+use App\Support\CondicoesDePagamento;
+use App\Support\Desconto;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
@@ -252,9 +254,11 @@ class ContratoController extends Controller
                 $registro->cobrancas()->update(['contrato_id' => null]);
             }
 
+            $condicoesAntes = $registro->only(Contrato::CONDICOES);
             $registro->update($dados);
             $registro->itens()->delete();
             $registro->itens()->createMany($request->itensDoContrato());
+            $this->registrarCondicoes($request, $registro, $condicoesAntes);
         });
 
         return redirect('/contratos')->with('sucesso', 'Contrato salvo. As mudanças valem para as próximas cobranças.');
@@ -411,6 +415,55 @@ class ContratoController extends Controller
         return redirect("/contratos/{$registro->id}/edit")->with('sucesso', 'Contrato renovado.');
     }
 
+    /** Auditoria só quando as condições de pagamento mudam de verdade (salvar o contrato sem mexer nelas não registra). */
+    private function registrarCondicoes(Request $request, Contrato $contrato, array $antes): void
+    {
+        $depois = $contrato->only(Contrato::CONDICOES);
+
+        if ($antes === $depois) {
+            return;
+        }
+
+        Auditoria::registrar($request, 'contrato.condicoes', $contrato,
+            'Condições de pagamento alteradas (antes: '.$this->descricaoDasCondicoes($antes).'; agora: '.$this->descricaoDasCondicoes($depois).')',
+            $antes, $depois);
+    }
+
+    /** "desconto até o vencimento 15%, multa R$ 5,00, juros 1% ao mês", ou "sem condições". */
+    private function descricaoDasCondicoes(array $colunas): string
+    {
+        $partes = [];
+
+        foreach (['desconto_pontualidade' => 'desconto até o vencimento', 'multa' => 'multa', 'juros' => 'juros'] as $campo => $nome) {
+            $valor = $colunas["{$campo}_valor"];
+
+            if ($valor > 0) {
+                $partes[] = $nome.' '.($colunas["{$campo}_tipo"] === Desconto::PERCENTUAL ? Desconto::textoDoPercentual($valor).'%' : 'R$ '.Dinheiro::formatar($valor))
+                    .($campo === 'juros' ? ' ao mês' : '');
+            }
+        }
+
+        return $partes === [] ? 'sem condições' : implode(', ', $partes);
+    }
+
+    /**
+     * As condições do contrato como a tela as digita (`entradaDaRegra`); sem regra, o texto vazio e o tipo percentual.
+     *
+     * @return array<string, string>
+     */
+    private function condicoesParaATela(Contrato $contrato): array
+    {
+        $campos = [];
+
+        foreach (['desconto_pontualidade', 'multa', 'juros'] as $campo) {
+            $tipo = $contrato->{"{$campo}_tipo"};
+            $campos["{$campo}_tipo"] = $tipo ?? Desconto::PERCENTUAL;
+            $campos[$campo] = CondicoesDePagamento::entradaDaRegra($tipo, $contrato->{"{$campo}_valor"});
+        }
+
+        return $campos;
+    }
+
     private function registrarRenovacao(Request $request, Contrato $contrato, CarbonImmutable $fimAntigo, ?CarbonImmutable $novaData): void
     {
         Auditoria::registrar($request, 'contrato.renovado', $contrato,
@@ -439,6 +492,14 @@ class ContratoController extends Controller
             return back()->withErrors(['data_inicio' => 'O novo início precisa ser depois de '.$registro->data_fim->format('d/m/Y').'.']);
         }
 
+        // O desconto em R$ vem do contrato antigo, mas o valor pode ter sido renegociado: a regra do cadastro vale aqui também.
+        $valorNovo = $request->resumoDosItens()['valor_centavos'];
+        if ($registro->desconto_pontualidade_tipo === Desconto::VALOR && $registro->desconto_pontualidade_valor > $valorNovo) {
+            return back()->withErrors([
+                'desconto_pontualidade' => 'O desconto não pode passar do valor do contrato (R$ '.Dinheiro::formatar($valorNovo).').',
+            ]);
+        }
+
         $novo = DB::transaction(function () use ($request, $registro, $inicio, $encerrador) {
             $encerrador->encerrar($registro, $registro->data_fim, false, CarbonImmutable::today());
 
@@ -452,7 +513,7 @@ class ContratoController extends Controller
                 'ativo' => true,
                 'forma_pagamento' => $registro->forma_pagamento,
                 'chave_pix_id' => $registro->chave_pix_id,
-            ] + $request->resumoDosItens());
+            ] + $registro->only(Contrato::CONDICOES) + $request->resumoDosItens());
             $novo->itens()->createMany($request->itensDoContrato());
 
             Auditoria::registrar($request, 'contrato.renovado_vencido', $registro,
@@ -594,7 +655,7 @@ class ContratoController extends Controller
                 'encerramento_agendado' => $contrato->ativo && $contrato->ultimo_periodo !== 'inteiro',
                 'forma_pagamento' => $contrato->forma_pagamento->value,
                 'chave_pix_id' => $contrato->chave_pix_id ?? '',
-            ] : null,
+            ] + $this->condicoesParaATela($contrato) : null,
             'clienteAtual' => $contrato?->cliente?->paraBusca(),
             'periodicidades' => Periodicidade::opcoes(),
             'modalidades' => Modalidade::opcoes(),
