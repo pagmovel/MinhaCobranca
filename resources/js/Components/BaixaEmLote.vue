@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, useId, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { criarAvisoTemporario } from '../avisoTemporario.js';
 import { previaDoLote, travarDesconto } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
 import Modal from './Modal.vue';
@@ -22,9 +23,7 @@ const form = useForm({ ids: [], modo: 'vencimento', desconto_percentual: '' });
 // Valor, desconto e valor pago de cada cobrança, e os totais: a mesma conta que o servidor grava.
 const previa = computed(() => previaDoLote(elegiveis.value.map((c) => c.valor_centavos), form.desconto_percentual));
 
-const aviso = ref('');
-let temporizadorDoAviso;
-onBeforeUnmount(() => clearTimeout(temporizadorDoAviso));
+const { aviso, mostrar: mostrarAviso } = criarAvisoTemporario();
 
 // A trava roda num watch, não em @input: o v-model registra o ouvinte no `created` e a diretiva no `mounted`,
 // então um @input veria o texto ainda sem máscara.
@@ -34,9 +33,7 @@ watch(() => form.desconto_percentual, () => {
     const { entrada, travou } = travarDesconto(0, 'percentual', form.desconto_percentual);
     if (travou) {
         form.desconto_percentual = entrada;
-        clearTimeout(temporizadorDoAviso);
-        aviso.value = 'Máximo: 100%';
-        temporizadorDoAviso = setTimeout(() => { aviso.value = ''; }, 2000);
+        mostrarAviso('Máximo: 100%');
     }
 });
 

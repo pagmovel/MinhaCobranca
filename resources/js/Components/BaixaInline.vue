@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, useId, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { criarAvisoTemporario } from '../avisoTemporario.js';
 import { descontoEmCentavos, travarDesconto } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
 
@@ -25,21 +26,12 @@ const valorPagoCentavos = computed(() => props.valorCentavos - descontoCentavos.
 const descontoIntegral = computed(() => props.valorCentavos > 0 && descontoCentavos.value === props.valorCentavos);
 
 const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
-const aviso = ref('');
-let temporizadorDoAviso;
+const { aviso, mostrar: mostrarAviso, limpar: limparAviso } = criarAvisoTemporario();
 const anuncio = computed(() => aviso.value || (descontoIntegral.value ? TEXTO_INTEGRAL : ''));
-
-const mostrarAviso = (texto) => {
-    clearTimeout(temporizadorDoAviso);
-    aviso.value = texto;
-    temporizadorDoAviso = setTimeout(() => { aviso.value = ''; }, 2000);
-};
-onBeforeUnmount(() => clearTimeout(temporizadorDoAviso));
 
 // Trocar % ↔ R$ limpa o número: 10% não pode virar R$ 0,10.
 watch(() => form.desconto_tipo, () => {
-    clearTimeout(temporizadorDoAviso);
-    aviso.value = '';
+    limparAviso();
     form.desconto = '';
 });
 

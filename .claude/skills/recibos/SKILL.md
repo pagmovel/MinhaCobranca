@@ -1726,6 +1726,7 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   o teste JS usa os mesmos valores do teste PHP, então "soma da prévia = soma gravada" fica provada nas duas pontas. A
   vírgula final ("12,") conta como o número antes dela (a prévia não pisca). A lista da prévia rola dentro do modal
   (`max-h-64 overflow-auto`, até 200 cobranças) e só o total pago leva `.destacar`.
+- **Aviso que some sozinho = `criarAvisoTemporario()` (`avisoTemporario.js`, com teste):** `{ aviso, mostrar, limpar }`, 2 s, cancela ao sair do componente; usado em `BaixaInline` e `BaixaEmLote` (o próximo usa o mesmo).
 
 ### Pegadinhas
 - **`Dinheiro::paraCentavos` lança `TypeError` (500) com número gigante** (`'99999999999999999999'`: `(int) × 100` vira
