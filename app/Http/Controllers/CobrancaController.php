@@ -367,7 +367,7 @@ class CobrancaController extends Controller
     /**
      * Baixa com a data, o desconto, a multa, os juros ou os outros acréscimos errados (senha + motivo, registrado na
      * auditoria). Campo fora do pedido mantém o gravado e trocar a data não recalcula nada: corrige-se o que aconteceu de
-     * fato. Sem atraso na data nova, multa, juros e outros vão a zero (ver ValoresDaBaixa).
+     * fato. Sem atraso na data nova, multa e juros vão a zero; "outros" vale em qualquer data (ver ValoresDaBaixa).
      */
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {

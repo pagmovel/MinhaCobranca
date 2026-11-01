@@ -425,7 +425,8 @@ class AcoesEmLoteTest extends TestCase
         $this->assertSame([3150, 0, 0, 0], $this->gravados($controle));
     }
 
-    public function test_so_cobranca_em_atraso_recebe_acrescimo(): void
+    /** Multa e juros só nas em atraso; "outros" (pedido do Marcos, 2026-11-01) vale em todas, qualquer que seja a data. */
+    public function test_so_cobranca_em_atraso_recebe_multa_e_juros_e_outros_vale_em_todas(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-11-01 10:00:00'));
         $vencida = $this->cobranca(['vencimento' => '2026-01-05', 'valor_centavos' => 21000]);
@@ -438,12 +439,12 @@ class AcoesEmLoteTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame([0, 500, 3000, 500], $this->gravados($vencida));
-        $this->assertSame([[0, 0, 0, 0], [0, 0, 0, 0]], [$this->gravados($venceHoje), $this->gravados($aVencer)]);
-        $this->assertSame([21000, 21000], [$venceHoje->valorPagoCentavos(), $aVencer->valorPagoCentavos()]);
+        $this->assertSame([[0, 0, 0, 500], [0, 0, 0, 500]], [$this->gravados($venceHoje), $this->gravados($aVencer)]);
+        $this->assertSame([21500, 21500], [$venceHoje->valorPagoCentavos(), $aVencer->valorPagoCentavos()]);
     }
 
-    /** Ponto 5 da revisão: com "usar a data de vencimento" a vencida é baixada no vencimento, sem multa nem juros (nem os digitados). */
-    public function test_modo_vencimento_nao_gera_acrescimo(): void
+    /** Com "usar a data de vencimento" a vencida é baixada no vencimento, sem multa nem juros (nem os digitados); "outros" fica. */
+    public function test_modo_vencimento_nao_gera_multa_nem_juros_mas_soma_outros(): void
     {
         [$a, $b] = $this->cenarioDeAtraso();
 
@@ -455,7 +456,30 @@ class AcoesEmLoteTest extends TestCase
         [$c] = $this->cenarioDeAtraso();
         $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'vencimento', 'multa_tipo' => 'percentual', 'multa' => '5', 'juros_tipo' => 'percentual', 'juros' => '5', 'outros' => '9,00'])
             ->assertSessionHasNoErrors();
-        $this->assertSame([3150, 0, 0, 0], $this->gravados($c));
+        $this->assertSame([3150, 0, 0, 900], $this->gravados($c));
+    }
+
+    /** O mesmo R$ em cada linha, com a data de vencimento (todas sem atraso) e com a de hoje (a que vai vencer também). */
+    public function test_outros_soma_em_todas_com_vencimento_e_com_hoje(): void
+    {
+        [$a, $b] = $this->cenarioDeAtraso();
+        $aVencer = $this->cobrancaDoContrato($a->contrato, 21000, '2026-12-05');
+        $this->actingAs($this->usuario);
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $aVencer->id], 'modo' => 'vencimento', 'outros' => '5,00'])->assertSessionHasNoErrors();
+
+        // A e B são baixadas no vencimento (o desconto do contrato vale, sem multa nem juros); a que vai vencer é baixada hoje.
+        $this->assertSame([[3150, 0, 0, 500], [0, 0, 0, 500], [3150, 0, 0, 500]], [$this->gravados($a), $this->gravados($b), $this->gravados($aVencer)]);
+        $this->assertSame([18350, 10500, 18350], [$a->valorPagoCentavos(), $b->valorPagoCentavos(), $aVencer->valorPagoCentavos()]);
+
+        [$c, $d] = $this->cenarioDeAtraso();
+        $deHoje = $this->cobrancaDoContrato($c->contrato, 21000, '2026-12-06');
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id, $d->id, $deHoje->id], 'modo' => 'hoje', 'outros' => '5,00'])->assertSessionHasNoErrors();
+
+        // Em atraso: multa e juros do contrato, mais "outros"; a que vai vencer: desconto do contrato e "outros".
+        $this->assertSame([[0, 420, 2100, 500], [0, 500, 3000, 500], [3150, 0, 0, 500]], [$this->gravados($c), $this->gravados($d), $this->gravados($deHoje)]);
+        $this->assertSame([24020, 14000, 18350], [$c->valorPagoCentavos(), $d->valorPagoCentavos(), $deHoje->valorPagoCentavos()]);
     }
 
     /** Ponto 5 da revisão: a que ainda vai vencer é baixada com a data de hoje e recebe o desconto do contrato. */
@@ -487,6 +511,7 @@ class AcoesEmLoteTest extends TestCase
             'juros acima de 100%' => [['juros_tipo' => 'percentual', 'juros' => '101'], 'juros', $percentual],
             'juros em reais negativo' => [['juros_tipo' => 'valor', 'juros' => '-5'], 'juros', $reais],
             'outros com texto' => [['outros' => 'abc'], 'outros', $reais],
+            'outros acima do teto' => [['outros' => '100.000.000,00'], 'outros', $reais],
             'multa sem tipo' => [['multa' => '2'], 'multa_tipo', 'Escolha se a multa é em % ou em R$.'],
             'juros com tipo inválido' => [['juros_tipo' => 'taxa', 'juros' => '2'], 'juros_tipo', 'Tipo de juros inválido.'],
         ];
@@ -543,17 +568,21 @@ class AcoesEmLoteTest extends TestCase
     public function test_auditoria_de_cada_cobranca_do_lote_traz_os_acrescimos(): void
     {
         [$a, $b] = $this->cenarioDeAtraso();
-        $semAcrescimo = $this->cobrancaDoContrato(Contrato::factory()->create(['user_id' => $this->usuario->id]), 7000, '2026-12-05');
+        $semRegra = Contrato::factory()->create(['user_id' => $this->usuario->id]);
+        $aVencer = $this->cobrancaDoContrato($semRegra, 7000, '2026-12-05');
+        $semAcrescimo = $this->cobrancaDoContrato($semRegra, 8000, '2026-12-06');
 
-        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $semAcrescimo->id], 'modo' => 'hoje', 'outros' => '5,00'])
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id, $aVencer->id], 'modo' => 'hoje', 'outros' => '5,00'])
             ->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$semAcrescimo->id], 'modo' => 'hoje'])->assertSessionHasNoErrors();
 
         $resumos = $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('alvo_id')->pluck('resumo')->all();
         $this->assertSame(
             [
                 'Baixa registrada (R$ 210,00, multa R$ 4,20, juros R$ 21,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 240,20, em 01/11/2026)',
                 'Baixa registrada (R$ 100,00, multa R$ 5,00, juros R$ 30,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 140,00, em 01/11/2026)',
-                'Baixa em lote (R$ 70,00, paga em 01/11/2026)',
+                'Baixa registrada (R$ 70,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 75,00, em 01/11/2026)',
+                'Baixa em lote (R$ 80,00, paga em 01/11/2026)',
             ],
             $resumos,
         );

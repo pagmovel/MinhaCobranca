@@ -238,8 +238,12 @@ class CondicoesDaCobrancaTest extends TestCase
         $cobranca->forceFill(['multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500]);
         $this->assertSame('Acréscimos por atraso: multa R$ 4,20; juros R$ 21,00; outros R$ 5,00.', $cobranca->detalheDosAcrescimos());
 
+        $cobranca->forceFill(['multa_centavos' => 420, 'juros_centavos' => 0]);
+        $this->assertSame('Acréscimos por atraso: multa R$ 4,20; outros R$ 5,00.', $cobranca->detalheDosAcrescimos());
+
+        // Só "outros": não pode dizer "por atraso", porque pode ter sido paga em dia.
         $cobranca->forceFill(['multa_centavos' => 0, 'juros_centavos' => 0]);
-        $this->assertSame('Acréscimos por atraso: outros R$ 5,00.', $cobranca->detalheDosAcrescimos());
+        $this->assertSame('Outros acréscimos: R$ 5,00.', $cobranca->detalheDosAcrescimos());
     }
 
     public function test_detalhe_dos_acrescimos_nao_existe_fora_da_paga(): void

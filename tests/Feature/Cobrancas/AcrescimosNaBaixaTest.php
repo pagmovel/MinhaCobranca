@@ -159,7 +159,8 @@ class AcrescimosNaBaixaTest extends TestCase
         );
     }
 
-    public function test_sem_atraso_zera_acrescimos_mesmo_preenchidos(): void
+    /** Pedido do Marcos (2026-11-01): sem atraso, multa e juros zeram; "outros" é lançamento manual e vale em qualquer data. */
+    public function test_sem_atraso_zera_multa_e_juros_mesmo_preenchidos_e_mantem_outros(): void
     {
         [$usuario, $cobranca] = $this->cenario();
 
@@ -171,9 +172,52 @@ class AcrescimosNaBaixaTest extends TestCase
             'desconto_tipo' => 'percentual', 'desconto' => '',
         ])->assertSessionHas('sucesso');
 
-        $this->assertSame([0, 0, 0, 0], $this->gravados($cobranca));
-        $this->assertSame(21000, $cobranca->valorPagoCentavos());
-        $this->assertSame('Baixa registrada (R$ 210,00, paga em 05/01/2026)', $this->resumoDaAuditoria($usuario));
+        $this->assertSame([0, 0, 0, 500], $this->gravados($cobranca));
+        $this->assertSame(21500, $cobranca->valorPagoCentavos());
+        $this->assertSame(
+            'Baixa registrada (R$ 210,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 215,00, em 05/01/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_outros_em_dia_grava_e_audita_junto_do_desconto_do_contrato(): void
+    {
+        [$usuario, $cobranca] = $this->cenario();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-01-05', 'outros' => '5,00'])->assertSessionHas('sucesso');
+
+        $this->assertSame([3150, 0, 0, 500], $this->gravados($cobranca));
+        $this->assertSame(18350, $cobranca->valorPagoCentavos());
+        $this->assertSame(
+            'Baixa registrada (R$ 210,00, outros R$ 5,00, desconto 15% = R$ 31,50, pago R$ 183,50, em 05/01/2026)',
+            $this->resumoDaAuditoria($usuario),
+        );
+    }
+
+    public function test_outros_vazio_ou_zero_em_dia_fica_sem_valor(): void
+    {
+        [, $cobranca] = $this->cenario();
+
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-01-05', 'outros' => '0'])->assertSessionHas('sucesso');
+
+        $this->assertSame([3150, 0, 0, 0], $this->gravados($cobranca));
+    }
+
+    public function test_outros_acima_do_teto_ou_invalido_e_recusado_em_dia_no_campo_outros(): void
+    {
+        [$usuario, $cobranca] = $this->cenario();
+
+        foreach (['100.000.000,00', 'abc'] as $invalido) {
+            $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-01-05', 'outros' => $invalido])
+                ->assertSessionHasErrors(['outros' => self::REAIS_INVALIDO]);
+        }
+
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->fresh()->status);
+        $this->assertSame(0, $usuario->auditorias()->count());
+
+        // Exatamente o teto passa, também em dia.
+        $this->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-01-05', 'outros' => '99.999.999,99'])->assertSessionHas('sucesso');
+        $this->assertSame(9999999999, $cobranca->fresh()->outros_centavos);
     }
 
     public function test_pago_no_vencimento_aplica_desconto_do_contrato(): void
@@ -473,7 +517,7 @@ class AcrescimosNaBaixaTest extends TestCase
         $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
     }
 
-    public function test_corrigir_para_data_sem_atraso_zera_acrescimos(): void
+    public function test_corrigir_para_data_sem_atraso_zera_multa_e_juros_e_mantem_outros(): void
     {
         [$usuario, $cobranca] = $this->cenarioPago(desconto: 300);
 
@@ -484,16 +528,43 @@ class AcrescimosNaBaixaTest extends TestCase
             'outros' => '5,00',
         ])->assertSessionHasNoErrors();
 
-        // O desconto não é acréscimo: continua. Multa, juros e outros vão a zero, mesmo preenchidos.
-        $this->assertSame([300, 0, 0, 0], $this->gravados($cobranca));
-        $this->assertSame(20700, $cobranca->valorPagoCentavos());
+        // O desconto não é acréscimo: continua. Multa e juros vão a zero, mesmo preenchidos; "outros" vale em qualquer data.
+        $this->assertSame([300, 0, 0, 500], $this->gravados($cobranca));
+        $this->assertSame(21200, $cobranca->valorPagoCentavos());
 
         $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
-        $this->assertSame(['pago_em' => '2026-01-05', 'desconto_centavos' => 300, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 0], $auditoria->depois);
+        $this->assertSame(['pago_em' => '2026-01-05', 'desconto_centavos' => 300, 'multa_centavos' => 0, 'juros_centavos' => 0, 'outros_centavos' => 500], $auditoria->depois);
         $this->assertSame(
-            'Pagamento corrigido (antes: 01/11/2026, multa de R$ 4,20 para R$ 0,00, juros de R$ 21,00 para R$ 0,00, outros de R$ 5,00 para R$ 0,00)',
+            'Pagamento corrigido (antes: 01/11/2026, multa de R$ 4,20 para R$ 0,00, juros de R$ 21,00 para R$ 0,00)',
             $auditoria->resumo,
         );
+    }
+
+    public function test_corrigir_para_data_sem_atraso_sem_os_campos_mantem_o_desconto_e_o_outros_gravados(): void
+    {
+        [, $cobranca] = $this->cenarioPago(desconto: 300);
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-01-05'])->assertSessionHasNoErrors();
+
+        $this->assertSame([300, 0, 0, 500], $this->gravados($cobranca));
+    }
+
+    public function test_corrigir_so_o_outros_numa_baixa_em_dia(): void
+    {
+        [$usuario, $cobranca] = $this->cenario();
+        $cobranca->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-01-05', 'desconto_centavos' => 3150])->save();
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-01-05', 'outros' => '5,00'])->assertSessionHasNoErrors();
+
+        $this->assertSame([3150, 0, 0, 500], $this->gravados($cobranca));
+        $this->assertSame(18350, $cobranca->valorPagoCentavos());
+        $this->assertSame(
+            'Pagamento corrigido (antes: 05/01/2026, outros de R$ 0,00 para R$ 5,00)',
+            $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole()->resumo,
+        );
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-01-05', 'outros' => '100.000.000,00'])->assertSessionHasErrors(['outros' => self::REAIS_INVALIDO]);
+        $this->assertSame([3150, 0, 0, 500], $this->gravados($cobranca));
     }
 
     public function test_corrigir_exige_senha_e_motivo(): void

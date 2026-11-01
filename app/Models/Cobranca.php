@@ -190,11 +190,18 @@ class Cobranca extends Model
         return "Valor atualizado em {$data->format('d/m/Y')}: ".self::listarValores(['multa' => $condicoes['multa_centavos'], 'juros' => $condicoes['juros_centavos']]).'.';
     }
 
-    /** O que o recibo da paga diz dos acréscimos gravados na baixa: `Acréscimos por atraso: multa R$ 4,20; outros R$ 5,00.` Nulo sem acréscimo. */
+    /**
+     * O que o recibo da paga diz dos acréscimos gravados na baixa: `Acréscimos por atraso: multa R$ 4,20; outros R$ 5,00.`
+     * Só com "outros" (que vale em qualquer data, então pode ter sido paga em dia): `Outros acréscimos: R$ 5,00.` Nulo sem acréscimo.
+     */
     public function detalheDosAcrescimos(): ?string
     {
         if ($this->status !== StatusCobranca::Paga || $this->acrescimosCentavos() === 0) {
             return null;
+        }
+
+        if ($this->multa_centavos === 0 && $this->juros_centavos === 0) {
+            return 'Outros acréscimos: R$ '.Dinheiro::formatar($this->outros_centavos).'.';
         }
 
         return 'Acréscimos por atraso: '.self::listarValores(['multa' => $this->multa_centavos, 'juros' => $this->juros_centavos, 'outros' => $this->outros_centavos]).'.';

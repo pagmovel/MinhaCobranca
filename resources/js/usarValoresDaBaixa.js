@@ -11,7 +11,7 @@ export const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
 const NOMES = ['multa', 'juros', 'desconto'];
 const SEM_REGRA = { tipo: 'percentual', numero: '' };
 const igual = (a, b) => a.tipo === b.tipo && a.numero === b.numero;
-/** Sem atraso a baixa só tem o desconto; multa, juros e outros ficam escondidos (e o servidor os zera). */
+/** Sem atraso, multa e juros ficam escondidos (e o servidor os zera); "outros" não entra aqui: não tem regra de contrato e vale sempre. */
 const visiveis = (dias) => (dias > 0 ? NOMES : ['desconto']);
 
 /**
@@ -46,7 +46,7 @@ export const camposAoTrocarAData = (atuais, anteriores, novos) => Object.fromEnt
 /**
  * A conta da baixa com o que está nos campos (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros` em R$), pelas
  * mesmas regras do servidor. Texto inválido vale 0; a vírgula no fim ("12,") conta como o número antes dela. Sem atraso,
- * multa, juros e outros valem 0. O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como
+ * multa e juros valem 0; "outros" é lançamento manual e soma em qualquer data. O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como
  * no servidor), então o valor pago não fica negativo. `jurosTotais` (a correção do pagamento): os juros digitados são o total
  * gravado, uma vez só como a multa, e não "ao mês" × dias.
  */
@@ -57,7 +57,7 @@ export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos, { j
     const multaCentavos = dias > 0 ? multaEmCentavos(valorCentavos, regra('multa')?.tipo, regra('multa')?.valor) : 0;
     const juros = jurosTotais ? multaEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor) : jurosEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor, dias);
     const jurosCentavos = dias > 0 ? juros : 0;
-    const outrosCentavos = dias > 0 ? (regraDaEntrada('valor', semSeparadorFinal(campos.outros)) ?? 0) : 0;
+    const outrosCentavos = regraDaEntrada('valor', semSeparadorFinal(campos.outros)) ?? 0;
 
     return {
         dias,
@@ -82,8 +82,8 @@ const emBranco = (numero) => aparar(semSeparadorFinal(numero)) === '';
  * Prévia da baixa em lote, pela mesma regra do servidor (`ValoresDaBaixa`, modo `lote`): o campo digitado no topo vale para
  * todas as cobranças (% calculado em cada uma, R$ igual em cada); em branco, cada uma usa o próprio contrato na data dela.
  * `linhas` são `{ valorCentavos, vencimentoIso, regras }`, `datas` a data da baixa de cada uma (ISO) e `campos` os do
- * formulário do topo (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros`). Multa, juros e outros só entram nas
- * que estão em atraso na data. Devolve por linha `{ valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos }` e os
+ * formulário do topo (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros`). Multa e juros só entram nas que estão
+ * em atraso na data; `outros` soma em todas, o mesmo R$ em cada uma. Devolve por linha `{ valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos }` e os
  * mesmos quatro nos totais, que somam as linhas.
  */
 export function previaDoLote(linhas, datas, campos) {

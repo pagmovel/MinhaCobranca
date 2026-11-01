@@ -105,7 +105,7 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
                     v-model="form.outros"
                     rotulo="Outros acréscimos"
                     :erro="erroDo('outros')"
-                    ajuda="Outros valores a cobrar, só em R$, nas cobranças em atraso."
+                    ajuda="Taxas ou valores à parte, só em R$. O mesmo valor em todas, em qualquer data."
                     :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
                     somente-reais
                     @digitar="limparErro('outros')"

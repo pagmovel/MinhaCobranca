@@ -29,8 +29,8 @@ contrato. Valor pago continua derivado.
 - Multa: `intdiv(valor × pontosBase + 5000, 10000)`. Juros em %: `intdiv(valor × pontosBase × dias + 150000, 300000)`.
   Juros em R$: `intdiv(centavos × dias + 15, 30)`. Base: sempre o valor original. No JS, `BigInt` (o produto passa de
   2^53).
-- `valor pago = valor − desconto + multa + juros + outros`, sempre derivado. Sem atraso, o servidor zera multa, juros e
-  outros. `0 ≤ desconto ≤ valor`.
+- `valor pago = valor − desconto + multa + juros + outros`, sempre derivado. Sem atraso, o servidor zera multa e juros;
+  `outros` vale em qualquer data (Tarefa 11, pedido do Marcos de 2026-11-01). `0 ≤ desconto ≤ valor`.
 - Auditoria (texto exato da spec): `Baixa registrada (R$ 210,00, multa R$ 4,20, juros R$ 21,00, outros R$ 5,00, desconto
   R$ 0,00, pago R$ 240,20, em 01/11/2026)`. Só os acréscimos maiores que zero entram no texto. Sem acréscimos, os
   textos da Fase 26 ficam como estão.
@@ -362,6 +362,18 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
   **Falta (controlador):** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos de que o deploy roda as duas migrações **aditivas** (sem migração de dados) e de que, ao definir
   regra num contrato, os recibos **pendentes** dele passam a sair com o valor do dia (um PIX já enviado fica com o valor antigo).
 
+### Tarefa 11 — "Outros" vale em qualquer data da baixa — **Estado: testada**
+
+**Pedido do Marcos (2026-11-01, ao testar a tela):** "baixa em qualquer data tem que permitir adicionar valor no campo outros". Decisão R13: "outros" é lançamento manual, sem relação com atraso e sem regra no contrato; a regra "sem atraso, sem acréscimo" vale **só para multa e juros**.
+
+**Arquivos:** `app/Services/ValoresDaBaixa.php`, `app/Models/Cobranca.php` (`detalheDosAcrescimos`), `resources/js/usarValoresDaBaixa.js`, `BaixaInline.vue`, `BaixaEmLote.vue`, `CorrecaoPagamentoInline.vue`, testes (`AcrescimosNaBaixaTest`, `AcoesEmLoteTest`, `CondicoesDaCobrancaTest`, `RenderizadorDeReciboTest`, `FaturamentoTest`, `ReceitaTest`, `usarValoresDaBaixa.test.js`), spec e skill.
+
+- [x] Servidor: `resolver` zera só multa e juros sem atraso, nos três modos; `outros` é validado em qualquer data (formato, teto, erro no campo `outros`) e gravado; no lote soma em todas as linhas (mesmo R$), vencimento ou hoje.
+- [x] Tela: o campo "Outros" aparece sempre (baixa, lote e correção), ao lado do desconto; `calcularBaixa` e `previaDoLote` somam `outros` em qualquer data, com os mesmos números do servidor; o aviso da correção passou a citar só multa e juros e só aparece com algum deles preenchido.
+- [x] Recibo da paga: com multa ou juros, `Acréscimos por atraso: …; outros R$ 5,00.`; só `outros`, `Outros acréscimos: R$ 5,00.` (pode ter sido paga em dia). `ReciboIdenticoSemRegraTest` (12 fixtures) intacto.
+- [x] Relatórios: `outros` pago em dia entra no Recebido, em Acréscimos e na linha "Outros acréscimos" (testes ponta a ponta pela baixa).
+- Testes: PHPUnit e JS conforme o registro abaixo, `npm run build` ok. Sem navegador (a subagente não o abre): aparência do campo sem atraso, alinhamento e 390 px ficam para o Passo 4 da Tarefa 10.
+
 ## Registro de execução
 
 - 2026-11-01: spec e plano aprovados pelo Marcos. Execução por subagentes, com as regras globais de subagentes (context-mode,
@@ -370,8 +382,9 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 - 2026-11-01: Tarefa 3 testada (PHPUnit 784, JS 277, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).
 - 2026-11-01: Tarefas 1 e 4 a 9 testadas, cada uma com revisão limpa do controlador (T7: PHPUnit 830, JS 278; T8: 862 e 278; T9: 876 e 283). Nenhuma conferência no navegador.
 - 2026-11-01: Tarefa 10 concluída: suíte da Fase 25 verde sem mudar asserção, PHPUnit 876, JS 283, `npm run build` ok, 12 PDFs de amostra conferidos por texto, documentação consolidada. Faltam o Passo 4 e o merge.
+- 2026-11-01: Tarefa 11 testada ("outros" vale em qualquer data, pedido do Marcos ao testar a tela): PHPUnit 886, JS 288, `npm run build` ok. Sem conferência no navegador.
 
-### Decisões do controlador (R1 a R12)
+### Decisões do controlador (R1 a R13)
 
 | # | Decisão | Custo se errada |
 |---|---|---|
@@ -387,6 +400,7 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 | R10 | Em "Corrigir pagamento", o juros é o total em R$ (sem seletor, sem "ao mês") e abre com o gravado; o `resolver` em modo `correcao` trata o digitado como centavos totais. Baixa e lote seguem com juros ao mês (a spec §1/§2 se contradizia) | a correção não recalcula juros por % ao mês |
 | R11 | Letra do WebISS de 8,4 pt para 8 pt só com mais de uma informação, para manter 1 página; não altera nenhum recibo existente (provado com as 12 fixtures) | ajuste de tamanho de letra ou de linhas |
 | R12 | A frase do recibo antes do vencimento diz `+ multa`, `+ juros` ou `+ multa e juros` conforme o contrato (a mensagem usa a mesma frase) | três ramos de texto a mais |
+| R13 | "Outros" vale em qualquer data (individual, lote e correção); sem atraso só multa e juros são zerados. Recibo da paga só com `outros`: `Outros acréscimos: R$ 5,00.` (sem "por atraso"). Pedido do Marcos ao testar a tela | voltar a zerar `outros` sem atraso (uma linha no servidor e no JS) |
 
 ### Para o Marcos decidir
 
@@ -402,7 +416,7 @@ Também com o Marcos: R9 (lote que mistura os dois textos de auditoria) e R11 (l
 - **T1:** `condicoes.test.js` diz "mesmos casos", mas "reais gigante" só está no PHP (JS 1e22, divergência da Fase 26); a migração de contratos repete a lista de colunas e o `down()` não foi executado; `diaDoCalendario` não valida mês nem dia (a entrada vem do servidor).
 - **T2:** a etiqueta "contrato" é `Etiqueta.vue` compacta (texto 10,4px a 60%), com `id` dentro do `aria-describedby` (só o texto dela); a trava em R$ do contrato só age ao digitar, sem aviso quando o total cai abaixo do desconto, e o erro do servidor não some ao editar o campo; o teto de R$ de multa/juros não entra na trava de digitação
   (só o desconto tem `valorMaximoCentavos`) e o exemplo ao vivo some sem aviso acima dele; o formulário do contrato depende do `@change` para tirar a vírgula final; `ContratoRequest::CONDICOES` e `Contrato::CONDICOES` têm o mesmo nome para coisas diferentes.
-- **T3:** o servidor valida multa/juros/outros mesmo sem atraso e a tela os esconde (valor inválido digitado antes de trocar a data daria erro em campo invisível); faltam testes do separador final ("12,") em multa/juros e do pagamento antes do vencimento com desconto do contrato; só trocar o seletor % | R$ já mostra "Valores diferentes do contrato" (cosmético).
+- **T3:** o servidor valida multa/juros mesmo sem atraso e a tela os esconde (valor inválido digitado antes de trocar a data daria erro em campo invisível; `outros`, desde a Tarefa 11, é visível sempre); faltam testes do separador final ("12,") em multa/juros e do pagamento antes do vencimento com desconto do contrato; só trocar o seletor % | R$ já mostra "Valores diferentes do contrato" (cosmético).
 - **T4:** a prévia usa a data do aparelho (`toLocaleDateString`) e o servidor `today()` (mesmo padrão da `BaixaInline`); sem teste de cobrança alheia ou não pendente no mesmo pedido com acréscimos; o aviso da data de vencimento aparece mesmo sem regra (literal da spec).
 - **T5:** o `.vue` da correção não tem teste automatizado (só o hook); `juros_tipo=percentual` por API na correção vale uma vez sobre o valor, como a multa (a tela só manda valor; não recusar); specs e plano da Fase 26 e a linha 10 da spec da Fase 27 ainda citam `usarDescontoDaBaixa.js` (histórico).
 - **T6:** sem teste de `linhaDoDia` perto da meia-noite (UTC × São Paulo).

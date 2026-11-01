@@ -23,7 +23,7 @@ const props = defineProps({
     multaCentavos: { type: Number, default: 0 },
     jurosCentavos: { type: Number, default: 0 },
     outrosCentavos: { type: Number, default: 0 },
-    // Vencimento (ISO): os dias de atraso na data do pagamento dizem se multa, juros e outros se aplicam.
+    // Vencimento (ISO): os dias de atraso na data do pagamento dizem se multa e juros se aplicam ("outros" vale sempre).
     vencimentoIso: { type: String, required: true },
     // Data atual do pagamento (ISO): o formulário abre nela, para não mudar o mês sem querer.
     pagoEmIso: { type: String, required: true },
@@ -55,11 +55,11 @@ const { dias, valorPagoCentavos, calculados, descontoIntegral, anuncio, erroDo, 
 });
 const primeiroCampo = ref(null);
 
-const TEXTO_SEM_ATRASO = 'Nessa data não há atraso: multa, juros e outros acréscimos ficam zerados.';
-// Sem atraso o servidor zera os três, mesmo preenchidos: o aviso aparece quando isso muda alguma coisa.
-const temAcrescimo = computed(() => [form.multa, form.juros, form.outros].some((texto) => texto.trim() !== ''));
-const semAtrasoComAcrescimo = computed(() => dias.value === 0 && temAcrescimo.value);
-const anunciar = computed(() => (semAtrasoComAcrescimo.value ? TEXTO_SEM_ATRASO : anuncio.value));
+const TEXTO_SEM_ATRASO = 'Nessa data não há atraso: multa e juros ficam zerados.';
+// Sem atraso o servidor zera multa e juros, mesmo preenchidos: o aviso aparece quando isso muda alguma coisa. "Outros" vale em qualquer data.
+const temMultaOuJuros = computed(() => [form.multa, form.juros].some((texto) => texto.trim() !== ''));
+const semAtrasoComMultaOuJuros = computed(() => dias.value === 0 && temMultaOuJuros.value);
+const anunciar = computed(() => (semAtrasoComMultaOuJuros.value ? TEXTO_SEM_ATRASO : anuncio.value));
 
 const lancados = computed(() => [['desconto', props.descontoCentavos], ['multa', props.multaCentavos], ['juros', props.jurosCentavos], ['outros', props.outrosCentavos]]
     .filter(([, centavos]) => centavos > 0)
@@ -120,7 +120,7 @@ const confirmar = () => form.post(
                 Valor
                 <span class="border border-transparent py-2 text-sm tabular-nums text-grafite">R$ {{ formatarCentavos(valorCentavos) }}</span>
             </div>
-            <!-- Com atraso: multa, juros e outros acréscimos; sem atraso, só o desconto (o servidor zera o resto). -->
+            <!-- Multa e juros só com atraso (sem atraso o servidor os zera); "Outros" e o desconto aparecem sempre. -->
             <template v-if="dias > 0">
                 <CampoValorOuPercentual
                     :id="`${id}-multa`"
@@ -146,17 +146,17 @@ const confirmar = () => form.post(
                     somente-reais
                     @digitar="limparErro('juros')"
                 />
-                <CampoValorOuPercentual
-                    :id="`${id}-outros`"
-                    v-model="form.outros"
-                    rotulo="Outros acréscimos"
-                    :erro="erroDo('outros')"
-                    ajuda="Outros valores a cobrar, só em R$."
-                    :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
-                    somente-reais
-                    @digitar="limparErro('outros')"
-                />
             </template>
+            <CampoValorOuPercentual
+                :id="`${id}-outros`"
+                v-model="form.outros"
+                rotulo="Outros acréscimos"
+                :erro="erroDo('outros')"
+                ajuda="Taxas ou valores à parte, em R$. Vale em qualquer data."
+                :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
+                somente-reais
+                @digitar="limparErro('outros')"
+            />
             <CampoValorOuPercentual
                 :id="`${id}-desconto`"
                 v-model="form.desconto"
@@ -178,7 +178,7 @@ const confirmar = () => form.post(
                 </span>
             </div>
             <Transition name="surgir">
-                <p v-if="semAtrasoComAcrescimo" aria-hidden="true" class="w-full text-xs text-tinta-laranja">{{ TEXTO_SEM_ATRASO }}</p>
+                <p v-if="semAtrasoComMultaOuJuros" aria-hidden="true" class="w-full text-xs text-tinta-laranja">{{ TEXTO_SEM_ATRASO }}</p>
             </Transition>
             <Transition name="surgir">
                 <p v-if="descontoIntegral" aria-hidden="true" class="w-full text-xs font-semibold text-tinta-laranja">{{ TEXTO_INTEGRAL }}</p>

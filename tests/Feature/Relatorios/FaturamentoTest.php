@@ -120,6 +120,16 @@ class FaturamentoTest extends TestCase
             ->assertJsonPath('totais', ['mes' => 'Total', 'previsto' => 47757, 'nao_emitido' => 0, 'recebido' => 41186, 'descontos' => 1000, 'acrescimos' => 2429, 'inadimplencia' => null]);
     }
 
+    /** Pedido do Marcos (2026-11-01): "outros" vale em qualquer data; pago no vencimento, entra no Recebido e em Acréscimos. */
+    public function test_outros_pago_em_dia_entra_no_recebido_e_em_acrescimos(): void
+    {
+        $cobranca = $this->cobranca('2026-10-10', 10000);
+        $this->actingAs($this->usuario)->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-10-10', 'outros' => '5,00'])->assertSessionHas('sucesso');
+
+        $this->getJson('/relatorios/faturamento/dados?de=2026-10&ate=2026-10')->assertOk()
+            ->assertJsonPath('linhas.0', ['mes' => '10/2026', 'previsto' => 10000, 'nao_emitido' => 0, 'recebido' => 10500, 'descontos' => 0, 'acrescimos' => 500, 'inadimplencia' => 0]);
+    }
+
     public function test_periodo_padrao_e_os_ultimos_12_meses(): void
     {
         $this->actingAs($this->usuario)->getJson('/relatorios/faturamento/dados')->assertOk()

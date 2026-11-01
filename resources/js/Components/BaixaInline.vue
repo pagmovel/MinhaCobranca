@@ -41,7 +41,7 @@ const confirmar = () => form.post(`/cobrancas/${props.cobrancaId}/pagar`, { pres
             Valor
             <span class="border border-transparent py-2 text-sm tabular-nums text-grafite">R$ {{ formatarCentavos(valorCentavos) }}</span>
         </div>
-        <!-- Com atraso: multa, juros e outros acréscimos; sem atraso, só o desconto (o servidor zera o resto). -->
+        <!-- Multa e juros só com atraso (sem atraso o servidor os zera); "Outros" e o desconto aparecem sempre. -->
         <template v-if="dias > 0">
             <CampoValorOuPercentual
                 :id="`${id}-multa`"
@@ -73,17 +73,17 @@ const confirmar = () => form.post(`/cobrancas/${props.cobrancaId}/pagar`, { pres
                     <p v-if="calculados.juros > 0" :id="idCalculado" class="tabular-nums text-grafite">= R$ {{ formatarCentavos(calculados.juros) }}</p>
                 </template>
             </CampoValorOuPercentual>
-            <CampoValorOuPercentual
-                :id="`${id}-outros`"
-                v-model="form.outros"
-                rotulo="Outros acréscimos"
-                :erro="erroDo('outros')"
-                ajuda="Outros valores a cobrar, só em R$."
-                :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
-                somente-reais
-                @digitar="limparErro('outros')"
-            />
         </template>
+        <CampoValorOuPercentual
+            :id="`${id}-outros`"
+            v-model="form.outros"
+            rotulo="Outros acréscimos"
+            :erro="erroDo('outros')"
+            ajuda="Taxas ou valores à parte, em R$. Vale em qualquer data."
+            :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
+            somente-reais
+            @digitar="limparErro('outros')"
+        />
         <CampoValorOuPercentual
             :id="`${id}-desconto`"
             v-model="form.desconto"

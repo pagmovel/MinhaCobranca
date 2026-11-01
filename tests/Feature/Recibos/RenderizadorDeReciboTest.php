@@ -400,6 +400,27 @@ class RenderizadorDeReciboTest extends TestCase
 
         $dados = $this->renderizador->dados($empate, CarbonImmutable::now());
         $this->assertSame(['5,00', '100,00'], [$dados['desconto'], $dados['valor_pago']]);
+        $this->assertContains('Outros acréscimos: R$ 5,00.', $dados['informacoes']);
+    }
+
+    /** Paga em dia, só com "outros": a frase não fala de atraso, e o valor pago e o extenso seguem o líquido. */
+    public function test_paga_em_dia_so_com_outros_mostra_a_frase_sem_atraso(): void
+    {
+        $recibo = $this->reciboDoContrato([
+            'valor_centavos' => 21000, 'outros_centavos' => 500,
+            'vencimento' => '2026-10-09', 'status' => StatusCobranca::Paga, 'pago_em' => '2026-10-09',
+        ]);
+
+        $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+
+        $this->assertNull($dados['desconto']);
+        $this->assertSame(['215,00', '210,00'], [$dados['valor_pago'], $dados['valor']]);
+        $this->assertSame([
+            'Valor por extenso: duzentos e quinze reais.',
+            'Outros acréscimos: R$ 5,00.',
+        ], $dados['informacoes']);
+        $this->assertStringContainsString('Outros acréscimos: R$ 5,00.', view($recibo->modelo->view(), $dados)->render());
+        $this->assertStringNotContainsString('por atraso', view($recibo->modelo->view(), $dados)->render());
     }
 
     public function test_valor_por_extenso_da_paga_com_desconto_segue_o_valor_liquido(): void

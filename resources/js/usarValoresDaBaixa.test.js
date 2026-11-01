@@ -74,7 +74,9 @@ test('o valor pago soma multa, juros e outros e tira o desconto; os números bat
     assert.equal(calcularBaixa(21000, VENCIMENTO, '2026-01-06', campos).jurosCentavos, 7);
 });
 
-test('sem atraso multa, juros e outros valem zero, mesmo preenchidos', () => {
+// Pedido do Marcos (2026-11-01): "outros" é lançamento manual e vale em qualquer data; sem atraso só multa e juros zeram.
+// Mesmos números de AcrescimosNaBaixaTest::test_sem_atraso_zera_multa_e_juros_mesmo_preenchidos_e_mantem_outros.
+test('sem atraso multa e juros valem zero, mesmo preenchidos, e outros soma', () => {
     const campos = {
         multa: { tipo: 'percentual', numero: '2' },
         juros: { tipo: 'valor', numero: '3,00' },
@@ -83,7 +85,11 @@ test('sem atraso multa, juros e outros valem zero, mesmo preenchidos', () => {
     };
 
     assert.deepEqual(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, campos), {
-        dias: 0, descontoCentavos: 3150, multaCentavos: 0, jurosCentavos: 0, outrosCentavos: 0, pagoCentavos: 17850,
+        dias: 0, descontoCentavos: 3150, multaCentavos: 0, jurosCentavos: 0, outrosCentavos: 500, pagoCentavos: 18350,
+    });
+    // Só "outros", sem desconto: R$ 210,00 + R$ 5,00.
+    assert.deepEqual(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, { multa: vazio, juros: vazio, desconto: vazio, outros: '5,00' }), {
+        dias: 0, descontoCentavos: 0, multaCentavos: 0, jurosCentavos: 0, outrosCentavos: 500, pagoCentavos: 21500,
     });
 });
 
@@ -251,9 +257,9 @@ test('a correção abre com os gravados e o valor pago os soma', () => {
     assert.equal(diferenteDaRegra.value, false);
 });
 
-test('na correção, trocar a data não mexe nos campos; sem atraso o valor pago deixa de somar os acréscimos', async () => {
+test('na correção, trocar a data não mexe nos campos; sem atraso o valor pago deixa de somar multa e juros, mas soma outros', async () => {
     const form = criarFormDaCorrecao();
-    const { dias, valorPagoCentavos } = correcao(form);
+    const { dias, valorPagoCentavos, calculados } = correcao(form);
 
     // Os juros não são recalculados pelos dias.
     form.pago_em = '2026-02-01';
@@ -261,12 +267,13 @@ test('na correção, trocar a data não mexe nos campos; sem atraso o valor pago
     assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '21,00', '5,00']);
     assert.equal(valorPagoCentavos.value, 24020);
 
-    // O servidor zera multa, juros e outros sem atraso (o que está digitado fica na tela, mas não conta).
+    // O servidor zera multa e juros sem atraso (o que está digitado fica na tela, mas não conta); "outros" vale em qualquer data.
     form.pago_em = VENCIMENTO;
     await nextTick();
     assert.equal(dias.value, 0);
     assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '21,00', '5,00']);
-    assert.equal(valorPagoCentavos.value, 21000);
+    assert.deepEqual([calculados.value.multa, calculados.value.juros, calculados.value.outros], [0, 0, 500]);
+    assert.equal(valorPagoCentavos.value, 21500);
 });
 
 test('na correção, juros digitados substituem o gravado como total; vazio ou 0 tira os juros', () => {
@@ -333,12 +340,25 @@ test('lote: 0 digitado zera a regra do contrato em todas; em branco (ou só espa
     assert.deepEqual(prever([C], { ...branco, desconto: pt('') }).linhas.map(resumo), [[3150, 0, 17850]]);
 });
 
-test('lote: só a cobrança em atraso na data recebe multa, juros e outros', () => {
+// Mesmos números de AcoesEmLoteTest::test_so_cobranca_em_atraso_recebe_multa_e_juros_e_outros_vale_em_todas.
+test('lote: só a cobrança em atraso na data recebe multa e juros; outros vale em todas', () => {
     const campos = { desconto: vazio, multa: rs('5,00'), juros: rs('3,00'), outros: '5,00' };
     const venceHoje = linha(21000, HOJE, null);
     const aVencer = linha(21000, '2026-12-05', null);
 
-    assert.deepEqual(prever([D, venceHoje, aVencer], campos).linhas.map(resumo), [[0, 4000, 9000], [0, 0, 21000], [0, 0, 21000]]);
+    assert.deepEqual(prever([D, venceHoje, aVencer], campos).linhas.map(resumo), [[0, 4000, 9000], [0, 500, 21500], [0, 500, 21500]]);
+});
+
+// Mesmos números de AcoesEmLoteTest::test_outros_soma_em_todas_com_vencimento_e_com_hoje: o mesmo R$ em cada linha.
+test('lote: outros soma em todas as linhas, com a data de vencimento e com a de hoje', () => {
+    const digitado = { ...branco, outros: '5,00' };
+    const datasDoVencimento = [A, B, C].map((cobranca) => dataDaBaixaEmLote('vencimento', cobranca.vencimentoIso, HOJE));
+
+    // Todas sem atraso: o desconto do contrato vale (A e C) e "outros" soma nas três.
+    assert.deepEqual(prever([A, B, C], digitado, datasDoVencimento).linhas.map(resumo), [[3150, 500, 18350], [0, 500, 10500], [3150, 500, 18350]]);
+    // Hoje: A e B em atraso (contrato mais "outros"); C ainda não venceu (desconto do contrato e "outros").
+    assert.deepEqual(prever([A, B, C], digitado).linhas.map(resumo), [[0, 3020, 24020], [0, 4000, 14000], [3150, 500, 18350]]);
+    assert.equal(prever([A, B, C], digitado).totais.acrescimosCentavos, 7520);
 });
 
 test('lote: a data de cada cobrança é a do vencimento, ou hoje para a que ainda não venceu (nunca no futuro)', () => {
@@ -349,12 +369,12 @@ test('lote: a data de cada cobrança é a do vencimento, ou hoje para a que aind
     assert.equal(dataDaBaixaEmLote('hoje', '2026-12-05', HOJE), HOJE);
 });
 
-test('lote com a data de vencimento: sem multa nem juros (nem os digitados), e o desconto do contrato vale', () => {
+test('lote com a data de vencimento: sem multa nem juros (nem os digitados), o desconto do contrato vale e outros soma', () => {
     const datas = [A, B, C].map((cobranca) => dataDaBaixaEmLote('vencimento', cobranca.vencimentoIso, HOJE));
     const digitado = { desconto: vazio, multa: pt('5'), juros: pt('5'), outros: '9,00' };
 
     assert.deepEqual(prever([A, B, C], branco, datas).linhas.map(resumo), [[3150, 0, 17850], [0, 0, 10000], [3150, 0, 17850]]);
-    assert.deepEqual(prever([A, B, C], digitado, datas).linhas.map(resumo), [[3150, 0, 17850], [0, 0, 10000], [3150, 0, 17850]]);
+    assert.deepEqual(prever([A, B, C], digitado, datas).linhas.map(resumo), [[3150, 900, 18750], [0, 900, 10900], [3150, 900, 18750]]);
 });
 
 test('lote sem regra e sem valores sai igual ao de hoje', () => {

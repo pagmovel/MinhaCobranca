@@ -21,8 +21,8 @@ use Illuminate\Validation\ValidationException;
  * | 0               | sem valor         | zera em todas     | sem valor        |
  * | Preenchido      | esse valor        | vale para todas   | esse valor       |
  *
- * "Outros" não tem regra: ausente ou vazio é 0 (e, na correção, ausente mantém o gravado). Sem atraso na data do
- * pagamento, multa, juros e outros são sempre zero. **Na correção, os juros digitados são o total** (em R$, uma vez, como a
+ * "Outros" não tem regra: ausente ou vazio é 0 (e, na correção, ausente mantém o gravado) e vale em qualquer data. Sem atraso
+ * na data do pagamento, só multa e juros são zero. **Na correção, os juros digitados são o total** (em R$, uma vez, como a
  * multa), não "ao mês": o que está gravado é o total, e reenviá-lo multiplicado pelos dias o mudaria.
  */
 final class ValoresDaBaixa
@@ -107,9 +107,10 @@ final class ValoresDaBaixa
         $juros = self::acrescimo('juros', $cobranca, $dias, $regras['juros'] ?? null, $dados, $modo);
         $outros = self::acrescimo('outros', $cobranca, $dias, null, $dados, $modo);
 
-        // Só depois de conferir tudo: sem atraso não há acréscimo, nem o que veio preenchido.
+        // Só depois de conferir tudo: sem atraso não há multa nem juros, nem o que veio preenchido. "Outros" é lançamento
+        // manual, sem relação com atraso: vale em qualquer data.
         if ($dias === 0) {
-            $multa = $juros = $outros = 0;
+            $multa = $juros = 0;
         }
 
         return [

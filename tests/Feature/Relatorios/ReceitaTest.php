@@ -219,6 +219,19 @@ class ReceitaTest extends TestCase
             ->where('resumo.recebido', Dinheiro::formatar($resposta->json('totais.recebido'))));
     }
 
+    /** Pedido do Marcos (2026-11-01): "outros" vale em qualquer data; pago no vencimento, aparece na linha "Outros acréscimos". */
+    public function test_outros_pago_em_dia_aparece_na_linha_de_outros_acrescimos(): void
+    {
+        $cliente = Cliente::factory()->for($this->usuario)->create();
+        $cobranca = $this->cobranca($cliente, '2026-10-10', 10000);
+        $this->actingAs($this->usuario)->post("/cobrancas/{$cobranca->id}/pagar", ['pago_em' => '2026-10-10', 'outros' => '5,00'])->assertSessionHas('sucesso');
+
+        $resposta = $this->getJson('/relatorios/produtos/dados?de=2026-10&ate=2026-10')->assertOk()
+            ->assertJsonPath('linhas.1', ['item' => 'Outros acréscimos', 'recebido' => 500, 'previsto' => 0, 'contratos' => 0])
+            ->assertJsonPath('totais.recebido', 10500);
+        $this->assertSame(['Sem item (cobranças anteriores ao catálogo)', 'Outros acréscimos'], array_column($resposta->json('linhas'), 'item'));
+    }
+
     public function test_linhas_de_acrescimos_so_aparecem_quando_ha_valor_no_periodo(): void
     {
         $this->cenarioComAcrescimosPorProduto();
