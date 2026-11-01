@@ -374,6 +374,16 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 - [x] Relatórios: `outros` pago em dia entra no Recebido, em Acréscimos e na linha "Outros acréscimos" (testes ponta a ponta pela baixa).
 - Testes: PHPUnit e JS conforme o registro abaixo, `npm run build` ok. Sem navegador (a subagente não o abre): aparência do campo sem atraso, alinhamento e 390 px ficam para o Passo 4 da Tarefa 10.
 
+### Tarefa 12 — Lote avisa quando multa e juros não entram e oferece a data de hoje — **Estado: testada**
+
+**Pedido do Marcos (2026-11-01, ao testar a tela):** "na baixa em lote, ao adicionar um acréscimo não está calculando os resultados". Diagnóstico: o cálculo estava certo. Multa e juros só entram em cobrança em atraso na data da baixa, e com a data padrão do lote ("usar a data de vencimento de cada cobrança") ninguém tem atraso; o único aviso era uma frase cinza e pequena. Faltava a saída na tela (padrão de usabilidade 2). **Servidor e regra não mudam.**
+
+**Arquivos:** `resources/js/usarValoresDaBaixa.js` (`multaOuJurosSemEfeito`), `resources/js/Components/BaixaEmLote.vue`, `resources/js/usarValoresDaBaixa.test.js`, spec §2 e skill.
+
+- [x] Função pura `multaOuJurosSemEfeito(linhas, datas, campos, hojeIso)` → `{ semEfeito, hojeResolve }`: `semEfeito` = multa ou juros digitados com valor maior que zero (`regraDoCampo`; em branco, `0` e texto inválido não contam) e nenhuma linha com dia de atraso (`diasDeAtraso`) na data da baixa dela (as datas da prévia); `hojeResolve` = alguma linha venceu antes de hoje. Sem linhas elegíveis, não há o que avisar.
+- [x] Tela: bloco laranja logo abaixo dos quatro campos, só com `semEfeito`. Com `hojeResolve` e a data de vencimento: "Com a data de vencimento não há atraso, então a multa e os juros digitados não entram no cálculo." e o botão "Usar a data de hoje" (`type="button"`, `botao-secundario`; muda o modo para `hoje`, a prévia recalcula e o foco vai para o rádio "hoje"). Sem `hojeResolve`: "Nenhuma cobrança selecionada está em atraso, então a multa e os juros digitados não entram no cálculo.", sem botão. A região `aria-live` fica sempre presente; o aviso antigo da data de vencimento continua.
+- Testes: JS 294 (6 novos), PHPUnit 886 (sem mudança), `npm run build` ok. Renderização de servidor (Vite + `@vitejs/plugin-vue` + `renderToString`): aviso e botão aparecem com duas vencidas de R$ 210,00, vencimento e multa 2 (ou juros 1); somem com a multa limpa ou 0, só com "outros" ou na data de hoje; sem cobrança em atraso aparece o segundo texto, sem botão. Sem navegador: clique no botão, foco, aparência e 390 px ficam para o Passo 4.
+
 ## Registro de execução
 
 - 2026-11-01: spec e plano aprovados pelo Marcos. Execução por subagentes, com as regras globais de subagentes (context-mode,
@@ -383,6 +393,7 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 - 2026-11-01: Tarefas 1 e 4 a 9 testadas, cada uma com revisão limpa do controlador (T7: PHPUnit 830, JS 278; T8: 862 e 278; T9: 876 e 283). Nenhuma conferência no navegador.
 - 2026-11-01: Tarefa 10 concluída: suíte da Fase 25 verde sem mudar asserção, PHPUnit 876, JS 283, `npm run build` ok, 12 PDFs de amostra conferidos por texto, documentação consolidada. Faltam o Passo 4 e o merge.
 - 2026-11-01: Tarefa 11 testada ("outros" vale em qualquer data, pedido do Marcos ao testar a tela): PHPUnit 886, JS 288, `npm run build` ok. Sem conferência no navegador.
+- 2026-11-01: Tarefa 12 testada (lote avisa quando multa e juros não entram e oferece "Usar a data de hoje", relato do Marcos ao testar a tela): PHPUnit 886, JS 294, `npm run build` ok. Sem conferência no navegador.
 
 ### Decisões do controlador (R1 a R13)
 

@@ -7,6 +7,7 @@ import {
     camposAoTrocarAData,
     camposDaRegra,
     dataDaBaixaEmLote,
+    multaOuJurosSemEfeito,
     paraOForm,
     previaDoLote,
     usarValoresDaBaixa,
@@ -412,4 +413,50 @@ test('lote: vírgula ou ponto dão o mesmo valor e a vírgula final é digitaç�
 
 test('lote sem cobranças tem totais zerados', () => {
     assert.deepEqual(prever([], branco), { linhas: [], totais: { valorCentavos: 0, acrescimosCentavos: 0, descontoCentavos: 0, pagoCentavos: 0 } });
+});
+
+// Aviso do lote: multa ou juros digitados só entram em cobrança em atraso na data da baixa dela. Duas vencidas de R$ 210,00
+// (05/02 e 05/03/2026) e hoje 01/11/2026.
+const VENCIDAS = [linha(21000, '2026-02-05', null), linha(21000, '2026-03-05', null)];
+const A_VENCER = [linha(21000, '2026-12-05', null), linha(21000, '2027-01-05', null)];
+const semEfeito = (linhas, modo, campos) => multaOuJurosSemEfeito(linhas, linhas.map((l) => dataDaBaixaEmLote(modo, l.vencimentoIso, HOJE)), campos, HOJE);
+
+test('lote: multa ou juros digitados com a data de vencimento não entram no cálculo, e a data de hoje resolve', () => {
+    assert.deepEqual(semEfeito(VENCIDAS, 'vencimento', { ...branco, multa: pt('2') }), { semEfeito: true, hojeResolve: true });
+    assert.deepEqual(semEfeito(VENCIDAS, 'vencimento', { ...branco, juros: pt('1') }), { semEfeito: true, hojeResolve: true });
+    assert.deepEqual(semEfeito(VENCIDAS, 'vencimento', { ...branco, multa: rs('5,00') }), { semEfeito: true, hojeResolve: true });
+    // A vírgula no fim é digitação em curso: conta como o número antes dela.
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', { ...branco, multa: pt('2,') }).semEfeito, true);
+});
+
+test('lote: sem aviso quando só "outros" ou o desconto foram digitados, ou multa e juros estão em branco ou em 0', () => {
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', { ...branco, outros: '5,00' }).semEfeito, false);
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', { ...branco, desconto: pt('10') }).semEfeito, false);
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', { ...branco, multa: pt('0') }).semEfeito, false);
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', { ...branco, multa: pt(' '), juros: rs('0,00') }).semEfeito, false);
+    assert.equal(semEfeito(VENCIDAS, 'vencimento', branco).semEfeito, false);
+});
+
+test('lote: com a data de hoje a multa entra nas vencidas e não há aviso', () => {
+    assert.equal(semEfeito(VENCIDAS, 'hoje', { ...branco, multa: pt('2') }).semEfeito, false);
+    assert.equal(semEfeito(VENCIDAS, 'hoje', { ...branco, juros: pt('1') }).semEfeito, false);
+});
+
+test('lote: nenhuma cobrança em atraso, nem hoje, avisa sem oferecer a data de hoje', () => {
+    assert.deepEqual(semEfeito(A_VENCER, 'vencimento', { ...branco, multa: pt('2') }), { semEfeito: true, hojeResolve: false });
+    assert.deepEqual(semEfeito(A_VENCER, 'hoje', { ...branco, multa: pt('2') }), { semEfeito: true, hojeResolve: false });
+    // Vence hoje: ainda não há dia de atraso.
+    assert.deepEqual(semEfeito([linha(21000, HOJE, null)], 'hoje', { ...branco, juros: pt('1') }), { semEfeito: true, hojeResolve: false });
+});
+
+test('lote: basta uma cobrança em atraso na data da baixa para a multa valer (sem aviso)', () => {
+    const mista = [A_VENCER[0], VENCIDAS[0]];
+
+    assert.equal(semEfeito(mista, 'hoje', { ...branco, multa: pt('2') }).semEfeito, false);
+    // Com a data de vencimento a vencida é baixada no vencimento (sem atraso) e a outra hoje: ninguém atrasa, e hoje resolve.
+    assert.deepEqual(semEfeito(mista, 'vencimento', { ...branco, multa: pt('2') }), { semEfeito: true, hojeResolve: true });
+});
+
+test('lote: sem cobranças elegíveis não há o que avisar', () => {
+    assert.deepEqual(semEfeito([], 'vencimento', { ...branco, multa: pt('2') }), { semEfeito: false, hojeResolve: false });
 });

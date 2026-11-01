@@ -1,10 +1,10 @@
 <script setup>
-import { computed, useId } from 'vue';
+import { computed, ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { MAXIMO_EM_CENTAVOS } from '../condicoes.js';
 import { menorValor } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
-import { camposDoForm, dataDaBaixaEmLote, previaDoLote } from '../usarValoresDaBaixa.js';
+import { camposDoForm, dataDaBaixaEmLote, multaOuJurosSemEfeito, previaDoLote } from '../usarValoresDaBaixa.js';
 import CampoValorOuPercentual from './CampoValorOuPercentual.vue';
 import Modal from './Modal.vue';
 
@@ -33,17 +33,34 @@ const form = useForm({
     outros: '',
 });
 
+const linhasDaPrevia = computed(() => elegiveis.value.map((c) => ({ valorCentavos: c.valor_centavos, vencimentoIso: c.vencimento_iso, regras: c.regras ?? null })));
+const datasDaBaixa = computed(() => elegiveis.value.map((c) => dataDaBaixaEmLote(form.modo, c.vencimento_iso, hoje)));
 // Valor, acréscimos, desconto e valor pago de cada cobrança, e os totais: a mesma conta que o servidor grava, na data de cada uma.
-const previa = computed(() => previaDoLote(
-    elegiveis.value.map((c) => ({ valorCentavos: c.valor_centavos, vencimentoIso: c.vencimento_iso, regras: c.regras ?? null })),
-    elegiveis.value.map((c) => dataDaBaixaEmLote(form.modo, c.vencimento_iso, hoje)),
-    camposDoForm(form),
-));
+const previa = computed(() => previaDoLote(linhasDaPrevia.value, datasDaBaixa.value, camposDoForm(form)));
 // Em R$ o desconto não passa da menor cobrança (nenhuma fica negativa).
 const menorDasCobrancas = computed(() => menorValor(elegiveis.value.map((c) => c.valor_centavos)));
 const erroDo = (nome) => form.errors[nome] || form.errors[`${nome}_tipo`];
 const limparErro = (nome) => form.clearErrors(nome, `${nome}_tipo`);
 const AVISO_DO_VENCIMENTO = 'Com essa data não há multa nem juros; o desconto do contrato vale.';
+
+// Multa ou juros digitados que não entram em nenhuma cobrança: o aviso diz por quê e, se a data de hoje resolve, oferece a saída ali mesmo.
+const semEfeito = computed(() => multaOuJurosSemEfeito(linhasDaPrevia.value, datasDaBaixa.value, camposDoForm(form), hoje));
+const oferecerHoje = computed(() => semEfeito.value.semEfeito && semEfeito.value.hojeResolve && form.modo === 'vencimento');
+const textoSemEfeito = computed(() => {
+    if (!semEfeito.value.semEfeito) {
+        return '';
+    }
+
+    return oferecerHoje.value
+        ? 'Com a data de vencimento não há atraso, então a multa e os juros digitados não entram no cálculo.'
+        : 'Nenhuma cobrança selecionada está em atraso, então a multa e os juros digitados não entram no cálculo.';
+});
+// O botão some ao ser usado: o foco vai para o rádio que ele acabou de marcar, em vez de se perder no corpo da página.
+const radioHoje = ref(null);
+const usarHoje = () => {
+    form.modo = 'hoje';
+    radioHoje.value?.focus();
+};
 
 // O @change do CampoValorOuPercentual já tira a vírgula final antes do envio; em branco segue como '' (nunca vira 0).
 const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.value.map((c) => c.id) }))
@@ -67,7 +84,7 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
                 </span>
             </label>
             <label class="flex items-center gap-2 text-sm">
-                <input v-model="form.modo" type="radio" value="hoje" class="accent-carbono">
+                <input ref="radioHoje" v-model="form.modo" type="radio" value="hoje" class="accent-carbono">
                 Usar a data de hoje para todas
             </label>
             <Transition name="surgir">
@@ -122,6 +139,14 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
                     @digitar="limparErro('desconto')"
                 />
             </div>
+            <Transition name="surgir">
+                <div v-if="textoSemEfeito" class="mt-3 flex flex-wrap items-center gap-2 border border-tinta-laranja bg-white px-3 py-2 text-sm text-tinta-laranja">
+                    <p aria-hidden="true">{{ textoSemEfeito }}</p>
+                    <button v-if="oferecerHoje" type="button" class="botao-secundario" @click="usarHoje">Usar a data de hoje</button>
+                </div>
+            </Transition>
+            <!-- Aviso que entra por v-if não é anunciado; a região fica sempre presente e só o texto muda. -->
+            <p class="sr-only" aria-live="polite">{{ textoSemEfeito }}</p>
         </fieldset>
         <div v-if="elegiveis.length" class="relative mt-4 max-h-64 overflow-auto border border-linha">
             <table class="w-full text-xs tabular-nums">

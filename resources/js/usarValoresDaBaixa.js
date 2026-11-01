@@ -75,6 +75,21 @@ export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos, { j
  */
 export const dataDaBaixaEmLote = (modo, vencimentoIso, hojeIso) => (modo === 'hoje' || vencimentoIso > hojeIso ? hojeIso : vencimentoIso);
 
+/**
+ * O lote tem multa ou juros digitados (maiores que zero) que não entram em nenhuma cobrança: nenhuma tem dia de atraso na data da
+ * baixa dela (`datas`, as mesmas da prévia). `hojeResolve`: a data de hoje atrasaria alguma linha, então "Usar a data de hoje" adianta.
+ * `linhas` são as elegíveis (`{ vencimentoIso }`) e `campos` os do formulário (`camposDoForm`); sem linhas não há o que avisar.
+ */
+export function multaOuJurosSemEfeito(linhas, datas, campos, hojeIso) {
+    const digitado = ['multa', 'juros'].some((nome) => regraDoCampo(campos[nome].tipo, campos[nome].numero) !== null);
+    const comAtraso = linhas.some(({ vencimentoIso }, i) => diasDeAtraso(vencimentoIso, datas[i]) > 0);
+
+    return {
+        semEfeito: linhas.length > 0 && digitado && !comAtraso,
+        hojeResolve: linhas.some(({ vencimentoIso }) => diasDeAtraso(vencimentoIso, hojeIso) > 0),
+    };
+}
+
 /** Em branco (vazio, só espaço ou só a vírgula do fim) o lote usa o contrato de cada cobrança; qualquer número, inclusive 0, vale. */
 const emBranco = (numero) => aparar(semSeparadorFinal(numero)) === '';
 

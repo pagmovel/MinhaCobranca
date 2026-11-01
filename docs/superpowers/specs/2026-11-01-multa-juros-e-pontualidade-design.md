@@ -128,7 +128,12 @@ não entram no progresso da Fase 25.
 próprio contrato. Preenchido: vale para todas." A prévia lista Vencimento, Valor, Acréscimos, Desconto e Pago, com totais
 iguais à soma gravada. Com "usar a data de vencimento de cada cobrança", aviso: "Com essa data não há multa nem juros; o
 desconto do contrato vale." O "Outros" digitado soma em todas as linhas da prévia, também nas sem atraso (2026-11-01, pedido
-do Marcos), e a ajuda do campo diz que vale para todas, em qualquer data.
+do Marcos), e a ajuda do campo diz que vale para todas, em qualquer data. Multa ou juros digitados que não entram em nenhuma
+cobrança (ninguém em atraso na data da baixa) ganham um aviso visível, laranja, logo abaixo dos campos (2026-11-01, relato do
+Marcos: "ao adicionar um acréscimo não está calculando"): com a data de vencimento e alguma cobrança vencida, "Com a data de
+vencimento não há atraso, então a multa e os juros digitados não entram no cálculo." e o botão "Usar a data de hoje"; sem
+nenhuma em atraso, nem hoje, "Nenhuma cobrança selecionada está em atraso, então a multa e os juros digitados não entram no
+cálculo.", sem botão. A regra e o servidor não mudam.
 
 **Corrigir pagamento** (`CorrecaoPagamentoInline.vue`): os mesmos campos, abrindo com os valores **gravados** em R$. Trocar
 a data não recalcula, pois ali se corrige o que aconteceu de fato. Na correção, os juros são o total em R$, pois o gravado é o total.
