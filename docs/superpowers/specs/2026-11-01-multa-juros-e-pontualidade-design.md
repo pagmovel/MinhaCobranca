@@ -213,9 +213,9 @@ Campos novos do contrato são opcionais e não entram em `ProgressoDeConfiguraca
 - `CondicoesDePagamento` (PHP) e `condicoes.js` (`node --test`) com os mesmos casos: 0, 1, 15, 30 e 300 dias; pagamento no
   próprio vencimento; % e R$; arredondamento; desconto em R$ maior que o valor; sem regra.
 - Contrato: grava, valida e audita as condições; contrato existente continua válido sem elas.
-- Baixa individual: pré-preenchido, editado, vazio, zero, sem atraso zerando; 404 para alheia antes da validação; textos
+- Baixa individual: pré-preenchido, editado, vazio, zero, sem atraso zerando (multa e juros; `outros` fica em qualquer data); 404 para alheia antes da validação; textos
   exatos da auditoria.
-- Lote: em branco usa o contrato de cada cobrança; preenchido vale para todas; só em atraso recebe acréscimo; contratos
+- Lote: em branco usa o contrato de cada cobrança; preenchido vale para todas; só em atraso recebe multa e juros (`outros` vale em qualquer data); contratos
   diferentes e clientes diferentes; prévia igual ao gravado; recusa sem gravar nada.
 - Corrigir: muda os quatro com senha e motivo e não recalcula. Desfazer: zera os quatro.
 - Lista, painel e relatórios: somas, CSV byte a byte, total por produto igual ao painel; sem regra, valores iguais aos de

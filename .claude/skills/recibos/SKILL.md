@@ -1831,7 +1831,7 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
 
 ## Fase 27 — multa, juros, outros acréscimos e desconto por pontualidade (2026-11-01)
 
-Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md` (decisões R1 a R12 e pendências do Marcos no "Registro de execução"). Spec: `docs/superpowers/specs/2026-11-01-multa-juros-e-pontualidade-design.md`.
+Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md` (decisões R1 a R15 e pendências do Marcos no "Registro de execução"). Spec: `docs/superpowers/specs/2026-11-01-multa-juros-e-pontualidade-design.md`.
 Estado: Tarefas 1 a 12 concluídas e testadas (PHPUnit 886, JS 294, `npm run build` ok). **Faltam a conferência no navegador (Passo 4) e o merge no `main`:** são do controlador, com o Marcos.
 **Deploy (avisar o Marcos):** rodam duas migrações **aditivas** (`contratos` e `cobrancas`), sem migração de dados. Ao definir regra num contrato, os recibos **pendentes** dele passam a sair com o valor do dia (desconto até o vencimento; multa e juros depois);
 um PIX já enviado fica com o valor antigo; baixa já feita não muda (os valores ficam gravados). Sem regra e sem valores gravados, tudo sai como antes.

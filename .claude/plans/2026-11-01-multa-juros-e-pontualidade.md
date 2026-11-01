@@ -148,7 +148,7 @@ e exemplo ao vivo): fica para a Tarefa 10.
 - Produz: `ValoresDaBaixa::resolver(Cobranca $cobranca, CarbonImmutable $pagoEm, array $dados, string $modo): array` —
   `$modo` em `individual` | `lote` | `correcao`; devolve `{desconto_centavos, multa_centavos, juros_centavos,
   outros_centavos, rotulo_desconto}` (`rotulo_desconto` é o texto da auditoria, como `10% = R$ 24,76`, também para a regra do
-  contrato, via `entradaDaRegra`), pela tabela "Entrada na baixa" da spec; sem atraso, zera os três acréscimos; lança
+  contrato, via `entradaDaRegra`), pela tabela "Entrada na baixa" da spec; sem atraso, zera multa e juros (`outros` fica em qualquer data); lança
   `ValidationException` no campo que errou, com as mensagens do desconto da Fase 26.
 - Produz: `ValoresDaBaixa::regras(): array` (regras do `validate` dos sete campos).
 - `paraLista` ganha `vencimento_iso` e `regras` (`Contrato::regrasDePagamento()`, com `contrato` carregado junto).
@@ -157,7 +157,7 @@ e exemplo ao vivo): fica para a Tarefa 10.
   2% e juros 1%: `test_pedido_sem_campos_usa_o_contrato` (em 01/11/2026 → multa 420, juros 2100);
   `test_valor_digitado_vence_o_contrato`; `test_campo_vazio_fica_sem_valor`; `test_zero_fica_sem_valor`;
   `test_outros_soma_e_audita` (500 → texto exato da restrição global, pago R$ 240,20 com multa e juros);
-  `test_sem_atraso_zera_acrescimos_mesmo_preenchidos`; `test_pago_no_vencimento_aplica_desconto_do_contrato`;
+  `test_sem_atraso_zera_multa_e_juros_mesmo_preenchidos_e_mantem_outros`; `test_pago_no_vencimento_aplica_desconto_do_contrato`;
   `test_pago_atrasado_nao_aplica_desconto_do_contrato`; `test_cobranca_sem_contrato_aceita_lancamento_manual`;
   `test_multa_invalida_da_erro_no_campo_e_nao_grava`; `test_percentual_acima_de_100_e_recusado`;
   `test_cobranca_alheia_da_404_antes_da_validacao`; `test_mudar_contrato_depois_nao_muda_o_valor_gravado`;
@@ -193,7 +193,7 @@ aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `Corr
 
 - [x] **Passo 1: testes que falham:** `test_em_branco_usa_o_contrato_de_cada_cobranca` (dois contratos com multas diferentes,
   clientes diferentes); `test_preenchido_vale_para_todas`; `test_percentual_calculado_por_cobranca_e_reais_igual_em_cada`;
-  `test_zero_zera_em_todas`; `test_so_cobranca_em_atraso_recebe_acrescimo`; `test_modo_vencimento_nao_gera_acrescimo`
+  `test_zero_zera_em_todas`; `test_so_cobranca_em_atraso_recebe_multa_e_juros_e_outros_vale_em_todas`; `test_modo_vencimento_nao_gera_multa_nem_juros_mas_soma_outros`
   (ponto 5); `test_modo_vencimento_a_vencer_recebe_desconto_do_contrato` (ponto 5);
   `test_multa_invalida_recusa_o_lote_sem_gravar_nada`; `test_lote_sem_regra_fica_igual` (mesmos valores de antes);
   auditoria com o texto da restrição global em cada cobrança. JS: `previaDoLote` com o mesmo exemplo do PHP, soma igual.
@@ -224,7 +224,7 @@ individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: 
 
 - [x] **Passo 1: testes que falham:** `test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois`;
   `test_corrigir_sem_os_campos_mantem_o_gravado`; `test_corrigir_data_nao_recalcula`;
-  `test_corrigir_para_data_sem_atraso_zera_acrescimos`; `test_corrigir_exige_senha_e_motivo`;
+  `test_corrigir_para_data_sem_atraso_zera_multa_e_juros_e_mantem_outros` e `test_corrigir_para_data_sem_atraso_sem_os_campos_mantem_o_desconto_e_o_outros_gravados`; `test_corrigir_exige_senha_e_motivo`;
   `test_desfazer_zera_os_quatro_valores`.
 - [x] **Passo 2:** rodar → FALHAM.
 - [x] **Passo 3:** servidor; `antes`/`depois` de `pagamento.corrigido` e `baixa.desfeita` com os quatro valores.
@@ -411,7 +411,9 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 | R10 | Em "Corrigir pagamento", o juros é o total em R$ (sem seletor, sem "ao mês") e abre com o gravado; o `resolver` em modo `correcao` trata o digitado como centavos totais. Baixa e lote seguem com juros ao mês (a spec §1/§2 se contradizia) | a correção não recalcula juros por % ao mês |
 | R11 | Letra do WebISS de 8,4 pt para 8 pt só com mais de uma informação, para manter 1 página; não altera nenhum recibo existente (provado com as 12 fixtures) | ajuste de tamanho de letra ou de linhas |
 | R12 | A frase do recibo antes do vencimento diz `+ multa`, `+ juros` ou `+ multa e juros` conforme o contrato (a mensagem usa a mesma frase) | três ramos de texto a mais |
-| R13 | "Outros" vale em qualquer data (individual, lote e correção); sem atraso só multa e juros são zerados. Recibo da paga só com `outros`: `Outros acréscimos: R$ 5,00.` (sem "por atraso"). Pedido do Marcos ao testar a tela | voltar a zerar `outros` sem atraso (uma linha no servidor e no JS) |
+| R13 | "Outros" vale em qualquer data (individual, lote e correção); sem atraso só multa e juros são zerados. Recibo da paga só com `outros`: `Outros acréscimos: R$ 5,00.` (sem "por atraso"). Pedido do Marcos ao testar a tela | uma condição no servidor, no espelho JS e nas telas |
+| R14 | Frase do recibo da paga com só `outros`: `Outros acréscimos: R$ 5,00.` (sem "por atraso") | troca de texto |
+| R15 | Aviso do lote para multa e juros sem efeito (sem atraso na data da cobrança, ou data de vencimento) | um aviso a mais na janela do lote |
 
 ### Para o Marcos decidir
 
