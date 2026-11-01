@@ -1689,8 +1689,8 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
 ## Fase 26 — valor e desconto na baixa (2026-11-01)
 
 Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md`.
-Estado: Tarefas 1 a 7 e 3b testadas; a 8 concluída (faltam a migração dos recibos no Postgres local e a conferência no navegador); o portão da migração dos recibos no Postgres local e a conferência no
-navegador (ambos com o Marcos), depois o merge. **Deploy:** as duas migrações rodam no `migrate --force`; a segunda **altera todos os recibos**
+Estado: tarefas testadas, conferência no navegador feita e merge no `main` (2026-11-01). Pegadinha da conferência: `php artisan serve` pode reler o `.env`;
+para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite temporário e um roteador que confere a conexão antes de tudo. **Deploy:** as duas migrações rodam no `migrate --force`; a segunda **altera todos os recibos**
 (só o campo `modelo`): avisar o Marcos e fazer backup antes.
 
 ### Acertos (Tarefa 1 — dado e regra)

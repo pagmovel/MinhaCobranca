@@ -175,7 +175,7 @@ cobrança, limite na menor pendente selecionada), e as três telas ganham um tex
   nenhuma foi enfraquecida. (5) **Sem navegador:** a ajuda embaixo do campo, o alinhamento depois do `items-start`, a quebra do texto e o modal em
   390 px só se conferem no passo 4 da Tarefa 8.
 
-### Tarefa 8 — Wizard, conferência e documentação — **Estado: concluída** (passos 3 e 4 e o merge/push são do controlador; vira `testada` depois deles)
+### Tarefa 8 — Wizard, conferência e documentação — **Estado: testada**
 
 **Arquivos:** `.claude/skills/recibos/SKILL.md` (acertos e pegadinhas da Fase 26; exceção consciente à regra do `-v2`),
 `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), README (nada mudou no uso: sem alteração).
@@ -185,18 +185,18 @@ cobrança, limite na menor pendente selecionada), e as três telas ganham um tex
   resources/js/progresso.test.js` (8) → passam. `git diff $(git merge-base main HEAD) -- tests/Feature/ProgressoDeConfiguracao*` e os testes JS
   da Fase 25 → vazios. (Contra o `merge-base` e não contra o `main`, que avançou com `8cca23a`, de outra sessão.)
 - [x] **Passo 2:** `php artisan test --compact` (657 testes, 3132 asserções) e `node --test 'resources/js/**/*.test.js'` (170) → verdes; `npm run build` ok.
-- [ ] **Passo 3: PORTÃO-BANCO (Postgres local, cópia de produção) — do controlador:** mostrar conexão, contagem (`cobrancas`, `recibos` por `modelo`), o
-  comando literal `php artisan migrate`, e só rodar com o "sim" do Marcos. Recontar depois. (A migração `desconto_centavos` já rodou, com autorização;
-  falta a dos recibos.)
-- [ ] **Passo 4: conferência no navegador — do controlador, com o Marcos** (pedir autorização antes; avisar que o browser-agent não está instalado, só o
-  Playwright; conta de teste, nunca dados reais): baixa individual (%, R$, trava, troca de tipo, integral), lote (% e R$, trava pela menor cobrança,
-  prévia), correção, o texto de ajuda do seletor nas três telas (e se ele quebra bem na faixa, sem desalinhar os campos), lista e painel, 390 px sem
-  rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido.
+- [x] **Passo 3: PORTÃO-BANCO (Postgres local, cópia de produção):** as duas migrações rodaram, cada uma com o "sim" do Marcos (2026-11-01). Recibos: de 50
+  `webiss-v1` e 10 `danfse-v1` para 50 `webiss-v2` e 10 `danfse-v2`, com números e snapshots iguais.
+- [x] **Passo 4: conferência no navegador** (autorizada pelo Marcos em 2026-11-01): feita por scripts com `playwright-core` e o Chromium já instalado (o MCP
+  do Playwright não abre: falta o Chrome), em banco SQLite temporário com dados de teste, em 1280 e 390 px. Postgres igual antes e depois. Sem erro de
+  console nem estouro de largura em 390 px. Defeito achado e corrigido: a correção abria com a data de hoje. A faixa de baixa nunca ficou coberta pelo
+  coach. Achado fora da fase: em 1280 px o coach cobre a última linha do painel. Não conferidos: erro do servidor no lote pela tela; holofote; modal de
+  boas-vindas. O Marcos testou o lote e liberou o merge.
 - [x] **Passo 5:** PDFs de amostra com desconto em `storage/app/private/verificacao/` (fora do git), 1 página cada: `amostra-webiss-paga-desconto.pdf`,
   `-paga-integral.pdf`, `-paga-sem-desconto.pdf` e os três de `amostra-danfse-…`. Texto conferido com `pdftotext -layout` (WebISS: 24,76 em
   `Desc. Cond.`, 222,81 em `Valor Líquido`, 247,57 em `Valor Total`; DANFSe: `R$ 24,76` e `R$ 222,81`). Conferência visual: do Marcos.
 - [x] **Passo 6 (documentação):** skill, este plano e o roteiro atualizados; commit `docs: registra a Fase 26 (desconto na baixa)`.
-- [ ] **Passo 6 (merge) — do controlador:** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos: o deploy roda as duas migrações em
+- [x] **Passo 6 (merge):** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos: o deploy roda as duas migrações em
   produção (a segunda **altera todos os recibos**, só o campo `modelo`); backup antes.
 
 ## Registro de execução
