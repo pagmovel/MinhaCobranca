@@ -102,4 +102,35 @@ class FiltroSituacaoTest extends TestCase
         $this->assertSame($esperado, $abas('?status=vencida'));
         $this->assertSame($esperado, $abas('?status=paga'));
     }
+
+    /**
+     * Fase 26: "Pagas" soma o valor pago (valor − desconto) na aba, no total da situação e no rodapé; as outras
+     * situações seguem com o valor cheio, e a paga sem desconto sai igual a antes.
+     */
+    public function test_pagas_somam_o_valor_pago_e_as_demais_o_valor_cheio(): void
+    {
+        $this->usuario->cobrancas()->where('status', StatusCobranca::Paga)->firstOrFail()
+            ->forceFill(['desconto_centavos' => 100])->save(); // 4,00 com 1,00 de desconto: pago 3,00
+        $semDesconto = Cobranca::factory()->for($this->usuario)->for($this->usuario->clientes()->firstOrFail())
+            ->create(['vencimento' => '2026-10-20', 'valor_centavos' => 500]);
+        $semDesconto->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-16'])->save();
+
+        $dados = $this->actingAs($this->usuario)->getJson('/cobrancas/dados')->assertOk();
+
+        $dados->assertJsonPath('abas', [
+            ['chave' => 'todas', 'quantidade' => 6, 'soma_centavos' => 2000],
+            ['chave' => 'vencida', 'quantidade' => 2, 'soma_centavos' => 300],
+            ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
+            ['chave' => 'paga', 'quantidade' => 2, 'soma_centavos' => 800],
+        ]);
+        // Sem filtro de situação a lista é só do mês: a vencida de setembro (1,00) não entra nos totais, só nas abas.
+        $dados->assertJsonPath('totais', [
+            ['situacao' => 'vencida', 'quantidade' => 1, 'soma_centavos' => 200],
+            ['situacao' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['situacao' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
+            ['situacao' => 'paga', 'quantidade' => 2, 'soma_centavos' => 800],
+        ]);
+        $dados->assertJsonPath('total_geral', ['quantidade' => 5, 'soma_centavos' => 1900]);
+    }
 }

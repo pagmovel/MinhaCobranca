@@ -70,23 +70,23 @@ class TrocaDeModeloTest extends TestCase
 
         $this->salvar();
 
-        $this->assertSame(ModeloRecibo::DanfseV1, $this->modelo('nao_enviada'));
+        $this->assertSame(ModeloRecibo::DanfseV2, $this->modelo('nao_enviada'));
         $this->assertSame($numero, $this->cobrancas['nao_enviada']->recibo()->firstOrFail()->numero, 'mesmo número');
-        $this->assertSame(ModeloRecibo::WebissV1, $this->modelo('enviada'));
+        $this->assertSame(ModeloRecibo::WebissV2, $this->modelo('enviada'));
         $this->assertNotNull($this->cobrancas['enviada']->fresh()->enviado_em);
-        $this->assertSame(ModeloRecibo::WebissV1, $this->modelo('paga'));
-        $this->assertSame(ModeloRecibo::WebissV1, $this->modelo('cancelada'));
+        $this->assertSame(ModeloRecibo::WebissV2, $this->modelo('paga'));
+        $this->assertSame(ModeloRecibo::WebissV2, $this->modelo('cancelada'));
     }
 
     public function test_com_a_caixa_as_enviadas_mudam_e_voltam_para_enviar(): void
     {
         $this->salvar(['regerar_enviadas' => '1']);
 
-        $this->assertSame(ModeloRecibo::DanfseV1, $this->modelo('enviada'));
+        $this->assertSame(ModeloRecibo::DanfseV2, $this->modelo('enviada'));
         $this->assertNull($this->cobrancas['enviada']->fresh()->enviado_em);
-        $this->assertSame(ModeloRecibo::WebissV1, $this->modelo('paga'));
+        $this->assertSame(ModeloRecibo::WebissV2, $this->modelo('paga'));
         $this->assertNotNull($this->cobrancas['paga']->fresh()->enviado_em);
-        $this->assertSame(ModeloRecibo::WebissV1, $this->modelo('cancelada'));
+        $this->assertSame(ModeloRecibo::WebissV2, $this->modelo('cancelada'));
     }
 
     public function test_sem_trocar_o_modelo_nenhum_recibo_e_refeito(): void

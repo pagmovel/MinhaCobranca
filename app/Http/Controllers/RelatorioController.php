@@ -125,7 +125,7 @@ class RelatorioController extends Controller
             fwrite($saida, "\xEF\xBB\xBF");
 
             // PHP 8.4 avisa se o `escape` de fputcsv não for informado: '' desliga o escape fora do padrão RFC 4180.
-            $escrever = fn (array $valores) => fputcsv($saida, array_map($this->celula(...), $valores), ';', '"', '');
+            $escrever = fn (array $valores) => fputcsv($saida, $valores, ';', '"', '');
 
             $escrever(array_column($tabela['colunas'], 'rotulo'));
             foreach ($tabela['linhas'] as $linha) {
@@ -143,7 +143,8 @@ class RelatorioController extends Controller
         return array_map(function (array $coluna) use ($linha) {
             $valor = $linha[$coluna['chave']] ?? null;
 
-            return $coluna['tipo'] === 'dinheiro' && is_int($valor) ? Dinheiro::formatar($valor) : (string) ($valor ?? '');
+            // Dinheiro que nós formatamos (pode ser negativo, como os descontos) não é fórmula: só o texto livre leva o apóstrofo.
+            return $coluna['tipo'] === 'dinheiro' && is_int($valor) ? Dinheiro::formatar($valor) : $this->celula((string) ($valor ?? ''));
         }, $colunas);
     }
 

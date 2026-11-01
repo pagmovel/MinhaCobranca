@@ -35,6 +35,14 @@ export const formatadores = {
         return `${inteiro},${completo.slice(-2)}`;
     },
 
+    /** Percentual do desconto: até 3 dígitos inteiros e 2 decimais, vírgula como separador ("12.5" → "12,5"). */
+    percentual(texto) {
+        const [inteiro, ...decimais] = String(texto ?? '').replace(/[^\d.,]/g, '').split(/[.,]/);
+        const parteInteira = inteiro.slice(0, 3);
+
+        return decimais.length ? `${parteInteira || '0'},${decimais.join('').slice(0, 2)}` : parteInteira;
+    },
+
     /** CPF enquanto tiver até 11 dígitos; depois CNPJ (alfanumérico desde jul/2026). */
     documento(texto) {
         const limpo = String(texto ?? '').toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 14);

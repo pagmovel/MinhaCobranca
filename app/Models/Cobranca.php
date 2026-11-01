@@ -24,8 +24,11 @@ class Cobranca extends Model
     /** @use HasFactory<CobrancaFactory> */
     use HasFactory;
 
+    /** A conta de {@see valorPagoCentavos()} para somar no SQL (vale em SQLite e PostgreSQL). */
+    public const VALOR_PAGO_SQL = 'valor_centavos - desconto_centavos';
+
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma'];
+    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma', 'desconto_centavos' => 0];
 
     protected function casts(): array
     {
@@ -38,6 +41,7 @@ class Cobranca extends Model
             'avisado_em' => 'immutable_datetime',
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
+            'desconto_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
         ];
     }
@@ -90,6 +94,12 @@ class Cobranca extends Model
         };
     }
 
+    /** Derivado, nunca gravado: o que entra no caixa quando a cobrança é paga. */
+    public function valorPagoCentavos(): int
+    {
+        return $this->valor_centavos - $this->desconto_centavos;
+    }
+
     public function editavel(): bool
     {
         return $this->status === StatusCobranca::Pendente && $this->enviado_em === null;
@@ -106,8 +116,11 @@ class Cobranca extends Model
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),
             'valor_centavos' => $this->valor_centavos,
+            'desconto_centavos' => $this->desconto_centavos,
+            'valor_pago' => Dinheiro::formatar($this->valorPagoCentavos()),
             'situacao' => $this->situacao($hoje),
             'pago_em' => $this->pago_em?->format('d/m/Y'),
+            'pago_em_iso' => $this->pago_em?->toDateString(),
             'enviado' => $this->enviado_em !== null,
             'avisado_em' => $this->avisado_em?->format('d/m'),
             'editavel' => $this->editavel(),

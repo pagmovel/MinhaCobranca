@@ -13,7 +13,8 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 
 **Stack:** Laravel 13 / PHP 8.4, Inertia v3 + Vue 3, PHPUnit (SQLite em memória), `node --test`, dompdf.
 
-**Spec:** `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md` (ler inteira antes de começar).
+**Spec:** `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md` (ler inteira antes de começar). As pegadinhas e
+os acertos de cada tarefa estão na skill, seção "Fase 26" (`.claude/skills/recibos/SKILL.md`); aqui ficam só as decisões.
 
 **Estados das tarefas:** pendente / concluída / testada / validada.
 
@@ -43,200 +44,176 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 1. Percentual com vírgula e com ponto (`12,5` e `12.5`) dão o mesmo desconto → Tarefa 1.
 2. Trocar % ↔ R$ depois de digitar limpa o número (10% não vira R$ 0,10) → Tarefa 2.
 3. Corrigir pagamento sem mexer no desconto mantém o desconto atual → Tarefa 4.
-4. Lote com valores diferentes: arredondamento por cobrança e soma da prévia igual à soma gravada → Tarefa 3.
+4. Lote com valores diferentes: arredondamento por cobrança e soma da prévia igual à soma gravada → Tarefas 3 e 3b.
 5. Cobrança paga antes desta fase (desconto 0) sai igual na lista, painel, relatórios e recibo → Tarefas 5, 6 e 7.
 
 ---
 
-### Tarefa 1 — Dado e regra do desconto — **Estado: pendente**
+### Tarefa 1 — Dado e regra do desconto — **Estado: testada**
 
-**Arquivos:**
-- Criar: migração `add_desconto_centavos_to_cobrancas_table` (`php artisan make:migration`), `app/Support/Desconto.php`,
-  `resources/js/desconto.js`, `resources/js/desconto.test.js`, `tests/Unit/DescontoTest.php`.
-- Modificar: `app/Models/Cobranca.php` (cast `desconto_centavos` → `integer`; `$attributes` com `desconto_centavos =>
-  0`; **não** entra no `#[Fillable]`, como `status`).
+**Arquivos:** migração `add_desconto_centavos_to_cobrancas_table`, `app/Support/Desconto.php`, `resources/js/desconto.js` e
+`desconto.test.js`, `tests/Unit/DescontoTest.php`, `app/Models/Cobranca.php` (cast, `$attributes` com `desconto_centavos => 0`,
+**fora** do `#[Fillable]` como `status`).
 
-**Interfaces (produz):**
-- PHP `Desconto::centavos(int $valorCentavos, string $tipo, ?string $entrada): ?int` — `$tipo` em
-  `Desconto::PERCENTUAL = 'percentual'` | `Desconto::VALOR = 'valor'`; vazio/null → `0`; formato inválido → `null`;
-  **não** limita ao valor (quem chama valida o limite).
-- PHP `Desconto::rotulo(int $valorCentavos, int $descontoCentavos, string $tipo, ?string $entrada): string` — devolve
-  `10% = R$ 24,76` ou `R$ 24,76` (usado na auditoria).
-- PHP `Cobranca::valorPagoCentavos(): int` — `valor_centavos − desconto_centavos`.
-- JS `descontoEmCentavos(valorCentavos, tipo, entrada) → number|null` (mesma regra do PHP).
-- JS `travarDesconto(valorCentavos, tipo, entrada) → { entrada: string, travou: boolean }` — % acima de 100 vira `'100'`;
-  R$ acima do valor vira o valor formatado por `formatadores.valor`; senão devolve a entrada e `travou: false`.
+**Interfaces:** PHP `Desconto::centavos(int $valorCentavos, string $tipo, ?string $entrada): ?int` (`$tipo` =
+`Desconto::PERCENTUAL` | `Desconto::VALOR`; vazio → 0; formato inválido → `null`; **não** limita ao valor),
+`Desconto::rotulo(...)` (`10% = R$ 24,76` ou `R$ 24,76`), `Cobranca::valorPagoCentavos()`. JS `descontoEmCentavos(valor, tipo,
+entrada)` e `travarDesconto(valor, tipo, entrada) → { entrada, travou }` (% acima de 100 vira `'100'`; R$ acima do valor vira o valor).
 
-- [ ] **Passo 1: testes que falham** — `DescontoTest` (PHP) e `desconto.test.js` com os mesmos casos, valor 24757:
-  vazio → 0; `'0'` → 0; `'10'` % → 2476; `'12,5'` e `'12.5'` % → 3095; `'100'` % → 24757; `'150'` % → 37136 (sem
-  limitar); `'24,76'` R$ → 2476; `'-5'`, `'1e3'`, `'+5'`, `'abc'` → null; `rotulo` → `10% = R$ 24,76` e `R$ 24,76`.
-  JS também: `travarDesconto(24757, 'percentual', '150')` → `{entrada: '100', travou: true}`;
-  `travarDesconto(24757, 'valor', '300,00')` → `{entrada: '247,57', travou: true}`; dentro do limite → `travou: false`.
-  Mais um teste de model: `Cobranca::factory()->create()->valorPagoCentavos()` igual a `valor_centavos` (desconto 0).
-- [ ] **Passo 2:** `php artisan test --compact tests/Unit/DescontoTest.php` e `node --test resources/js/desconto.test.js`
-  → FALHAM (classe/módulo inexistente).
-- [ ] **Passo 3:** migração (`unsignedBigInteger('desconto_centavos')->default(0)->after('valor_centavos')`), model,
-  `Desconto` e `desconto.js`. Percentual: regex `^\d{1,3}([.,]\d{1,2})?$`, converter para pontos-base em inteiros.
-  Valor: `Dinheiro::paraCentavos`. JS em R$: a máscara garante o formato; centavos = dígitos.
-- [ ] **Passo 4:** os mesmos comandos → PASSAM. Pint.
-- [ ] **Passo 5:** commit `feat: desconto_centavos na cobrança e regra única do desconto (PHP e JS)`.
+- [x] **Passos 1–5:** testes com os mesmos casos nas duas linguagens (valor 24757: vazio e `'0'` → 0; `'10'` % → 2476; `'12,5'` e
+  `'12.5'` % → 3095; `'100'` % → 24757; `'24,76'` R$ → 2476; `'-5'`, `'1e3'`, `'+5'`, `'abc'` → `null`; travas de 150% e de R$ 300,00) →
+  falham → migração, model, `Desconto`, `desconto.js` → passam, Pint → commit `feat: desconto_centavos na cobrança e regra única do
+  desconto (PHP e JS)`.
 
-### Tarefa 2 — Baixa individual com valor e desconto — **Estado: pendente**
+  Registro: o JS em R$ espelha `Dinheiro::paraCentavos` (não "centavos = dígitos"), por decisão do controlador; PHP e JS
+  conferidos com 8.000 entradas sorteadas; divergem só em R$ com dígitos demais (20 dígitos: PHP `null`, JS `1e22`; a trava da tela limita) e em tab no meio de `"R$\t5"` (PHP 500 via `Dinheiro::paraCentavos`, JS `null`); os dois cortam só espaço ASCII nas pontas.
 
-**Arquivos:** `app/Http/Controllers/CobrancaController.php` (`pagar`), `resources/js/Components/BaixaInline.vue`,
-`resources/js/Pages/Painel.vue:65`, `resources/js/Pages/Cobrancas/Index.vue:399`, teste
+### Tarefa 2 — Baixa individual com valor e desconto — **Estado: testada**
+
+**Arquivos:** `CobrancaController::pagar`, `BaixaInline.vue`, `Painel.vue`, `Cobrancas/Index.vue`,
 `tests/Feature/Cobrancas/DescontoNaBaixaTest.php`.
 
-**Interfaces:**
-- Consome: Tarefa 1.
-- Produz: método privado `CobrancaController::descontoValidado(Request $request, int $valorCentavos): int` — valida
-  `desconto_tipo` (`nullable|in:percentual,valor`, obrigatório quando `desconto` vem preenchido) e `desconto`
-  (`nullable|string|max:20`), calcula com `Desconto::centavos`, lança `ValidationException::withMessages(['desconto'
-  => …])` para formato inválido ("Desconto inválido.") ou acima do valor ("O desconto não pode passar do valor da
-  cobrança."). Reusado nas Tarefas 4.
-- Produz: `BaixaInline` com prop nova `valorCentavos: Number` (obrigatória); envia `{ pago_em, desconto_tipo,
-  desconto }`.
+**Interfaces:** `CobrancaController::descontoValidado(Request, int $valorCentavos): int` (privado, reusado nas Tarefas 3b e 4;
+erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória), envia `{ pago_em, desconto_tipo, desconto }`.
 
-- [ ] **Passo 1: testes que falham** (`DescontoNaBaixaTest`):
-  `test_baixa_com_desconto_percentual_grava_e_audita` (valor 24757, 10% → `desconto_centavos` 2476, auditoria com o
-  texto exato da restrição global); `test_baixa_com_desconto_em_reais`; `test_baixa_com_desconto_integral_audita_como_integral`
-  (100% → pago 0, texto "Baixa com desconto integral (…)"); `test_desconto_acima_do_valor_e_recusado` (erro em
-  `desconto`, cobrança continua pendente); `test_baixa_sem_desconto_mantem_texto_de_hoje`;
-  `test_cobranca_alheia_da_404_antes_da_validacao` (primeiro a própria com sucesso, depois a alheia com desconto
-  inválido → 404).
-- [ ] **Passo 2:** `php artisan test --compact tests/Feature/Cobrancas/DescontoNaBaixaTest.php` → FALHAM.
-- [ ] **Passo 3:** `pagar` chama `descontoValidado` depois do `findOrFail` e da checagem de status; grava
-  `desconto_centavos` por atribuição direta (fora do fillable) na mesma transação; auditoria com `Desconto::rotulo`.
-- [ ] **Passo 4:** `BaixaInline.vue` conforme spec §2: valor só leitura, campo + seletor `%`/`R$` (máscara `valor`
-  quando R$), `watch` do tipo **limpa** o número, `travarDesconto` a cada `input` com aviso `aria-live` "Máximo: 100%" /
-  "Máximo: R$ …" por ~2 s, valor pago com `.destacar`, aviso laranja no integral, erro embaixo do campo. Painel e lista
-  passam `:valor-centavos="cobranca.valor_centavos"`.
-- [ ] **Passo 5:** testes da tarefa + `node --test resources/js/` → PASSAM. Pint. `npm run build`.
-- [ ] **Passo 6:** commit `feat: baixa mostra o valor e aceita desconto em % ou R$`.
+- [x] **Passos 1–6:** `DescontoNaBaixaTest` (percentual, R$, integral, acima do valor recusado, sem desconto = texto de hoje, alheia
+  = 404 antes da validação) → falham → `pagar` valida depois do `findOrFail` e da checagem de status, grava por atribuição direta na
+  transação, audita com `Desconto::rotulo`; tela conforme spec §2 → passam, Pint, build → commit `feat: baixa mostra o valor e aceita
+  desconto em % ou R$`.
 
-### Tarefa 3 — Baixa em lote com percentual — **Estado: pendente**
+  Registro: (1) `formatadores.percentual` (`mascaras.js`, com teste) é a máscara do % que a spec pede e o plano não previa. (2) A
+  trava roda num `watch` do número, não num `@input` (a ordem entre `v-model`, `@input` e `v-mascara` muda o que cada um enxerga).
+  (3) Sem teste de componente (sem jsdom nem Vue Test Utils): "trocar limpa o número", trava e aviso foram para módulo `.js` na Tarefa 4.
 
-**Arquivos:** `CobrancaController::pagarEmLote` (linha ~244), `resources/js/Components/BaixaEmLote.vue`,
-`tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
+### Tarefa 3 — Baixa em lote com percentual — **Estado: testada** (o campo mudou na Tarefa 3b)
 
-**Interfaces:** consome `Desconto::centavos(…, Desconto::PERCENTUAL, …)` e `descontoEmCentavos` (JS). Campo novo
-`desconto_percentual` (`nullable`, mesma regex de percentual, máximo 100).
+**Arquivos:** `CobrancaController::pagarEmLote`, `BaixaEmLote.vue`, `tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
 
-- [ ] **Passo 1: testes que falham** (em `AcoesEmLoteTest`): `test_lote_aplica_percentual_em_cada_cobranca` (valores
-  10001 e 24757 a 10% → 1000 e 2476: arredondamento por cobrança; soma 3476); `test_lote_sem_percentual_continua_sem_desconto`;
-  `test_lote_percentual_acima_de_100_e_recusado`; auditoria "Baixa em lote" com o rótulo do desconto.
-- [ ] **Passo 2:** rodar o arquivo → FALHAM.
-- [ ] **Passo 3:** servidor aplica o percentual a cada cobrança pendente selecionada, na transação de hoje.
-- [ ] **Passo 4:** `BaixaEmLote.vue`: campo "Desconto (%) para todas" com trava em 100; a prévia lista valor, desconto
-  e valor pago por cobrança (com `descontoEmCentavos`) e os totais.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: baixa em lote com percentual de desconto e prévia por cobrança`.
+- [x] **Passos 1–6:** percentual por cobrança (10001 e 24757 a 10% → 1000 e 2476, soma 3476), lote sem desconto, acima de 100 recusado,
+  auditoria "Baixa em lote" com o rótulo; prévia por cobrança com totais → commit `feat: baixa em lote com percentual de desconto e
+  prévia por cobrança` (mais `refactor: aviso temporário da baixa vira módulo único (avisoTemporario.js)`).
 
-### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: pendente**
+  Registro: `resumoDaBaixa` deixou de ler o `Request` (recebe tipo, entrada e `emLote`); a validação do percentual ficou em
+  `Desconto::percentualValido`; a conta da prévia ficou pura em `previaDoLote` (`desconto.js`), com o mesmo caso do teste PHP.
 
-**Arquivos:** `CobrancaController::corrigirPagamento` (~332) e `desfazerBaixa` (~354),
-`resources/js/Components/CorrecaoPagamentoInline.vue`, `resources/js/Pages/Cobrancas/Index.vue:417` (passa
-`valor-centavos` e `desconto-centavos`), `tests/Feature/Cobrancas/DescontoNaBaixaTest.php`.
+### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: testada**
 
-**Interfaces:** consome `descontoValidado` (Tarefa 2). `CorrecaoPagamentoInline` ganha props `valorCentavos` e
-`descontoCentavos`; o formulário inicia com `desconto_tipo: 'valor'` e `desconto` = desconto atual formatado.
+**Arquivos:** `CobrancaController::corrigirPagamento` e `desfazerBaixa`, `CorrecaoPagamentoInline.vue`, `Cobrancas/Index.vue`
+(passa `valor-centavos` e `desconto-centavos`), `usarDescontoDaBaixa.js`, `DescontoNaBaixaTest`.
 
-- [ ] **Passo 1: testes que falham:** `test_corrigir_muda_data_e_desconto_com_auditoria_antes_e_depois`;
-  `test_corrigir_sem_mexer_no_desconto_mantem_o_desconto` (envia o desconto atual em R$ → igual);
-  `test_corrigir_desconto_exige_senha_e_motivo`; `test_desfazer_baixa_zera_o_desconto`.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** implementar (auditoria `pagamento.corrigido` com antes/depois de `pago_em` e `desconto_centavos`).
-- [ ] **Passo 4:** tela de correção com os campos de desconto e o valor pago novo.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: corrigir pagamento muda o desconto; desfazer baixa zera`.
+- [x] **Passos 1–6:** corrigir muda data e desconto com auditoria antes/depois; corrigir sem mexer no desconto mantém o desconto;
+  senha e motivo; desfazer zera o desconto → commit `feat: corrigir pagamento muda o desconto; desfazer baixa zera`.
 
-### Tarefa 5 — Lista de cobranças e painel — **Estado: pendente**
+  Registro: (1) Pedido **sem** `desconto`/`desconto_tipo` corrige só a data e **mantém** o desconto (a tela sempre manda os dois; campo
+  vazio com o tipo = tirar o desconto). (2) `antes`/`depois` de `pagamento.corrigido` e de `baixa.desfeita` levam o desconto (o
+  `AuditoriaTest` antigo foi atualizado). (3) A lógica de tela saiu do `BaixaInline` para `usarDescontoDaBaixa.js`, com teste `node --test`
+  (cobre o ponto de revisão 2 sem navegador). (4) `Cobranca::paraLista` ganhou `desconto_centavos`.
 
-**Arquivos:** `app/Models/Cobranca.php` (`paraLista`), `app/Services/ListaDeCobrancas.php` (linhas 55, 77, 116),
-`app/Http/Controllers/PainelController.php` (linhas 55 e 78), `resources/js/Pages/Cobrancas/Index.vue`,
-`resources/js/Pages/Painel.vue`, testes `tests/Feature/Cobrancas/DadosDaListaTest.php`, `FiltroSituacaoTest.php`,
-`tests/Feature/PainelTest.php`.
+### Tarefa 5 — Lista de cobranças e painel — **Estado: testada**
 
-**Interfaces:** `paraLista` ganha `desconto_centavos` e `valor_pago` (formatado). Soma de pagas em SQL:
-`sum(valor_centavos - desconto_centavos)`.
+**Arquivos:** `Cobranca::paraLista`, `ListaDeCobrancas`, `PainelController`, `Cobrancas/Index.vue`, `LinhaCobranca.vue`, testes
+`DadosDaListaTest`, `FiltroSituacaoTest`, `PainelTest`.
 
-- [ ] **Passo 1: testes que falham:** aba/rodapé "Pagas" soma o valor pago e as demais o valor cheio
-  (`FiltroSituacaoTest`); recebido do mês no painel = valor − desconto (`PainelTest`); cobrança paga sem desconto
-  mantém as somas de antes (ponto de revisão 5).
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** servidor (`leves` passa a buscar `desconto_centavos`; `paga` soma o valor pago).
-- [ ] **Passo 4:** tela: paga com desconto mostra o valor cheio e, embaixo e menor, "pago R$ …"; mesma coisa em
-  "Recebidas no mês" do painel.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: lista e painel somam o valor pago das cobranças pagas`.
+- [x] **Passos 1–6:** aba e rodapé "Pagas" somam o valor pago e as demais o valor cheio; recebido do mês no painel = valor − desconto;
+  paga sem desconto mantém as somas → commit `feat: lista e painel somam o valor pago das cobranças pagas`.
 
-### Tarefa 6 — Relatórios — **Estado: pendente**
+  Registro: só a situação "paga" soma o valor pago, em quatro pontos da lista e dois do painel (o "Previsto" segue cheio);
+  `Cobranca::VALOR_PAGO_SQL` é a conta em SQL (a Tarefa 6 reusa); `paraLista` ganhou `valor_pago`; a tela mostra "pago R$ …" só com
+  `situacao === 'paga'` e desconto > 0. **Não conferido no PostgreSQL** (a coluna ainda não existia no banco local).
 
-**Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porCliente`, `porProduto`), `resources/js/relatorios.js`
-(se lista colunas), `tests/Feature/Relatorios/*` (inclui `FaturamentoTest::test_csv_para_o_excel_em_portugues`).
+### Tarefa 6 — Relatórios — **Estado: testada**
 
-**Interfaces:** faturamento ganha coluna `self::coluna('descontos', 'Descontos')` logo depois de `recebido`; por
-produto ganha a linha `item => 'Descontos concedidos'` com `recebido` = −(soma dos descontos das pagas no período) e
-`previsto` 0; os itens e "Sem item" continuam com o valor cheio dos itens, então o total = painel.
+**Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porCliente`, `porProduto`), `itens.js`, `Dinheiro`, `tests/Feature/Relatorios/*`
+(inclui `FaturamentoTest::test_csv_para_o_excel_em_portugues`).
 
-- [ ] **Passo 1: testes que falham:** faturamento (recebido = valor − desconto; coluna "Descontos"; previsto e
-  inadimplência cheios); por cliente (recebido e média com valor pago); por produto (linha negativa e total igual ao
-  recebido do painel no mesmo período); CSV byte a byte com a coluna nova; sem desconto, relatório igual ao de antes.
-- [ ] **Passo 2:** rodar `php artisan test --compact tests/Feature/Relatorios` → FALHAM.
-- [ ] **Passo 3:** implementar. Contas a receber não muda.
-- [ ] **Passo 4:** testes → PASSAM. Pint. Build se `relatorios.js` mudou.
-- [ ] **Passo 5:** commit `feat: relatórios usam o valor pago e mostram os descontos`.
+- [x] **Passos 1–5:** recebido = valor pago; coluna `descontos` logo depois de `recebido`; por cliente com o valor pago; por produto com a
+  linha `Descontos concedidos`; CSV byte a byte → commit `feat: relatórios usam o valor pago e mostram os descontos`.
 
-### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: pendente**
+  Registro: (1) Faturamento: `previsto` e `inadimplencia` seguem cheios; a coluna `descontos` existe sempre (0,00 sem desconto).
+  (2) Por produto: itens e "Sem item" cheios; `Descontos concedidos` (negativa, última, só se houver) faz o total bater com o `resumo.recebido`
+  do painel (provado em teste). (3) **Achado fora da lista:** `Dinheiro::formatar` e `formatarCentavos` (JS) não formatavam negativo e o CSV
+  poria apóstrofo em `-22,00`; corrigidos nos três lugares, com teste. (4) Contas a receber não mudou. **Não conferido no PostgreSQL.**
 
-**Arquivos:** `app/Enums/ModeloRecibo.php`, `app/Enums/FamiliaModelo.php` (`versaoAtual`),
-`app/Services/RenderizadorDeRecibo.php` (`dados`), criar `resources/views/recibos/pdf/webiss-v2.blade.php` e
-`danfse-v2.blade.php`, apagar os v1, migração de dados `troca_modelo_dos_recibos_para_v2`, testes
-`tests/Feature/Recibos/*`, `TrocaDeModeloTest`, `AcoesCobrancaTest`, `Contas/UsuarioModeloTest`, teste novo
-`tests/Feature/Recibos/MigracaoReciboV2Test.php`.
+### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: testada**
 
-**Interfaces:** `dados()` ganha `desconto` (formatado, ou `null` quando não está paga ou desconto = 0) e
-`valor_pago` (formatado, ou `null` no mesmo caso). v2 = v1 com: WebISS — no `@foreach` de rótulos, `Desc. Cond. (R$)`
-mostra `$desconto ?? '-'`; `Valor Líquido (R$)` mostra `$valor_pago ?? $valor`. DANFSe — linha 137 `Desconto
-Condicionado` mostra `$desconto ?? '-'`; linhas 141 e 143 (valor líquido) mostram `$valor_pago ?? $valor`.
-"Valor Total" continua `$valor`.
+**Arquivos:** `ModeloRecibo`, `FamiliaModelo::versaoAtual`, `RenderizadorDeRecibo::dados`, templates `webiss-v2` e `danfse-v2` (v1 apagados),
+migração `troca_modelo_dos_recibos_para_v2`, `MigracaoReciboV2Test`, `AmostrasVisuaisTest` e os 5 testes que citavam v1.
 
-- [ ] **Passo 1:** copiar os v1 para v2 e acrescentar os casos `WebissV2`/`DanfseV2` (sem apagar nada ainda).
-- [ ] **Passo 2: prova de igualdade (temporária):** teste que renderiza a view v1 e a v2 com os mesmos `dados()` de
-  uma cobrança **sem** desconto (WebISS e DANFSe, paga e pendente) e exige HTML idêntico → PASSA. Registrar o
-  resultado no "Registro de execução" deste plano.
-- [ ] **Passo 3: testes que falham:** paga com desconto preenche os dois campos (texto do PDF via `RenderizadorDeReciboTest`);
-  `AmostrasVisuaisTest` ganha as combinações com desconto e continua exigindo 1 página;
-  `MigracaoReciboV2Test`: `up` troca só `modelo` (v1 → v2, as duas famílias, número/snapshot iguais) e `down` volta
-  (`(require database_path('migrations/…'))->up()`); `FamiliaModelo::opcoes()` continua com 2 itens e
-  `versaoAtual()` devolve v2.
-- [ ] **Passo 4:** rodar `php artisan test --compact tests/Feature/Recibos tests/Feature/TrocaDeModeloTest.php` → FALHAM.
-- [ ] **Passo 5:** implementar os campos nos v2, `dados()`, `versaoAtual()`, migração de dados; apagar o teste
-  temporário do passo 2, os templates v1 e os casos v1; atualizar os 5 arquivos de teste que esperavam v1.
-- [ ] **Passo 6:** suíte inteira `php artisan test --compact` → verde. Pint.
-- [ ] **Passo 7:** commit `feat: recibos v2 mostram desconto e valor pago e substituem o v1`.
+**Interfaces:** `dados()['desconto']` e `['valor_pago']` (formatados; `null` quando a cobrança não está paga **ou** o desconto é 0).
+WebISS: `Desc. Cond. (R$)` = `$desconto ?? '0,00'` e `Valor Líquido (R$)` = `$valor_pago ?? $valor`. DANFSe: `Desconto Condicionado` =
+`$desconto ?? '-'` e as duas linhas de valor líquido = `$valor_pago ?? $valor`. "Valor Total" segue cheio.
 
-### Tarefa 8 — Wizard, conferência e documentação — **Estado: pendente**
+- [x] **Passos 1–7:** copiar v1 → v2 → testes que falham (13 vermelhos) → campos do v2 e `dados()` → prova de igualdade v1 × v2 (ver
+  "Registro de execução") → apagar teste temporário, templates e casos v1 → suíte inteira verde, Pint → commit `feat: recibos v2 mostram desconto
+  e valor pago e substituem o v1`.
 
-**Arquivos:** `.claude/skills/recibos/SKILL.md` (acertos e pegadinhas da Fase 26; atualizar a regra do `-v2` com a
-exceção consciente), `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), README (só se algo de uso mudou).
+  Registro: (1) A prova corrigiu o brief: o v1 do WebISS imprime `0,00` em `Desc. Cond. (R$)`, não `-`. (2) A migração usa `DB::table` (troca só
+  `modelo`, nem `updated_at`), porque sem os casos v1 o cast de `Recibo.modelo` quebra ao ler a linha antiga; `down` inverso. **Nunca rodada fora do
+  SQLite em memória**; no Postgres local é do portão. (3) `FamiliaModelo::opcoes()` segue com 2 famílias (teste em `UsuarioModeloTest`).
+  (4) Asserções antigas que mudaram: só `WebissV1`/`DanfseV1`/`*-v1` → v2 em `TrocaDeModeloTest`, `AcoesCobrancaTest`, `EmissaoReciboTest`,
+  `PdfReciboTest` e `UsuarioModeloTest`. (5) `AmostrasVisuaisTest::test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos` é guarda contra o v2
+  estourar a página (não podia ficar vermelho antes: o v1 ignora o desconto).
 
-- [ ] **Passo 1:** suíte da Fase 25 sem mudar asserção: `php artisan test --compact
-  tests/Feature/ProgressoDeConfiguracaoTest.php tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php` e
-  `node --test resources/js/progressoHolofote.test.js resources/js/progresso.test.js` → PASSAM. `git diff main --
-  tests/Feature/ProgressoDeConfiguracao*` vazio.
-- [ ] **Passo 2:** `php artisan test --compact` (tudo) e `node --test resources/js/` → verdes; `npm run build` ok.
-- [ ] **Passo 3: PORTÃO-BANCO (Postgres local, cópia de produção):** mostrar conexão, contagem (`cobrancas`,
-  `recibos` por `modelo`), o comando literal `php artisan migrate`, e só rodar com o "sim" do Marcos. Recontar depois.
-- [ ] **Passo 4: conferência no navegador** (pedir autorização antes; avisar que o browser-agent não está instalado,
-  só o Playwright; conta de teste, nunca dados reais): baixa individual (%, R$, trava, troca de tipo, integral),
-  lote, correção, lista e painel, 390 px sem rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido.
-- [ ] **Passo 5:** PDF de amostra com desconto em `storage/app/private/verificacao/` para a conferência visual do
-  Marcos.
-- [ ] **Passo 6:** documentação, estados deste plano, commit `docs: registra a Fase 26 (desconto na baixa)`; com tudo
-  `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos: o deploy roda as duas migrações em produção
-  (a segunda **altera todos os recibos**); backup antes.
+### Tarefa 3b — Desconto em R$ no lote e texto de ajuda — **Estado: testada**
+
+Pedido do Marcos ao ver a tela (2026-11-01): o lote ganha o mesmo seletor `% | R$` da baixa individual (R$ = o mesmo valor em cada
+cobrança, limite na menor pendente selecionada), e as três telas ganham um texto de ajuda sobre o seletor. Substitui o
+`desconto_percentual` da Tarefa 3 (nunca publicado). Brief: `.superpowers/sdd/2026-11-01-desconto-na-baixa/tarefa-3b-brief.md`.
+
+**Arquivos:** `CobrancaController::pagarEmLote` (`regrasDoDesconto`, `MENSAGENS_DO_DESCONTO`, `conferirDescontoDoLote`), `BaixaEmLote.vue`,
+`BaixaInline.vue`, `CorrecaoPagamentoInline.vue`, `desconto.js` (`previaDoLote`, `menorValor`, `semSeparadorFinal`), `usarDescontoDaBaixa.js`
+(`complementoDoMaximo`), `AcoesEmLoteTest`.
+
+- [x] **Passos:** testes do lote em R$ e em % (servidor e `desconto.test.js`) → servidor → telas → commit `feat: baixa em lote aceita desconto em R$ e
+  telas explicam o seletor`.
+
+  Registro: (1) `pagarEmLote` troca `desconto_percentual` por `desconto_tipo` + `desconto`, com as mesmas regras da baixa individual; a conferência
+  roda **antes** da transação, só sobre as pendentes selecionadas, e lote recusado não grava nada (teste confere status, `pago_em`, desconto e
+  auditorias). (2) "10," é enviado como "10" nas três telas (`semSeparadorFinal`). (3) O erro do desconto e o da data da `BaixaInline` foram para dentro
+  da coluna do campo; a ajuda também (`w-0 min-w-full`), e a linha passou de `items-end` para `items-start`, com os botões em `mt-4`. (4) Asserções
+  antigas alteradas: só os campos de entrada dos testes de lote da Tarefa 3 e a mensagem de "% acima de 100 ou inválido", agora separada em duas;
+  nenhuma foi enfraquecida. (5) **Sem navegador:** a ajuda embaixo do campo, o alinhamento depois do `items-start`, a quebra do texto e o modal em
+  390 px só se conferem no passo 4 da Tarefa 8.
+
+### Tarefa 8 — Wizard, conferência e documentação — **Estado: testada**
+
+**Arquivos:** `.claude/skills/recibos/SKILL.md` (acertos e pegadinhas da Fase 26; exceção consciente à regra do `-v2`),
+`.claude/plans/2026-10-10-roteiro-modulos.md` (estado), README (nada mudou no uso: sem alteração).
+
+- [x] **Passo 1:** suíte da Fase 25 sem mudar asserção: `php artisan test --compact tests/Feature/ProgressoDeConfiguracaoTest.php
+  tests/Feature/ProgressoDeConfiguracaoMiddlewareTest.php` (11 testes, 65 asserções) e `node --test resources/js/progressoHolofote.test.js
+  resources/js/progresso.test.js` (8) → passam. `git diff $(git merge-base main HEAD) -- tests/Feature/ProgressoDeConfiguracao*` e os testes JS
+  da Fase 25 → vazios. (Contra o `merge-base` e não contra o `main`, que avançou com `8cca23a`, de outra sessão.)
+- [x] **Passo 2:** `php artisan test --compact` (657 testes, 3132 asserções) e `node --test 'resources/js/**/*.test.js'` (170) → verdes; `npm run build` ok.
+- [x] **Passo 3: PORTÃO-BANCO (Postgres local, cópia de produção):** as duas migrações rodaram, cada uma com o "sim" do Marcos (2026-11-01). Recibos: de 50
+  `webiss-v1` e 10 `danfse-v1` para 50 `webiss-v2` e 10 `danfse-v2`, com números e snapshots iguais.
+- [x] **Passo 4: conferência no navegador** (autorizada pelo Marcos em 2026-11-01): feita por scripts com `playwright-core` e o Chromium já instalado (o MCP
+  do Playwright não abre: falta o Chrome), em banco SQLite temporário com dados de teste, em 1280 e 390 px. Postgres igual antes e depois. Sem erro de
+  console nem estouro de largura em 390 px. Defeito achado e corrigido: a correção abria com a data de hoje. A faixa de baixa nunca ficou coberta pelo
+  coach. Achado fora da fase: em 1280 px o coach cobre a última linha do painel. Não conferidos: erro do servidor no lote pela tela; holofote; modal de
+  boas-vindas. O Marcos testou o lote e liberou o merge.
+- [x] **Passo 5:** PDFs de amostra com desconto em `storage/app/private/verificacao/` (fora do git), 1 página cada: `amostra-webiss-paga-desconto.pdf`,
+  `-paga-integral.pdf`, `-paga-sem-desconto.pdf` e os três de `amostra-danfse-…`. Texto conferido com `pdftotext -layout` (WebISS: 24,76 em
+  `Desc. Cond.`, 222,81 em `Valor Líquido`, 247,57 em `Valor Total`; DANFSe: `R$ 24,76` e `R$ 222,81`). Conferência visual: do Marcos.
+- [x] **Passo 6 (documentação):** skill, este plano e o roteiro atualizados; commit `docs: registra a Fase 26 (desconto na baixa)`.
+- [x] **Passo 6 (merge):** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos: o deploy roda as duas migrações em
+  produção (a segunda **altera todos os recibos**, só o campo `modelo`); backup antes.
 
 ## Registro de execução
 
-(preenchido durante a execução)
+### Tarefa 7 — prova de igualdade v1 × v2 (2026-11-01, feita com o v2 já editado e antes de apagar o v1)
+
+Teste temporário (apagado depois) que renderizava `view('recibos.pdf.{familia}-v1', $dados)` e `-v2` com os **mesmos** `dados()` de cobranças **sem**
+desconto — WebISS e DANFSe × pendente, pendente com PIX e paga — e exigia `assertSame` no HTML inteiro (6 comparações).
+
+- **1ª rodada** (WebISS com `$desconto ?? '-'`, como o brief dizia): **falhou** em `webiss pendente`, diferença única: `0,00` no v1 × `-` no v2. A spec §3 manda
+  "sem desconto, o v2 é igual ao v1", então o padrão do WebISS é `0,00`.
+- **2ª rodada** (`?? '0,00'`): 1 teste, 13 asserções, HTML idêntico nos 6 casos. O DANFSe passou nas duas rodadas.
+
+### Correção final da revisão (2026-11-01)
+
+NBSP trocado pelo escape de U+00A0 em `desconto.js` e no teste; frase "0 diferenças" corrigida (plano e skill); novo teste do lote com cobrança de outro usuário; estado "Tarefas 1 a 7 e 3b testadas; a 8 concluída" na skill e no roteiro.
+
+### Correção da data em "Corrigir pagamento" (2026-11-01, commit `fix: corrigir pagamento abre com a data atual do pagamento`)
+
+Defeito achado na conferência no navegador: o campo abria com a data de hoje. Teste `test_cobranca_paga_traz_a_data_do_pagamento_para_a_correcao` (vermelho com `Undefined array key "pago_em_iso"`, verde depois); suíte inteira verde (659 PHPUnit, 170 JS).

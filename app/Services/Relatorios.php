@@ -26,7 +26,7 @@ final class Relatorios
         $cobrancas = $usuario->cobrancas()
             ->where('status', '!=', StatusCobranca::Cancelada)
             ->where(fn ($consulta) => $consulta->where('vencimento', '<=', $fim)->orWhereBetween('pago_em', [$de, $fim]))
-            ->get(['vencimento', 'pago_em', 'status', 'valor_centavos']);
+            ->get(['vencimento', 'pago_em', 'status', 'valor_centavos', 'desconto_centavos']);
 
         // O que os contratos ainda vão emitir, por mês (m/Y). Só depois de hoje: até hoje a geração já criou as de verdade.
         $naoEmitido = collect($this->previsao->entre($usuario, $de->max($hoje->addDay()), $fim))
@@ -39,7 +39,7 @@ final class Relatorios
             $fimMes = $mes->endOfMonth();
             $corte = $fimMes->startOfDay()->min($hoje);
             $previstoNaoEmitido = (int) ($naoEmitido[$mes->format('m/Y')] ?? 0);
-            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => $previstoNaoEmitido, 'nao_emitido' => $previstoNaoEmitido, 'recebido' => 0, 'inadimplencia' => 0];
+            $linha = ['mes' => $mes->format('m/Y'), 'previsto' => $previstoNaoEmitido, 'nao_emitido' => $previstoNaoEmitido, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0];
 
             foreach ($cobrancas as $cobranca) {
                 /** @var Cobranca $cobranca */
@@ -47,7 +47,8 @@ final class Relatorios
                     $linha['previsto'] += $cobranca->valor_centavos;
                 }
                 if ($cobranca->status === StatusCobranca::Paga && $cobranca->pago_em?->betweenIncluded($inicioMes, $fimMes)) {
-                    $linha['recebido'] += $cobranca->valor_centavos;
+                    $linha['recebido'] += $cobranca->valorPagoCentavos();
+                    $linha['descontos'] += $cobranca->desconto_centavos;
                 }
                 if ($inicioMes->lte($hoje) && $cobranca->vencimento->lt($corte)
                     && ($cobranca->pago_em === null || $cobranca->pago_em->gt($corte))) {
@@ -60,12 +61,13 @@ final class Relatorios
 
         return $this->tabela(
             'Faturamento por período',
-            'Mês a mês: previsto (vencimentos, incluindo o que os contratos ainda vão emitir), recebido (pagamentos do mês) e o que estava em atraso no fim do mês.',
+            'Mês a mês: previsto (vencimentos, incluindo o que os contratos ainda vão emitir), recebido (o valor pago nos pagamentos do mês), os descontos dados nessas baixas e o que estava em atraso no fim do mês.',
             [
                 self::coluna('mes', 'Mês', 'texto'),
                 self::coluna('previsto', 'Previsto'),
                 self::coluna('nao_emitido', 'Ainda não emitido'),
                 self::coluna('recebido', 'Recebido'),
+                self::coluna('descontos', 'Descontos'),
                 self::coluna('inadimplencia', 'Em atraso no fim do mês', soma: false),
             ],
             $linhas,
@@ -78,7 +80,7 @@ final class Relatorios
         $hoje = $hoje->startOfDay();
 
         $pagas = $usuario->cobrancas()->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$de, $fim])
-            ->selectRaw('cliente_id, sum(valor_centavos) as recebido, count(*) as quantidade')
+            ->selectRaw('cliente_id, sum('.Cobranca::VALOR_PAGO_SQL.') as recebido, count(*) as quantidade')
             ->groupBy('cliente_id')->get()->keyBy('cliente_id');
         $contratos = $usuario->contratos()->where('ativo', true)
             ->selectRaw('cliente_id, count(*) as quantidade')->groupBy('cliente_id')->pluck('quantidade', 'cliente_id');
@@ -107,7 +109,7 @@ final class Relatorios
 
         return $this->tabela(
             'Receita por cliente',
-            'Recebido no período, contratos ativos, valor médio por cobrança paga e cobranças vencidas em aberto hoje.',
+            'Recebido no período (o valor pago, já sem os descontos), contratos ativos, valor médio por cobrança paga e cobranças vencidas em aberto hoje.',
             [
                 self::coluna('cliente', 'Cliente', 'texto'),
                 self::coluna('recebido', 'Recebido'),
@@ -174,9 +176,15 @@ final class Relatorios
             ];
         }
 
+        // Os itens somam o valor cheio; o desconto não é rateado entre eles. Esta linha o tira de uma vez, e o total fica igual ao recebido do painel.
+        $descontos = (int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)->whereBetween('pago_em', [$de, $fim])->sum('desconto_centavos');
+        if ($descontos > 0) {
+            $linhas[] = ['item' => 'Descontos concedidos', 'recebido' => -$descontos, 'previsto' => 0, 'contratos' => 0];
+        }
+
         return $this->tabela(
             'Receita por produto ou serviço',
-            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período, incluindo o que os contratos ainda vão emitir), com os contratos ativos que usam cada item.',
+            'Pelos itens das cobranças: recebido (pagas no período) e previsto (vencendo no período, incluindo o que os contratos ainda vão emitir), com os contratos ativos que usam cada item. Os itens somam o valor cheio; a linha Descontos concedidos tira o que foi abatido nas baixas, e o total fica igual ao recebido do painel.',
             [
                 self::coluna('item', 'Produto ou serviço', 'texto'),
                 self::coluna('recebido', 'Recebido'),

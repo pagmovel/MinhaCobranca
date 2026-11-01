@@ -28,13 +28,14 @@ class FaturamentoTest extends TestCase
         $this->cliente = Cliente::factory()->for($this->usuario)->create();
     }
 
-    private function cobranca(string $vencimento, int $valor, ?string $pagoEm = null, bool $cancelada = false): Cobranca
+    private function cobranca(string $vencimento, int $valor, ?string $pagoEm = null, bool $cancelada = false, int $desconto = 0): Cobranca
     {
         $cobranca = Cobranca::factory()->for($this->usuario)->for($this->cliente)
             ->create(['vencimento' => $vencimento, 'valor_centavos' => $valor]);
         if ($pagoEm !== null) {
             $cobranca->status = StatusCobranca::Paga;
             $cobranca->pago_em = $pagoEm;
+            $cobranca->desconto_centavos = $desconto;
         }
         if ($cancelada) {
             $cobranca->status = StatusCobranca::Cancelada;
@@ -55,11 +56,11 @@ class FaturamentoTest extends TestCase
 
         $this->actingAs($this->usuario)->getJson('/relatorios/faturamento/dados?de=2026-08&ate=2026-11')->assertOk()
             ->assertJsonCount(4, 'linhas')
-            ->assertJsonPath('linhas.0', ['mes' => '08/2026', 'previsto' => 10000, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 10000])
-            ->assertJsonPath('linhas.1', ['mes' => '09/2026', 'previsto' => 20000, 'nao_emitido' => 0, 'recebido' => 10000, 'inadimplencia' => 20000])
-            ->assertJsonPath('linhas.2', ['mes' => '10/2026', 'previsto' => 30000, 'nao_emitido' => 0, 'recebido' => 70000, 'inadimplencia' => 20000])
-            ->assertJsonPath('linhas.3', ['mes' => '11/2026', 'previsto' => 40000, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 0])
-            ->assertJsonPath('totais', ['mes' => 'Total', 'previsto' => 100000, 'nao_emitido' => 0, 'recebido' => 80000, 'inadimplencia' => null]);
+            ->assertJsonPath('linhas.0', ['mes' => '08/2026', 'previsto' => 10000, 'nao_emitido' => 0, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 10000])
+            ->assertJsonPath('linhas.1', ['mes' => '09/2026', 'previsto' => 20000, 'nao_emitido' => 0, 'recebido' => 10000, 'descontos' => 0, 'inadimplencia' => 20000])
+            ->assertJsonPath('linhas.2', ['mes' => '10/2026', 'previsto' => 30000, 'nao_emitido' => 0, 'recebido' => 70000, 'descontos' => 0, 'inadimplencia' => 20000])
+            ->assertJsonPath('linhas.3', ['mes' => '11/2026', 'previsto' => 40000, 'nao_emitido' => 0, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0])
+            ->assertJsonPath('totais', ['mes' => 'Total', 'previsto' => 100000, 'nao_emitido' => 0, 'recebido' => 80000, 'descontos' => 0, 'inadimplencia' => null]);
     }
 
     public function test_previsto_inclui_o_que_os_contratos_ainda_vao_emitir(): void
@@ -69,11 +70,28 @@ class FaturamentoTest extends TestCase
         $this->cobranca('2026-11-10', 10000);
 
         $this->actingAs($this->usuario)->getJson('/relatorios/faturamento/dados?de=2026-09&ate=2026-11')->assertOk()
-            ->assertJsonPath('linhas.0', ['mes' => '09/2026', 'previsto' => 0, 'nao_emitido' => 0, 'recebido' => 0, 'inadimplencia' => 0])
-            ->assertJsonPath('linhas.1', ['mes' => '10/2026', 'previsto' => 26060, 'nao_emitido' => 26060, 'recebido' => 0, 'inadimplencia' => 0])
-            ->assertJsonPath('linhas.2', ['mes' => '11/2026', 'previsto' => 36060, 'nao_emitido' => 26060, 'recebido' => 0, 'inadimplencia' => 0])
+            ->assertJsonPath('linhas.0', ['mes' => '09/2026', 'previsto' => 0, 'nao_emitido' => 0, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0])
+            ->assertJsonPath('linhas.1', ['mes' => '10/2026', 'previsto' => 26060, 'nao_emitido' => 26060, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0])
+            ->assertJsonPath('linhas.2', ['mes' => '11/2026', 'previsto' => 36060, 'nao_emitido' => 26060, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 0])
             ->assertJsonPath('totais.nao_emitido', 52120)
             ->assertJsonPath('colunas.2.rotulo', 'Ainda não emitido');
+    }
+
+    /** Fase 26: recebido é o valor pago e os descontos aparecem ao lado; previsto e atraso seguem com o valor cheio. */
+    public function test_recebido_e_o_valor_pago_e_os_descontos_ficam_em_coluna_propria(): void
+    {
+        $this->cobranca('2026-08-10', 24757, '2026-09-05', desconto: 2476); // paga com atraso, em setembro: pago 222,81
+        $this->cobranca('2026-10-10', 10000, '2026-10-10', desconto: 10000); // desconto integral: recebido 0,00
+        $this->cobranca('2026-10-12', 5000, '2026-10-12');                   // sem desconto, como antes da fase
+        $this->cobranca('2026-07-20', 7000, '2026-07-25', desconto: 700);    // paga em julho, antes do período: não entra
+
+        $this->actingAs($this->usuario)->getJson('/relatorios/faturamento/dados?de=2026-08&ate=2026-10')->assertOk()
+            ->assertJsonPath('colunas.4', ['chave' => 'descontos', 'rotulo' => 'Descontos', 'tipo' => 'dinheiro', 'soma' => true])
+            ->assertJsonPath('colunas.5.chave', 'inadimplencia')
+            ->assertJsonPath('linhas.0', ['mes' => '08/2026', 'previsto' => 24757, 'nao_emitido' => 0, 'recebido' => 0, 'descontos' => 0, 'inadimplencia' => 24757])
+            ->assertJsonPath('linhas.1', ['mes' => '09/2026', 'previsto' => 0, 'nao_emitido' => 0, 'recebido' => 22281, 'descontos' => 2476, 'inadimplencia' => 0])
+            ->assertJsonPath('linhas.2', ['mes' => '10/2026', 'previsto' => 15000, 'nao_emitido' => 0, 'recebido' => 5000, 'descontos' => 10000, 'inadimplencia' => 0])
+            ->assertJsonPath('totais', ['mes' => 'Total', 'previsto' => 39757, 'nao_emitido' => 0, 'recebido' => 27281, 'descontos' => 12476, 'inadimplencia' => null]);
     }
 
     public function test_periodo_padrao_e_os_ultimos_12_meses(): void
@@ -121,9 +139,9 @@ class FaturamentoTest extends TestCase
             ->assertDownload('relatorio-faturamento-2026-10-a-2026-10.csv');
         $this->assertSame(
             "\xEF\xBB\xBF"
-            ."Mês;Previsto;\"Ainda não emitido\";Recebido;\"Em atraso no fim do mês\"\n"
-            ."10/2026;1.234,56;0,00;1.234,56;0,00\n"
-            ."Total;1.234,56;0,00;1.234,56;\n",
+            ."Mês;Previsto;\"Ainda não emitido\";Recebido;Descontos;\"Em atraso no fim do mês\"\n"
+            ."10/2026;1.234,56;0,00;1.234,56;0,00;0,00\n"
+            ."Total;1.234,56;0,00;1.234,56;0,00;\n",
             $resposta->streamedContent(),
         );
     }

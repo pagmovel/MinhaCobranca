@@ -340,6 +340,9 @@ async function fecharFaixa() {
                             </td>
                             <td class="order-1 text-lg font-semibold whitespace-nowrap tabular-nums xl:px-3 xl:py-3 xl:text-right xl:text-base">
                                 R$ {{ cobranca.valor }}
+                                <p v-if="cobranca.situacao === 'paga' && cobranca.desconto_centavos > 0" class="font-estreita text-xs font-normal text-grafite/80">
+                                    pago R$ {{ cobranca.valor_pago }}
+                                </p>
                             </td>
                             <td class="order-2 whitespace-nowrap xl:px-3 xl:py-3">
                                 <Carimbo :situacao="cobranca.situacao" />
@@ -396,7 +399,7 @@ async function fecharFaixa() {
                         <Transition name="surgir">
                             <tr v-if="faixa?.id === cobranca.id && naFaixa.includes(faixa.acao)" class="block xl:table-row">
                                 <td :id="`faixa-${cobranca.id}`" colspan="8" class="block border-t border-carbono/10 bg-papel px-4 py-3 xl:table-cell">
-                                    <BaixaInline v-if="faixa.acao === 'baixa'" :cobranca-id="cobranca.id" na-faixa @fechar="fecharFaixa" />
+                                    <BaixaInline v-if="faixa.acao === 'baixa'" :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" na-faixa @fechar="fecharFaixa" />
                                     <PagamentoInline
                                         v-else-if="faixa.acao === 'pagamento'"
                                         :cobranca-id="cobranca.id"
@@ -418,6 +421,9 @@ async function fecharFaixa() {
                                         v-else
                                         :cobranca-id="cobranca.id"
                                         :enviada="cobranca.enviado"
+                                        :valor-centavos="cobranca.valor_centavos"
+                                        :desconto-centavos="cobranca.desconto_centavos"
+                                        :pago-em-iso="cobranca.pago_em_iso"
                                         :modo-inicial="faixa.acao"
                                         @fechar="fecharFaixa"
                                     />

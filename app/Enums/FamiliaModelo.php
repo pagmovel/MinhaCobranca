@@ -7,12 +7,12 @@ enum FamiliaModelo: string
     case Webiss = 'webiss';
     case Danfse = 'danfse';
 
-    /** Versão usada nos recibos emitidos a partir de agora. Ao criar uma v2, trocar só aqui. */
+    /** Versão usada nos recibos emitidos a partir de agora. Ao criar uma versão nova, trocar só aqui. */
     public function versaoAtual(): ModeloRecibo
     {
         return match ($this) {
-            self::Webiss => ModeloRecibo::WebissV1,
-            self::Danfse => ModeloRecibo::DanfseV1,
+            self::Webiss => ModeloRecibo::WebissV2,
+            self::Danfse => ModeloRecibo::DanfseV2,
         };
     }
 

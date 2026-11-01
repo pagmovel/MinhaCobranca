@@ -119,6 +119,33 @@ class DadosDaListaTest extends TestCase
             ->assertJsonPath('filtros.cliente_id', $outro->id);
     }
 
+    public function test_linha_paga_traz_o_valor_cheio_o_desconto_e_o_valor_pago(): void
+    {
+        $nova = function (int $valor, int $desconto) {
+            $cobranca = Cobranca::factory()->for($this->usuario)->for($this->cliente)->create(['vencimento' => '2026-10-05', 'valor_centavos' => $valor]);
+            $cobranca->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-05', 'desconto_centavos' => $desconto])->save();
+        };
+        $nova(24757, 2476);
+        $nova(10000, 0); // paga antes da Fase 26: sem desconto, valor pago = valor
+
+        $linhas = $this->dados('?status=paga')->assertOk()->json('linhas');
+
+        $this->assertSame(['247,57', '222,81', 2476], [$linhas[0]['valor'], $linhas[0]['valor_pago'], $linhas[0]['desconto_centavos']]);
+        $this->assertSame(['100,00', '100,00', 0], [$linhas[1]['valor'], $linhas[1]['valor_pago'], $linhas[1]['desconto_centavos']]);
+    }
+
+    public function test_cobranca_paga_traz_a_data_do_pagamento_para_a_correcao(): void
+    {
+        $paga = Cobranca::factory()->for($this->usuario)->for($this->cliente)->create(['vencimento' => '2026-10-05']);
+        $paga->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-28'])->save();
+        $pendente = Cobranca::factory()->for($this->usuario)->for($this->cliente)->create(['vencimento' => '2026-10-20']);
+
+        $linhas = collect($this->dados()->assertOk()->json('linhas'))->keyBy('id');
+
+        $this->assertSame('2026-10-28', $linhas[$paga->id]['pago_em_iso']);
+        $this->assertNull($linhas[$pendente->id]['pago_em_iso']);
+    }
+
     public function test_filtro_de_contrato_mostra_so_as_cobrancas_daquele_contrato(): void
     {
         // Encerrados: sem isso, a previsão calculada pelo próprio contrato entra na lista e confunde a contagem.

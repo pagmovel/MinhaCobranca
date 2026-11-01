@@ -12,6 +12,19 @@ test('valor entra pelos centavos', () => {
     assert.equal(f.valor('00012'), '0,12');
 });
 
+test('percentual aceita até 3 dígitos inteiros e 2 decimais, com vírgula', () => {
+    assert.equal(f.percentual(''), '');
+    assert.equal(f.percentual('10'), '10');
+    assert.equal(f.percentual('12,5'), '12,5');
+    assert.equal(f.percentual('12.5'), '12,5', 'o ponto vira vírgula');
+    assert.equal(f.percentual('12,'), '12,', 'a vírgula sozinha fica: a pessoa ainda vai digitar os decimais');
+    assert.equal(f.percentual(',5'), '0,5');
+    assert.equal(f.percentual('1234'), '123');
+    assert.equal(f.percentual('12,345'), '12,34');
+    assert.equal(f.percentual('1,2,3'), '1,23', 'separador repetido é ignorado');
+    assert.equal(f.percentual('1a0%'), '10', 'letra e % não entram');
+});
+
 test('documento vira CPF até 11 dígitos e CNPJ (inclusive com letras) depois', () => {
     assert.equal(f.documento('529'), '529');
     assert.equal(f.documento('52998224725'), '529.982.247-25');

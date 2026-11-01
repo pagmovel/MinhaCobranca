@@ -54,4 +54,12 @@ class DinheiroTest extends TestCase
         $this->assertSame('0,05', Dinheiro::formatar(5));
         $this->assertSame('0,00', Dinheiro::formatar(0));
     }
+
+    public function test_formata_valor_negativo_com_o_sinal_na_frente(): void
+    {
+        $this->assertSame('-24,76', Dinheiro::formatar(-2476));
+        $this->assertSame('-0,50', Dinheiro::formatar(-50));
+        $this->assertSame('-0,05', Dinheiro::formatar(-5));
+        $this->assertSame('-1.234.567,89', Dinheiro::formatar(-123456789));
+    }
 }

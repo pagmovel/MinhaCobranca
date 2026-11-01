@@ -30,6 +30,8 @@ final class RenderizadorDeRecibo
         $extenso = ValorPorExtenso::converter($servico['valor_centavos']);
         $itens = $servico['itens'] ?? [];
         $texto = TextoDoRecibo::compor($itens, $servico['descricao']);
+        // Dado vivo, como situação e pago_em: só a cobrança paga com desconto preenche os campos de desconto e valor líquido.
+        $comDesconto = $cobranca->status === StatusCobranca::Paga && $cobranca->desconto_centavos > 0;
 
         return [
             'numero' => $recibo->numeroFormatado(),
@@ -59,6 +61,8 @@ final class RenderizadorDeRecibo
                 'obs_periodo' => 'Obs.: Período de '.$periodo,
             ],
             'valor' => Dinheiro::formatar($servico['valor_centavos']),
+            'desconto' => $comDesconto ? Dinheiro::formatar($cobranca->desconto_centavos) : null,
+            'valor_pago' => $comDesconto ? Dinheiro::formatar($cobranca->valorPagoCentavos()) : null,
             'valor_extenso' => $extenso,
             'informacoes' => ['Valor por extenso: '.$extenso.'.'],
             'gerado_em' => $agora->format('d/m/Y H:i'),

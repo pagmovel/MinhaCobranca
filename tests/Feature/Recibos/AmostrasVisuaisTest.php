@@ -3,6 +3,7 @@
 namespace Tests\Feature\Recibos;
 
 use App\Enums\FormaPagamento;
+use App\Enums\StatusCobranca;
 use App\Enums\TipoChavePix;
 use App\Models\ChavePix;
 use App\Models\Cliente;
@@ -79,6 +80,27 @@ class AmostrasVisuaisTest extends TestCase
             // Amostra com PIX para a conferência visual (V4) e para escanear o QR no celular.
             $comPix = $this->pdf($modelo, "- Hospedagem do domínio exemplo.com.br\n- Servidor de Arquivos", ['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $this->chave->id])->output();
             Storage::disk('local')->put("verificacao/amostra-{$modelo}-pix.pdf", $comPix);
+        }
+    }
+
+    /** Fase 26: o desconto e o valor pago entram nos campos que já existiam, sem empurrar o recibo para a página 2. */
+    public function test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos(): void
+    {
+        $descricao = implode("\n", array_map(fn (int $linha) => "- Item {$linha} do serviço prestado no período", range(1, 25)));
+        $paga = ['status' => StatusCobranca::Paga, 'pago_em' => '2026-09-13', 'valor_centavos' => 24757];
+        $casos = [
+            'desconto' => $paga + ['desconto_centavos' => 2476],
+            'integral' => $paga + ['desconto_centavos' => 24757],
+            'sem-desconto' => $paga,
+        ];
+
+        foreach (['webiss', 'danfse'] as $modelo) {
+            foreach ($casos as $caso => $cobranca) {
+                $pdf = $this->pdf($modelo, $descricao, $cobranca);
+                Storage::disk('local')->put("verificacao/amostra-{$modelo}-paga-{$caso}.pdf", $pdf->output());
+
+                $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$modelo} paga ({$caso})");
+            }
         }
     }
 

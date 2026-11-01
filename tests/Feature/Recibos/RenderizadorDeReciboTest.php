@@ -14,6 +14,7 @@ use App\Services\EmissorDeRecibos;
 use App\Services\RenderizadorDeRecibo;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class RenderizadorDeReciboTest extends TestCase
@@ -122,6 +123,70 @@ class RenderizadorDeReciboTest extends TestCase
         $dados = $this->renderizador->dados($recibo->fresh(), CarbonImmutable::now());
         $this->assertSame(['texto' => 'PAGO', 'detalhe' => 'em 09/10/2026', 'classe' => 'pago'], $dados['carimbo']);
         $this->assertSame('Pago em 09/10/2026', $dados['situacao']);
+    }
+
+    /** @return array<string, array{string, string, string, string}> família, campo do desconto, valor líquido e valor cheio */
+    public static function familiasComOsCamposDoDesconto(): array
+    {
+        return [
+            'webiss' => [
+                'webiss',
+                'Desc. Cond. (R$)</span><span class="val">24,76<',
+                'Valor Líquido (R$)</span><span class="val">222,81<',
+                'Valor Total (R$)</span><span style="display: block; font-size: 12pt; font-weight: bold;">247,57<',
+            ],
+            'danfse' => [
+                'danfse',
+                'Desconto Condicionado</span><span class="val">R$ 24,76<',
+                'VALOR LÍQUIDO DO RECIBO</span><span class="val" style="font-weight: bold;">R$ 222,81<',
+                'VALOR DA OPERAÇÃO / SERVIÇO</span><span class="val">R$ 247,57<',
+            ],
+        ];
+    }
+
+    #[DataProvider('familiasComOsCamposDoDesconto')]
+    public function test_paga_com_desconto_preenche_desconto_e_valor_liquido_e_mantem_o_valor_total(string $familia, string $campoDesconto, string $campoLiquido, string $campoValorCheio): void
+    {
+        $recibo = $this->recibo(['modelo' => $familia], [
+            'valor_centavos' => 24757, 'desconto_centavos' => 2476, 'status' => StatusCobranca::Paga, 'pago_em' => '2026-10-09',
+        ]);
+
+        $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+        $html = view($recibo->modelo->view(), $dados)->render();
+
+        $this->assertSame('24,76', $dados['desconto']);
+        $this->assertSame('222,81', $dados['valor_pago']);
+        $this->assertSame('247,57', $dados['valor']);
+        $this->assertStringContainsString($campoDesconto, $html);
+        $this->assertStringContainsString($campoLiquido, $html);
+        $this->assertStringContainsString($campoValorCheio, $html);
+    }
+
+    public function test_desconto_integral_mostra_valor_pago_zero(): void
+    {
+        $recibo = $this->recibo([], [
+            'valor_centavos' => 24757, 'desconto_centavos' => 24757, 'status' => StatusCobranca::Paga, 'pago_em' => '2026-10-09',
+        ]);
+
+        $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+
+        $this->assertSame('247,57', $dados['desconto']);
+        $this->assertSame('0,00', $dados['valor_pago']);
+    }
+
+    public function test_sem_desconto_ou_sem_estar_paga_desconto_e_valor_pago_sao_nulos(): void
+    {
+        $pagaSemDesconto = $this->recibo([], ['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-09']);
+        $pendente = $this->recibo([], ['desconto_centavos' => 500]);
+
+        foreach ([$pagaSemDesconto, $pendente] as $recibo) {
+            $dados = $this->renderizador->dados($recibo, CarbonImmutable::now());
+
+            $this->assertArrayHasKey('desconto', $dados);
+            $this->assertNull($dados['desconto']);
+            $this->assertArrayHasKey('valor_pago', $dados);
+            $this->assertNull($dados['valor_pago']);
+        }
     }
 
     public function test_usa_o_snapshot_e_nao_o_perfil_atual(): void

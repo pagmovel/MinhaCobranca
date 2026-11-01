@@ -21,7 +21,8 @@ export function totalDoItem(quantidade, preco) {
 }
 
 export function formatarCentavos(valor) {
-    const texto = String(valor).padStart(3, '0');
+    const sinal = String(valor).startsWith('-') ? '-' : '';
+    const texto = String(valor).replace('-', '').padStart(3, '0');
 
-    return `${texto.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${texto.slice(-2)}`;
+    return `${sinal}${texto.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${texto.slice(-2)}`;
 }
