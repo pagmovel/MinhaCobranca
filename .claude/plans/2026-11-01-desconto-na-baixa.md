@@ -282,6 +282,12 @@ Condicionado` mostra `$desconto ?? '-'`; linhas 141 e 143 (valor líquido) mostr
   integral e sem desconto, 25 linhas) não podia ficar vermelho antes (o v1 ignora o desconto): é guarda contra o v2 estourar a
   página; passa em 1 página.
 
+### Tarefa 3b — Desconto em R$ no lote e texto de ajuda — **Estado: testada**
+
+Pedido do Marcos ao ver a tela (2026-11-01): o lote ganha o mesmo seletor `% | R$` da baixa individual (R$ = o mesmo valor em cada
+cobrança, limite na menor pendente selecionada), e as três telas ganham um texto de ajuda sobre o seletor. Substitui o
+`desconto_percentual` da Tarefa 3 (nunca publicado). Brief: `.superpowers/sdd/2026-11-01-desconto-na-baixa/tarefa-3b-brief.md`.
+
 ### Tarefa 8 — Wizard, conferência e documentação — **Estado: pendente**
 
 **Arquivos:** `.claude/skills/recibos/SKILL.md` (acertos e pegadinhas da Fase 26; atualizar a regra do `-v2` com a
@@ -296,7 +302,9 @@ exceção consciente), `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), R
   `recibos` por `modelo`), o comando literal `php artisan migrate`, e só rodar com o "sim" do Marcos. Recontar depois.
 - [ ] **Passo 4: conferência no navegador** (pedir autorização antes; avisar que o browser-agent não está instalado,
   só o Playwright; conta de teste, nunca dados reais): baixa individual (%, R$, trava, troca de tipo, integral),
-  lote, correção, lista e painel, 390 px sem rolagem e 1280 px; faixa de baixa com o coach aberto e recolhido.
+  lote (% e R$, trava pela menor cobrança, prévia), correção, o texto de ajuda do seletor nas três telas (e se ele
+  quebra bem na faixa, sem desalinhar os campos), lista e painel, 390 px sem rolagem e 1280 px; faixa de baixa com o
+  coach aberto e recolhido.
 - [ ] **Passo 5:** PDF de amostra com desconto em `storage/app/private/verificacao/` para a conferência visual do
   Marcos.
 - [ ] **Passo 6:** documentação, estados deste plano, commit `docs: registra a Fase 26 (desconto na baixa)`; com tudo
@@ -304,6 +312,25 @@ exceção consciente), `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), R
   (a segunda **altera todos os recibos**); backup antes.
 
 ## Registro de execução
+
+### Tarefa 3b — desconto em R$ no lote e texto de ajuda (2026-11-01)
+
+- **Servidor:** `pagarEmLote` troca `desconto_percentual` por `desconto_tipo` + `desconto`, com as mesmas regras da baixa
+  individual (`regrasDoDesconto()` e `MENSAGENS_DO_DESCONTO`, agora compartilhadas com `descontoValidado`). A conferência
+  (`conferirDescontoDoLote`) roda **antes** da transação, só sobre as pendentes selecionadas: formato inválido → "Desconto
+  inválido."; % acima de 100 → a mensagem de percentual de antes; R$ acima da menor pendente → "O desconto não pode passar do
+  valor da menor cobrança (R$ X,XX)." Lote recusado não grava nada (teste confere status, `pago_em`, desconto e auditorias).
+- **Tela:** `BaixaEmLote` reaproveita `usarDescontoDaBaixa` (parâmetro novo `complementoDoMaximo` para o " (valor da menor
+  cobrança)"); `previaDoLote(valores, tipo, entrada)`; `menorValor()` e `semSeparadorFinal()` em `desconto.js`. O "10," agora
+  é enviado como "10" nas três telas (`transform`). O erro do desconto e o da data da `BaixaInline` foram para dentro da coluna
+  do campo; a ajuda também fica dentro da coluna, e a linha das colunas passou de `items-end` para `items-start` (com os
+  botões em `mt-4`) para a ajuda não subir o campo de desconto em relação aos outros.
+- **Asserções antigas alteradas:** só os campos de entrada dos testes de lote da Tarefa 3 (`desconto_percentual` → `desconto_tipo`
+  + `desconto`) e a mensagem esperada de "% acima de 100 ou inválido", agora separada em duas (a de percentual para 100,01 a
+  150; "Desconto inválido." para o formato errado). Nenhuma foi enfraquecida.
+- **Sem navegador:** a ajuda embaixo do campo, o alinhamento depois do `items-start`, a quebra do texto na largura do campo
+  (`w-0 min-w-full`) e o modal em 390 px só se confere na Tarefa 8. Os três componentes foram renderizados no servidor (Vite SSR,
+  sem navegador) só para pegar erro de template.
 
 ### Tarefa 7 — prova de igualdade v1 × v2 (2026-11-01, feita com o v2 já editado e antes de apagar o v1)
 

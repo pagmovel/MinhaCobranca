@@ -86,12 +86,127 @@ class AcoesEmLoteTest extends TestCase
         $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 10001]);
         $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 24757]);
 
-        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'hoje', 'desconto_percentual' => '10'])
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '10'])
             ->assertSessionHas('sucesso', '2 cobrança(s) baixada(s).');
 
         $this->assertSame([1000, 2476], [$a->fresh()->desconto_centavos, $b->fresh()->desconto_centavos]);
         $this->assertSame([9001, 22281], [$a->fresh()->valorPagoCentavos(), $b->fresh()->valorPagoCentavos()]);
         $this->assertSame(3476, $this->usuario->cobrancas()->sum('desconto_centavos'));
+    }
+
+    /** Tarefa 3b: em R$ o mesmo valor sai de cada cobrança (a soma gravada é a da prévia). */
+    public function test_lote_aplica_o_mesmo_valor_em_reais_em_cada_cobranca(): void
+    {
+        $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 10001]);
+        $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 24757]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'vencimento', 'desconto_tipo' => 'valor', 'desconto' => '20,00'])
+            ->assertSessionHas('sucesso', '2 cobrança(s) baixada(s).');
+
+        $this->assertSame([2000, 2000], [$a->fresh()->desconto_centavos, $b->fresh()->desconto_centavos]);
+        $this->assertSame([8001, 22757], [$a->fresh()->valorPagoCentavos(), $b->fresh()->valorPagoCentavos()]);
+        $this->assertSame(4000, $this->usuario->cobrancas()->sum('desconto_centavos'));
+        $this->assertSame(
+            [
+                'Baixa em lote (R$ 100,01, desconto R$ 20,00, pago R$ 80,01, em 01/10/2026)',
+                'Baixa em lote (R$ 247,57, desconto R$ 20,00, pago R$ 227,57, em 02/10/2026)',
+            ],
+            $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('alvo_id')->pluck('resumo')->all(),
+        );
+    }
+
+    /** O limite em R$ é a menor cobrança do lote: nenhuma fica negativa, e o lote recusado não grava nada. */
+    public function test_lote_com_reais_acima_da_menor_pendente_e_recusado_sem_gravar_nada(): void
+    {
+        $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 10001]);
+        $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 24757]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => '100,02'])
+            ->assertSessionHasErrors(['desconto' => 'O desconto não pode passar do valor da menor cobrança (R$ 100,01).']);
+
+        foreach ([$a, $b] as $cobranca) {
+            $this->assertSame([StatusCobranca::Pendente, null, 0], [$cobranca->fresh()->status, $cobranca->fresh()->pago_em, $cobranca->fresh()->desconto_centavos]);
+        }
+        $this->assertSame(0, $this->usuario->auditorias()->count());
+    }
+
+    public function test_lote_com_reais_igual_a_menor_e_aceito_e_a_menor_fica_com_pago_zero(): void
+    {
+        $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 10001]);
+        $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 24757]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'vencimento', 'desconto_tipo' => 'valor', 'desconto' => '100,01'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame([0, 14756], [$a->fresh()->valorPagoCentavos(), $b->fresh()->valorPagoCentavos()]);
+        $this->assertSame(
+            [
+                'Baixa em lote com desconto integral (100% = R$ 100,01, pago R$ 0,00, em 01/10/2026)',
+                'Baixa em lote (R$ 247,57, desconto R$ 100,01, pago R$ 147,56, em 02/10/2026)',
+            ],
+            $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('alvo_id')->pluck('resumo')->all(),
+        );
+    }
+
+    /** A paga ou cancelada selecionada não entra na conta do limite nem recebe desconto. */
+    public function test_limite_em_reais_ignora_a_selecionada_que_nao_esta_pendente(): void
+    {
+        $pendenteA = $this->cobranca(['valor_centavos' => 10001]);
+        $pendenteB = $this->cobranca(['valor_centavos' => 24757]);
+        $paga = $this->cobranca(['valor_centavos' => 1500]);
+        $paga->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-01', 'desconto_centavos' => 300])->save();
+        $cancelada = $this->cobranca(['valor_centavos' => 500]);
+        $cancelada->forceFill(['status' => StatusCobranca::Cancelada])->save();
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$pendenteA->id, $pendenteB->id, $paga->id, $cancelada->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => '20'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('sucesso', '2 cobrança(s) baixada(s). 2 ignorada(s) (não estavam pendentes).');
+
+        $this->assertSame([2000, 2000, 300, 0], [$pendenteA->fresh()->desconto_centavos, $pendenteB->fresh()->desconto_centavos, $paga->fresh()->desconto_centavos, $cancelada->fresh()->desconto_centavos]);
+        $this->assertSame('2026-10-01', $paga->fresh()->pago_em->toDateString());
+    }
+
+    /** Selecionadas que não são pendentes não deixam ninguém sem limite: sem pendente, não há o que baixar nem o que limitar. */
+    public function test_lote_so_com_nao_pendentes_nao_grava_nem_da_erro_de_limite(): void
+    {
+        $paga = $this->cobranca(['valor_centavos' => 1500]);
+        $paga->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-01'])->save();
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$paga->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => '99'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('sucesso', '0 cobrança(s) baixada(s). 1 ignorada(s) (não estavam pendentes).');
+
+        $this->assertSame(0, $paga->fresh()->desconto_centavos);
+    }
+
+    public function test_lote_com_desconto_sem_tipo_ou_com_tipo_invalido_e_recusado(): void
+    {
+        $cobranca = $this->cobranca(['valor_centavos' => 10000]);
+        $this->actingAs($this->usuario);
+
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto' => '10'])
+            ->assertSessionHasErrors(['desconto_tipo' => 'Escolha se o desconto é em % ou em R$.']);
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'abatimento', 'desconto' => '10'])
+            ->assertSessionHasErrors(['desconto_tipo' => 'Tipo de desconto inválido.']);
+
+        $this->assertSame([StatusCobranca::Pendente, 0], [$cobranca->fresh()->status, $cobranca->fresh()->desconto_centavos]);
+    }
+
+    public function test_lote_com_reais_invalido_e_recusado_sem_gravar_nada(): void
+    {
+        $cobranca = $this->cobranca(['valor_centavos' => 10000]);
+        $this->actingAs($this->usuario);
+
+        foreach (['abc', '-5', '1e3', '+5', '1,234,56', '10%'] as $entrada) {
+            $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => $entrada])
+                ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
+        }
+
+        // Pedido montado fora da tela: o desconto como lista é erro de validação, não 500.
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => ['10']])
+            ->assertSessionHasErrors('desconto');
+
+        $this->assertSame([StatusCobranca::Pendente, 0], [$cobranca->fresh()->status, $cobranca->fresh()->desconto_centavos]);
     }
 
     public function test_lote_com_percentual_so_desconta_nas_pendentes_selecionadas(): void
@@ -101,27 +216,29 @@ class AcoesEmLoteTest extends TestCase
         $paga = $this->cobranca(['valor_centavos' => 10000]);
         $paga->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-01', 'desconto_centavos' => 300])->save();
 
-        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$pendente->id, $paga->id], 'modo' => 'hoje', 'desconto_percentual' => '50'])
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$pendente->id, $paga->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '50'])
             ->assertSessionHas('sucesso', '1 cobrança(s) baixada(s). 1 ignorada(s) (não estavam pendentes).');
 
         $this->assertSame([5000, 0, 300], [$pendente->fresh()->desconto_centavos, $naoSelecionada->fresh()->desconto_centavos, $paga->fresh()->desconto_centavos]);
         $this->assertSame(StatusCobranca::Pendente, $naoSelecionada->fresh()->status);
     }
 
-    public function test_lote_sem_percentual_continua_sem_desconto(): void
+    public function test_lote_sem_desconto_continua_sem_desconto(): void
     {
         $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 1000]);
         $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 2000]);
         $c = $this->cobranca(['vencimento' => '2026-10-03', 'valor_centavos' => 3000]);
+        $d = $this->cobranca(['vencimento' => '2026-10-04', 'valor_centavos' => 4000]);
 
         $this->actingAs($this->usuario);
         $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id], 'modo' => 'vencimento'])->assertSessionHasNoErrors();
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$b->id], 'modo' => 'vencimento', 'desconto_percentual' => ''])->assertSessionHasNoErrors();
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'vencimento', 'desconto_percentual' => '0'])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$b->id], 'modo' => 'vencimento', 'desconto_tipo' => 'percentual', 'desconto' => ''])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'vencimento', 'desconto_tipo' => 'percentual', 'desconto' => '0'])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$d->id], 'modo' => 'vencimento', 'desconto_tipo' => 'valor', 'desconto' => ''])->assertSessionHasNoErrors();
 
-        $this->assertSame([0, 0, 0], [$a->fresh()->desconto_centavos, $b->fresh()->desconto_centavos, $c->fresh()->desconto_centavos]);
+        $this->assertSame([0, 0, 0, 0], [$a->fresh()->desconto_centavos, $b->fresh()->desconto_centavos, $c->fresh()->desconto_centavos, $d->fresh()->desconto_centavos]);
         $this->assertSame(
-            ['Baixa em lote (R$ 10,00, paga em 01/10/2026)', 'Baixa em lote (R$ 20,00, paga em 02/10/2026)', 'Baixa em lote (R$ 30,00, paga em 03/10/2026)'],
+            ['Baixa em lote (R$ 10,00, paga em 01/10/2026)', 'Baixa em lote (R$ 20,00, paga em 02/10/2026)', 'Baixa em lote (R$ 30,00, paga em 03/10/2026)', 'Baixa em lote (R$ 40,00, paga em 04/10/2026)'],
             $this->usuario->auditorias()->where('acao', 'cobranca.paga')->orderBy('id')->pluck('resumo')->all(),
         );
     }
@@ -131,14 +248,19 @@ class AcoesEmLoteTest extends TestCase
         $cobranca = $this->cobranca(['valor_centavos' => 10000]);
         $this->actingAs($this->usuario);
 
-        foreach (['100,01', '101', '150', '1000', '-5', 'abc', '10,555', '10%'] as $percentual) {
-            $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_percentual' => $percentual])
-                ->assertSessionHasErrors('desconto_percentual');
+        foreach (['100,01', '101', '150'] as $percentual) {
+            $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => $percentual])
+                ->assertSessionHasErrors(['desconto' => 'Percentual inválido: use de 0 a 100, com até 2 casas decimais.']);
+        }
+
+        foreach (['1000', '-5', 'abc', '10,555', '10%'] as $percentual) {
+            $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => $percentual])
+                ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
         }
 
         // Pedido montado fora da tela: o percentual como lista é erro de validação, não 500.
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_percentual' => ['10']])
-            ->assertSessionHasErrors('desconto_percentual');
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => ['10']])
+            ->assertSessionHasErrors('desconto');
 
         $this->assertSame(StatusCobranca::Pendente, $cobranca->fresh()->status);
         $this->assertSame(0, $cobranca->fresh()->desconto_centavos);
@@ -151,9 +273,9 @@ class AcoesEmLoteTest extends TestCase
         $c = $this->cobranca(['valor_centavos' => 10000]);
         $this->actingAs($this->usuario);
 
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id], 'modo' => 'hoje', 'desconto_percentual' => '100'])->assertSessionHasNoErrors();
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$b->id], 'modo' => 'hoje', 'desconto_percentual' => '12,5'])->assertSessionHasNoErrors();
-        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'hoje', 'desconto_percentual' => '12.5'])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$a->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '100'])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$b->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '12,5'])->assertSessionHasNoErrors();
+        $this->post('/cobrancas/lote/pagar', ['ids' => [$c->id], 'modo' => 'hoje', 'desconto_tipo' => 'percentual', 'desconto' => '12.5'])->assertSessionHasNoErrors();
 
         $this->assertSame([10000, 1250, 1250], [$a->fresh()->desconto_centavos, $b->fresh()->desconto_centavos, $c->fresh()->desconto_centavos]);
     }
@@ -163,7 +285,7 @@ class AcoesEmLoteTest extends TestCase
         $a = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 10001]);
         $b = $this->cobranca(['vencimento' => '2026-10-02', 'valor_centavos' => 24757]);
 
-        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'vencimento', 'desconto_percentual' => '10']);
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$a->id, $b->id], 'modo' => 'vencimento', 'desconto_tipo' => 'percentual', 'desconto' => '10']);
 
         $this->assertSame(
             [
@@ -178,7 +300,7 @@ class AcoesEmLoteTest extends TestCase
     {
         $cobranca = $this->cobranca(['vencimento' => '2026-10-01', 'valor_centavos' => 24757]);
 
-        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'vencimento', 'desconto_percentual' => '100']);
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$cobranca->id], 'modo' => 'vencimento', 'desconto_tipo' => 'percentual', 'desconto' => '100']);
 
         $this->assertSame(
             'Baixa em lote com desconto integral (100% = R$ 247,57, pago R$ 0,00, em 01/10/2026)',

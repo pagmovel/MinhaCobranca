@@ -1,6 +1,6 @@
 import { computed, watch } from 'vue';
 import { criarAvisoTemporario } from './avisoTemporario.js';
-import { descontoEmCentavos, travarDesconto } from './desconto.js';
+import { descontoEmCentavos, semSeparadorFinal, travarDesconto } from './desconto.js';
 import { formatarCentavos } from './itens.js';
 
 export const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
@@ -8,13 +8,14 @@ export const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
 /**
  * Lógica dos campos de desconto da baixa (BaixaInline e CorrecaoPagamentoInline) sobre um `useForm` com
  * `desconto_tipo` e `desconto`: valor pago ao vivo, trava em 100%, trocar % ↔ R$ limpa o número, aviso que some.
- * `valorCentavos` é uma função (a prop pode mudar). A trava roda num `watch` do número, não num `@input`: a ordem
- * entre `v-model` e `v-mascara` mudaria o texto que o `@input` enxerga.
+ * `valorCentavos` é uma função (a prop pode mudar; no lote, a menor cobrança). A trava roda num `watch` do número, não
+ * num `@input`: a ordem entre `v-model` e `v-mascara` mudaria o texto que o `@input` enxerga.
+ * `complementoDoMaximo`: texto depois de "Máximo: R$ X,XX" (no lote, " (valor da menor cobrança)").
  */
-export function usarDescontoDaBaixa(form, valorCentavos) {
+export function usarDescontoDaBaixa(form, valorCentavos, { complementoDoMaximo = '' } = {}) {
     const emReais = computed(() => form.desconto_tipo === 'valor');
     // A vírgula no fim ("12,") é digitação em curso: conta como o número antes dela, senão o valor pago pisca.
-    const descontoCentavos = computed(() => descontoEmCentavos(valorCentavos(), form.desconto_tipo, form.desconto.replace(/[.,]$/, '')) ?? 0);
+    const descontoCentavos = computed(() => descontoEmCentavos(valorCentavos(), form.desconto_tipo, semSeparadorFinal(form.desconto)) ?? 0);
     const valorPagoCentavos = computed(() => valorCentavos() - descontoCentavos.value);
     const descontoIntegral = computed(() => valorCentavos() > 0 && descontoCentavos.value === valorCentavos());
     const { aviso, mostrar, limpar } = criarAvisoTemporario();
@@ -32,7 +33,7 @@ export function usarDescontoDaBaixa(form, valorCentavos) {
         const { entrada, travou } = travarDesconto(valorCentavos(), form.desconto_tipo, form.desconto);
         if (travou) {
             form.desconto = entrada;
-            mostrar(emReais.value ? `Máximo: R$ ${formatarCentavos(valorCentavos())}` : 'Máximo: 100%');
+            mostrar(emReais.value ? `Máximo: R$ ${formatarCentavos(valorCentavos())}${complementoDoMaximo}` : 'Máximo: 100%');
         }
     });
 

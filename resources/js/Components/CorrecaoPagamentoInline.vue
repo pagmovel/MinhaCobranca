@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { semSeparadorFinal } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
 import { TEXTO_INTEGRAL, usarDescontoDaBaixa } from '../usarDescontoDaBaixa.js';
 
@@ -46,7 +47,7 @@ const abrir = async (qual) => {
 };
 const fechar = () => { modo.value = null; emit('fechar'); };
 
-const confirmar = () => form.post(
+const confirmar = () => form.transform((dados) => ({ ...dados, desconto: semSeparadorFinal(dados.desconto) })).post(
     `/cobrancas/${props.cobrancaId}/${modo.value === 'corrigir' ? 'corrigir-pagamento' : 'desfazer-baixa'}`,
     {
         preserveScroll: true,
@@ -63,7 +64,8 @@ const confirmar = () => form.post(
     </span>
     <form v-else class="aparecer grid w-full gap-2 border border-carbono/20 bg-papel p-3 sm:grid-cols-2" @submit.prevent="confirmar" @keydown.esc="fechar">
         <p class="text-sm font-medium sm:col-span-2">{{ titulo }}</p>
-        <div v-if="modo === 'corrigir'" class="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2 sm:col-span-2">
+        <!-- items-start: a ajuda e o erro ficam embaixo dos campos sem subir o campo de desconto em relação aos outros. -->
+        <div v-if="modo === 'corrigir'" class="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 sm:col-span-2">
             <label class="flex flex-col font-estreita text-xs">
                 Data certa do pagamento
                 <input ref="primeiroCampo" v-model="form.pago_em" type="date" class="entrada" :max="hoje" required>
@@ -85,13 +87,16 @@ const confirmar = () => form.post(
                         :placeholder="emReais ? '0,00' : '0'"
                         class="entrada w-24"
                         :aria-invalid="erroDoDesconto ? 'true' : undefined"
-                        :aria-describedby="erroDoDesconto ? `${idDesconto}-erro` : undefined"
+                        :aria-describedby="erroDoDesconto ? `${idDesconto}-ajuda ${idDesconto}-erro` : `${idDesconto}-ajuda`"
                     >
                     <select v-model="form.desconto_tipo" class="entrada w-auto" aria-label="Tipo do desconto: percentual ou reais">
                         <option value="percentual">%</option>
                         <option value="valor">R$</option>
                     </select>
                 </div>
+                <!-- w-0 min-w-full: o texto quebra na largura do campo, sem alargar a coluna. -->
+                <p :id="`${idDesconto}-ajuda`" class="mt-1 w-0 min-w-full text-xs text-grafite/80">Escolha % ou R$ e digite o desconto.</p>
+                <p v-if="erroDoDesconto" :id="`${idDesconto}-erro`" class="mt-1 w-0 min-w-full text-xs text-tinta-vermelha">{{ erroDoDesconto }}</p>
             </div>
             <div class="flex flex-col font-estreita text-xs">
                 Valor pago
@@ -99,7 +104,6 @@ const confirmar = () => form.post(
                     R$ <span :key="valorPagoCentavos" class="destacar inline-block px-1">{{ formatarCentavos(valorPagoCentavos) }}</span>
                 </span>
             </div>
-            <p v-if="erroDoDesconto" :id="`${idDesconto}-erro`" class="w-full text-xs text-tinta-vermelha">{{ erroDoDesconto }}</p>
             <Transition name="surgir">
                 <p v-if="aviso" aria-hidden="true" class="w-full text-xs text-tinta-laranja">{{ aviso }}</p>
             </Transition>

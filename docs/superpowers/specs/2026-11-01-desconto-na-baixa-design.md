@@ -13,7 +13,9 @@ falta o valor e o desconto. Para o desconto, o usuário poderá digitar um perce
 - **Recibo mostra o desconto**, em modelos `webiss-v2` e `danfse-v2`, preenchendo os campos que o layout já
   tem: "Desconto condicionado" e "Valor líquido" (campo confirmado pelo usuário). **O v2 substitui o v1**: os
   recibos existentes passam para v2 por migração de dados, e o v1 sai do código.
-- **Baixa em lote aceita desconto**: um percentual único para todas as selecionadas, com prévia por cobrança.
+- **Baixa em lote aceita desconto**, com o mesmo seletor `% | R$` da baixa individual e prévia por cobrança. *(Decisão de
+  2026-11-01, depois de ver a tela, no lugar de "um percentual único": o Marcos pediu "campo com seletor" nas três telas, com
+  um texto de ajuda, e, em R$, "mesmo valor em cada uma" — R$ 20,00 tira R$ 20,00 de cada cobrança selecionada.)*
 - **Desconto errado se corrige no "Corrigir pagamento"** (senha + motivo), que passa a aceitar data e desconto.
 
 **Estado antes desta fase (lido no código em 2026-11-01):**
@@ -64,15 +66,33 @@ R$ 247,57        [ 10   ] [% | R$]     R$ 222,81         [01/11/2026]     [Confi
   teste.
 - Valor pago recalculado a cada tecla, com `.destacar` quando muda. Com 100%: aviso laranja "Desconto integral:
   nada será recebido."
-- Erro do servidor embaixo do campo que errou. 390 px sem rolagem horizontal (os campos quebram linha).
+- **Texto de ajuda sempre visível embaixo do campo** (pedido do Marcos, 2026-11-01: a tela só mostrava o percentual e
+  nada dizia que também dava para digitar um valor): "Escolha % ou R$ e digite o desconto." Ligado ao campo por
+  `aria-describedby`, junto do id do erro quando houver, e sem alargar a coluna do campo.
+- "10," (separador no fim, digitação em curso) vale 10 na prévia e no valor pago, e é **enviado** como "10": o servidor
+  não recebe o separador sobrando.
+- Erro do servidor embaixo do campo que errou (o do desconto e o da data, dentro da coluna de cada campo). 390 px sem
+  rolagem horizontal (os campos quebram linha).
 
-**Baixa em lote** (`BaixaEmLote.vue`): campo opcional "Desconto (%) para todas" (padrão 0), com a mesma trava em
-100%. A prévia lista, por
-cobrança, valor, desconto e valor pago, com totais. Confirmação em dois cliques, como hoje. O servidor aplica a
-mesma regra a cada cobrança (arredondamento por cobrança).
+**Baixa em lote** (`BaixaEmLote.vue`): rótulo "Desconto para todas" e o **mesmo campo com seletor `% | R$`** da
+baixa individual (mesma lógica, `usarDescontoDaBaixa.js`: trava, trocar limpa o número, aviso). Opcional (vazio = sem
+desconto).
+- **%:** o mesmo percentual em cada cobrança, arredondado por cobrança. Trava em 100.
+- **R$:** o mesmo valor sai de **cada** cobrança selecionada (R$ 20,00 tira R$ 20,00 de todas). O campo trava no valor da
+  **menor** cobrança elegível (pendente), para nenhuma ficar negativa; aviso "Máximo: R$ X,XX (valor da menor
+  cobrança)". Em %, "Máximo: 100%".
+- Texto de ajuda: "Escolha % ou R$. O desconto vale para cada cobrança: em R$, o mesmo valor sai de todas."
+- A prévia lista, por cobrança, valor, desconto e valor pago, com totais, nos dois tipos (o total da prévia é igual à soma
+  gravada). Confirmação em dois cliques, como hoje.
+- **Servidor** (`desconto_tipo` + `desconto`, as mesmas regras da baixa individual): o desconto vale só para as
+  **pendentes** selecionadas; paga ou cancelada selecionada não entra no limite nem recebe desconto. O lote é recusado
+  **inteiro**, sem gravar nada, com erro no campo `desconto`: formato inválido ("Desconto inválido."), percentual acima de
+  100 ("Percentual inválido: use de 0 a 100, com até 2 casas decimais.") e R$ acima da menor pendente ("O desconto não
+  pode passar do valor da menor cobrança (R$ X,XX)."). R$ igual à menor é aceito (essa fica com pago R$ 0,00 e audita como
+  integral).
 
 **Corrigir pagamento** (`CorrecaoPagamentoInline.vue`): além da data, os campos de desconto (preenchidos com o
-desconto atual em R$) e o valor pago novo.
+desconto atual em R$) e o valor pago novo, com o mesmo texto de ajuda da baixa individual.
 
 **Lista de cobranças:** paga com desconto mostra o valor cheio e, embaixo, menor, "pago R$ 222,81". A aba e o rodapé
 "Pagas" somam o valor pago (coerente com o Recebido); as demais situações continuam com o valor cheio.
@@ -153,7 +173,11 @@ Pontos de contato conferidos no código e o que esta fase garante:
 - Migração v1 → v2: troca só `modelo` dos recibos v1 (WebISS e DANFSe), não toca nos outros campos; `down` volta.
   Testes que citam v1 (`TrocaDeModeloTest`, `AcoesCobrancaTest`, `UsuarioModeloTest`, `PdfReciboTest`,
   `EmissaoReciboTest`) passam a esperar v2.
-- Lote: percentual aplicado a cada cobrança com arredondamento próprio; prévia igual ao gravado.
+- Lote (decisão de 2026-11-01): percentual aplicado a cada cobrança com arredondamento próprio e R$ igual em todas; prévia
+  igual ao gravado nos dois tipos (mesmo exemplo no PHP e no JS: 10001 e 24757, 10% → 1000 e 2476; R$ 20,00 → 2000 e 2000).
+  Limite em R$ pela menor **pendente** (a paga selecionada não conta), R$ igual à menor aceito, acima recusado sem gravar
+  nada; desconto sem tipo, tipo inválido e formato inválido recusados; vazio = sem desconto. Em JS: trava pela menor e envio
+  sem o separador final.
 - Corrigir: muda desconto com senha e motivo, auditoria com antes/depois. Desfazer: zera o desconto.
 - Painel e relatórios: recebido = valor − desconto; CSV byte a byte atualizado; total por produto bate com o painel.
 - Recibo: v2 preenche os dois campos e cabe em 1 página (`AmostrasVisuaisTest`, combinações com desconto); v2 sem

@@ -1715,12 +1715,13 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   senão o valor pago voltava ao cheio e piscava enquanto a pessoa digitava os decimais.
 
 ### Acertos (Tarefa 3 — baixa em lote)
-- **Um percentual para o lote, arredondado por cobrança:** `pagarEmLote` recebe `desconto_percentual` (opcional) e grava
+- **(Tarefa 3b: o lote agora também aceita R$, com `desconto_tipo` + `desconto`; veja "Acertos (Tarefa 3b)".) Um percentual para
+  o lote, arredondado por cobrança:** `pagarEmLote` recebia `desconto_percentual` (opcional) e grava
   `Desconto::centavos(valor, PERCENTUAL, $percentual)` em cada pendente selecionada (10001 e 24757 a 10% → 1000 e 2476,
   soma 3476). Cobrança já paga ou alheia continua ignorada, sem mexer no desconto dela.
 - **Validação em `Desconto::percentualValido`** (formato + de 0 a 100; vazio vale 0), numa regra `Closure` com `bail` na
-  frente (testado: sem `bail`, `desconto_percentual[]=10` chega à closure e deixa de dar erro de validação). O erro sai no campo `desconto_percentual`, que a
-  tela mostra embaixo do campo. Percentual acima de 100 **não** passa pelo "desconto > valor" da baixa individual: com
+  frente (testado: sem `bail`, `desconto_percentual[]=10` chega à closure e deixa de dar erro de validação). O erro saía no campo `desconto_percentual`
+  (na 3b é `desconto`, e o `desconto` em lista cai na regra `string`, sem closure). Percentual acima de 100 **não** passa pelo "desconto > valor" da baixa individual: com
   valor 0 esse teste deixaria 150% passar.
 - **`resumoDaBaixa($registro, $tipo, $entrada, $emLote)`** não lê mais o `Request` (achado da revisão da Tarefa 2).
   Textos do lote: "Baixa em lote (R$ …, paga em …)" sem desconto; "Baixa em lote (R$ …, desconto 10% = R$ …, pago R$ …,
@@ -1789,6 +1790,35 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
 - **Amostra com desconto em 1 página:** `AmostrasVisuaisTest::test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos`
   (desconto, 100% e sem desconto, 25 linhas de descrição). Não fica vermelho antes do template (o v1 ignora o desconto): é
   guarda contra o v2 estourar a página.
+
+### Acertos (Tarefa 3b — desconto em R$ no lote e texto de ajuda)
+- **Pedido do Marcos ao ver a tela (2026-11-01):** "a tela só mostra valor percentual e nenhum help informando que também
+  pode digitar um valor monetário". Decisões dele: **campo com seletor `% | R$` nas três telas** (baixa individual, lote e
+  corrigir pagamento) com um **texto de ajuda sempre visível**; no lote, R$ é **o mesmo valor em cada cobrança** (R$ 20,00
+  tira R$ 20,00 de cada uma), e o campo trava na **menor** cobrança. Isso substitui o "um percentual único" da Tarefa 3.
+- **Servidor:** `pagarEmLote` recebe `desconto_tipo` + `desconto` (o `desconto_percentual` nunca foi publicado e saiu).
+  `regrasDoDesconto()` e `MENSAGENS_DO_DESCONTO` são **um lugar só** para a baixa individual, a correção e o lote. A conferência
+  (`conferirDescontoDoLote`) roda **antes** da transação e só sobre as **pendentes** selecionadas: a paga ou cancelada
+  selecionada não entra na conta do limite nem recebe desconto, e lote recusado não grava nada. Mensagens, no campo `desconto`:
+  formato inválido → "Desconto inválido." (vem primeiro, porque `Desconto::centavos` devolve `null`); % acima de 100 → a de
+  percentual; R$ acima da menor → "O desconto não pode passar do valor da menor cobrança (R$ X,XX)." R$ igual à menor é aceito
+  (ela fica com pago 0,00 e audita como integral; as outras, "desconto R$ 20,00"). `Collection::min()` sem pendente dá `null`:
+  não há limite, e nada é baixado.
+- **Tela:** `BaixaEmLote` reaproveita `usarDescontoDaBaixa(form, () => menorValor(valores), { complementoDoMaximo: ' (valor da menor
+  cobrança)' })`; nenhuma cópia dos `watch`. Do que o composable devolve, o lote usa só `emReais`, `aviso` e `erroDoDesconto`: **não** usar
+  `anuncio`/`descontoIntegral` ali (diriam "nada será recebido" quando só a menor zera). `menorValor([])` é 0, não `Infinity`: o
+  `BigInt` de `descontoEmCentavos` lança com valor que não é inteiro. `previaDoLote(valores, tipo, entrada)` faz a mesma conta do
+  servidor nos dois tipos (teste com o mesmo exemplo: R$ 20,00 em 10001 e 24757 → 2000 e 2000, soma 4000).
+- **"10," é enviado como "10":** `semSeparadorFinal` (`desconto.js`) é a única função que tira o separador do fim; a prévia, o
+  valor pago e o `transform` do envio (nas três telas) a usam. Sem isso a tela mostrava 10 e o servidor recusava "10,".
+- **Layout do texto de ajuda e do erro (sem navegador, a conferir na Tarefa 8):** o texto fica **dentro da coluna do campo**, com
+  `w-0 min-w-full` (quebra na largura do campo, não alarga a coluna). Isso mudou a linha da `BaixaInline` e da
+  `CorrecaoPagamentoInline` de `items-end` para `items-start` (com `items-end`, a ajuda subia o campo de desconto em relação aos
+  outros) e os botões da `BaixaInline` ganharam um `div` com `mt-4` (= a altura do rótulo, 16 px). O erro do desconto e o da data da
+  `BaixaInline`, que ficavam depois dos botões, foram para a coluna do campo. Ajuda e erro entram no `aria-describedby`.
+- **Componente Vue renderizado sem navegador:** o `Modal` usa `document` num `watch` imediato; para renderizar o `BaixaEmLote` no
+  Vite SSR, atribuir um `document` mínimo (`activeElement`, `body.style`, `addEventListener`...) **depois** de carregar o Vue
+  (antes disso o `runtime-dom` quebra com `doc.createElement is not a function`) e registrar uma diretiva `mascara` vazia.
 
 ### Pegadinhas
 - **Teste antigo travava o formato do `antes`/`depois`:** `AuditoriaTest` comparava `['pago_em' => …]` exato; acrescentar

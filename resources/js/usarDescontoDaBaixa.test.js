@@ -69,6 +69,25 @@ test('em % o número trava em 100 e avisa; em R$ trava no valor da cobrança', a
     assert.equal(aviso.value, 'Máximo: R$ 247,57');
 });
 
+// Lote: o valor de referência é o da menor cobrança e o aviso diz isso.
+test('com o complemento, o aviso do máximo em R$ cita a menor cobrança; em % continua igual', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const form = criarForm({ desconto_tipo: 'valor' });
+    const { aviso } = usarDescontoDaBaixa(form, () => 10001, { complementoDoMaximo: ' (valor da menor cobrança)' });
+
+    form.desconto = '150,00';
+    await nextTick();
+    assert.equal(form.desconto, '100,01');
+    assert.equal(aviso.value, 'Máximo: R$ 100,01 (valor da menor cobrança)');
+
+    form.desconto_tipo = 'percentual';
+    await nextTick();
+    form.desconto = '150';
+    await nextTick();
+    assert.equal(form.desconto, '100');
+    assert.equal(aviso.value, 'Máximo: 100%');
+});
+
 test('dentro do limite o número fica como digitado, sem aviso', async () => {
     const form = criarForm();
     const { aviso } = usarDescontoDaBaixa(form, () => 24757);

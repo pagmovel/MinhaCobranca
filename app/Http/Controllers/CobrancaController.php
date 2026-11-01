@@ -18,7 +18,7 @@ use App\Support\Desconto;
 use App\Support\Dinheiro;
 use App\Support\ItensDeVenda;
 use Carbon\CarbonImmutable;
-use Closure;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -249,31 +249,54 @@ class CobrancaController extends Controller
             'ids' => ['required', 'array', 'max:200'],
             'ids.*' => ['integer'],
             'modo' => ['required', Rule::in(['vencimento', 'hoje'])],
-            // Um percentual só para o lote; cada cobrança arredonda o seu (a tela trava em 100, aqui confere de novo).
-            'desconto_percentual' => ['bail', 'nullable', 'string', function (string $atributo, mixed $valor, Closure $falhar) {
-                if (! Desconto::percentualValido($valor)) {
-                    $falhar('Percentual inválido: use de 0 a 100, com até 2 casas decimais.');
-                }
-            }],
-        ]);
+            ...$this->regrasDoDesconto(),
+        ], self::MENSAGENS_DO_DESCONTO);
 
         $hoje = CarbonImmutable::today();
-        $percentual = $dados['desconto_percentual'] ?? null;
+        $tipo = $dados['desconto_tipo'] ?? Desconto::PERCENTUAL;
+        $entrada = $dados['desconto'] ?? null;
         $pedidas = count($dados['ids']);
         $cobrancas = $request->user()->cobrancas()->whereIn('id', $dados['ids'])->where('status', StatusCobranca::Pendente)->get();
 
-        DB::transaction(function () use ($cobrancas, $dados, $hoje, $percentual, $request) {
+        // Antes de gravar qualquer uma: lote recusado não baixa nada.
+        $this->conferirDescontoDoLote($cobrancas, $tipo, $entrada);
+
+        DB::transaction(function () use ($cobrancas, $dados, $hoje, $tipo, $entrada, $request) {
             foreach ($cobrancas as $registro) {
                 $pagoEm = $dados['modo'] === 'hoje' ? $hoje : $registro->vencimento->min($hoje);
                 $registro->status = StatusCobranca::Paga;
                 $registro->pago_em = $pagoEm;
-                $registro->desconto_centavos = Desconto::centavos($registro->valor_centavos, Desconto::PERCENTUAL, $percentual);
+                $registro->desconto_centavos = Desconto::centavos($registro->valor_centavos, $tipo, $entrada);
                 $registro->save();
-                Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, Desconto::PERCENTUAL, $percentual, emLote: true));
+                Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $tipo, $entrada, emLote: true));
             }
         });
 
         return back()->with('sucesso', $this->resumoDoLote($cobrancas->count(), $pedidas, 'baixada'));
+    }
+
+    /**
+     * O desconto do lote vale para cada pendente selecionada: o mesmo percentual (arredondado por cobrança) ou o mesmo valor
+     * em R$, que não pode passar da menor delas (nenhuma fica negativa). Paga ou cancelada selecionada não entra na conta.
+     *
+     * @param  Collection<int, Cobranca>  $pendentes
+     */
+    private function conferirDescontoDoLote(Collection $pendentes, string $tipo, ?string $entrada): void
+    {
+        $menor = $pendentes->min('valor_centavos');
+        $centavos = Desconto::centavos($menor ?? 0, $tipo, $entrada);
+
+        if ($centavos === null) {
+            throw ValidationException::withMessages(['desconto' => 'Desconto inválido.']);
+        }
+
+        if ($tipo === Desconto::PERCENTUAL && ! Desconto::percentualValido($entrada)) {
+            throw ValidationException::withMessages(['desconto' => 'Percentual inválido: use de 0 a 100, com até 2 casas decimais.']);
+        }
+
+        if ($tipo === Desconto::VALOR && $menor !== null && $centavos > $menor) {
+            throw ValidationException::withMessages(['desconto' => 'O desconto não pode passar do valor da menor cobrança (R$ '.Dinheiro::formatar($menor).').']);
+        }
     }
 
     /** T17.19: cancelamento de várias cobranças de uma vez. */
@@ -436,19 +459,31 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Baixa registrada.');
     }
 
+    private const MENSAGENS_DO_DESCONTO = [
+        'desconto_tipo.required_with' => 'Escolha se o desconto é em % ou em R$.',
+        'desconto_tipo.in' => 'Tipo de desconto inválido.',
+    ];
+
+    /**
+     * Campos do desconto, iguais na baixa individual, na correção e no lote.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function regrasDoDesconto(): array
+    {
+        return [
+            'desconto_tipo' => ['nullable', 'required_with:desconto', Rule::in([Desconto::PERCENTUAL, Desconto::VALOR])],
+            'desconto' => ['nullable', 'string', 'max:20'],
+        ];
+    }
+
     /**
      * Desconto da baixa em centavos, conferido de novo no servidor (a tela já trava em 100%):
      * 0 ≤ desconto ≤ valor. Sem desconto digitado, 0.
      */
     private function descontoValidado(Request $request, int $valorCentavos): int
     {
-        $dados = $request->validate([
-            'desconto_tipo' => ['nullable', 'required_with:desconto', Rule::in([Desconto::PERCENTUAL, Desconto::VALOR])],
-            'desconto' => ['nullable', 'string', 'max:20'],
-        ], [
-            'desconto_tipo.required_with' => 'Escolha se o desconto é em % ou em R$.',
-            'desconto_tipo.in' => 'Tipo de desconto inválido.',
-        ]);
+        $dados = $request->validate($this->regrasDoDesconto(), self::MENSAGENS_DO_DESCONTO);
 
         $centavos = Desconto::centavos($valorCentavos, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
 

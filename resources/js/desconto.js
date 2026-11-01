@@ -45,12 +45,21 @@ export function descontoEmCentavos(valorCentavos, tipo, entrada) {
 }
 
 /**
- * Prévia da baixa em lote: o mesmo percentual em cada valor, arredondado por cobrança (como o servidor grava),
- * e os totais somam as linhas. A vírgula final ("12,") é digitação em curso: conta como o número antes dela.
+ * A vírgula ou ponto no fim ("12,") é digitação em curso: conta como o número antes dela na prévia e no valor pago,
+ * e o envio manda o mesmo (senão o servidor recusa "12,").
  */
-export function previaDoLote(valoresCentavos, entrada) {
+export const semSeparadorFinal = (entrada) => String(entrada ?? '').replace(/[.,]$/, '');
+
+/** Menor valor do lote (limite do desconto em R$); 0 sem cobrança, porque o BigInt de `descontoEmCentavos` recusa Infinity. */
+export const menorValor = (valoresCentavos) => (valoresCentavos.length ? Math.min(...valoresCentavos) : 0);
+
+/**
+ * Prévia da baixa em lote: o mesmo percentual (arredondado por cobrança) ou o mesmo valor em R$ em cada cobrança,
+ * como o servidor grava, e os totais somam as linhas.
+ */
+export function previaDoLote(valoresCentavos, tipo, entrada) {
     const linhas = valoresCentavos.map((valor) => {
-        const desconto = descontoEmCentavos(valor, PERCENTUAL, String(entrada ?? '').replace(/[.,]$/, '')) ?? 0;
+        const desconto = descontoEmCentavos(valor, tipo, semSeparadorFinal(entrada)) ?? 0;
 
         return { valor, desconto, pago: valor - desconto };
     });

@@ -1,9 +1,9 @@
 <script setup>
-import { computed, ref, useId, watch } from 'vue';
+import { computed, ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { criarAvisoTemporario } from '../avisoTemporario.js';
-import { previaDoLote, travarDesconto } from '../desconto.js';
+import { menorValor, previaDoLote, semSeparadorFinal } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
+import { usarDescontoDaBaixa } from '../usarDescontoDaBaixa.js';
 import Modal from './Modal.vue';
 
 // `cobrancas`: linhas selecionadas na tela (id, cliente, vencimento, valor_centavos, situacao). Previstas/pagas/canceladas
@@ -18,26 +18,16 @@ const aindaNaoVenceram = computed(() => elegiveis.value.filter((c) => c.situacao
 
 const idDesconto = useId();
 const modo = ref('vencimento');
-const form = useForm({ ids: [], modo: 'vencimento', desconto_percentual: '' });
+const form = useForm({ ids: [], modo: 'vencimento', desconto_tipo: 'percentual', desconto: '' });
 
+const valores = computed(() => elegiveis.value.map((c) => c.valor_centavos));
 // Valor, desconto e valor pago de cada cobrança, e os totais: a mesma conta que o servidor grava.
-const previa = computed(() => previaDoLote(elegiveis.value.map((c) => c.valor_centavos), form.desconto_percentual));
+const previa = computed(() => previaDoLote(valores.value, form.desconto_tipo, form.desconto));
 
-const { aviso, mostrar: mostrarAviso } = criarAvisoTemporario();
+// Mesma lógica do seletor da baixa individual; no lote o limite em R$ é a menor cobrança (nenhuma fica negativa).
+const { emReais, aviso, erroDoDesconto } = usarDescontoDaBaixa(form, () => menorValor(valores.value), { complementoDoMaximo: ' (valor da menor cobrança)' });
 
-// A trava roda num watch, não em @input: o v-model registra o ouvinte no `created` e a diretiva no `mounted`,
-// então um @input veria o texto ainda sem máscara.
-watch(() => form.desconto_percentual, () => {
-    form.clearErrors('desconto_percentual');
-    // Percentual não depende do valor da cobrança: o 0 só preenche o parâmetro.
-    const { entrada, travou } = travarDesconto(0, 'percentual', form.desconto_percentual);
-    if (travou) {
-        form.desconto_percentual = entrada;
-        mostrarAviso('Máximo: 100%');
-    }
-});
-
-const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.value.map((c) => c.id), modo: modo.value }))
+const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.value.map((c) => c.id), modo: modo.value, desconto: semSeparadorFinal(dados.desconto) }))
     .post('/cobrancas/lote/pagar', { preserveScroll: true, onSuccess: () => emit('sucesso') });
 </script>
 
@@ -63,19 +53,26 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
             </label>
         </fieldset>
         <div class="mt-4 flex flex-col font-estreita text-xs">
-            <label :for="idDesconto">Desconto (%) para todas</label>
-            <input
-                :id="idDesconto"
-                v-model="form.desconto_percentual"
-                v-mascara="'percentual'"
-                inputmode="decimal"
-                autocomplete="off"
-                placeholder="0"
-                class="entrada w-24"
-                :aria-invalid="form.errors.desconto_percentual ? 'true' : undefined"
-                :aria-describedby="form.errors.desconto_percentual ? `${idDesconto}-erro` : undefined"
-            >
-            <p v-if="form.errors.desconto_percentual" :id="`${idDesconto}-erro`" class="mt-1 text-xs text-tinta-vermelha">{{ form.errors.desconto_percentual }}</p>
+            <label :for="idDesconto">Desconto para todas</label>
+            <div class="flex gap-1">
+                <input
+                    :id="idDesconto"
+                    v-model="form.desconto"
+                    v-mascara="emReais ? 'valor' : 'percentual'"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    :placeholder="emReais ? '0,00' : '0'"
+                    class="entrada w-24"
+                    :aria-invalid="erroDoDesconto ? 'true' : undefined"
+                    :aria-describedby="erroDoDesconto ? `${idDesconto}-ajuda ${idDesconto}-erro` : `${idDesconto}-ajuda`"
+                >
+                <select v-model="form.desconto_tipo" class="entrada w-auto" aria-label="Tipo do desconto: percentual ou reais">
+                    <option value="percentual">%</option>
+                    <option value="valor">R$</option>
+                </select>
+            </div>
+            <p :id="`${idDesconto}-ajuda`" class="mt-1 text-xs text-grafite/80">Escolha % ou R$. O desconto vale para cada cobrança: em R$, o mesmo valor sai de todas.</p>
+            <p v-if="erroDoDesconto" :id="`${idDesconto}-erro`" class="mt-1 text-xs text-tinta-vermelha">{{ erroDoDesconto }}</p>
             <Transition name="surgir">
                 <p v-if="aviso" aria-hidden="true" class="mt-1 text-xs text-tinta-laranja">{{ aviso }}</p>
             </Transition>
