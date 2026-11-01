@@ -12,6 +12,7 @@ use App\Models\Contrato;
 use App\Models\ProdutoServico;
 use App\Models\User;
 use App\Services\GeradorDeCobrancas;
+use App\Support\CondicoesDePagamento;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -246,13 +247,51 @@ class ContratosTest extends TestCase
         $this->assertSame(['valor', 26060, 'valor', 99900, null, null], $this->condicoesGravadas($usuario->contratos()->sole()));
     }
 
+    public function test_multa_em_reais_acima_do_maximo_e_recusada(): void
+    {
+        [$usuario, $cliente] = $this->usuarioComCliente();
+        $this->actingAs($usuario);
+        $mensagem = 'Informe um valor em reais, como 15,00, de no máximo R$ 99.999.999,99.';
+
+        // Um centavo acima do teto dos preços e o valor enorme que ainda cabe no inteiro do PHP: o mesmo erro, no campo.
+        $this->post('/contratos', $this->dados($cliente, ['multa_tipo' => 'valor', 'multa' => '100.000.000,00']))
+            ->assertSessionHasErrors(['multa' => $mensagem]);
+        $this->post('/contratos', $this->dados($cliente, ['multa_tipo' => 'valor', 'multa' => '9999999999999999,99']))
+            ->assertSessionHasErrors(['multa' => $mensagem]);
+        $this->assertSame(0, $usuario->contratos()->count());
+
+        $this->post('/contratos', $this->dados($cliente, ['multa_tipo' => 'valor', 'multa' => '99.999.999,99']))
+            ->assertRedirect('/contratos')->assertSessionHasNoErrors();
+        $this->assertSame(9_999_999_999, $usuario->contratos()->sole()->multa_valor);
+    }
+
+    public function test_juros_em_reais_acima_do_maximo_e_recusada(): void
+    {
+        [$usuario, $cliente] = $this->usuarioComCliente();
+        $this->actingAs($usuario);
+        $mensagem = 'Informe um valor em reais, como 15,00, de no máximo R$ 99.999.999,99.';
+
+        $this->post('/contratos', $this->dados($cliente, ['juros_tipo' => 'valor', 'juros' => '100.000.000,00']))
+            ->assertSessionHasErrors(['juros' => $mensagem]);
+        $this->post('/contratos', $this->dados($cliente, ['juros_tipo' => 'valor', 'juros' => '9999999999999999,99']))
+            ->assertSessionHasErrors(['juros' => $mensagem]);
+        $this->assertSame(0, $usuario->contratos()->count());
+
+        // No teto, a conta de juros com atraso continua em inteiro (antes do teto, o valor gravado dava TypeError no intdiv).
+        $this->post('/contratos', $this->dados($cliente, ['juros_tipo' => 'valor', 'juros' => '99.999.999,99']))
+            ->assertRedirect('/contratos')->assertSessionHasNoErrors();
+        $contrato = $usuario->contratos()->sole();
+        $this->assertSame(9_999_999_999, $contrato->juros_valor);
+        $this->assertSame(3333333333, CondicoesDePagamento::jurosCentavos(10000, 'valor', $contrato->juros_valor, 10));
+    }
+
     public function test_formato_ou_tipo_invalido_das_condicoes_e_recusado(): void
     {
         [$usuario, $cliente] = $this->usuarioComCliente();
         $this->actingAs($usuario);
 
         $this->post('/contratos', $this->dados($cliente, ['multa_tipo' => 'valor', 'multa' => 'abc']))
-            ->assertSessionHasErrors(['multa' => 'Informe um valor em reais, como 15,00.']);
+            ->assertSessionHasErrors(['multa' => 'Informe um valor em reais, como 15,00, de no máximo R$ 99.999.999,99.']);
         $this->post('/contratos', $this->dados($cliente, ['multa_tipo' => 'dobro', 'multa' => '2']))
             ->assertSessionHasErrors('multa_tipo');
         $this->post('/contratos', $this->dados($cliente, ['juros' => '1']))

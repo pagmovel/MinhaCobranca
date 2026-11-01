@@ -492,6 +492,14 @@ class ContratoController extends Controller
             return back()->withErrors(['data_inicio' => 'O novo início precisa ser depois de '.$registro->data_fim->format('d/m/Y').'.']);
         }
 
+        // O desconto em R$ vem do contrato antigo, mas o valor pode ter sido renegociado: a regra do cadastro vale aqui também.
+        $valorNovo = $request->resumoDosItens()['valor_centavos'];
+        if ($registro->desconto_pontualidade_tipo === Desconto::VALOR && $registro->desconto_pontualidade_valor > $valorNovo) {
+            return back()->withErrors([
+                'desconto_pontualidade' => 'O desconto não pode passar do valor do contrato (R$ '.Dinheiro::formatar($valorNovo).').',
+            ]);
+        }
+
         $novo = DB::transaction(function () use ($request, $registro, $inicio, $encerrador) {
             $encerrador->encerrar($registro, $registro->data_fim, false, CarbonImmutable::today());
 

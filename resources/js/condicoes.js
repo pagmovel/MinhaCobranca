@@ -9,6 +9,8 @@ import { formatadores } from './mascaras.js';
 const PERCENTUAL = 'percentual';
 const VALOR = 'valor';
 const DIA_EM_MILISSEGUNDOS = 86_400_000;
+/** Teto de sanidade do R$ da regra (R$ 99.999.999,99, o mesmo de App\Rules\ValorEmReais::MAXIMO_CENTAVOS). */
+export const MAXIMO_EM_CENTAVOS = 9_999_999_999;
 
 /** Dia do calendário de "AAAA-MM-DD" (UTC: sem fuso nem horário de verão na conta); null se não for uma data. */
 function diaDoCalendario(iso) {
@@ -57,7 +59,12 @@ export function regraDaEntrada(tipo, entrada) {
         return pontos !== null && pontos <= CEM_POR_CENTO ? pontos : null;
     }
 
-    return tipo === VALOR ? descontoEmCentavos(0, VALOR, texto) : null;
+    if (tipo !== VALOR) {
+        return null;
+    }
+    const centavos = descontoEmCentavos(0, VALOR, texto);
+
+    return centavos > MAXIMO_EM_CENTAVOS ? null : centavos;
 }
 
 /** Multa e desconto são a mesma conta do desconto da baixa, aplicada à regra gravada no contrato. */

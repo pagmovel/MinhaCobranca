@@ -44,6 +44,7 @@ class CondicoesDePagamentoTest extends TestCase
             'regra zero' => [21000, 'valor', 0, 30, 0],
             'dias negativos' => [21000, 'percentual', 100, -5, 0],
             'sem estouro' => [1000000000, 'percentual', 10000, 3650, 121666666667],
+            'valor no teto, 10 dias' => [10000, 'valor', 9_999_999_999, 10, 3333333333],
         ];
     }
 
@@ -84,6 +85,9 @@ class CondicoesDePagamentoTest extends TestCase
             'reais inválido' => ['valor', 'abc', null],
             'reais negativo' => ['valor', '-5', null],
             'reais gigante' => ['valor', '99999999999999999999', null],
+            'reais exatamente no teto' => ['valor', '99.999.999,99', 9_999_999_999],
+            'reais um centavo acima do teto' => ['valor', '100.000.000,00', null],
+            'reais enorme que ainda cabe no inteiro' => ['valor', '9999999999999999,99', null],
             'tipo desconhecido' => ['abatimento', '10', null],
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Rules\ValorEmReais;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
@@ -55,7 +56,8 @@ final class CondicoesDePagamento
 
     /**
      * O que se digitou no contrato virou regra: vazio ou 0 é 0 (sem regra); formato inválido ou percentual acima
-     * de 100% é null. Percentual vira pontos-base; R$, centavos.
+     * de 100% é null. Percentual vira pontos-base; R$, centavos, até {@see ValorEmReais::MAXIMO_CENTAVOS}: acima
+     * disso é null (teto de sanidade, o mesmo dos preços, para a conta de juros caber no inteiro).
      */
     public static function regraDaEntrada(string $tipo, ?string $entrada): ?int
     {
@@ -71,7 +73,13 @@ final class CondicoesDePagamento
             return $pontosBase !== null && $pontosBase <= 10000 ? $pontosBase : null;
         }
 
-        return $tipo === Desconto::VALOR ? Desconto::centavos(0, $tipo, $texto) : null;
+        if ($tipo !== Desconto::VALOR) {
+            return null;
+        }
+
+        $centavos = Desconto::centavos(0, $tipo, $texto);
+
+        return $centavos !== null && $centavos > ValorEmReais::MAXIMO_CENTAVOS ? null : $centavos;
     }
 
     /** A regra como se digita no campo: 1500 percentual → "15", 250 → "2,5", 1500 R$ → "15,00"; sem regra, "". */

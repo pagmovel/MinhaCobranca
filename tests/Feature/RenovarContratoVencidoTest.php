@@ -98,6 +98,23 @@ class RenovarContratoVencidoTest extends TestCase
         $this->assertSame(1000, $antigo->fresh()->desconto_pontualidade_valor);
     }
 
+    public function test_renovar_vencido_recusa_desconto_em_reais_acima_do_novo_valor_do_contrato(): void
+    {
+        // Desconto de R$ 350,00 copiado do contrato antigo; os itens renovados somam R$ 300,00.
+        $antigo = $this->contratoVencido(['desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 35000]);
+
+        $this->actingAs($this->usuario)->renovar($antigo)
+            ->assertSessionHasErrors(['desconto_pontualidade' => 'O desconto não pode passar do valor do contrato (R$ 300,00).']);
+
+        $this->assertSame(1, $this->usuario->contratos()->count());
+        $this->assertTrue($antigo->fresh()->ativo);
+
+        // Igual ao novo valor passa (como no cadastro).
+        $antigo->update(['desconto_pontualidade_valor' => 30000]);
+        $this->renovar($antigo)->assertSessionHasNoErrors();
+        $this->assertSame(2, $this->usuario->contratos()->count());
+    }
+
     public function test_renovar_vencido_sem_condicoes_cria_contrato_sem_condicoes(): void
     {
         $antigo = $this->contratoVencido();

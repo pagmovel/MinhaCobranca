@@ -74,8 +74,9 @@ mesmos casos de teste:
 3. **Cobrança avulsa** não tem regra e só aceita lançamento manual na baixa.
 4. **Desconto** continua sobre o valor original e limitado a ele (`0 ≤ desconto ≤ valor`). Para perdoar a multa, zera-se o
    campo dela.
-5. **Limites:** cada percentual vai até 100% e até 2 casas decimais; R$ sem teto. No contrato, desconto em R$ acima do
-   valor do contrato é recusado.
+5. **Limites:** cada percentual vai até 100% e até 2 casas decimais; R$ de multa e juros (e de desconto) vão até
+   R$ 99.999.999,99, o mesmo teto dos preços, só para a conta caber no inteiro (não é limite do valor da cobrança). No
+   contrato, desconto em R$ acima do valor do contrato é recusado, inclusive ao renovar contrato vencido com itens novos.
 6. **Sem trava legal.** A multa não é limitada a 2%. `[A VERIFICAR]`: pela memória, o CDC, art. 52, §1º, limita a multa de
    mora a 2% em relações de consumo; a fonte não foi consultada. O sistema atende também empresas, então a escolha do
    percentual é de quem preenche o contrato.

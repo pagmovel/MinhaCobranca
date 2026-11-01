@@ -8,6 +8,7 @@ use App\Http\Requests\Concerns\RegrasDeItens;
 use App\Http\Requests\Concerns\RegrasDePagamento;
 use App\Rules\AnoValido;
 use App\Rules\LinhasMaximas;
+use App\Rules\ValorEmReais;
 use App\Support\CondicoesDePagamento;
 use App\Support\Desconto;
 use App\Support\Dinheiro;
@@ -96,7 +97,7 @@ class ContratoRequest extends FormRequest
                 if (CondicoesDePagamento::regraDaEntrada($tipo, $valor) === null) {
                     $falhar($tipo === Desconto::PERCENTUAL
                         ? 'Informe um percentual de 0 a 100, com até 2 casas decimais.'
-                        : 'Informe um valor em reais, como 15,00.');
+                        : 'Informe um valor em reais, como 15,00, de no máximo R$ '.Dinheiro::formatar(ValorEmReais::MAXIMO_CENTAVOS).'.');
                 }
             }],
         ];

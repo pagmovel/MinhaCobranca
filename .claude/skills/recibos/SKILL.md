@@ -1872,3 +1872,9 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   O total do formulário vem de `totalDosItens` (novo em `itens.js`, usado também por `SecaoItens`).
 - **Renderização sem navegador** do componente (script no scratchpad, técnica da Fase 26): rótulo, `aria-describedby="x-ajuda x-erro"`, `aria-invalid`, etiqueta, `somenteReais` e o `select` com `:value` saem certos.
   **Não conferido (sem navegador):** digitação com a máscara, a trava e o aviso, o exemplo ao vivo, 390 px e 1280 px. Fica na conferência da Tarefa 10.
+- **Rodada de correção (Tarefa 2): teto no R$ da regra e desconto na renovação.** Multa e juros em R$ sem teto gravavam `999999999999999999`, e a baixa daria `TypeError` em `intdiv` (o produto vira float). O teto
+  (`ValorEmReais::MAXIMO_CENTAVOS`, R$ 99.999.999,99, em JS `MAXIMO_EM_CENTAVOS` de `condicoes.js`) mora na **regra única**: `regraDaEntrada` devolve `null` para R$ acima dele, em PHP e JS, com os mesmos casos
+  (exatamente o teto passa, um centavo acima não; o número gigante deixou de divergir entre as duas linguagens). O erro do contrato é um só para formato e teto, sem segunda conversão: "Informe um valor em reais, como
+  15,00, de no máximo R$ 99.999.999,99." A spec §1 regra 5 deixou de dizer "R$ sem teto". `renovarVencido` também recusa desconto em R$ maior que o novo total dos itens (mesma mensagem do cadastro, erro em
+  `desconto_pontualidade`, antes de encerrar o contrato antigo); o erro aparece na seção "Renovar contrato" com as duas saídas (subir o preço dos itens ou reduzir o desconto e salvar antes), porque o campo do desconto está no
+  formulário principal, fora dessa seção. Armadilha: o desconto da renovação vem do contrato antigo, não do pedido, então a checagem fica no controlador e não no `RenovarContratoVencidoRequest`.

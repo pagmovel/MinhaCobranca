@@ -373,6 +373,11 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                     <input id="renovacao_data_inicio" v-model="formRenovacaoVencido.data_inicio" type="date" class="entrada">
                 </Campo>
                 <SecaoItens :form="formRenovacaoVencido" escopo="renovacao_" />
+                <!-- O desconto em R$ é o do contrato antigo, que fica fora desta seção: o erro traz as duas saídas. -->
+                <p v-if="formRenovacaoVencido.errors.desconto_pontualidade" class="text-sm text-tinta-vermelha sm:col-span-6">
+                    {{ formRenovacaoVencido.errors.desconto_pontualidade }}
+                    Aumente os preços dos itens acima, ou reduza o desconto em "Condições de pagamento" e salve o contrato antes de renovar.
+                </p>
                 <div class="flex items-center gap-2 sm:col-span-6">
                     <button type="button" class="botao" :disabled="formRenovacaoVencido.processing" @click="confirmarRenovacaoVencido">
                         Confirmar renovação

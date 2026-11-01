@@ -45,6 +45,7 @@ const juros = [
     [21000, 'percentual', null, 30, 0],
     [21000, 'valor', 0, 30, 0],
     [21000, 'percentual', 100, -5, 0],
+    [10000, 'valor', 9_999_999_999, 10, 3333333333],
     [1000000000, 'percentual', 10000, 3650, 121666666667], // o produto passa de 2^53: só BigInt acerta
 ];
 
@@ -89,6 +90,10 @@ const entradas = [
     ['valor', '  ', 0],
     ['valor', 'abc', null],
     ['valor', '-5', null],
+    ['valor', '99999999999999999999', null],
+    ['valor', '99.999.999,99', 9_999_999_999],
+    ['valor', '100.000.000,00', null],
+    ['valor', '9999999999999999,99', null],
     ['abatimento', '10', null],
 ];
 
