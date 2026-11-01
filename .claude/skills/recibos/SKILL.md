@@ -1689,7 +1689,7 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
 ## Fase 26 — valor e desconto na baixa (2026-11-01)
 
 Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md`.
-Estado: Tarefas 1 a 8 (com a 3b) concluídas e testadas na suíte; faltam o portão da migração dos recibos no Postgres local e a conferência no
+Estado: Tarefas 1 a 7 e 3b testadas; a 8 concluída (faltam a migração dos recibos no Postgres local e a conferência no navegador); o portão da migração dos recibos no Postgres local e a conferência no
 navegador (ambos com o Marcos), depois o merge. **Deploy:** as duas migrações rodam no `migrate --force`; a segunda **altera todos os recibos**
 (só o campo `modelo`): avisar o Marcos e fazer backup antes.
 
@@ -1816,7 +1816,7 @@ navegador (ambos com o Marcos), depois o merge. **Deploy:** as duas migrações 
   `Desconto::centavos` captura e devolve `null`; a raiz continua em `Dinheiro` (afeta também a regra `ValorEmReais`), não corrigida.
 - **`trim()` do PHP não tira o NBSP (U+00A0); o do JS tira.** Entrada só com NBSP dava `null` no servidor e `0` na tela. `desconto.js` corta só espaço ASCII
   (`aparar`) e os dois testes têm o caso. Achado comparando PHP × JS com 8.000 entradas sorteadas: ao duplicar uma regra, comparar as duas implementações com
-  entradas aleatórias, não só com casos escritos à mão.
+  entradas aleatórias, não só com casos escritos à mão. Divergências conhecidas (fora do que a tela deixa digitar): R$ com 20 dígitos (PHP `null`, JS `1e22`; a trava da tela limita) e tab no meio de `"R$\t5"` (PHP 500 via `Dinheiro::paraCentavos`, JS `null`).
 - **`$attributes` é obrigatório para coluna nova com default:** sem `desconto_centavos => 0` ali, o objeto recém-criado pela factory vem com `null` até ser relido
   (mesma pegadinha de `User`, Fase 25).
 - **Tela sem teste automático:** não há jsdom nem Vue Test Utils (dependência nova exige aprovação). Manter a lógica em módulos `.js` testados com `node --test`

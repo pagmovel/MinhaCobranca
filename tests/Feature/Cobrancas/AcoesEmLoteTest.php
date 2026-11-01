@@ -331,6 +331,20 @@ class AcoesEmLoteTest extends TestCase
         $this->assertSame(StatusCobranca::Pendente, $alheia->fresh()->status);
     }
 
+    /** A de outro usuário, menor que o desconto em R$, não entra na conta do limite nem é alterada. */
+    public function test_limite_em_reais_ignora_a_cobranca_de_outro_usuario(): void
+    {
+        $propria = $this->cobranca(['valor_centavos' => 24757]);
+        $alheia = Cobranca::factory()->create(['valor_centavos' => 500]);
+
+        $this->actingAs($this->usuario)->post('/cobrancas/lote/pagar', ['ids' => [$propria->id, $alheia->id], 'modo' => 'hoje', 'desconto_tipo' => 'valor', 'desconto' => '20'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('sucesso', '1 cobrança(s) baixada(s). 1 ignorada(s) (não estavam pendentes).');
+
+        $this->assertSame([2000, 0], [$propria->fresh()->desconto_centavos, $alheia->fresh()->desconto_centavos]);
+        $this->assertSame([StatusCobranca::Paga, StatusCobranca::Pendente], [$propria->fresh()->status, $alheia->fresh()->status]);
+    }
+
     public function test_pagar_e_marcar_enviada_registram_auditoria(): void
     {
         $cobranca = $this->cobranca(['vencimento' => '2026-10-01']);

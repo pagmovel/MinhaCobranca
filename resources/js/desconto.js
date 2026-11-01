@@ -17,7 +17,7 @@ function pontosBase(texto) {
 
 /** Mesma leitura de App\Support\Dinheiro::paraCentavos: "1.234,56", "260,6", "R$ 260". */
 function reais(texto) {
-    let limpo = texto.replace(/R\$|[  ]/g, '');
+    let limpo = texto.replace(/R\$|[ \u00A0]/g, '');
     if (limpo.includes(',')) {
         limpo = limpo.replace(/\./g, '').replace(/,/g, '.');
     } else if (/^\d{1,3}(\.\d{3})+$/.test(limpo)) {

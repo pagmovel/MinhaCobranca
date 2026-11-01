@@ -39,8 +39,8 @@ const invalidos = [
     ['percentual', '1000'],
     ['percentual', '10,123'],
     ['percentual', '10%'],
-    ['percentual', ' '], // o trim() do PHP não tira o espaço inseparável; o do JS tiraria
-    ['valor', ' '],
+    ['percentual', '\u00A0'], // o trim() do PHP não tira o espaço inseparável; o do JS tiraria
+    ['valor', '\u00A0'],
     ['valor', '1,234,56'],
     ['abatimento', '10'],
 ];

@@ -66,7 +66,7 @@ entrada)` e `travarDesconto(valor, tipo, entrada) → { entrada, travou }` (% ac
   desconto (PHP e JS)`.
 
   Registro: o JS em R$ espelha `Dinheiro::paraCentavos` (não "centavos = dígitos"), por decisão do controlador; PHP e JS
-  conferidos com 8.000 entradas sorteadas, 0 diferenças; os dois cortam só espaço ASCII nas pontas.
+  conferidos com 8.000 entradas sorteadas; divergem só em R$ com dígitos demais (20 dígitos: PHP `null`, JS `1e22`; a trava da tela limita) e em tab no meio de `"R$\t5"` (PHP 500 via `Dinheiro::paraCentavos`, JS `null`); os dois cortam só espaço ASCII nas pontas.
 
 ### Tarefa 2 — Baixa individual com valor e desconto — **Estado: testada**
 
@@ -209,3 +209,7 @@ desconto — WebISS e DANFSe × pendente, pendente com PIX e paga — e exigia `
 - **1ª rodada** (WebISS com `$desconto ?? '-'`, como o brief dizia): **falhou** em `webiss pendente`, diferença única: `0,00` no v1 × `-` no v2. A spec §3 manda
   "sem desconto, o v2 é igual ao v1", então o padrão do WebISS é `0,00`.
 - **2ª rodada** (`?? '0,00'`): 1 teste, 13 asserções, HTML idêntico nos 6 casos. O DANFSe passou nas duas rodadas.
+
+### Correção final da revisão (2026-11-01)
+
+NBSP trocado pelo escape de U+00A0 em `desconto.js` e no teste; frase "0 diferenças" corrigida (plano e skill); novo teste do lote com cobrança de outro usuário; estado "Tarefas 1 a 7 e 3b testadas; a 8 concluída" na skill e no roteiro.
