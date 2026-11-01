@@ -143,7 +143,7 @@
         <tr>
             <td class="num"><span class="rot">Valor dos Serviços (R$)</span><span class="val">{{ $valor }}</span></td>
             @foreach (['Deduções (R$)', 'Desc. Cond. (R$)', 'Desc. Incond. (R$)', 'B.C. do ISS (R$)', 'Alíquota ISS (%)', 'ISS (R$)', 'ISS Retido (R$)'] as $rotulo)
-                <td class="num"><span class="rot">{{ $rotulo }}</span><span class="val">0,00</span></td>
+                <td class="num"><span class="rot">{{ $rotulo }}</span><span class="val">{{ $rotulo === 'Desc. Cond. (R$)' ? ($desconto ?? '0,00') : '0,00' }}</span></td>
             @endforeach
         </tr>
     </table>
@@ -152,7 +152,7 @@
             @foreach (['B.C. do IBS/CBS (R$)', 'Alíquota IBS/CBS (%)', 'Redução IBS/CBS (%)', 'IBS (R$)', 'CBS (R$)'] as $rotulo)
                 <td class="num"><span class="rot">{{ $rotulo }}</span><span class="val">0,00</span></td>
             @endforeach
-            <td class="num"><span class="rot">Valor Líquido (R$)</span><span class="val">{{ $valor }}</span></td>
+            <td class="num"><span class="rot">Valor Líquido (R$)</span><span class="val">{{ $valor_pago ?? $valor }}</span></td>
             <td class="num"><span class="rot">Valor Total (R$)</span><span style="display: block; font-size: 12pt; font-weight: bold;">{{ $valor }}</span></td>
         </tr>
     </table>

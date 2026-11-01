@@ -49,7 +49,14 @@ class UsuarioModeloTest extends TestCase
 
     public function test_familia_do_modelo_aponta_para_a_versao_atual(): void
     {
-        $this->assertSame('recibos.pdf.webiss-v1', FamiliaModelo::Webiss->versaoAtual()->view());
-        $this->assertSame('recibos.pdf.danfse-v1', FamiliaModelo::Danfse->versaoAtual()->view());
+        $this->assertSame('recibos.pdf.webiss-v2', FamiliaModelo::Webiss->versaoAtual()->view());
+        $this->assertSame('recibos.pdf.danfse-v2', FamiliaModelo::Danfse->versaoAtual()->view());
+    }
+
+    /** Fase 26: o wizard grava a família; a versão não vira opção nos selects de modelo. */
+    public function test_selects_de_modelo_continuam_com_as_duas_familias(): void
+    {
+        $this->assertSame(['webiss', 'danfse'], array_column(FamiliaModelo::opcoes(), 'valor'));
+        $this->assertCount(2, FamiliaModelo::opcoes());
     }
 }

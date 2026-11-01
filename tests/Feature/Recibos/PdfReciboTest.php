@@ -40,7 +40,7 @@ class PdfReciboTest extends TestCase
         $cliente = Cliente::factory()->for($usuario)->create(['modelo' => 'danfse']);
         $recibo = app(EmissorDeRecibos::class)->emitir(Cobranca::factory()->for($usuario)->for($cliente)->create());
 
-        $this->assertSame('recibos.pdf.danfse-v1', $recibo->modelo->view());
+        $this->assertSame('recibos.pdf.danfse-v2', $recibo->modelo->view());
         $this->actingAs($usuario)->get("/recibos/{$recibo->id}/pdf")
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');

@@ -237,7 +237,7 @@ produto ganha a linha `item => 'Descontos concedidos'` com `recebido` = −(soma
   agregado nas consultas novas (PostgreSQL); **não conferido no PostgreSQL** (a coluna `desconto_centavos` ainda não está
   no banco local; migrar é do portão). (7) Asserções antigas que mudaram: ver o relatório da tarefa.
 
-### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: pendente**
+### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: testada**
 
 **Arquivos:** `app/Enums/ModeloRecibo.php`, `app/Enums/FamiliaModelo.php` (`versaoAtual`),
 `app/Services/RenderizadorDeRecibo.php` (`dados`), criar `resources/views/recibos/pdf/webiss-v2.blade.php` e
@@ -247,24 +247,40 @@ produto ganha a linha `item => 'Descontos concedidos'` com `recebido` = −(soma
 
 **Interfaces:** `dados()` ganha `desconto` (formatado, ou `null` quando não está paga ou desconto = 0) e
 `valor_pago` (formatado, ou `null` no mesmo caso). v2 = v1 com: WebISS — no `@foreach` de rótulos, `Desc. Cond. (R$)`
-mostra `$desconto ?? '-'`; `Valor Líquido (R$)` mostra `$valor_pago ?? $valor`. DANFSe — linha 137 `Desconto
+mostra `$desconto ?? '0,00'` (o texto original dizia `'-'`; a prova de igualdade mostrou que o v1 imprime `0,00`);
+`Valor Líquido (R$)` mostra `$valor_pago ?? $valor`. DANFSe — linha 137 `Desconto
 Condicionado` mostra `$desconto ?? '-'`; linhas 141 e 143 (valor líquido) mostram `$valor_pago ?? $valor`.
 "Valor Total" continua `$valor`.
 
-- [ ] **Passo 1:** copiar os v1 para v2 e acrescentar os casos `WebissV2`/`DanfseV2` (sem apagar nada ainda).
-- [ ] **Passo 2: prova de igualdade (temporária):** teste que renderiza a view v1 e a v2 com os mesmos `dados()` de
+- [x] **Passo 1:** copiar os v1 para v2 e acrescentar os casos `WebissV2`/`DanfseV2` (sem apagar nada ainda).
+- [x] **Passo 2: prova de igualdade (temporária):** teste que renderiza a view v1 e a v2 com os mesmos `dados()` de
   uma cobrança **sem** desconto (WebISS e DANFSe, paga e pendente) e exige HTML idêntico → PASSA. Registrar o
   resultado no "Registro de execução" deste plano.
-- [ ] **Passo 3: testes que falham:** paga com desconto preenche os dois campos (texto do PDF via `RenderizadorDeReciboTest`);
+- [x] **Passo 3: testes que falham:** paga com desconto preenche os dois campos (texto do PDF via `RenderizadorDeReciboTest`);
   `AmostrasVisuaisTest` ganha as combinações com desconto e continua exigindo 1 página;
   `MigracaoReciboV2Test`: `up` troca só `modelo` (v1 → v2, as duas famílias, número/snapshot iguais) e `down` volta
   (`(require database_path('migrations/…'))->up()`); `FamiliaModelo::opcoes()` continua com 2 itens e
   `versaoAtual()` devolve v2.
-- [ ] **Passo 4:** rodar `php artisan test --compact tests/Feature/Recibos tests/Feature/TrocaDeModeloTest.php` → FALHAM.
-- [ ] **Passo 5:** implementar os campos nos v2, `dados()`, `versaoAtual()`, migração de dados; apagar o teste
+- [x] **Passo 4:** rodar `php artisan test --compact tests/Feature/Recibos tests/Feature/TrocaDeModeloTest.php` → FALHAM.
+- [x] **Passo 5:** implementar os campos nos v2, `dados()`, `versaoAtual()`, migração de dados; apagar o teste
   temporário do passo 2, os templates v1 e os casos v1; atualizar os 5 arquivos de teste que esperavam v1.
-- [ ] **Passo 6:** suíte inteira `php artisan test --compact` → verde. Pint.
-- [ ] **Passo 7:** commit `feat: recibos v2 mostram desconto e valor pago e substituem o v1`.
+- [x] **Passo 6:** suíte inteira `php artisan test --compact` → verde. Pint.
+- [x] **Passo 7:** commit `feat: recibos v2 mostram desconto e valor pago e substituem o v1`.
+
+  Registro: (1) **Ordem real** (decisão do controlador): copiar → testes que falham (13 vermelhos) → campos do v2 e
+  `dados()` → prova de igualdade (ver "Registro de execução", abaixo) → apagar teste temporário, v1 e casos v1. (2) **Brief
+  corrigido pela prova:** no WebISS o v1 imprime `0,00` em `Desc. Cond. (R$)` (não `-`); o v2 usa `$desconto ?? '0,00'`.
+  (3) **DANFSe:** `Desconto Condicionado` mostra `R$ 24,76` (com o "R$ " das células vizinhas) ou `-`; as duas linhas de valor
+  líquido mostram `R$ {{ $valor_pago ?? $valor }}`. "Valor Total" / "VALOR DA OPERAÇÃO / SERVIÇO" seguem com o valor cheio.
+  (4) `dados()['desconto']` e `['valor_pago']` são `null` quando a cobrança não está paga **ou** o desconto é 0 (a regra
+  mora em `dados()`, os templates só usam `??`). (5) Migração `2026_11_01_105832_troca_modelo_dos_recibos_para_v2` com
+  `DB::table` (troca só `modelo`, não toca `updated_at`); `MigracaoReciboV2Test` prova `up`, `down`, as duas famílias e que
+  tudo o mais da linha fica igual. **Nunca rodada fora do SQLite em memória**; no Postgres local é do portão (Tarefa 8).
+  (6) `FamiliaModelo::opcoes()` segue com 2 famílias (teste em `UsuarioModeloTest`). (7) Asserções antigas que mudaram: só
+  `WebissV1`/`DanfseV1`/`*-v1` → v2 em `TrocaDeModeloTest`, `AcoesCobrancaTest`, `EmissaoReciboTest`, `PdfReciboTest` e
+  `UsuarioModeloTest`. (8) `AmostrasVisuaisTest::test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos` (desconto,
+  integral e sem desconto, 25 linhas) não podia ficar vermelho antes (o v1 ignora o desconto): é guarda contra o v2 estourar a
+  página; passa em 1 página.
 
 ### Tarefa 8 — Wizard, conferência e documentação — **Estado: pendente**
 
@@ -289,4 +305,15 @@ exceção consciente), `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), R
 
 ## Registro de execução
 
-(preenchido durante a execução)
+### Tarefa 7 — prova de igualdade v1 × v2 (2026-11-01, feita com o v2 já editado e antes de apagar o v1)
+
+Teste temporário `tests/Feature/Recibos/ProvaIgualdadeV1V2Test.php` (apagado depois): renderiza `view('recibos.pdf.{familia}-v1', $dados)`
+e `-v2` com os **mesmos** `dados()` de cobranças **sem** desconto — WebISS e DANFSe × pendente, pendente com PIX (QR no
+HTML) e paga — e exige `assertSame` no HTML inteiro (6 comparações).
+
+- **1ª rodada, com o v2 escrito como o brief diz** (WebISS: `Desc. Cond. (R$)` mostra `$desconto ?? '-'`): **FALHOU** em
+  `webiss pendente`. Diferença única: `<span class="val">0,00</span>` no v1 × `<span class="val">-</span>` no v2. O v1 imprime
+  `0,00` em todas as colunas desse `@foreach`; o brief supôs `-` (que é o que o DANFSe imprime). A spec §3 manda "sem
+  desconto, o v2 é igual ao v1", então o padrão do WebISS é `0,00`: `$desconto ?? '0,00'`.
+- **2ª rodada, com `?? '0,00'`:** `resultado: passed | testes: 1 | passaram: 1 | asserções: 13` — HTML idêntico nos 6 casos.
+- DANFSe passou nas duas rodadas (o `-` do v1 é o mesmo `?? '-'` do v2).

@@ -134,13 +134,13 @@
     <td class="c1 titulo">VALOR TOTAL DO RECIBO</td>
     <td class="c1"><span class="rot">VALOR DA OPERAÇÃO / SERVIÇO</span><span class="val">R$ {{ $valor }}</span></td>
     <td class="c1"><span class="rot">Desconto Incondicionado</span><span class="val">-</span></td>
-    <td class="c1"><span class="rot">Desconto Condicionado</span><span class="val">-</span></td>
+    <td class="c1"><span class="rot">Desconto Condicionado</span><span class="val">{{ $desconto !== null ? 'R$ '.$desconto : '-' }}</span></td>
 </tr></table>
 <table><tr>
     <td class="c1"><span class="rot">Total das Retenções (ISSQN / Federais)</span><span class="val">-</span></td>
-    <td class="c1"><span class="rot">VALOR LÍQUIDO DO RECIBO</span><span class="val" style="font-weight: bold;">R$ {{ $valor }}</span></td>
+    <td class="c1"><span class="rot">VALOR LÍQUIDO DO RECIBO</span><span class="val" style="font-weight: bold;">R$ {{ $valor_pago ?? $valor }}</span></td>
     <td class="c1"><span class="rot">Total do IBS/CBS</span><span class="val">-</span></td>
-    <td class="c1"><span class="rot">VALOR LÍQUIDO + IBS/CBS</span><span class="val">R$ {{ $valor }}</span></td>
+    <td class="c1"><span class="rot">VALOR LÍQUIDO + IBS/CBS</span><span class="val">R$ {{ $valor_pago ?? $valor }}</span></td>
 </tr></table>
 
 @if ($pagamento['forma'] === 'pix')

@@ -91,7 +91,7 @@ o relatório mostra a parte que existe.
 
 ## Regras de domínio
 - Cobrança nasce com o recibo (mesma transação), antes do vencimento (`users.dias_antecedencia`).
-- Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v1`).
+- Recibo = snapshot congelado (prestador, tomador, serviço) + modelo com versão (`webiss-v2`; o v1 saiu na Fase 26).
   Situação, data de pagamento e NFS-e vinculada são lidas na hora de gerar o PDF.
 - Modelo é do cliente. **Desde a Fase 22 (pedido do usuário, 2026-10-11):** trocar o modelo refaz na hora os recibos
   das cobranças em aberto e não enviadas (mesmo número); as enviadas e não pagas só com a caixa "Gerar de novo" (e
@@ -338,7 +338,10 @@ o relatório mostra a parte que existe.
   - Teste `AmostrasVisuaisTest` (grupo `visual`) prova 1 página com 25 linhas de descrição nos dois
     modelos e PDF < 200 KB; grava as amostras em `storage/app/private/verificacao/`.
 - **A partir da aprovação visual do usuário, mudança em `webiss-v1`/`danfse-v1` só vale antes de existir
-  recibo emitido em produção; depois, criar `-v2`.**
+  recibo emitido em produção; depois, criar `-v2`.** *Fase 26 (2026-11-01): exceção consciente — o `-v2` **substituiu** o
+  v1 em vez de conviver com ele (ver "Acertos (Tarefa 7)"). Menções a `webiss-v1`/`danfse-v1` em seções antigas desta skill
+  são históricas: os arquivos e os casos do enum não existem mais. Para a próxima mudança de layout, vale a regra de
+  sempre (versão nova, a antiga continua renderizando).*
 
 - Conferências visuais (amostras x notas, carimbo, rodapé) ficaram **para o final** por decisão do
   usuário (2026-10-10): lista "Pendências para o final" no plano. Não bloquear tarefas por elas.
@@ -1766,6 +1769,26 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   formatamos. Relatório novo com número negativo: testar a tela, o CSV e o formatador.
 - **Teste que compara o JSON do relatório com `assertJsonPath` + array usa `assertSame`:** a ordem das chaves conta. Coluna nova
   muda todas as linhas esperadas de `FaturamentoTest` e o CSV byte a byte (`test_csv_para_o_excel_em_portugues`).
+
+### Acertos (Tarefa 7 — recibo v2 substitui o v1)
+- **`ModeloRecibo` só tem `WebissV2`/`DanfseV2`;** `FamiliaModelo::versaoAtual()` devolve o v2 e `opcoes()` segue com as 2
+  famílias (o wizard grava a família, nunca a versão). Os templates v2 nasceram como cópia dos v1; a única diferença é
+  `dados()['desconto']` e `['valor_pago']` (formatados; `null` se a cobrança não está paga **ou** o desconto é 0 — a regra
+  fica em `dados()`, o template só usa `??`). WebISS: `Desc. Cond. (R$)` e `Valor Líquido (R$)`; DANFSe: `Desconto
+  Condicionado` (com "R$ ") e as duas linhas de valor líquido. "Valor Total" e "Valor dos Serviços" seguem com o valor cheio.
+- **Prova de igualdade antes de apagar o v1:** teste temporário renderiza `view(v1)` e `view(v2)` com os mesmos `dados()` de
+  cobranças sem desconto (WebISS e DANFSe × pendente, pendente com PIX, paga) e exige HTML idêntico. Tem de rodar **depois** de
+  editar o v2 (comparar cópias idênticas não prova nada). Ela pegou um erro do próprio plano: o v1 do WebISS imprime `0,00`
+  em `Desc. Cond. (R$)` (o plano dizia `-`); o padrão do v2 é `$desconto ?? '0,00'`. Não confiar em valor padrão escrito de
+  cabeça: comparar o HTML.
+- **Migração de dados `troca_modelo_dos_recibos_para_v2`:** `DB::table('recibos')->where('modelo', 'webiss-v1')->update(...)`
+  (e `danfse`), `down` inverso; só `modelo` muda (nem `updated_at`). `DB::table` porque sem os casos v1 o cast de
+  `Recibo.modelo` quebra ao ler a linha antiga; o teste grava a linha v1 por `DB::table` também (emite o recibo e rebaixa o
+  `modelo`). Roda em todos os recibos no deploy (`migrate --force`); no Postgres local (cópia de produção) é PORTÃO-BANCO.
+  **Enquanto ela não rodar num banco com recibos v1, abrir o recibo dá erro** (`ValueError` do enum): esperado.
+- **Amostra com desconto em 1 página:** `AmostrasVisuaisTest::test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos`
+  (desconto, 100% e sem desconto, 25 linhas de descrição). Não fica vermelho antes do template (o v1 ignora o desconto): é
+  guarda contra o v2 estourar a página.
 
 ### Pegadinhas
 - **Teste antigo travava o formato do `antes`/`depois`:** `AuditoriaTest` comparava `['pago_em' => …]` exato; acrescentar
