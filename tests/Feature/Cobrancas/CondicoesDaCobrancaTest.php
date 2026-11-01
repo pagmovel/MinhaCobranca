@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Cobrancas;
 
+use App\Enums\StatusCobranca;
 use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\User;
@@ -160,5 +161,90 @@ class CondicoesDaCobrancaTest extends TestCase
         $cobranca = new Cobranca(['multa_centavos' => 5, 'juros_centavos' => 5, 'outros_centavos' => 5]);
 
         $this->assertSame(0, $cobranca->acrescimosCentavos());
+    }
+
+    public function test_frase_antes_do_vencimento_diz_o_valor_com_desconto_e_o_original_com_multa_e_juros(): void
+    {
+        $cobranca = $this->cobranca();
+
+        $this->assertSame(
+            'Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.',
+            $cobranca->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')),
+        );
+        // O dia do vencimento ainda vale o desconto, a qualquer hora.
+        $this->assertSame(
+            'Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00 + multa e juros.',
+            $cobranca->fraseDaCondicao(CarbonImmutable::parse('2026-01-05 23:59:59')),
+        );
+    }
+
+    public function test_frase_antes_do_vencimento_so_cita_multa_e_juros_se_o_contrato_tem(): void
+    {
+        $soDesconto = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'percentual', 'desconto_pontualidade_valor' => 1500]);
+        $soMulta = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'valor', 'desconto_pontualidade_valor' => 500, 'multa_tipo' => 'valor', 'multa_valor' => 300]);
+
+        $this->assertSame('Pagando até 05/01/2026: R$ 85,00. Depois: R$ 100,00.', $soDesconto->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')));
+        $this->assertSame('Pagando até 05/01/2026: R$ 95,00. Depois: R$ 100,00 + multa e juros.', $soMulta->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')));
+    }
+
+    public function test_frase_depois_do_vencimento_diz_a_data_e_so_os_acrescimos_maiores_que_zero(): void
+    {
+        // 300 dias de atraso: multa de 2% e juros de 1% ao mês (10 meses) sobre R$ 210,00.
+        $comTudo = $this->cobranca();
+        $comTudo->valor_centavos = 21000;
+        $soJuros = $this->cobranca(false, ['juros_tipo' => 'percentual', 'juros_valor' => 100]);
+        $soJuros->valor_centavos = 21000;
+        $data = CarbonImmutable::parse('2026-11-01');
+
+        $this->assertSame('Valor atualizado em 01/11/2026: multa R$ 4,20; juros R$ 21,00.', $comTudo->fraseDaCondicao($data));
+        $this->assertSame('Valor atualizado em 01/11/2026: juros R$ 21,00.', $soJuros->fraseDaCondicao($data));
+    }
+
+    public function test_frase_e_nula_sem_regra_sem_contrato_ou_quando_o_valor_do_dia_e_o_original(): void
+    {
+        $semRegra = $this->cobranca(false);
+        $avulsa = Cobranca::factory()->create(['vencimento' => '2026-01-05', 'valor_centavos' => 10000]);
+        $soMultaEmDia = $this->cobranca(false, ['multa_tipo' => 'percentual', 'multa_valor' => 200]);
+        $soDescontoAtrasada = $this->cobranca(false, ['desconto_pontualidade_tipo' => 'percentual', 'desconto_pontualidade_valor' => 1500]);
+
+        foreach ([$semRegra, $avulsa] as $cobranca) {
+            $this->assertNull($cobranca->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')));
+            $this->assertNull($cobranca->fraseDaCondicao(CarbonImmutable::parse('2026-02-04')));
+        }
+        $this->assertNull($soMultaEmDia->fraseDaCondicao(CarbonImmutable::parse('2026-01-05')));
+        $this->assertNull($soDescontoAtrasada->fraseDaCondicao(CarbonImmutable::parse('2026-02-04')));
+    }
+
+    public function test_frase_e_so_da_pendente(): void
+    {
+        foreach ([StatusCobranca::Paga, StatusCobranca::Cancelada] as $status) {
+            $cobranca = $this->cobranca();
+            $cobranca->status = $status;
+
+            $this->assertNull($cobranca->fraseDaCondicao(CarbonImmutable::parse('2025-12-20')), $status->value);
+            $this->assertNull($cobranca->fraseDaCondicao(CarbonImmutable::parse('2026-02-04')), $status->value);
+        }
+    }
+
+    public function test_detalhe_dos_acrescimos_da_paga_cita_so_os_maiores_que_zero(): void
+    {
+        $cobranca = $this->cobranca();
+        $cobranca->status = StatusCobranca::Paga;
+        $this->assertNull($cobranca->detalheDosAcrescimos());
+
+        $cobranca->forceFill(['multa_centavos' => 420, 'juros_centavos' => 2100, 'outros_centavos' => 500]);
+        $this->assertSame('Acréscimos por atraso: multa R$ 4,20; juros R$ 21,00; outros R$ 5,00.', $cobranca->detalheDosAcrescimos());
+
+        $cobranca->forceFill(['multa_centavos' => 0, 'juros_centavos' => 0]);
+        $this->assertSame('Acréscimos por atraso: outros R$ 5,00.', $cobranca->detalheDosAcrescimos());
+    }
+
+    public function test_detalhe_dos_acrescimos_nao_existe_fora_da_paga(): void
+    {
+        $cobranca = $this->cobranca()->forceFill(['multa_centavos' => 420]);
+
+        $this->assertNull($cobranca->detalheDosAcrescimos());
+        $cobranca->status = StatusCobranca::Cancelada;
+        $this->assertNull($cobranca->detalheDosAcrescimos());
     }
 }

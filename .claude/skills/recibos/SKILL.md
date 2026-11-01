@@ -1966,3 +1966,20 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
 - **CSV:** o controlador não mudou (monta pelas colunas); `test_csv_para_o_excel_em_portugues` ganhou a coluna e há um segundo CSV byte a byte, com acréscimos. **Asserções antigas alteradas (só por esta tarefa):** as linhas e os totais esperados de
   `FaturamentoTest` ganharam `'acrescimos' => 0` depois de `descontos` (`assertJsonPath` com array usa `assertSame`: a ordem das chaves conta), `colunas.5` virou `colunas.6` para `inadimplencia`, e o cabeçalho e as linhas do CSV ganharam a coluna.
 - **Pegadinha de teste:** acréscimo só existe em baixa atrasada, então a cobrança de teste vence **antes** do pagamento; o `previsto` entra no mês do vencimento (o relatório por produto de setembro mostra o previsto das pagas em outubro).
+
+### Acertos (Tarefa 8 — recibo e PIX)
+- **O recibo é dado vivo:** `RenderizadorDeRecibo::dados()` decide por situação. **Paga** usa o gravado (`desconto_centavos`, `valorPagoCentavos()`; contrato alterado depois não muda nada). **Pendente com regra no contrato**
+  (`valorDoDia`, só se `contrato?->regrasDePagamento()` existe) usa `condicoesNaData($agora)`: desconto até o vencimento, multa e juros depois. Pendente sem regra e cancelada seguem como na Fase 26. `desconto` e `valor_pago` só saem
+  preenchidos com desconto > 0 ou valor líquido ≠ valor (nunca `valor_pago` igual ao valor sem desconto); "Valor Total" é sempre o original; o valor por extenso segue o líquido (corrige também a paga com desconto da Fase 26, que
+  dizia o valor cheio).
+- **Textos:** `Cobranca::fraseDaCondicao($data)` (pendente) e `detalheDosAcrescimos()` (paga), nos textos da spec §3, só com os valores maiores que zero; o `+ multa e juros` da frase "Pagando até…" só aparece se o contrato tem multa **ou** juros.
+  O aviso `O boleto foi emitido com o valor original.` vem do renderizador (só pendente com regra, boleto e valor do dia ≠ original). `informacoes` é uma lista: extenso, frase, detalhe, aviso.
+- **PIX:** `pagamento()` recebe o `valorDoDia`; com regra o payload e o QR levam o valor do dia, sem regra o `valor_centavos` do snapshot (como sempre). Valor do dia 0 (desconto integral) → `['forma' => null]`, sem QR nem copia e cola.
+- **Prova de igualdade permanente:** `ReciboIdenticoSemRegraTest` compara o HTML dos dois modelos, sem regra e sem valores, com as fixtures de `tests/Feature/Recibos/fixtures/` (gravadas com o código da Fase 26, antes de mexer em `dados()`).
+  **Não regerar a fixture para "consertar" o teste.** O PNG do QR sai da comparação (varia com o GD); antes dela o teste exige que o HTML tenha o `QrCodePix::dataUri` do copia e cola. Fixa também `config('app.name')`, nome e e-mails (a factory sorteia).
+- **Pegadinha (WebISS, 1 página):** com 25 linhas de descrição e PIX a última palavra fica a ~10pt do limite (812pt); uma linha a mais em "Outras informações" (~10pt) levava o recibo à página 2 (o `AmostrasVisuaisTest` novo pegou, os testes de dados não). Correção no
+  `webiss-v2`: com mais de uma informação a linha da descrição tem 8pt em vez de 8,4pt (`count($informacoes) > 1`); sem regra continua 8,4 e o HTML sai idêntico. Medido com `pdftotext -bbox` (limite 812pt = 842 − margem de 30pt): depois da correção, PIX com a frase 9,9pt de folga e boleto com frase e aviso 4,8pt.
+  DANFSe cabe sem mudança. Quem acrescentar mais uma linha em `informacoes` precisa rodar `AmostrasVisuaisTest`.
+- **Pegadinha de teste:** helper de teste com `[...base] + $extra` deixa a base vencer (o `vencimento` pedido era ignorado); usar `array_merge`. Aconteceu duas vezes nesta tarefa.
+- **Amostras novas:** `AmostrasVisuaisTest::test_valor_do_dia_e_acrescimos_cabem_em_uma_pagina_nos_dois_modelos` grava `amostra-{modelo}-fase27-{caso}.pdf` (a vencer e vencida × PIX e boleto; paga com acréscimos; paga com desconto e acréscimos) em
+  `storage/app/private/verificacao/`. A conferência visual é do Marcos.

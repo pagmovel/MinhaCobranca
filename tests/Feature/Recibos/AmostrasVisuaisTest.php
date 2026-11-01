@@ -8,6 +8,7 @@ use App\Enums\TipoChavePix;
 use App\Models\ChavePix;
 use App\Models\Cliente;
 use App\Models\Cobranca;
+use App\Models\Contrato;
 use App\Models\User;
 use App\Services\EmissorDeRecibos;
 use App\Services\RenderizadorDeRecibo;
@@ -54,7 +55,7 @@ class AmostrasVisuaisTest extends TestCase
             'logradouro' => 'Rua Exemplo Oliveira Lima',
             'complemento' => 'Delegacia Sindical do Sisal',
         ]);
-        $cobranca = Cobranca::factory()->for($this->usuario)->for($cliente)->create([
+        $cobranca = Cobranca::factory()->for($this->usuario)->for($cliente)->create(array_merge([
             'descricao' => $descricao,
             'codigo_servico' => '0102 - Programação',
             'codigo_nbs' => '115061000',
@@ -62,7 +63,7 @@ class AmostrasVisuaisTest extends TestCase
             'periodo_inicio' => '2026-09-21',
             'periodo_fim' => '2026-10-20',
             'vencimento' => '2026-09-21',
-        ] + $pagamento);
+        ], $pagamento));
 
         return app(RenderizadorDeRecibo::class)->pdf(app(EmissorDeRecibos::class)->emitir($cobranca), CarbonImmutable::now());
     }
@@ -100,6 +101,37 @@ class AmostrasVisuaisTest extends TestCase
                 Storage::disk('local')->put("verificacao/amostra-{$modelo}-paga-{$caso}.pdf", $pdf->output());
 
                 $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$modelo} paga ({$caso})");
+            }
+        }
+    }
+
+    /**
+     * Fase 27: valor do dia, frases, detalhe dos acréscimos e aviso do boleto entram nas informações do recibo, que não
+     * podem empurrá-lo para a página 2 (25 linhas de descrição, o pior caso).
+     */
+    public function test_valor_do_dia_e_acrescimos_cabem_em_uma_pagina_nos_dois_modelos(): void
+    {
+        $descricao = implode("\n", array_map(fn (int $linha) => "- Item {$linha} do serviço prestado no período", range(1, 25)));
+        $pix = ['forma_pagamento' => FormaPagamento::Pix, 'chave_pix_id' => $this->chave->id];
+        $boleto = ['forma_pagamento' => FormaPagamento::Boleto, 'linha_digitavel' => '23793381286000000000300000000400184340000026060'];
+        $paga = ['status' => StatusCobranca::Paga, 'pago_em' => '2026-09-13', 'valor_centavos' => 24757];
+        $casos = [
+            'a-vencer-pix' => $pix,
+            'a-vencer-boleto' => $boleto,
+            'vencida-pix' => ['vencimento' => '2026-08-13'] + $pix,
+            'vencida-boleto' => ['vencimento' => '2026-08-13'] + $boleto,
+            'paga-acrescimos' => $paga + ['multa_centavos' => 495, 'juros_centavos' => 2476, 'outros_centavos' => 500],
+            'paga-desconto-e-acrescimos' => $paga + ['desconto_centavos' => 2476, 'multa_centavos' => 495, 'juros_centavos' => 2476, 'outros_centavos' => 500],
+        ];
+
+        foreach (['webiss', 'danfse'] as $modelo) {
+            foreach ($casos as $caso => $cobranca) {
+                // Um contrato por cobrança: o índice único é (contrato, início do período).
+                $contrato = Contrato::factory()->comCondicoes()->for($this->usuario)->create(['ativo' => false]);
+                $pdf = $this->pdf($modelo, $descricao, $cobranca + ['contrato_id' => $contrato->id]);
+                Storage::disk('local')->put("verificacao/amostra-{$modelo}-fase27-{$caso}.pdf", $pdf->output());
+
+                $this->assertSame(1, $pdf->getDomPDF()->getCanvas()->get_page_count(), "amostra {$modelo} ({$caso})");
             }
         }
     }

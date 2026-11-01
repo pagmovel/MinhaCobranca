@@ -162,6 +162,55 @@ class Cobranca extends Model
         return $condicoes['dias'] === 0 ? "até {$this->vencimento->format('d/m')}: R$ {$valor}" : "hoje R$ {$valor}";
     }
 
+    /**
+     * A frase do recibo para uma pendente com regra no contrato. Até o vencimento: `Pagando até 05/01/2026: R$ 85,00. Depois:
+     * R$ 100,00 + multa e juros.` (o trecho `+ multa e juros` só se o contrato tem multa ou juros). Depois dele: `Valor atualizado
+     * em 01/11/2026: multa R$ 4,20; juros R$ 21,00.`. Nulo se não é pendente ou se o valor do dia é o valor.
+     */
+    public function fraseDaCondicao(CarbonImmutable $data): ?string
+    {
+        if ($this->status !== StatusCobranca::Pendente) {
+            return null;
+        }
+
+        $condicoes = $this->condicoesNaData($data);
+
+        if ($condicoes['total_centavos'] === $this->valor_centavos) {
+            return null;
+        }
+
+        if ($condicoes['dias'] === 0) {
+            $regras = $this->contrato->regrasDePagamento();
+            $depois = 'R$ '.Dinheiro::formatar($this->valor_centavos).($regras['multa'] !== null || $regras['juros'] !== null ? ' + multa e juros' : '');
+
+            return "Pagando até {$this->vencimento->format('d/m/Y')}: R$ ".Dinheiro::formatar($condicoes['total_centavos']).". Depois: {$depois}.";
+        }
+
+        return "Valor atualizado em {$data->format('d/m/Y')}: ".self::listarValores(['multa' => $condicoes['multa_centavos'], 'juros' => $condicoes['juros_centavos']]).'.';
+    }
+
+    /** O que o recibo da paga diz dos acréscimos gravados na baixa: `Acréscimos por atraso: multa R$ 4,20; outros R$ 5,00.` Nulo sem acréscimo. */
+    public function detalheDosAcrescimos(): ?string
+    {
+        if ($this->status !== StatusCobranca::Paga || $this->acrescimosCentavos() === 0) {
+            return null;
+        }
+
+        return 'Acréscimos por atraso: '.self::listarValores(['multa' => $this->multa_centavos, 'juros' => $this->juros_centavos, 'outros' => $this->outros_centavos]).'.';
+    }
+
+    /**
+     * `multa R$ 4,20; juros R$ 21,00`: só os valores maiores que zero.
+     *
+     * @param  array<string, int>  $centavosPorRotulo
+     */
+    private static function listarValores(array $centavosPorRotulo): string
+    {
+        return collect($centavosPorRotulo)->filter()
+            ->map(fn (int $centavos, string $rotulo) => "{$rotulo} R$ ".Dinheiro::formatar($centavos))
+            ->implode('; ');
+    }
+
     public function editavel(): bool
     {
         return $this->status === StatusCobranca::Pendente && $this->enviado_em === null;

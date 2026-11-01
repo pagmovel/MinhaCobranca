@@ -286,11 +286,11 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 uma consulta só (`toBase()`, sem `ORDER BY`), e um teste com `DB::listen` falha se alguma consulta de relatório juntar agregado e `ORDER BY`. Por cliente já usava `VALOR_PAGO_SQL`: só o teste e o texto
 mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa vencida de contrato com regra). Suíte: PHPUnit 830, JS 278. Sem `.vue`/`.js` alterado: sem `npm run build`.
 
-### Tarefa 8 — Recibo e PIX — **Estado: pendente**
+### Tarefa 8 — Recibo e PIX — **Estado: testada**
 
 **Arquivos:** `app/Services/RenderizadorDeRecibo.php` (`dados`, `pagamento`), `app/Models/Cobranca.php`,
-`tests/Feature/Recibos/RenderizadorDeReciboTest.php`, `PdfReciboTest.php`, `AmostrasVisuaisTest.php`. **Os templates não mudam:** usam
-`$desconto`, `$valor_pago ?? $valor` e `$informacoes`.
+`tests/Feature/Recibos/RenderizadorDeReciboTest.php`, `PdfReciboTest.php`, `AmostrasVisuaisTest.php`. **Os templates quase não mudam:** usam
+`$desconto`, `$valor_pago ?? $valor` e `$informacoes` (a única mudança é a altura da linha da descrição do WebISS, ver o registro).
 
 **Interfaces:**
 - Produz: `Cobranca::fraseDaCondicao(CarbonImmutable $data): ?string` — pendente com regra, nos textos exatos da spec §3
@@ -301,17 +301,23 @@ mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa
 - `dados()`: `desconto` e `valor_pago` também em pendente com regra, pela tabela da spec §3; `informacoes` acrescenta a frase, o
   detalhe e o aviso do boleto, e o valor por extenso segue o Valor Líquido.
 
-- [ ] **Passo 1: prova de igualdade (permanente):** teste que renderiza WebISS e DANFSe, sem regra e sem valores, paga e pendente,
+- [x] **Passo 1: prova de igualdade (permanente):** teste que renderiza WebISS e DANFSe, sem regra e sem valores, paga e pendente,
   com e sem PIX, e compara com o HTML de uma fixture gravada a partir do código atual, com a data congelada (`Carbon::setTestNow`), **antes** de mudar
   `dados()` → PASSA.
-- [ ] **Passo 2: testes que falham:** paga com acréscimos (líquido, detalhe, extenso pelo líquido; contrato alterado depois não muda:
+- [x] **Passo 2: testes que falham:** paga com acréscimos (líquido, detalhe, extenso pelo líquido; contrato alterado depois não muda:
   ponto 4); pendente antes do vencimento (desconto, líquido, frase); pendente vencida (líquido, frase com a data);
   sem contrato (ponto 3); cancelada sem nada novo; PIX: `payload` com o valor do dia; valor do dia 0 → `forma` nula e sem
   QR; boleto com o aviso exato; `AmostrasVisuaisTest` com as combinações novas, 1 página.
-- [ ] **Passo 3:** rodar `php artisan test --compact tests/Feature/Recibos` → FALHAM.
-- [ ] **Passo 4:** implementar; `pagamento()` usa `condicoesNaData($agora)['total_centavos']` só com regra (senão, o snapshot, como hoje).
-- [ ] **Passo 5:** suíte inteira → verde. Pint.
-- [ ] **Passo 6:** commit `feat: recibo e PIX mostram o valor do dia e os acréscimos`.
+- [x] **Passo 3:** rodar `php artisan test --compact tests/Feature/Recibos` → FALHAM.
+- [x] **Passo 4:** implementar; `pagamento()` usa `condicoesNaData($agora)['total_centavos']` só com regra (senão, o snapshot, como hoje).
+- [x] **Passo 5:** suíte inteira → verde. Pint.
+- [x] **Passo 6:** commit `feat: recibo e PIX mostram o valor do dia e os acréscimos`.
+
+**Registro (Tarefa 8):** a prova de igualdade (`ReciboIdenticoSemRegraTest`, 12 casos: WebISS e DANFSe × pendente, pendente com PIX, pendente com boleto, vencida com PIX de contrato sem regra, paga e cancelada) foi gravada em
+`tests/Feature/Recibos/fixtures/` com o código **anterior** (nenhum arquivo de `app/` ou `resources/` alterado naquela hora) e continua passando no fim. O PNG do QR sai da comparação (depende do GD): o teste exige antes que o HTML contenha o
+`QrCodePix::dataUri` do copia e cola que está nele. Os testes novos de `AmostrasVisuaisTest` pegaram um defeito que os de dados não pegam: no WebISS com 25 linhas de descrição e PIX a última palavra fica a ~10pt do limite da página, e uma linha a mais em "Outras
+informações" (~10pt) levava o recibo à página 2. Correção: com mais de uma informação, as linhas da descrição têm 8pt em vez de 8,4pt (sem regra continua 8,4pt, e a prova de igualdade confirma). `array_merge` no helper `pdf()` de
+`AmostrasVisuaisTest` (com `+` a base vencia o `vencimento` pedido). Suíte: PHPUnit 862, JS 278 (sem `.vue`/`.js` alterado).
 
 ### Tarefa 9 — Mensagem de WhatsApp — **Estado: pendente**
 
