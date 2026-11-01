@@ -208,7 +208,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
   resumo vem pronto do servidor. (5) Só a renderização de `LinhaCobranca` foi conferida (SSR do Vite, sem navegador:
   com desconto, 100%, sem desconto e pendente); a coluna da lista (xl e 390 px) fica para a Tarefa 8.
 
-### Tarefa 6 — Relatórios — **Estado: pendente**
+### Tarefa 6 — Relatórios — **Estado: testada**
 
 **Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porCliente`, `porProduto`), `resources/js/relatorios.js`
 (se lista colunas), `tests/Feature/Relatorios/*` (inclui `FaturamentoTest::test_csv_para_o_excel_em_portugues`).
@@ -217,13 +217,25 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 produto ganha a linha `item => 'Descontos concedidos'` com `recebido` = −(soma dos descontos das pagas no período) e
 `previsto` 0; os itens e "Sem item" continuam com o valor cheio dos itens, então o total = painel.
 
-- [ ] **Passo 1: testes que falham:** faturamento (recebido = valor − desconto; coluna "Descontos"; previsto e
+- [x] **Passo 1: testes que falham:** faturamento (recebido = valor − desconto; coluna "Descontos"; previsto e
   inadimplência cheios); por cliente (recebido e média com valor pago); por produto (linha negativa e total igual ao
   recebido do painel no mesmo período); CSV byte a byte com a coluna nova; sem desconto, relatório igual ao de antes.
-- [ ] **Passo 2:** rodar `php artisan test --compact tests/Feature/Relatorios` → FALHAM.
-- [ ] **Passo 3:** implementar. Contas a receber não muda.
-- [ ] **Passo 4:** testes → PASSAM. Pint. Build se `relatorios.js` mudou.
-- [ ] **Passo 5:** commit `feat: relatórios usam o valor pago e mostram os descontos`.
+- [x] **Passo 2:** rodar `php artisan test --compact tests/Feature/Relatorios` → FALHAM.
+- [x] **Passo 3:** implementar. Contas a receber não muda.
+- [x] **Passo 4:** testes → PASSAM. Pint. Build se `relatorios.js` mudou (`relatorios.js` não mudou; `itens.js` mudou, então build).
+- [x] **Passo 5:** commit `feat: relatórios usam o valor pago e mostram os descontos`.
+
+  Registro: (1) **Faturamento:** `recebido` soma `valorPagoCentavos()` e a coluna nova `descontos` (logo depois de
+  `recebido`, `soma: true`) soma `desconto_centavos` das pagas com `pago_em` no mês; `previsto` e `inadimplencia` seguem com
+  o valor cheio (a paga com atraso entra cheia no atraso do mês em que venceu). A coluna existe sempre (com 0,00 sem
+  desconto). (2) **Por cliente:** `sum(Cobranca::VALOR_PAGO_SQL)` no `selectRaw` (recebido e, por consequência, a média).
+  (3) **Por produto:** itens e "Sem item" com o valor cheio; a linha `Descontos concedidos` (`recebido` = −soma, `previsto`
+  0, `contratos` 0) é a **última** e só existe se a soma for maior que 0; `totais.recebido` = `resumo.recebido` do painel
+  (provado em teste). (4) **Achado fora da lista de arquivos:** `Dinheiro::formatar` e `formatarCentavos` (JS) não
+  formatavam negativo (`-24,-76` e `-,50`) e o CSV poria apóstrofo em `-22,00` (a defesa contra fórmula olhava todo texto
+  que começa com `-`). Corrigidos nos três lugares, com teste. (5) Contas a receber não mudou. (6) Sem `ORDER BY` junto de
+  agregado nas consultas novas (PostgreSQL); **não conferido no PostgreSQL** (a coluna `desconto_centavos` ainda não está
+  no banco local; migrar é do portão). (7) Asserções antigas que mudaram: ver o relatório da tarefa.
 
 ### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: pendente**
 

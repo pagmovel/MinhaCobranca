@@ -33,7 +33,9 @@ final class Dinheiro
 
     public static function formatar(int $centavos): string
     {
-        return number_format(intdiv($centavos, 100), 0, ',', '.')
-            .','.str_pad((string) ($centavos % 100), 2, '0', STR_PAD_LEFT);
+        $modulo = abs($centavos);
+
+        return ($centavos < 0 ? '-' : '').number_format(intdiv($modulo, 100), 0, ',', '.')
+            .','.str_pad((string) ($modulo % 100), 2, '0', STR_PAD_LEFT);
     }
 }

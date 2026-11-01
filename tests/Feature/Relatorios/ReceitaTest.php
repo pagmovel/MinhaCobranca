@@ -8,8 +8,10 @@ use App\Models\Cobranca;
 use App\Models\Contrato;
 use App\Models\ProdutoServico;
 use App\Models\User;
+use App\Support\Dinheiro;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ReceitaTest extends TestCase
@@ -25,13 +27,14 @@ class ReceitaTest extends TestCase
         $this->usuario = User::factory()->create();
     }
 
-    private function cobranca(Cliente $cliente, string $vencimento, int $valor, ?string $pagoEm = null, bool $cancelada = false): Cobranca
+    private function cobranca(Cliente $cliente, string $vencimento, int $valor, ?string $pagoEm = null, bool $cancelada = false, int $desconto = 0): Cobranca
     {
         $cobranca = Cobranca::factory()->for($this->usuario)->for($cliente)
             ->create(['vencimento' => $vencimento, 'valor_centavos' => $valor]);
         if ($pagoEm !== null) {
             $cobranca->status = StatusCobranca::Paga;
             $cobranca->pago_em = $pagoEm;
+            $cobranca->desconto_centavos = $desconto;
         }
         if ($cancelada) {
             $cobranca->status = StatusCobranca::Cancelada;
@@ -60,6 +63,89 @@ class ReceitaTest extends TestCase
             ->assertJsonPath('linhas.0', ['cliente' => 'Ana Contabilidade', 'recebido' => 40000, 'contratos' => 1, 'media' => 20000, 'vencidas' => 0, 'atraso' => 0])
             ->assertJsonPath('linhas.1', ['cliente' => 'Bruno Mecânica', 'recebido' => 0, 'contratos' => 0, 'media' => 0, 'vencidas' => 2, 'atraso' => 15])
             ->assertJsonPath('totais', ['cliente' => 'Total', 'recebido' => 40000, 'contratos' => 1, 'media' => null, 'vencidas' => 2, 'atraso' => null]);
+    }
+
+    /** Fase 26: recebido e média por cobrança paga usam o valor pago (valor − desconto). */
+    public function test_receita_por_cliente_usa_o_valor_pago(): void
+    {
+        $ana = Cliente::factory()->for($this->usuario)->create(['nome' => 'Ana Contabilidade']);
+        $bruno = Cliente::factory()->for($this->usuario)->create(['nome' => 'Bruno Mecânica']);
+        $this->cobranca($ana, '2026-10-05', 10000, '2026-10-05', desconto: 1000);  // pago 90,00
+        $this->cobranca($ana, '2026-10-10', 30000, '2026-10-11');                  // sem desconto: 300,00
+        $this->cobranca($ana, '2026-09-10', 8000, '2026-09-12', desconto: 800);    // paga antes do período: fora
+        $this->cobranca($bruno, '2026-10-06', 5000, '2026-10-06', desconto: 5000); // desconto integral: 0,00
+
+        $this->actingAs($this->usuario)->getJson('/relatorios/clientes/dados?de=2026-10&ate=2026-10')->assertOk()
+            ->assertJsonCount(2, 'linhas')
+            // Média: (9.000 + 30.000) / 2 = 19.500; com o valor cheio daria 20.000.
+            ->assertJsonPath('linhas.0', ['cliente' => 'Ana Contabilidade', 'recebido' => 39000, 'contratos' => 0, 'media' => 19500, 'vencidas' => 0, 'atraso' => 0])
+            ->assertJsonPath('linhas.1', ['cliente' => 'Bruno Mecânica', 'recebido' => 0, 'contratos' => 0, 'media' => 0, 'vencidas' => 0, 'atraso' => 0])
+            ->assertJsonPath('totais.recebido', 39000);
+    }
+
+    /**
+     * Pagas no mês de outubro, a Hospedagem e o Suporte numa cobrança (pago 135,00 de 150,00), uma cobrança sem itens
+     * (pago 63,00 de 70,00) e, fora do período, uma paga em setembro com desconto e uma pendente.
+     */
+    private function cenarioComDescontosPorProduto(): void
+    {
+        $cliente = Cliente::factory()->for($this->usuario)->create();
+        $hospedagem = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Hospedagem']);
+        $suporte = ProdutoServico::factory()->for($this->usuario)->create(['nome' => 'Suporte']);
+        $comItens = function (string $vencimento, ?string $pagoEm, int $desconto, array $itens) use ($cliente) {
+            $cobranca = $this->cobranca($cliente, $vencimento, array_sum(array_column($itens, 1)), $pagoEm, desconto: $desconto);
+            foreach ($itens as [$produto, $total]) {
+                $cobranca->itens()->create([
+                    'produto_servico_id' => $produto->id, 'nome' => $produto->nome, 'unidade' => 'mês', 'quantidade' => '1.000',
+                    'preco_unitario_centavos' => $total, 'total_centavos' => $total, 'principal' => true,
+                ]);
+            }
+        };
+        $comItens('2026-10-10', '2026-10-10', 1500, [[$hospedagem, 10000], [$suporte, 5000]]); // paga no período
+        $this->cobranca($cliente, '2026-10-01', 7000, '2026-10-02', desconto: 700);             // sem itens
+        $comItens('2026-09-15', '2026-09-20', 900, [[$hospedagem, 9000]]);                      // paga em setembro: fora
+        $comItens('2026-10-20', null, 0, [[$hospedagem, 20000]]);                               // pendente: vence no período
+    }
+
+    public function test_receita_por_produto_mostra_os_descontos_e_o_total_bate_com_o_painel(): void
+    {
+        $this->cenarioComDescontosPorProduto();
+
+        $resposta = $this->actingAs($this->usuario)->getJson('/relatorios/produtos/dados?de=2026-10&ate=2026-10')->assertOk()
+            ->assertJsonCount(4, 'linhas')
+            // Os itens e "Sem item" ficam com o valor cheio; a linha negativa tira o que foi abatido nas baixas do período.
+            ->assertJsonPath('linhas.0', ['item' => 'Hospedagem', 'recebido' => 10000, 'previsto' => 30000, 'contratos' => 0])
+            ->assertJsonPath('linhas.1', ['item' => 'Suporte', 'recebido' => 5000, 'previsto' => 5000, 'contratos' => 0])
+            ->assertJsonPath('linhas.2', ['item' => 'Sem item (cobranças anteriores ao catálogo)', 'recebido' => 7000, 'previsto' => 7000, 'contratos' => 0])
+            ->assertJsonPath('linhas.3', ['item' => 'Descontos concedidos', 'recebido' => -2200, 'previsto' => 0, 'contratos' => 0])
+            ->assertJsonPath('totais.recebido', 19800)
+            ->assertJsonPath('totais.previsto', 42000);
+
+        $this->get('/painel')->assertInertia(fn (Assert $page) => $page
+            ->where('resumo.recebido', Dinheiro::formatar($resposta->json('totais.recebido'))));
+    }
+
+    public function test_linha_de_descontos_so_aparece_com_desconto_no_periodo(): void
+    {
+        $this->cenarioComDescontosPorProduto();
+        $this->actingAs($this->usuario);
+
+        // Em setembro só houve a baixa com desconto de 9,00; em agosto não houve nada.
+        $this->getJson('/relatorios/produtos/dados?de=2026-09&ate=2026-09')->assertOk()
+            ->assertJsonPath('linhas.1', ['item' => 'Descontos concedidos', 'recebido' => -900, 'previsto' => 0, 'contratos' => 0])
+            ->assertJsonPath('totais.recebido', 8100);
+        $this->getJson('/relatorios/produtos/dados?de=2026-08&ate=2026-08')->assertOk()->assertJsonCount(0, 'linhas');
+    }
+
+    public function test_csv_por_produto_mostra_o_desconto_como_numero_negativo(): void
+    {
+        $this->cenarioComDescontosPorProduto();
+
+        $csv = $this->actingAs($this->usuario)->get('/relatorios/produtos?de=2026-10&ate=2026-10&formato=csv')->streamedContent();
+
+        // Número negativo que nós formatamos não é fórmula: não ganha o apóstrofo do texto livre.
+        $this->assertStringContainsString("\n\"Descontos concedidos\";-22,00;0,00;0\n", $csv);
+        $this->assertStringContainsString("\nTotal;198,00;420,00;\n", $csv);
     }
 
     public function test_receita_por_produto_bate_com_o_total_pago(): void

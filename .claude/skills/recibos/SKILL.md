@@ -1753,6 +1753,20 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
 - **Pegadinha de teste:** sem filtro de situação a lista é só do mês (a vencida de setembro entra nas **abas**, que ignoram o
   mês nas vencidas, mas não nos `totais` nem no `total_geral`). Ao escrever o esperado de `total_geral`, não copiar o da aba "Todas".
 
+### Acertos (Tarefa 6 — relatórios)
+- **Faturamento:** `recebido` = valor pago; coluna nova `descontos` (depois de `recebido`; existe sempre, com 0,00 sem desconto);
+  `previsto` e `inadimplencia` seguem com o valor cheio. **Por cliente:** `sum(Cobranca::VALOR_PAGO_SQL)` (a média vem junto).
+  **Contas a receber** não muda (só pendentes).
+- **Por produto:** os itens e "Sem item" continuam com o valor **cheio**; o desconto não é rateado entre itens. A linha
+  `Descontos concedidos` (negativa, a última, só se houver desconto nas pagas do período) faz o `totais.recebido` bater com o
+  `resumo.recebido` do painel; `test_receita_por_produto_mostra_os_descontos_e_o_total_bate_com_o_painel` compara os dois.
+- **Pegadinha: valor negativo era mal formatado em três lugares.** `Dinheiro::formatar(-2476)` dava `-24,-76`,
+  `formatarCentavos(-50)` dava `-,50` e o CSV poria apóstrofo em `-22,00` (`celula()` tratava todo texto que começa com `-`
+  como fórmula). Agora os dois formatadores põem o sinal na frente e o CSV só protege o **texto livre**, não o dinheiro que nós
+  formatamos. Relatório novo com número negativo: testar a tela, o CSV e o formatador.
+- **Teste que compara o JSON do relatório com `assertJsonPath` + array usa `assertSame`:** a ordem das chaves conta. Coluna nova
+  muda todas as linhas esperadas de `FaturamentoTest` e o CSV byte a byte (`test_csv_para_o_excel_em_portugues`).
+
 ### Pegadinhas
 - **Teste antigo travava o formato do `antes`/`depois`:** `AuditoriaTest` comparava `['pago_em' => …]` exato; acrescentar
   `desconto_centavos` exigiu atualizar a asserção. Ao acrescentar chave em dado de auditoria, procurar `->antes`/`->depois` nos testes.

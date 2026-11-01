@@ -23,3 +23,11 @@ test('formata centavos como a tela', () => {
     assert.equal(formatarCentavos(5), '0,05');
     assert.equal(formatarCentavos(123456789), '1.234.567,89');
 });
+
+test('formata centavos negativos com o sinal na frente (linha de descontos dos relatórios)', () => {
+    assert.equal(formatarCentavos(-2476), '-24,76');
+    assert.equal(formatarCentavos(-50), '-0,50');
+    assert.equal(formatarCentavos(-5), '-0,05');
+    assert.equal(formatarCentavos(-123456789), '-1.234.567,89');
+    assert.equal(formatarCentavos(-100000), '-1.000,00');
+});
