@@ -4,7 +4,7 @@ import { useForm } from '@inertiajs/vue3';
 import { MAXIMO_EM_CENTAVOS } from '../condicoes.js';
 import { menorValor } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
-import { camposDoForm, dataDaBaixaEmLote, previaDoLote } from '../usarDescontoDaBaixa.js';
+import { camposDoForm, dataDaBaixaEmLote, previaDoLote } from '../usarValoresDaBaixa.js';
 import CampoValorOuPercentual from './CampoValorOuPercentual.vue';
 import Modal from './Modal.vue';
 

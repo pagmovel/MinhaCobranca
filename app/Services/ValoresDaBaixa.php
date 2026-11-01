@@ -22,7 +22,8 @@ use Illuminate\Validation\ValidationException;
  * | Preenchido      | esse valor        | vale para todas   | esse valor       |
  *
  * "Outros" não tem regra: ausente ou vazio é 0 (e, na correção, ausente mantém o gravado). Sem atraso na data do
- * pagamento, multa, juros e outros são sempre zero.
+ * pagamento, multa, juros e outros são sempre zero. **Na correção, os juros digitados são o total** (em R$, uma vez, como a
+ * multa), não "ao mês": o que está gravado é o total, e reenviá-lo multiplicado pelos dias o mudaria.
  */
 final class ValoresDaBaixa
 {
@@ -156,8 +157,11 @@ final class ValoresDaBaixa
         $valor = $cobranca->valor_centavos;
         $digitado = self::digitado($campo, $dados, $modo);
 
+        // Os juros da correção são o total gravado: a mesma conta da multa, sem o × dias/30.
+        $conta = $campo === 'juros' && $modo === self::CORRECAO ? 'multa' : $campo;
+
         return match (true) {
-            $digitado !== null => self::calcular($campo, $valor, $dias, $digitado['tipo'], self::regraDigitada($campo, $digitado)),
+            $digitado !== null => self::calcular($conta, $valor, $dias, $digitado['tipo'], self::regraDigitada($campo, $digitado)),
             $modo === self::CORRECAO => $cobranca->{"{$campo}_centavos"},
             default => self::calcular($campo, $valor, $dias, $regra['tipo'] ?? null, $regra['valor'] ?? null),
         };

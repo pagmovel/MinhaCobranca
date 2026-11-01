@@ -47,14 +47,16 @@ export const camposAoTrocarAData = (atuais, anteriores, novos) => Object.fromEnt
  * A conta da baixa com o que está nos campos (`{ multa, juros, desconto }` como `{ tipo, numero }` e `outros` em R$), pelas
  * mesmas regras do servidor. Texto inválido vale 0; a vírgula no fim ("12,") conta como o número antes dela. Sem atraso,
  * multa, juros e outros valem 0. O desconto nunca passa do valor (o do contrato em R$ numa cobrança menor é limitado, como
- * no servidor), então o valor pago não fica negativo.
+ * no servidor), então o valor pago não fica negativo. `jurosTotais` (a correção do pagamento): os juros digitados são o total
+ * gravado, uma vez só como a multa, e não "ao mês" × dias.
  */
-export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos) {
+export function calcularBaixa(valorCentavos, vencimentoIso, dataIso, campos, { jurosTotais = false } = {}) {
     const dias = diasDeAtraso(vencimentoIso, dataIso);
     const regra = (nome) => regraDoCampo(campos[nome].tipo, campos[nome].numero);
     const descontoCentavos = Math.min(valorCentavos, descontoEmCentavos(valorCentavos, campos.desconto.tipo, semSeparadorFinal(campos.desconto.numero)) ?? 0);
     const multaCentavos = dias > 0 ? multaEmCentavos(valorCentavos, regra('multa')?.tipo, regra('multa')?.valor) : 0;
-    const jurosCentavos = dias > 0 ? jurosEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor, dias) : 0;
+    const juros = jurosTotais ? multaEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor) : jurosEmCentavos(valorCentavos, regra('juros')?.tipo, regra('juros')?.valor, dias);
+    const jurosCentavos = dias > 0 ? juros : 0;
     const outrosCentavos = dias > 0 ? (regraDaEntrada('valor', semSeparadorFinal(campos.outros)) ?? 0) : 0;
 
     return {
@@ -106,21 +108,13 @@ export function previaDoLote(linhas, datas, campos) {
  * (`multa_tipo`, `multa`, `juros_tipo`, `juros`, `outros`, `desconto_tipo`, `desconto`) e `errors`. A baixa abre com
  * `paraOForm(camposDaRegra(...))`; trocar a data recalcula só os campos que ainda são os da regra e `recalcular` devolve todos
  * à regra. A correção passa `regras: () => null` (corrige-se o que aconteceu, não há regra a seguir: trocar a data não mexe
- * nos campos) e `jurosGravadoCentavos`: o juros gravado não volta ao campo, que é "ao mês", então com o campo em branco o
- * servidor o mantém (a tela não o envia, ver `pedidoDaCorrecao`) e a conta o usa enquanto houver atraso.
- * `valorCentavos`, `vencimentoIso`, `regras` e `jurosGravadoCentavos` são funções (as props podem mudar).
+ * nos campos) e `jurosTotais: true` (os juros são o total gravado, ver `calcularBaixa`).
+ * `valorCentavos`, `vencimentoIso` e `regras` são funções (as props podem mudar).
  */
-export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras, jurosGravadoCentavos = () => 0 }) {
+export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras, jurosTotais = false }) {
     const daRegra = (dataIso) => camposDaRegra(vencimentoIso(), dataIso, regras());
     const doDia = computed(() => daRegra(form.pago_em));
-    const baixa = computed(() => {
-        const conta = calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, camposDoForm(form));
-        const gravado = jurosGravadoCentavos();
-
-        return gravado > 0 && conta.dias > 0 && emBranco(form.juros)
-            ? { ...conta, jurosCentavos: gravado, pagoCentavos: conta.pagoCentavos + gravado }
-            : conta;
-    });
+    const baixa = computed(() => calcularBaixa(valorCentavos(), vencimentoIso(), form.pago_em, camposDoForm(form), { jurosTotais }));
     const temRegra = computed(() => regras() != null);
     const diferenteDaRegra = computed(() => temRegra.value && visiveis(baixa.value.dias).some((nome) => !igual(doForm(form)[nome], doDia.value[nome])));
     const descontoIntegral = computed(() => valorCentavos() > 0 && baixa.value.pagoCentavos === 0);
@@ -152,18 +146,4 @@ export function usarValoresDaBaixa(form, { valorCentavos, vencimentoIso, regras,
         erroDo: (nome) => form.errors[nome] || form.errors[`${nome}_tipo`],
         limparErro: (nome) => form.clearErrors(nome, `${nome}_tipo`),
     };
-}
-
-/**
- * O pedido da correção do pagamento: o formulário inteiro, menos os juros quando o campo está em branco. Os juros digitados
- * são "ao mês" (o servidor os multiplica pelos dias), então o gravado não volta ao campo; sem o campo no pedido o servidor
- * mantém o gravado, e em branco valeria "sem juros". Para tirar os juros, digita-se 0.
- */
-export function pedidoDaCorrecao(dados) {
-    if (!emBranco(dados.juros)) {
-        return dados;
-    }
-    const { juros: _juros, juros_tipo: _jurosTipo, ...pedido } = dados;
-
-    return pedido;
 }

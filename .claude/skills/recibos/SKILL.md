@@ -1734,7 +1734,7 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
   desconto. `antes`/`depois` de `pagamento.corrigido` levam `pago_em` e `desconto_centavos`; o `resumo` só cita o desconto quando ele muda.
 - **Desfazer zera `desconto_centavos`** e grava o desfeito em `antes`/`depois` de `baixa.desfeita` (senão o valor some sem rastro); a tela avisa
   "…e o desconto de R$ X é desfeito".
-- **Lógica de tela do desconto = `usarDescontoDaBaixa(form, () => valorCentavos)`** (`usarDescontoDaBaixa.js`; `BaixaInline`, `CorrecaoPagamentoInline`
+- **Lógica de tela do desconto = `usarDescontoDaBaixa(form, () => valorCentavos)`** (`usarValoresDaBaixa.js`; `BaixaInline`, `CorrecaoPagamentoInline`
   e `BaixaEmLote`): valor pago, integral, aviso, trava e "trocar limpa o número" num lugar só, **com teste `node --test`** (um `reactive` faz o papel do
   `useForm`; `await nextTick()` espera os `watch`). Tela nova com desconto reaproveita; não copiar os `watch`. *(Fase 27, Tarefa 5: a função foi apagada; hoje é `CampoValorOuPercentual` + `usarValoresDaBaixa`.)*
 - `Cobranca::paraLista` traz `desconto_centavos` (a lista passa `valor-centavos` e `desconto-centavos` ao componente).
@@ -1820,7 +1820,7 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
 - **`$attributes` é obrigatório para coluna nova com default:** sem `desconto_centavos => 0` ali, o objeto recém-criado pela factory vem com `null` até ser relido
   (mesma pegadinha de `User`, Fase 25).
 - **Tela sem teste automático:** não há jsdom nem Vue Test Utils (dependência nova exige aprovação). Manter a lógica em módulos `.js` testados com `node --test`
-  (`desconto.js`, `mascaras.js`, `usarDescontoDaBaixa.js`, `avisoTemporario.js`) e deixar no componente só a ligação e o layout; digitação com a máscara,
+  (`desconto.js`, `mascaras.js`, `usarValoresDaBaixa.js`, `avisoTemporario.js`) e deixar no componente só a ligação e o layout; digitação com a máscara,
   aparência e 390 px só se conferem no navegador (pendente).
 - **Componente Vue renderizado sem navegador** (pega erro de template e de `<script setup>` na renderização inicial, não interação): `createServer` do Vite com
   `configFile: false` e só o `@vitejs/plugin-vue` (o `laravel-vite-plugin` do projeto pode criar `public/hot`), `ssrLoadModule` + `renderToString` de
@@ -1893,7 +1893,7 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   aparece sempre, até integral). Sem acréscimos, os textos da Fase 26. `resumoDaBaixa($registro, $rotuloDoDesconto, $emLote)` já não lê tipo nem entrada.
 - **`paraLista` manda `vencimento_iso` e `regras`** (`Contrato::regrasDePagamento()`); `ListaDeCobrancas` e `PainelController` são os únicos chamadores e carregam `contrato` junto
   (`test_lista_nao_faz_consulta_por_linha_ao_carregar_contrato` falha com 17 × 13 consultas sem o `with`). Cobrança sem contrato não consulta nada: `belongsTo` com chave nula devolve `null`.
-- **Tela (`BaixaInline`):** sete campos no `useForm`, abertos pela regra do dia (`camposDaRegra` + `paraOForm`); com atraso mostra Multa, Juros e Outros, sem atraso só o Desconto. Em `usarDescontoDaBaixa.js`:
+- **Tela (`BaixaInline`):** sete campos no `useForm`, abertos pela regra do dia (`camposDaRegra` + `paraOForm`); com atraso mostra Multa, Juros e Outros, sem atraso só o Desconto. Em `usarValoresDaBaixa.js`:
   `calcularBaixa` (a conta, em função pura), `camposAoTrocarAData` e `usarValoresDaBaixa`. **"Não editado" = igual ao que a regra da data anterior preencheu** (sem flag por campo): trocar a data troca só esses; o que a
   pessoa mexeu ou esvaziou fica; "Recalcular" aparece só com regra no contrato e campo visível diferente dela. A etiqueta "contrato" também sai quando o campo deixa de ser o da regra.
 - **`CampoValorOuPercentual` agora serve à baixa:** `complementoDoMaximo`, evento `digitar` (`@input` e troca de tipo; o pai chama `clearErrors`), slot `calculado` (recebe o `id` que entra no `aria-describedby`)
@@ -1911,7 +1911,7 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   vencer). Multa, juros e outros só entram nas cobranças em atraso **na data dela**; com "usar a data de vencimento" a vencida é baixada no vencimento (sem acréscimo, desconto do contrato vale) e a que ainda não venceu é baixada
   hoje (também com o desconto do contrato).
 - **Auditoria:** com algum acréscimo o lote usa o mesmo texto da individual, `Baixa registrada (R$ 210,00, multa R$ 4,20, ..., desconto R$ 0,00, pago R$ 240,20, em 01/11/2026)`; sem acréscimos segue `Baixa em lote ...` (Fase 26).
-- **Prévia = servidor:** `previaDoLote(linhas, datas, campos)` fica em `usarDescontoDaBaixa.js` (precisa de `camposDaRegra` e `calcularBaixa`; em `desconto.js` seria importação circular com `condicoes.js`) e `dataDaBaixaEmLote(modo, vencimentoIso, hojeIso)`
+- **Prévia = servidor:** `previaDoLote(linhas, datas, campos)` fica em `usarValoresDaBaixa.js` (precisa de `camposDaRegra` e `calcularBaixa`; em `desconto.js` seria importação circular com `condicoes.js`) e `dataDaBaixaEmLote(modo, vencimentoIso, hojeIso)`
   repete a data do servidor. Por linha `{valorCentavos, acrescimosCentavos, descontoCentavos, pagoCentavos}`, totais somam as linhas. Texto inválido digitado conta como preenchido e vale 0 (não volta ao contrato: o servidor recusaria).
   O desconto da regra em R$ é limitado ao valor também na prévia (o do contrato numa cobrança menor). Os testes PHP e JS usam os mesmos números (soma paga R$ 548,70).
 - **`BaixaEmLote.vue`** usa `CampoValorOuPercentual` nos quatro campos (`outros` com `somente-reais`; desconto com `valor-maximo-centavos` = menor cobrança e `complemento-do-maximo`; teto de R$ 99.999.999,99 nos outros), a ajuda "Em branco: cada
@@ -1927,14 +1927,17 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
 - **Servidor:** `corrigirPagamento` valida `pago_em` + senha + motivo, confere a situação (só paga) e chama `ValoresDaBaixa::resolver(..., 'correcao')` com `$request->validate(ValoresDaBaixa::regras(), MENSAGENS)`; `descontoValidado` saiu.
   Campo fora do pedido mantém o gravado; trocar a data não recalcula; data sem atraso zera multa, juros e outros (e só eles: o desconto fica). `antes`/`depois` de `pagamento.corrigido` e `baixa.desfeita` levam os quatro valores
   (`valoresGravados`); o resumo da correção cita só o que mudou (`desconto de R$ 0,00 para R$ 5,00, multa de ...`). Desfazer zera os quatro e grava o desfeito em `antes`/`depois`.
-- **Pegadinha dos juros na correção:** o juros digitado é **ao mês** (o servidor multiplica pelos dias), o gravado é o **total**. Abrir o campo com o gravado ("21,00") e reenviar daria R$ 210,00 em 300 dias. A tela abre os
-  juros **em branco**, mostra o gravado ao lado ("= R$ 21,00", `jurosGravadoCentavos` em `usarValoresDaBaixa`) e **não envia o campo em branco** (`pedidoDaCorrecao`): ausente = o servidor mantém o gravado. `0` tira os juros; % ou R$
-  recalcula pelos dias. Multa, outros e desconto abrem com o gravado em R$ (exato) e seguem sempre no pedido. Em branco na correção, então, quer dizer coisas diferentes: juros mantém, os outros três zeram.
-- **Tela:** `CorrecaoPagamentoInline` usa `CampoValorOuPercentual` nos quatro campos e `usarValoresDaBaixa(form, { regras: () => null, jurosGravadoCentavos })`: sem regra do contrato a troca de data não mexe nos campos
+- **Juros na correção = total em R$ (R10, decisão do Marcos depois da revisão):** o juros digitado na baixa é **ao mês** (o servidor multiplica pelos dias), mas o gravado é o **total**: abrir o campo com o gravado
+  ("21,00") e reenviar daria R$ 210,00 em 300 dias. Na correção os quatro valores ficam simétricos: o campo de juros é **só em R$** (`somente-reais`, rótulo "Juros (total)", `juros_tipo` fixo em `valor`) e abre com o gravado;
+  ausente mantém, vazio ou `0` zera, preenchido vale. No `ValoresDaBaixa::resolver`, modo `correcao`, o juros digitado usa a conta da multa (centavos totais; em % seria uma vez sobre o valor), sem o `× dias/30`; baixa individual
+  e lote seguem ao mês. Na tela, `usarValoresDaBaixa(form, { jurosTotais: true })` e `calcularBaixa(..., { jurosTotais })` fazem a mesma conta. A primeira solução (juros em branco que não ia no pedido, `jurosGravadoCentavos`,
+  `pedidoDaCorrecao`) foi descartada: em branco passava a significar coisas diferentes por campo.
+- **Tela:** `CorrecaoPagamentoInline` usa `CampoValorOuPercentual` nos quatro campos e `usarValoresDaBaixa(form, { regras: () => null, jurosTotais: true })`: sem regra do contrato a troca de data não mexe nos campos
   (o `watch` da data só roda quando há regra). Multa, juros e outros só aparecem com atraso na data; sem atraso, um aviso diz que ficam zerados (o valor pago já os desconta, como o servidor). A prop nova `vencimentoIso` e as
   três de centavos vêm de `paraLista` (`multa_centavos`, `juros_centavos`, `outros_centavos`).
-- **R8:** `usarDescontoDaBaixa()` (a trava e o aviso antigos) foi apagada com seus 8 testes; a trava existe só em `CampoValorOuPercentual`. O arquivo `usarDescontoDaBaixa.js` continua (`calcularBaixa`, `previaDoLote`, `usarValoresDaBaixa`).
+- **R8:** `usarDescontoDaBaixa()` (a trava e o aviso antigos) foi apagada com seus 8 testes; a trava existe só em `CampoValorOuPercentual`. O arquivo continua, **renomeado** de `usarDescontoDaBaixa.js` (e `.test.js`) para `usarValoresDaBaixa.js` na rodada de correção, porque o nome antigo já não descrevia o conteúdo (`calcularBaixa`, `previaDoLote`, `usarValoresDaBaixa`). Nas seções antigas desta skill, `usarDescontoDaBaixa.js` é este arquivo.
 - **Clamp do desconto em `calcularBaixa`** (`desconto ≤ valor`): o desconto de contrato em R$ maior que a cobrança mostrava "pago" negativo na `BaixaInline`; o servidor limita a R$ 0,00. O clamp de `previaDoLote` saiu (redundante).
 - **Asserções antigas alteradas** (só o formato de `antes`/`depois` ganhou as três chaves): `AuditoriaTest::test_corrigir_pagamento_com_senha_e_motivo_fica_registrado` e `DescontoNaBaixaTest::test_corrigir_muda_data_e_desconto_com_auditoria_antes_e_depois`.
+  Na rodada de correção (R10) mudou também `test_corrigir_muda_acrescimos_com_auditoria_antes_e_depois`, da própria Tarefa 5: os juros passaram de `percentual 2` (= R$ 42,00 em 300 dias) para `valor 42,00`, mesmo resultado.
 - **Renderização sem navegador** (técnica da Fase 26; no script, `import()` do `vue` e de `vue/server-renderer` pelo caminho do projeto: `ssrLoadModule('vue')` dá "module is not defined"): a correção abre com a data atual, multa 4,20, outros 5,00,
-  juros em branco com "= R$ 21,00" e valor pago R$ 240,20 (igual ao gravado); paga no vencimento mostra só o desconto (R$ 178,50). **Não conferido:** digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento. Fica na Tarefa 10.
+  juros "21,00" (campo só em R$, rótulo "Juros (total)") e valor pago R$ 240,20 (igual ao gravado); paga no vencimento mostra só o desconto (R$ 178,50). **Não conferido:** digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento. Fica na Tarefa 10.

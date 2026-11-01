@@ -8,10 +8,9 @@ import {
     camposDaRegra,
     dataDaBaixaEmLote,
     paraOForm,
-    pedidoDaCorrecao,
     previaDoLote,
     usarValoresDaBaixa,
-} from './usarDescontoDaBaixa.js';
+} from './usarValoresDaBaixa.js';
 
 // Baixa com multa, juros e outros acréscimos (BaixaInline). Mesmos números do servidor (AcrescimosNaBaixaTest):
 // R$ 210,00 vencidos em 05/01/2026, contrato com desconto de 15%, multa de 2% e juros de 1% ao mês; em 01/11/2026 são 300 dias.
@@ -214,14 +213,14 @@ test('digitar limpa o erro do campo e do tipo; o erro de outro campo fica', () =
     assert.equal(erroDo('juros'), 'x');
 });
 
-// Corrigir pagamento (Tarefa 5): o mesmo `usarValoresDaBaixa`, sem regra do contrato. O formulário abre com os valores gravados
-// (R$ 210,00 pagos em 01/11/2026 com multa R$ 4,20, juros R$ 21,00 e outros R$ 5,00): multa e outros em R$ nos campos; os juros
-// ficam em branco (o campo é "ao mês", o gravado é o total) e o gravado entra na conta. Trocar a data não recalcula nada.
+// Corrigir pagamento (Tarefa 5): o mesmo `usarValoresDaBaixa`, sem regra do contrato e com os juros como total em R$ (o gravado é o
+// total, não "ao mês"). O formulário abre com os quatro valores gravados em R$ (R$ 210,00 pagos em 01/11/2026 com multa R$ 4,20,
+// juros R$ 21,00 e outros R$ 5,00) e trocar a data não recalcula nada.
 function criarFormDaCorrecao(pagoEm = HOJE) {
     return reactive({
         pago_em: pagoEm,
         multa_tipo: 'valor', multa: '4,20',
-        juros_tipo: 'percentual', juros: '',
+        juros_tipo: 'valor', juros: '21,00',
         outros: '5,00',
         desconto_tipo: 'valor', desconto: '',
         errors: {},
@@ -229,11 +228,17 @@ function criarFormDaCorrecao(pagoEm = HOJE) {
     });
 }
 
-const correcao = (form) => usarValoresDaBaixa(form, {
-    valorCentavos: () => 21000,
-    vencimentoIso: () => VENCIMENTO,
-    regras: () => null,
-    jurosGravadoCentavos: () => 2100,
+const correcao = (form) => usarValoresDaBaixa(form, { valorCentavos: () => 21000, vencimentoIso: () => VENCIMENTO, regras: () => null, jurosTotais: true });
+
+test('os juros da correção são o total em R$: 21,00 em 300 dias é R$ 21,00, não R$ 210,00 (o servidor não multiplica pelos dias)', () => {
+    const campos = { multa: vazio, juros: { tipo: 'valor', numero: '21,00' }, desconto: vazio, outros: '' };
+
+    assert.equal(calcularBaixa(21000, VENCIMENTO, HOJE, campos).jurosCentavos, 21000);
+    assert.equal(calcularBaixa(21000, VENCIMENTO, HOJE, campos, { jurosTotais: true }).jurosCentavos, 2100);
+    assert.equal(calcularBaixa(21000, VENCIMENTO, '2026-01-06', campos, { jurosTotais: true }).jurosCentavos, 2100);
+    // Em %, uma vez só sobre o valor, como a multa; sem atraso, zero.
+    assert.equal(calcularBaixa(21000, VENCIMENTO, HOJE, { ...campos, juros: { tipo: 'percentual', numero: '2' } }, { jurosTotais: true }).jurosCentavos, 420);
+    assert.equal(calcularBaixa(21000, VENCIMENTO, VENCIMENTO, campos, { jurosTotais: true }).jurosCentavos, 0);
 });
 
 test('a correção abre com os gravados e o valor pago os soma', () => {
@@ -246,45 +251,35 @@ test('a correção abre com os gravados e o valor pago os soma', () => {
     assert.equal(diferenteDaRegra.value, false);
 });
 
-test('na correção, trocar a data não mexe nos campos nem nos gravados; sem atraso o valor pago deixa de somar os acréscimos', async () => {
+test('na correção, trocar a data não mexe nos campos; sem atraso o valor pago deixa de somar os acréscimos', async () => {
     const form = criarFormDaCorrecao();
     const { dias, valorPagoCentavos } = correcao(form);
 
-    // Os juros gravados não são recalculados pelos dias (o servidor os mantém).
+    // Os juros não são recalculados pelos dias.
     form.pago_em = '2026-02-01';
     await nextTick();
-    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '', '5,00']);
+    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '21,00', '5,00']);
     assert.equal(valorPagoCentavos.value, 24020);
 
     // O servidor zera multa, juros e outros sem atraso (o que está digitado fica na tela, mas não conta).
     form.pago_em = VENCIMENTO;
     await nextTick();
     assert.equal(dias.value, 0);
-    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '', '5,00']);
+    assert.deepEqual([form.multa, form.juros, form.outros], ['4,20', '21,00', '5,00']);
     assert.equal(valorPagoCentavos.value, 21000);
 });
 
-test('na correção, juros digitados (ao mês) substituem o gravado e seguem os dias; 0 tira os juros', () => {
+test('na correção, juros digitados substituem o gravado como total; vazio ou 0 tira os juros', () => {
     const form = criarFormDaCorrecao();
     const { valorPagoCentavos, calculados } = correcao(form);
 
-    form.juros_tipo = 'valor';
-    form.juros = '3,00';
+    form.juros = '30,00';
     assert.equal(calculados.value.juros, 3000);
     assert.equal(valorPagoCentavos.value, 21000 + 420 + 3000 + 500);
     form.juros = '0';
     assert.equal(calculados.value.juros, 0);
+    form.juros = '';
     assert.equal(valorPagoCentavos.value, 21000 + 420 + 500);
-});
-
-test('o pedido da correção só leva os juros quando o campo foi preenchido', () => {
-    const base = { pago_em: HOJE, multa_tipo: 'valor', multa: '4,20', outros: '5,00', desconto_tipo: 'valor', desconto: '', motivo: 'x', senha: 'y' };
-    const comJuros = { ...base, juros_tipo: 'valor', juros: '3,00' };
-
-    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: '' }), base);
-    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: ' ,' }), base);
-    assert.deepEqual(pedidoDaCorrecao(comJuros), comJuros);
-    assert.deepEqual(pedidoDaCorrecao({ ...base, juros_tipo: 'percentual', juros: '0' }), { ...base, juros_tipo: 'percentual', juros: '0' });
 });
 
 // Baixa em lote (Tarefa 4): os mesmos números de tests/Feature/Cobrancas/AcoesEmLoteTest.php, com o relógio em 01/11/2026.

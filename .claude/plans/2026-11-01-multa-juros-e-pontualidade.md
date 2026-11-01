@@ -141,7 +141,7 @@ e exemplo ao vivo): fica para a Tarefa 10.
 
 **Arquivos:** criar `app/Services/ValoresDaBaixa.php`, `tests/Feature/Cobrancas/AcrescimosNaBaixaTest.php`; modificar
 `CobrancaController` (`pagar`, `resumoDaBaixa`), `Cobranca::paraLista`, `ListaDeCobrancas` (~89) e `PainelController` (~89)
-(`with` do contrato), `BaixaInline.vue`, `usarDescontoDaBaixa.js` e teste.
+(`with` do contrato), `BaixaInline.vue`, `usarValoresDaBaixa.js` e teste.
 
 **Interfaces:**
 - Consome: Tarefas 1 e 2.
@@ -167,7 +167,7 @@ e exemplo ao vivo): fica para a Tarefa 10.
 - [x] **Passo 3:** `ValoresDaBaixa`, `pagar` e `resumoDaBaixa` (troca `descontoValidado` por `resolver`). Desconto integral sem
   acréscimos mantém o texto da Fase 26.
 - [x] **Passo 4:** `BaixaInline.vue` conforme spec §2, usando `CampoValorOuPercentual` e `condicoes.js`; lógica de "trocar a data
-  recalcula o não editado" e "Recalcular" em função pura testada em `usarDescontoDaBaixa.test.js`.
+  recalcula o não editado" e "Recalcular" em função pura testada em `usarValoresDaBaixa.test.js`.
   Painel e lista passam `:vencimento-iso="cobranca.vencimento_iso"` e `:regras="cobranca.regras"`.
 - [x] **Passo 5:** testes + JS + build → PASSAM. Suíte da Fase 25 verde. Pint.
 - [x] **Passo 6:** commit `feat: baixa traz multa e juros do contrato e aceita outros acréscimos`.
@@ -208,7 +208,7 @@ aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `Corr
 mais `test_desconto_do_contrato_em_reais_acima_do_valor_fica_no_valor` e `test_soma_gravada_do_lote_bate_com_a_previa_da_tela`; o JS tem 12 testes novos de `previaDoLote` e `dataDaBaixaEmLote`
 com os mesmos números (R$ 210,00 e R$ 100,00 vencidos em 05/01/2026, relógio em 01/11/2026, soma paga R$ 548,70). `pagarEmLote` conferiu o limite do desconto em R$ pela menor
 (`conferirDescontoDoLote`, como antes) e resolveu todas as cobranças (`ValoresDaBaixa::resolver`, modo `lote`) **antes** da transação; a gravação e a auditoria saíram para `registrarBaixa`,
-que a baixa individual também usa. **Desvios:** (1) `previaDoLote` mora em `usarDescontoDaBaixa.js` e não em `desconto.js`, porque precisa de `camposDaRegra` e `calcularBaixa` e `condicoes.js` já
+que a baixa individual também usa. **Desvios:** (1) `previaDoLote` mora em `usarValoresDaBaixa.js` e não em `desconto.js`, porque precisa de `camposDaRegra` e `calcularBaixa` e `condicoes.js` já
 importa `desconto.js` (importação circular); `desconto.js` perdeu a versão antiga e `menorValor` ficou. (2) R8: do `usarDescontoDaBaixa()` saiu só o `complementoDoMaximo` (único pedaço que só o lote
 usava); a trava e o aviso ficam porque `CorrecaoPagamentoInline` ainda os usa, e a Tarefa 5 apaga a função. (3) A auditoria do lote com acréscimo começa por "Baixa registrada" (texto da spec, igual ao
 individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: digitação com a máscara, a trava e o aviso nos quatro campos, 390 px e 1280 px, a prévia com os totais e o aviso da data de vencimento
@@ -233,13 +233,14 @@ individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: 
 - [x] **Passo 6:** commit `feat: corrigir pagamento muda multa, juros e outros; desfazer zera`.
 
 **Registro (2026-11-01):** os testes do passo 1 estão em `AcrescimosNaBaixaTest` (mais `test_corrigir_acrescimo_invalido_da_erro_no_campo_e_nao_grava` e `test_lista_traz_multa_juros_e_outros_gravados`;
-suíte PHP de 805 para 813). `corrigirPagamento` valida `pago_em` + senha + motivo, confere a situação (só paga) e então `ValoresDaBaixa::resolver(..., 'correcao')`; `antes`/`depois` de
+suíte PHP de 805 para 816: 813 na entrega e +3 na rodada de correção). `corrigirPagamento` valida `pago_em` + senha + motivo, confere a situação (só paga) e então `ValoresDaBaixa::resolver(..., 'correcao')`; `antes`/`depois` de
 `pagamento.corrigido` e de `baixa.desfeita` levam os quatro valores (`valoresGravados`), e o resumo cita só o que mudou (`desconto de R$ 0,00 para R$ 5,00, multa de ...`). `descontoValidado` saiu (sem chamador).
 JS: de 281 para 278 (saíram os 8 testes de `usarDescontoDaBaixa()`, entraram 1 do clamp e 4 da correção). **Desvios:** (1) R8 cumprido: `usarDescontoDaBaixa()` foi apagada, com seus testes e os imports sem uso
-(`travarDesconto`, `criarAvisoTemporario`, `formatarCentavos`); o arquivo `usarDescontoDaBaixa.js` segue com `calcularBaixa`, `previaDoLote` e `usarValoresDaBaixa`, então não foi apagado. (2) O clamp do desconto
-(`desconto ≤ valor`) foi para `calcularBaixa`; o de `previaDoLote` saiu. (3) **Juros na correção:** o juros digitado é sempre "ao mês" (o servidor multiplica pelos dias), mas o gravado é o total; abrir o campo com
-"21,00" e reenviar viraria R$ 210,00 em 300 dias. A tela abre os **juros em branco**, mostra o gravado ao lado ("= R$ 21,00") e **não envia o campo quando está em branco** (`pedidoDaCorrecao`): o servidor mantém
-o gravado (ausente). Digitar 0 tira os juros; digitar % ou R$ recalcula pelos dias. Multa, outros e desconto abrem com o gravado em R$ e seguem sempre no pedido. Sem mudar o `ValoresDaBaixa`. Falta conferir no
+(`travarDesconto`, `criarAvisoTemporario`, `formatarCentavos`); o arquivo `usarValoresDaBaixa.js` segue com `calcularBaixa`, `previaDoLote` e `usarValoresDaBaixa`, então não foi apagado. (2) O clamp do desconto
+(`desconto ≤ valor`) foi para `calcularBaixa`; o de `previaDoLote` saiu. (3) **Juros na correção = total em R$ (R10, rodada de correção):** o juros digitado na baixa é "ao mês" (o servidor multiplica pelos dias), mas o gravado é o total; reenviar "21,00" viraria R$ 210,00 em 300 dias.
+A primeira solução (juros em branco que não ia no pedido) foi trocada: na correção o campo de juros é só em R$ ("Juros (total)"), abre com o gravado, e o `ValoresDaBaixa::resolver`, modo `correcao`, usa o digitado como centavos totais
+(sem `× dias/30`); baixa individual e lote seguem ao mês. Saíram `jurosGravadoCentavos` e `pedidoDaCorrecao`; entrou `jurosTotais` em `calcularBaixa` e `usarValoresDaBaixa`. (4) `usarDescontoDaBaixa.js` renomeado para `usarValoresDaBaixa.js` (e o teste).
+Falta conferir no
 navegador: digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento dos campos e o aviso de "sem atraso" (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
 ### Tarefa 6 — Lista e painel — **Estado: pendente**

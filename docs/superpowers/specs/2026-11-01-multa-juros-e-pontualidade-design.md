@@ -86,6 +86,7 @@ mesmos casos de teste:
 
 **Entrada na baixa:** `multa_tipo`, `multa`, `juros_tipo`, `juros`, `outros`, além de `desconto_tipo` e `desconto`, da
 Fase 26. `multa` e `juros` em % ou R$; `juros` digitado é sempre ao mês. Formatos e mensagens seguem o desconto.
+Na correção, os juros são o total em R$, pois o gravado é o total.
 
 | Campo no pedido | Baixa individual | Lote | Corrigir pagamento |
 |---|---|---|---|
@@ -124,7 +125,7 @@ iguais à soma gravada. Com "usar a data de vencimento de cada cobrança", aviso
 desconto do contrato vale."
 
 **Corrigir pagamento** (`CorrecaoPagamentoInline.vue`): os mesmos campos, abrindo com os valores **gravados** em R$. Trocar
-a data não recalcula, pois ali se corrige o que aconteceu de fato.
+a data não recalcula, pois ali se corrige o que aconteceu de fato. Na correção, os juros são o total em R$, pois o gravado é o total.
 
 **Lista e painel:** pendente com regra mostra, embaixo do valor, `até 05/01: R$ 85,00` ou `hoje R$ 235,20`. Sem regra, nada
 muda. Paga continua com `pago R$ …` sempre que o valor pago diferir do valor. Abas e rodapé das pendentes continuam com

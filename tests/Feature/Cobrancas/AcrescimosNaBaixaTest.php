@@ -396,7 +396,7 @@ class AcrescimosNaBaixaTest extends TestCase
         $this->corrigir($cobranca, [
             'pago_em' => '2026-11-01',
             'multa_tipo' => 'valor', 'multa' => '10,00',
-            'juros_tipo' => 'percentual', 'juros' => '2',
+            'juros_tipo' => 'valor', 'juros' => '42,00',
             'outros' => '',
             'desconto_tipo' => 'valor', 'desconto' => '5,00',
         ])->assertSessionHasNoErrors()->assertSessionHas('sucesso');
@@ -428,6 +428,37 @@ class AcrescimosNaBaixaTest extends TestCase
         // Só o campo enviado muda; os que não vieram ficam como estão.
         $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'outros' => '1,00'])->assertSessionHasNoErrors();
         $this->assertSame([300, 420, 2100, 100], $this->gravados($cobranca));
+    }
+
+    public function test_corrigir_juros_digitado_e_o_total_em_reais_sem_multiplicar_pelos_dias(): void
+    {
+        [$usuario, $cobranca] = $this->cenarioPago();
+
+        // O gravado é o total (R$ 21,00 em 300 dias): digitar o mesmo número não pode virar R$ 210,00.
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'juros_tipo' => 'valor', 'juros' => '21,00'])->assertSessionHasNoErrors();
+        $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'juros_tipo' => 'valor', 'juros' => '30,00'])->assertSessionHasNoErrors();
+        $this->assertSame([0, 420, 3000, 500], $this->gravados($cobranca));
+        $this->assertSame(
+            'Pagamento corrigido (antes: 01/11/2026, juros de R$ 21,00 para R$ 30,00)',
+            $usuario->auditorias()->where('acao', 'pagamento.corrigido')->latest('id')->first()->resumo,
+        );
+    }
+
+    public function test_corrigir_juros_vazio_ou_zero_zera_e_ausente_mantem(): void
+    {
+        [, $cobranca] = $this->cenarioPago();
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'multa' => '4,20', 'multa_tipo' => 'valor'])->assertSessionHasNoErrors();
+        $this->assertSame([0, 420, 2100, 500], $this->gravados($cobranca));
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'juros_tipo' => 'valor', 'juros' => '0'])->assertSessionHasNoErrors();
+        $this->assertSame([0, 420, 0, 500], $this->gravados($cobranca));
+
+        $cobranca->forceFill(['juros_centavos' => 2100])->save();
+        $this->corrigir($cobranca, ['pago_em' => '2026-11-01', 'juros_tipo' => 'valor', 'juros' => ''])->assertSessionHasNoErrors();
+        $this->assertSame([0, 420, 0, 500], $this->gravados($cobranca));
     }
 
     public function test_corrigir_data_nao_recalcula(): void
@@ -486,6 +517,7 @@ class AcrescimosNaBaixaTest extends TestCase
 
         $this->corrigir($cobranca, $data + ['multa_tipo' => 'percentual', 'multa' => '100,01'])->assertSessionHasErrors(['multa' => self::PERCENTUAL_INVALIDO]);
         $this->corrigir($cobranca, $data + ['juros_tipo' => 'valor', 'juros' => '100.000.000,00'])->assertSessionHasErrors(['juros' => self::REAIS_INVALIDO]);
+        $this->corrigir($cobranca, $data + ['juros_tipo' => 'valor', 'juros' => '9999999999999999,99'])->assertSessionHasErrors(['juros' => self::REAIS_INVALIDO]);
         $this->corrigir($cobranca, $data + ['outros' => 'abc'])->assertSessionHasErrors(['outros' => self::REAIS_INVALIDO]);
         $this->corrigir($cobranca, $data + ['multa' => '1'])->assertSessionHasErrors(['multa_tipo' => 'Escolha se a multa é em % ou em R$.']);
 
@@ -560,6 +592,21 @@ class AcrescimosNaBaixaTest extends TestCase
         $this->assertSame([100, 200, 300, 400], [$ausente['desconto_centavos'], $ausente['multa_centavos'], $ausente['juros_centavos'], $ausente['outros_centavos']]);
         $this->assertSame([0, 0, 0, 0], [$vazio['desconto_centavos'], $vazio['multa_centavos'], $vazio['juros_centavos'], $vazio['outros_centavos']]);
         $this->assertSame([100, 150, 300, 200], [$preenchido['desconto_centavos'], $preenchido['multa_centavos'], $preenchido['juros_centavos'], $preenchido['outros_centavos']]);
+    }
+
+    public function test_resolver_na_correcao_os_juros_digitados_sao_o_total_e_na_baixa_sao_ao_mes(): void
+    {
+        [, $cobranca] = $this->cenario();
+        $cobranca->load('contrato');
+        $data = CarbonImmutable::parse('2026-11-01');
+        $digitado = ['juros_tipo' => 'valor', 'juros' => '21,00'];
+
+        // 300 dias de atraso: R$ 21,00 ao mês dão R$ 210,00; na correção o digitado é o que foi cobrado.
+        $this->assertSame(21000, ValoresDaBaixa::resolver($cobranca, $data, $digitado, 'individual')['juros_centavos']);
+        $this->assertSame(21000, ValoresDaBaixa::resolver($cobranca, $data, $digitado, 'lote')['juros_centavos']);
+        $this->assertSame(2100, ValoresDaBaixa::resolver($cobranca, $data, $digitado, 'correcao')['juros_centavos']);
+        // Em %, a correção também não multiplica pelos dias: é uma vez só sobre o valor, como a multa.
+        $this->assertSame(420, ValoresDaBaixa::resolver($cobranca, $data, ['juros_tipo' => 'percentual', 'juros' => '2'], 'correcao')['juros_centavos']);
     }
 
     public function test_resolver_lanca_o_erro_no_campo_que_errou(): void

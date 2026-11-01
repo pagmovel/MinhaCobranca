@@ -573,7 +573,7 @@ class AcoesEmLoteTest extends TestCase
         $this->assertSame('Baixa em lote com desconto integral (100% = R$ 200,00, pago R$ 0,00, em 01/11/2026)', $this->usuario->auditorias()->sole()->resumo);
     }
 
-    /** A soma que a prévia da tela mostra (JS: previaDoLote) é a gravada: mesmos números de usarDescontoDaBaixa.test.js. */
+    /** A soma que a prévia da tela mostra (JS: previaDoLote) é a gravada: mesmos números de usarValoresDaBaixa.test.js. */
     public function test_soma_gravada_do_lote_bate_com_a_previa_da_tela(): void
     {
         [$a, $b] = $this->cenarioDeAtraso();

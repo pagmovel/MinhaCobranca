@@ -3,7 +3,7 @@ import { ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { MAXIMO_EM_CENTAVOS } from '../condicoes.js';
 import { formatarCentavos } from '../itens.js';
-import { TEXTO_INTEGRAL, camposDaRegra, paraOForm, usarValoresDaBaixa } from '../usarDescontoDaBaixa.js';
+import { TEXTO_INTEGRAL, camposDaRegra, paraOForm, usarValoresDaBaixa } from '../usarValoresDaBaixa.js';
 import CampoValorOuPercentual from './CampoValorOuPercentual.vue';
 
 // naFaixa: aberto na faixa abaixo da linha da tabela; ao fechar, avisa a tabela em vez de mostrar o botão.

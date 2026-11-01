@@ -3,13 +3,13 @@ import { computed, nextTick, ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { MAXIMO_EM_CENTAVOS } from '../condicoes.js';
 import { formatarCentavos } from '../itens.js';
-import { TEXTO_INTEGRAL, pedidoDaCorrecao, usarValoresDaBaixa } from '../usarDescontoDaBaixa.js';
+import { TEXTO_INTEGRAL, usarValoresDaBaixa } from '../usarValoresDaBaixa.js';
 import CampoValorOuPercentual from './CampoValorOuPercentual.vue';
 
 /**
  * Cobrança paga: corrigir a data, o desconto, a multa, os juros e os outros acréscimos do pagamento, ou desfazer a baixa, com
  * senha e motivo (fica na auditoria). A correção abre com o que está gravado, em R$, e trocar a data não recalcula nada: ali se
- * corrige o que aconteceu de fato.
+ * corrige o que aconteceu de fato. Por isso os juros são o total em R$ (o gravado é o total), não "ao mês" como na baixa.
  */
 const props = defineProps({
     cobrancaId: { type: Number, required: true },
@@ -34,13 +34,13 @@ const id = useId();
 const modo = ref(props.modoInicial);
 const hoje = new Date().toLocaleDateString('sv-SE');
 const emReais = (centavos) => (centavos > 0 ? formatarCentavos(centavos) : '');
-// Os juros ficam em branco: o campo é "ao mês" e o gravado é o total (ver `usarValoresDaBaixa`).
+// Os quatro valores abrem em R$ com o gravado; juros_tipo fica 'valor' (o campo é só em R$, sem seletor).
 const form = useForm({
     pago_em: props.pagoEmIso,
     multa_tipo: 'valor',
     multa: emReais(props.multaCentavos),
-    juros_tipo: 'percentual',
-    juros: '',
+    juros_tipo: 'valor',
+    juros: emReais(props.jurosCentavos),
     outros: emReais(props.outrosCentavos),
     desconto_tipo: 'valor',
     desconto: emReais(props.descontoCentavos),
@@ -51,13 +51,13 @@ const { dias, valorPagoCentavos, calculados, descontoIntegral, anuncio, erroDo, 
     valorCentavos: () => props.valorCentavos,
     vencimentoIso: () => props.vencimentoIso,
     regras: () => null,
-    jurosGravadoCentavos: () => props.jurosCentavos,
+    jurosTotais: true,
 });
 const primeiroCampo = ref(null);
 
 const TEXTO_SEM_ATRASO = 'Nessa data não há atraso: multa, juros e outros acréscimos ficam zerados.';
 // Sem atraso o servidor zera os três, mesmo preenchidos: o aviso aparece quando isso muda alguma coisa.
-const temAcrescimo = computed(() => props.jurosCentavos > 0 || [form.multa, form.juros, form.outros].some((texto) => texto.trim() !== ''));
+const temAcrescimo = computed(() => [form.multa, form.juros, form.outros].some((texto) => texto.trim() !== ''));
 const semAtrasoComAcrescimo = computed(() => dias.value === 0 && temAcrescimo.value);
 const anunciar = computed(() => (semAtrasoComAcrescimo.value ? TEXTO_SEM_ATRASO : anuncio.value));
 
@@ -82,7 +82,7 @@ const abrir = async (qual) => {
 };
 const fechar = () => { modo.value = null; emit('fechar'); };
 
-const confirmar = () => form.transform(pedidoDaCorrecao).post(
+const confirmar = () => form.post(
     `/cobrancas/${props.cobrancaId}/${modo.value === 'corrigir' ? 'corrigir-pagamento' : 'desfazer-baixa'}`,
     {
         preserveScroll: true,
@@ -139,17 +139,13 @@ const confirmar = () => form.transform(pedidoDaCorrecao).post(
                 <CampoValorOuPercentual
                     :id="`${id}-juros`"
                     v-model="form.juros"
-                    v-model:tipo="form.juros_tipo"
-                    rotulo="Juros ao mês"
+                    rotulo="Juros (total)"
                     :erro="erroDo('juros')"
-                    ajuda="Em branco, mantém o gravado; 0 tira. Digite % ou R$ ao mês para recalcular."
+                    ajuda="Total dos juros cobrados, só em R$ (não é ao mês)."
                     :valor-maximo-centavos="MAXIMO_EM_CENTAVOS"
+                    somente-reais
                     @digitar="limparErro('juros')"
-                >
-                    <template #calculado="{ id: idCalculado }">
-                        <p v-if="calculados.juros > 0" :id="idCalculado" class="tabular-nums text-grafite">= R$ {{ formatarCentavos(calculados.juros) }}</p>
-                    </template>
-                </CampoValorOuPercentual>
+                />
                 <CampoValorOuPercentual
                     :id="`${id}-outros`"
                     v-model="form.outros"
