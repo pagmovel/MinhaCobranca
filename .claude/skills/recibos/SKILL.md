@@ -1080,7 +1080,15 @@ JSON de releases), os dois GHSA em github.com/php/php-src, watchTowr, NCSC, Dock
   2. **Aviso de tarefa em segundo plano com "exit code 0" pode mentir:** o `0` era do `echo` depois do `docker build`.
      Gravar o código do build no log (`rc=$?`) e terminar com `exit $rc`.
   3. **`expose_php = On` até no `php.ini-production`** (linha 400): a resposta traz `X-Powered-By: PHP/8.4.27`.
-     Não alterado nesta tarefa (não faz parte da correção).
+     Não alterado nesta tarefa (não faz parte da correção). O BunkerWeb remove esse cabeçalho no domínio público;
+     só o domínio de reserva do Easypanel o mostra, o que serve para conferir a versão por HTTP.
+  4. **Conferir na VPS** (só com autorização expressa, por mensagem): `ssh -o BatchMode=yes root@207.180.205.211` com
+     um script de leitura por stdin (`'bash -s' <<'EOF'`). O container é `meus_projetos_gerenciador_cobrancas-app-1`
+     e o BunkerWeb é `meus_projetos_bunker-bunkerweb-1`.
+  5. **Logs do BunkerWeb misturam acesso e ModSecurity:** um pedido barrado gera várias linhas `[warn]` antes da
+     linha de acesso. Contar pedidos só pelas linhas de acesso (`"POST /x HTTP/..." status`). O tamanho que aparece
+     nelas é o da **resposta**, não o do corpo enviado: não serve para achar o POST grande do exploit de falta de
+     memória. Sinal útil de worker do PHP caindo: `upstream prematurely closed` ou `recv() failed`.
 
 ### Segurança do PostgreSQL de dev — instruções (2026-10-12)
 

@@ -36,7 +36,16 @@
 ## Fase 3 — deploy (só o Marcos)
 - **T3.1 — commit e push** (o Easypanel puxa do Git). Estado: pendente, aguarda o "sim" do Marcos.
 - **T3.2 — Deploy na VPS pelo painel** (reconstrói a imagem a partir do Git) e conferência de `php -v` no container.
-  Estado: pendente, feita pelo Marcos.
+  Estado: testada (2026-10-25). Deploy feito pelo Marcos. Conferência só de leitura, por SSH autorizado na mensagem.
+  Container `meus_projetos_gerenciador_cobrancas-app-1` criado às 10:13. Resultados:
+  - PHP 8.4.27, `upload_progress` = 0 e `zz-seguranca.ini` carregado.
+  - "Nothing to migrate": as 26 migrações já estavam aplicadas, inclusive `apresentacao_vista`, no lote 2.
+  - Log de subida limpo (só o aviso AH00558 de ServerName).
+  - Views compiladas todas da subida, sem `eval`/`base64_decode`/`system`.
+  - Volume `storage-app` de 11/10, vazio porque nenhum usuário tem logo.
+  - Logs do BunkerWeb de 19 a 25/10: nenhum erro de upstream. Os POSTs em `/` e `/painel` são varreduras: 29
+    barradas pelo ModSecurity (403), 4 com 400 e 6 que chegaram ao Laravel e voltaram 303. A amostra é payload de
+    Next.js (`__proto__:then`), não PHP2Shell.
 
 ## Fora do escopo (decisão a tomar)
 - Trocar Apache + mod_php por PHP-FPM reduziria a exposição, mas muda a imagem inteira; não foi pedido.
