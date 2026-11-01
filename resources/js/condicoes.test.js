@@ -5,9 +5,11 @@ import {
     descontoDoContrato,
     diasDeAtraso,
     entradaDaRegra,
+    exemploDasCondicoes,
     jurosEmCentavos,
     multaEmCentavos,
     regraDaEntrada,
+    regraDoCampo,
 } from './condicoes.js';
 
 // Mesmos casos de tests/Unit/CondicoesDePagamentoTest.php: a tela e o servidor precisam concordar.
@@ -198,4 +200,53 @@ test('sem regra (cobrança avulsa ou contrato sem condições) o total é o valo
             totalCentavos: 10000,
         });
     }
+});
+
+const camposDaTela = [
+    // [tipo, o que se digitou, a regra que vale]
+    ['percentual', '2,5', { tipo: 'percentual', valor: 250 }],
+    ['valor', '15,00', { tipo: 'valor', valor: 1500 }],
+    ['percentual', '12,', { tipo: 'percentual', valor: 1200 }],
+    ['percentual', '', null],
+    ['percentual', '0', null],
+    ['valor', '0,00', null],
+    ['percentual', '100,01', null],
+    ['percentual', 'abc', null],
+    ['valor', 'abc', null],
+    [null, '5', null],
+];
+
+for (const [tipo, entrada, esperado] of camposDaTela) {
+    test(`o campo ${tipo} ${JSON.stringify(entrada)} da tela vale ${JSON.stringify(esperado)}`, () => {
+        assert.deepEqual(regraDoCampo(tipo, entrada), esperado);
+    });
+}
+
+test('exemplo da tela do contrato: em dia com o desconto e com 30 dias de atraso', () => {
+    // O exemplo da spec: R$ 100,00, desconto 15%, multa 2% e juros 1% ao mês → em dia R$ 85,00, 30 dias R$ 103,00.
+    assert.deepEqual(exemploDasCondicoes(10000, condicoes), { dias: 30, emDiaCentavos: 8500, atrasadoCentavos: 10300 });
+});
+
+test('o exemplo bate com a conta da baixa nas duas pontas', () => {
+    const exemplo = exemploDasCondicoes(21000, condicoes);
+
+    assert.equal(exemplo.emDiaCentavos, condicoesNaData(21000, '2026-01-05', '2026-01-05', condicoes).totalCentavos);
+    assert.equal(exemplo.atrasadoCentavos, condicoesNaData(21000, '2026-01-05', '2026-02-04', condicoes).totalCentavos);
+});
+
+test('exemplo só com parte das regras e com desconto em reais acima do valor', () => {
+    assert.deepEqual(
+        exemploDasCondicoes(10000, { desconto: null, multa: { tipo: 'valor', valor: 700 }, juros: { tipo: 'valor', valor: 300 } }),
+        { dias: 30, emDiaCentavos: 10000, atrasadoCentavos: 11000 },
+    );
+    assert.deepEqual(
+        exemploDasCondicoes(10000, { desconto: { tipo: 'valor', valor: 20000 }, multa: null, juros: null }),
+        { dias: 30, emDiaCentavos: 0, atrasadoCentavos: 10000 },
+    );
+});
+
+test('sem regra nenhuma ou sem valor do contrato não há exemplo', () => {
+    assert.equal(exemploDasCondicoes(10000, { desconto: null, multa: null, juros: null }), null);
+    assert.equal(exemploDasCondicoes(10000, undefined), null);
+    assert.equal(exemploDasCondicoes(0, condicoes), null);
 });

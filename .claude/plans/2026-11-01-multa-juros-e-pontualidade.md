@@ -102,7 +102,7 @@ contrato. Valor pago continua derivado.
 - [x] **Passo 4:** os mesmos comandos → PASSAM. Suíte inteira verde (a fórmula nova não muda quem tem zero). Pint.
 - [x] **Passo 5:** commit `feat: regra única de multa, juros e desconto por pontualidade (PHP e JS)`.
 
-### Tarefa 2 — Condições no contrato — **Estado: pendente**
+### Tarefa 2 — Condições no contrato — **Estado: testada**
 
 **Arquivos:** `app/Http/Requests/ContratoRequest.php`, `app/Http/Controllers/ContratoController.php` (`store`, `update`,
 recomeço ~363, renovação de vencido ~445), `resources/js/Pages/Contratos/Form.vue`, criar
@@ -117,19 +117,25 @@ recomeço ~363, renovação de vencido ~445), `resources/js/Pages/Contratos/Form
 - Pedido do contrato: `desconto_pontualidade_tipo`, `desconto_pontualidade`, `multa_tipo`, `multa`, `juros_tipo`, `juros`
   (texto); o request grava `*_tipo` e `*_valor` com `regraDaEntrada`. Vazio ou `0` → `null` nos dois.
 
-- [ ] **Passo 1: testes que falham:** `test_grava_condicoes_em_percentual_e_em_reais` (`'2,5'` % → 250; `'15,00'` R$ →
+- [x] **Passo 1: testes que falham:** `test_grava_condicoes_em_percentual_e_em_reais` (`'2,5'` % → 250; `'15,00'` R$ →
   1500); `test_contrato_sem_condicoes_continua_valido`; `test_zero_vira_sem_regra`; `test_percentual_acima_de_100_e_recusado`
   (erro no campo); `test_desconto_em_reais_acima_do_valor_do_contrato_e_recusado`;
   `test_mudar_condicoes_audita_antes_e_depois` (`contrato.condicoes`) e `test_salvar_sem_mudar_condicoes_nao_audita`;
   `test_outro_usuario_nao_ve_condicoes`; em `RenovarContratoVencidoTest`, `test_renovar_vencido_leva_as_condicoes`.
-- [ ] **Passo 2:** rodar os dois arquivos → FALHAM.
-- [ ] **Passo 3:** request, controller e cópia das condições na renovação de vencido (o `create` de ~445 lista os campos um a
+- [x] **Passo 2:** rodar os dois arquivos → FALHAM.
+- [x] **Passo 3:** request, controller e cópia das condições na renovação de vencido (o `create` de ~445 lista os campos um a
   um; o de ~363 já recebe `$dados`). `edit` manda os campos com `entradaDaRegra`.
-- [ ] **Passo 4:** `CampoValorOuPercentual.vue` e seção "Condições de pagamento" no `Form.vue`, com o exemplo da spec §2
+- [x] **Passo 4:** `CampoValorOuPercentual.vue` e seção "Condições de pagamento" no `Form.vue`, com o exemplo da spec §2
   recalculado com `condicoes.js`: `Exemplo com o valor deste contrato (R$ 100,00): em dia R$ 85,00 · 30 dias de atraso R$ 103,00`.
   Lógica do exemplo em função pura com teste `node --test`.
-- [ ] **Passo 5:** testes + JS + build → PASSAM. Suíte da Fase 25 verde. Pint.
-- [ ] **Passo 6:** commit `feat: contrato define desconto por pontualidade, multa e juros`.
+- [x] **Passo 5:** testes + JS + build → PASSAM. Suíte da Fase 25 verde. Pint.
+- [x] **Passo 6:** commit `feat: contrato define desconto por pontualidade, multa e juros`.
+
+**Decisão do controlador (provada):** mudar só as condições não aciona o fluxo de correção do cronograma nem refaz cobranças
+(`test_mudar_so_as_condicoes_nao_pede_correcao_nem_mexe_nas_cobrancas`). Além do previsto, `test_recomecar_leva_as_condicoes_do_formulario_ao_contrato_novo`
+(`EncerramentoContratoTest`), `test_formato_ou_tipo_invalido_das_condicoes_e_recusado` e, no JS, `regraDoCampo`/`exemploDasCondicoes`
+(`condicoes.test.js`) e `totalDosItens` (`itens.test.js`). Falta conferir no navegador (390 px e 1280 px, digitação com a máscara, trava
+e exemplo ao vivo): fica para a Tarefa 10.
 
 ### Tarefa 3 — Baixa individual — **Estado: pendente**
 
@@ -307,3 +313,4 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 - 2026-11-01: spec e plano aprovados pelo Marcos. Execução por subagentes, com as regras globais de subagentes (context-mode,
   ponytail lite, modelo informado e nunca Opus nem Fable, sem acesso à VPS). Implementação ainda não iniciada: depende do merge da
   Fase 26.
+- 2026-11-01: Tarefa 2 testada (PHPUnit 752, JS 258, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).

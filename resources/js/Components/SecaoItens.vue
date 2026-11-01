@@ -3,14 +3,14 @@ import { computed, nextTick, ref } from 'vue';
 import BuscaAutosugestao from './BuscaAutosugestao.vue';
 import CadastroRapidoProduto from './CadastroRapidoProduto.vue';
 import CatalogoItens from './CatalogoItens.vue';
-import { centavos, formatarCentavos, totalDoItem } from '../itens.js';
+import { centavos, formatarCentavos, totalDoItem, totalDosItens } from '../itens.js';
 
 // `escopo` distingue ids/nomes quando duas seções de itens aparecem juntas na mesma tela (ex.: formulário
 // principal do contrato + seção "Renovar contrato" vencido) — sem isso, id/name duplicados quebram foco,
 // o rótulo "for" e o agrupamento do rádio "principal" entre as duas listas.
 const props = defineProps({ form: { type: Object, required: true }, escopo: { type: String, default: '' } });
 
-const total = computed(() => props.form.itens.reduce((soma, item) => soma + totalDoItem(item.quantidade, item.preco), 0));
+const total = computed(() => totalDosItens(props.form.itens));
 const erro = (indice, campo) => props.form.errors[`itens.${indice}.${campo}`];
 const semPreco = (item) => !centavos(item.preco);
 const incluidos = computed(() => props.form.itens.map((item) => item.produto_servico_id));

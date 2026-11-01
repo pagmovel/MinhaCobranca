@@ -1,4 +1,4 @@
-import { CEM_POR_CENTO, aparar, descontoEmCentavos, pontosBase } from './desconto.js';
+import { CEM_POR_CENTO, aparar, descontoEmCentavos, pontosBase, semSeparadorFinal } from './desconto.js';
 import { formatadores } from './mascaras.js';
 
 /**
@@ -95,4 +95,32 @@ export function condicoesNaData(valor, vencimentoIso, dataIso, regras) {
     const jurosCentavos = jurosEmCentavos(valor, juros?.tipo, juros?.valor, dias);
 
     return { dias, descontoCentavos, multaCentavos, jurosCentavos, totalCentavos: valor - descontoCentavos + multaCentavos + jurosCentavos };
+}
+
+/** O campo da tela do contrato como regra ({ tipo, valor }); vazio, 0, inválido ou sem tipo é sem regra (null). */
+export function regraDoCampo(tipo, entrada) {
+    // A vírgula no fim ("12,") é digitação em curso: conta como o número antes dela.
+    const valor = regraDaEntrada(tipo, semSeparadorFinal(entrada));
+
+    return valor > 0 ? { tipo, valor } : null;
+}
+
+const DIAS_DO_EXEMPLO = 30;
+
+/**
+ * Exemplo da tela do contrato, com o valor atual dele: o valor em dia (com o desconto) e com 30 dias de atraso (com
+ * multa e juros), pela mesma conta da baixa. null sem valor ou sem nenhuma regra.
+ */
+export function exemploDasCondicoes(valor, regras) {
+    const { desconto, multa, juros } = regras ?? {};
+
+    if (!(valor > 0) || ![desconto, multa, juros].some((regra) => regra?.valor > 0)) {
+        return null;
+    }
+
+    return {
+        dias: DIAS_DO_EXEMPLO,
+        emDiaCentavos: valor - descontoDoContrato(valor, desconto?.tipo, desconto?.valor),
+        atrasadoCentavos: valor + multaEmCentavos(valor, multa?.tipo, multa?.valor) + jurosEmCentavos(valor, juros?.tipo, juros?.valor, DIAS_DO_EXEMPLO),
+    };
 }

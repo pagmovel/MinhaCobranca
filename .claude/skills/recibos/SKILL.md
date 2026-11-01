@@ -1848,3 +1848,27 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
 - **Valor do dia (`Cobranca::condicoesNaData`):** até o vencimento (inclusive) só o desconto; depois só multa e juros; sem contrato (`contrato_id` nulo) ou sem regra, o
   valor original. O desconto é limitado ao valor (`min`), então o total nunca fica negativo. `Contrato::regrasDePagamento()` trata tipo nulo ou valor 0 como sem regra.
 - **Teste de factory:** `ContratoFactory::comCondicoes()` = 15% / multa 2% / juros 1%. Para um contrato com só uma regra, partir da factory sem o estado e passar os campos.
+
+### Acertos (Tarefa 2 — condições no contrato)
+- **Pedido do contrato:** `desconto_pontualidade`, `multa` e `juros` (texto) com `*_tipo` (`percentual`/`valor`); `ContratoRequest::dadosContrato()` troca por `*_tipo` + `*_valor` via
+  `CondicoesDePagamento::regraDaEntrada` (vazio ou 0 → os dois nulos). **Campo ausente do pedido não entra no `update`**: salvar sem ele mantém o gravado (a tela sempre manda). Formato
+  inválido, percentual acima de 100 ou com mais de 2 casas → erro no campo; tipo sem número ou número sem tipo → erro em `*_tipo`. `bail` na frente: `multa[]=2` (lista) cai na regra
+  `string`, não vira 500 na closure.
+- **Desconto em R$ acima do valor do contrato:** checado no `after()` do request (depois dos itens, só sem outros erros), porque o valor é a soma dos itens recalculada no servidor.
+  Como a classe usa o trait `RegrasDeItens`, que já tem `after()`, o trait entra com `after as protected depoisDosItens` e o `after()` da classe soma os dois. Igual ao valor passa; multa em R$ não tem teto.
+- **Auditoria `contrato.condicoes`** no `update`, comparando `$registro->only(Contrato::CONDICOES)` antes e depois (`Contrato::CONDICOES` = as 6 colunas, na ordem em que `antes`/`depois` as guardam). Salvar o
+  contrato sem mexer nelas não registra (os testes antigos de `AuditoriaTest` continuam com a lista exata). Resumo: `desconto até o vencimento 15%, multa R$ 5,00, juros 1% ao mês`, ou `sem condições`.
+- **Condição não é cronograma:** `$mudaPeriodos` só olha início, periodicidade e modalidade; mudar só as condições de um contrato com cobranças (inclusive paga) salva sem `corrigir`, não cancela nem desvincula nada.
+- **Renovação e recomeço:** `renovarVencido` copia as seis colunas do contrato antigo (o `create` lista os campos um a um); `recomecar` usa o `$dados` do formulário, que já as traz. Renovar vencido com itens
+  de total menor que um desconto em R$ copiado não é recusado: `descontoDoContrato` já limita ao valor.
+- **`edit` manda as condições como se digitam** (`entradaDaRegra`: `15`, `2,5`, `15,00`); sem regra, texto vazio e tipo `percentual`.
+- **`CampoValorOuPercentual.vue`** (props `id`, `rotulo`, `erro`, `ajuda`, `etiqueta`, `valorMaximoCentavos`, `somenteReais`; `v-model` e `v-model:tipo` por `defineModel`): reaproveita `travarDesconto`,
+  `criarAvisoTemporario`, `semSeparadorFinal` e a diretiva `v-mascara`. Decisões: (1) trocar o seletor limpa o número **no `@change` do `<select>`**, não num `watch` do tipo, para não apagar o que o pai
+  define de uma vez (tipo e número juntos); (2) a trava roda num `watch` do número, e **só ao digitar** — o teto em R$ não reaplica quando o total do contrato muda (digitar o preço `1` antes de `100` apagaria o
+  desconto); quem confere depois é o servidor; (3) o `@change` do input tira a vírgula final (`12,` → `12`), e `change` sai antes do envio por Enter, então o pai nunca guarda o texto com o separador sobrando;
+  (4) `somenteReais` mostra um "R$" fixo no lugar do seletor; (5) `etiqueta` é um `<span>` com `leading-none`, não `Etiqueta.vue` (o `py-0.5` dele aumentaria o rótulo e desalinharia os campos vizinhos);
+  (6) o `valorMaximoCentavos` do contrato é o total dos itens ou `undefined` quando é 0 (sem itens ainda, travar em R$ 0,00 atrapalharia).
+- **Exemplo da tela** em `condicoes.js` (`regraDoCampo`, `exemploDasCondicoes`, testados): R$ 100,00 com 15% / 2% / 1% → em dia R$ 85,00, 30 dias R$ 103,00, pela mesma conta da baixa. Some sem regra ou sem total.
+  O total do formulário vem de `totalDosItens` (novo em `itens.js`, usado também por `SecaoItens`).
+- **Renderização sem navegador** do componente (script no scratchpad, técnica da Fase 26): rótulo, `aria-describedby="x-ajuda x-erro"`, `aria-invalid`, etiqueta, `somenteReais` e o `select` com `:value` saem certos.
+  **Não conferido (sem navegador):** digitação com a máscara, a trava e o aviso, o exemplo ao vivo, 390 px e 1280 px. Fica na conferência da Tarefa 10.

@@ -23,6 +23,11 @@ class Contrato extends Model
     /** @use HasFactory<ContratoFactory> */
     use HasFactory;
 
+    /** As colunas das condições de pagamento (tipo e valor de cada regra), na ordem em que a auditoria as guarda. */
+    public const CONDICOES = [
+        'desconto_pontualidade_tipo', 'desconto_pontualidade_valor', 'multa_tipo', 'multa_valor', 'juros_tipo', 'juros_valor',
+    ];
+
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
     protected $attributes = ['modalidade' => 'prepago', 'forma_pagamento' => 'nenhuma', 'ultimo_periodo' => 'inteiro'];
 
