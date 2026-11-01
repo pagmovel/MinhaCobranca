@@ -48,7 +48,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 
 ---
 
-### Tarefa 1 — Dado e regra do desconto — **Estado: pendente**
+### Tarefa 1 — Dado e regra do desconto — **Estado: testada**
 
 **Arquivos:**
 - Criar: migração `add_desconto_centavos_to_cobrancas_table` (`php artisan make:migration`), `app/Support/Desconto.php`,
@@ -67,19 +67,23 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 - JS `travarDesconto(valorCentavos, tipo, entrada) → { entrada: string, travou: boolean }` — % acima de 100 vira `'100'`;
   R$ acima do valor vira o valor formatado por `formatadores.valor`; senão devolve a entrada e `travou: false`.
 
-- [ ] **Passo 1: testes que falham** — `DescontoTest` (PHP) e `desconto.test.js` com os mesmos casos, valor 24757:
+- [x] **Passo 1: testes que falham** — `DescontoTest` (PHP) e `desconto.test.js` com os mesmos casos, valor 24757:
   vazio → 0; `'0'` → 0; `'10'` % → 2476; `'12,5'` e `'12.5'` % → 3095; `'100'` % → 24757; `'150'` % → 37136 (sem
   limitar); `'24,76'` R$ → 2476; `'-5'`, `'1e3'`, `'+5'`, `'abc'` → null; `rotulo` → `10% = R$ 24,76` e `R$ 24,76`.
   JS também: `travarDesconto(24757, 'percentual', '150')` → `{entrada: '100', travou: true}`;
   `travarDesconto(24757, 'valor', '300,00')` → `{entrada: '247,57', travou: true}`; dentro do limite → `travou: false`.
   Mais um teste de model: `Cobranca::factory()->create()->valorPagoCentavos()` igual a `valor_centavos` (desconto 0).
-- [ ] **Passo 2:** `php artisan test --compact tests/Unit/DescontoTest.php` e `node --test resources/js/desconto.test.js`
+- [x] **Passo 2:** `php artisan test --compact tests/Unit/DescontoTest.php` e `node --test resources/js/desconto.test.js`
   → FALHAM (classe/módulo inexistente).
-- [ ] **Passo 3:** migração (`unsignedBigInteger('desconto_centavos')->default(0)->after('valor_centavos')`), model,
+- [x] **Passo 3:** migração (`unsignedBigInteger('desconto_centavos')->default(0)->after('valor_centavos')`), model,
   `Desconto` e `desconto.js`. Percentual: regex `^\d{1,3}([.,]\d{1,2})?$`, converter para pontos-base em inteiros.
   Valor: `Dinheiro::paraCentavos`. JS em R$: a máscara garante o formato; centavos = dígitos.
-- [ ] **Passo 4:** os mesmos comandos → PASSAM. Pint.
-- [ ] **Passo 5:** commit `feat: desconto_centavos na cobrança e regra única do desconto (PHP e JS)`.
+- [x] **Passo 4:** os mesmos comandos → PASSAM. Pint.
+- [x] **Passo 5:** commit `feat: desconto_centavos na cobrança e regra única do desconto (PHP e JS)`.
+
+  Registro: JS em R$ espelha `Dinheiro::paraCentavos` (não "centavos = dígitos"), por decisão do controlador; os
+  mesmos casos valem nos dois tipos e nas duas linguagens (PHP e JS conferidos com 8.000 entradas sorteadas, 0
+  diferenças). Os dois cortam só espaço ASCII nas pontas (o `trim()` do JS tira o NBSP, o do PHP não).
 
 ### Tarefa 2 — Baixa individual com valor e desconto — **Estado: pendente**
 

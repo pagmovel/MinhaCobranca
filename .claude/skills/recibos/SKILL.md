@@ -1682,3 +1682,28 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
   `CadastroRapidoCliente`, `CatalogoItens`, `AvisarWhatsapp`, mais os dois via `CamposPagamento`/`CampoCliente`)
   montam com `aberto` inicialmente `false` — o ramo `else` do watch roda uma vez a mais para eles, de forma
   inofensiva (optional chaining em tudo que seria `null`).
+
+## Fase 26 — valor e desconto na baixa (2026-11-01)
+
+Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md`.
+
+### Acertos (Tarefa 1 — dado e regra)
+- **Valor pago nunca é gravado:** `cobrancas.desconto_centavos` (padrão 0, fora do `#[Fillable]` como `status`; default
+  também em `Cobranca::$attributes`) e `Cobranca::valorPagoCentavos()` = `valor_centavos − desconto_centavos`.
+- **Uma regra, duas linguagens:** `App\Support\Desconto` (PHP) e `resources/js/desconto.js` com os **mesmos casos** em
+  `tests/Unit/DescontoTest.php` e `desconto.test.js`. `centavos()`/`descontoEmCentavos()`: vazio → 0, inválido → `null`,
+  **não limitam** ao valor (quem chama confere `0 ≤ desconto ≤ valor`; a tela usa `travarDesconto`). Percentual em
+  pontos-base inteiros (`intdiv(valor × pb + 5000, 10000)`, meio centavo para cima), regex `^\d{1,3}([.,]\d{1,2})?$`;
+  R$ lê como `Dinheiro::paraCentavos` (`'5'` → R$ 5,00, `'1.234,56'`, `'R$ 260'`), nunca "centavos = dígitos".
+- `Desconto::rotulo()` mostra o percentual sempre com vírgula e sem zeros à direita (`'12.5'` e `'12,50'` → `12,5%`).
+
+### Pegadinhas
+- **`Dinheiro::paraCentavos` lança `TypeError` (500) com número gigante** (`'99999999999999999999'`: `(int) × 100` vira
+  float e o retorno é `?int`). `Desconto::centavos` captura e devolve `null`; a raiz continua em `Dinheiro` (afeta também
+  a regra `ValorEmReais`) — não corrigida na Tarefa 1.
+- **`trim()` do PHP não tira o NBSP (U+00A0); o do JS tira.** Entrada só com NBSP dava `null` no servidor e `0` na tela.
+  `desconto.js` corta só espaço ASCII (`aparar`) e os dois testes têm o caso. Achado por comparação PHP × JS com 8.000
+  entradas sorteadas: ao duplicar uma regra, comparar as duas implementações com entradas aleatórias, não só com os casos
+  escritos à mão.
+- **`$attributes` é obrigatório para coluna nova com default:** sem `desconto_centavos => 0` ali, o objeto recém-criado
+  pela factory vem com `null` até ser relido (mesma pegadinha de `User`, Fase 25).

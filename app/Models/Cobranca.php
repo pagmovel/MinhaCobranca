@@ -25,7 +25,7 @@ class Cobranca extends Model
     use HasFactory;
 
     /** Mesmo default da migração (objeto recém-criado precisa dele antes de ser relido). */
-    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma'];
+    protected $attributes = ['status' => 'pendente', 'forma_pagamento' => 'nenhuma', 'desconto_centavos' => 0];
 
     protected function casts(): array
     {
@@ -38,6 +38,7 @@ class Cobranca extends Model
             'avisado_em' => 'immutable_datetime',
             'status' => StatusCobranca::class,
             'valor_centavos' => 'integer',
+            'desconto_centavos' => 'integer',
             'forma_pagamento' => FormaPagamento::class,
         ];
     }
@@ -88,6 +89,12 @@ class Cobranca extends Model
                 default => 'a_vencer',
             },
         };
+    }
+
+    /** Derivado, nunca gravado: o que entra no caixa quando a cobrança é paga. */
+    public function valorPagoCentavos(): int
+    {
+        return $this->valor_centavos - $this->desconto_centavos;
     }
 
     public function editavel(): bool
