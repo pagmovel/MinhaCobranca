@@ -41,6 +41,15 @@ final class Desconto
         return $pontosBase === null ? null : intdiv($valorCentavos * $pontosBase + 5000, 10000);
     }
 
+    /** Percentual da baixa em lote: formato certo e de 0 a 100 (vazio vale 0). */
+    public static function percentualValido(?string $entrada): bool
+    {
+        $texto = trim((string) $entrada);
+        $pontosBase = self::pontosBase($texto);
+
+        return $texto === '' || ($pontosBase !== null && $pontosBase <= 10000);
+    }
+
     /** Texto da auditoria: "10% = R$ 24,76" (percentual, sempre com vírgula e sem zeros à direita) ou "R$ 24,76". */
     public static function rotulo(int $valorCentavos, int $descontoCentavos, string $tipo, ?string $entrada): string
     {

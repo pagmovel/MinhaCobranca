@@ -73,6 +73,17 @@ class DescontoTest extends TestCase
         $this->assertNull(Desconto::centavos(24757, $tipo, $entrada));
     }
 
+    public function test_percentual_valido_vai_de_0_a_100_e_vazio_vale_zero(): void
+    {
+        foreach ([null, '', '  ', '0', '0,01', '12.5', '99,99', '100', '100,0', '100,00'] as $entrada) {
+            $this->assertTrue(Desconto::percentualValido($entrada), var_export($entrada, true));
+        }
+
+        foreach (['100,01', '100.1', '101', '1000', '-5', 'abc', '10,555', '10%', "\u{00A0}"] as $entrada) {
+            $this->assertFalse(Desconto::percentualValido($entrada), var_export($entrada, true));
+        }
+    }
+
     public function test_rotulo_do_percentual_mostra_o_percentual_e_o_valor(): void
     {
         $this->assertSame('10% = R$ 24,76', Desconto::rotulo(24757, 2476, 'percentual', '10'));

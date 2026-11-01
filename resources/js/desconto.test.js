@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { descontoEmCentavos, travarDesconto } from './desconto.js';
+import { descontoEmCentavos, previaDoLote, travarDesconto } from './desconto.js';
 
 // Mesmos casos de tests/Unit/DescontoTest.php: a tela e o servidor precisam concordar.
 const casosValidos = [
@@ -77,4 +77,40 @@ test('campo vazio ou ainda inválido não trava', () => {
     assert.deepEqual(travarDesconto(24757, 'percentual', ''), { entrada: '', travou: false });
     assert.deepEqual(travarDesconto(24757, 'valor', ''), { entrada: '', travou: false });
     assert.deepEqual(travarDesconto(24757, 'percentual', '1e3'), { entrada: '1e3', travou: false });
+});
+
+// Mesmo caso de tests/Feature/Cobrancas/AcoesEmLoteTest.php: a soma da prévia é a soma gravada pelo servidor.
+test('prévia do lote arredonda por cobrança e os totais somam as linhas', () => {
+    assert.deepEqual(previaDoLote([10001, 24757], '10'), {
+        linhas: [
+            { valor: 10001, desconto: 1000, pago: 9001 },
+            { valor: 24757, desconto: 2476, pago: 22281 },
+        ],
+        totais: { valor: 34758, desconto: 3476, pago: 31282 },
+    });
+});
+
+test('prévia do lote sem percentual não desconta nada', () => {
+    for (const entrada of ['', '0', '  ']) {
+        assert.deepEqual(previaDoLote([10001, 24757], entrada).totais, { valor: 34758, desconto: 0, pago: 34758 });
+    }
+});
+
+test('prévia do lote: vírgula ou ponto dão o mesmo desconto e a vírgula final é digitação em curso', () => {
+    const esperado = previaDoLote([10001, 24757], '12.5');
+
+    assert.deepEqual(previaDoLote([10001, 24757], '12,5'), esperado);
+    assert.deepEqual(previaDoLote([10001, 24757], '12,').totais, previaDoLote([10001, 24757], '12').totais);
+});
+
+test('prévia do lote com 100% deixa o valor pago em zero', () => {
+    assert.deepEqual(previaDoLote([10001, 24757], '100').totais, { valor: 34758, desconto: 34758, pago: 0 });
+});
+
+test('prévia do lote com entrada ainda inválida não desconta (a tela não pisca)', () => {
+    assert.deepEqual(previaDoLote([10001], 'abc').totais, { valor: 10001, desconto: 0, pago: 10001 });
+});
+
+test('prévia do lote sem cobranças tem totais zerados', () => {
+    assert.deepEqual(previaDoLote([], '10'), { linhas: [], totais: { valor: 0, desconto: 0, pago: 0 } });
 });

@@ -1711,6 +1711,22 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
 - **"12," não é erro de digitação:** `descontoEmCentavos('12,')` é `null`; a tela tira a vírgula final antes de calcular,
   senão o valor pago voltava ao cheio e piscava enquanto a pessoa digitava os decimais.
 
+### Acertos (Tarefa 3 — baixa em lote)
+- **Um percentual para o lote, arredondado por cobrança:** `pagarEmLote` recebe `desconto_percentual` (opcional) e grava
+  `Desconto::centavos(valor, PERCENTUAL, $percentual)` em cada pendente selecionada (10001 e 24757 a 10% → 1000 e 2476,
+  soma 3476). Cobrança já paga ou alheia continua ignorada, sem mexer no desconto dela.
+- **Validação em `Desconto::percentualValido`** (formato + de 0 a 100; vazio vale 0), numa regra `Closure` com `bail` na
+  frente (testado: sem `bail`, `desconto_percentual[]=10` chega à closure e deixa de dar erro de validação). O erro sai no campo `desconto_percentual`, que a
+  tela mostra embaixo do campo. Percentual acima de 100 **não** passa pelo "desconto > valor" da baixa individual: com
+  valor 0 esse teste deixaria 150% passar.
+- **`resumoDaBaixa($registro, $tipo, $entrada, $emLote)`** não lê mais o `Request` (achado da revisão da Tarefa 2).
+  Textos do lote: "Baixa em lote (R$ …, paga em …)" sem desconto; "Baixa em lote (R$ …, desconto 10% = R$ …, pago R$ …,
+  em …)"; "Baixa em lote com desconto integral (100% = …)".
+- **Prévia pura em `previaDoLote` (`desconto.js`):** linhas (valor, desconto, pago) e totais saem da mesma conta do servidor;
+  o teste JS usa os mesmos valores do teste PHP, então "soma da prévia = soma gravada" fica provada nas duas pontas. A
+  vírgula final ("12,") conta como o número antes dela (a prévia não pisca). A lista da prévia rola dentro do modal
+  (`max-h-64 overflow-auto`, até 200 cobranças) e só o total pago leva `.destacar`.
+
 ### Pegadinhas
 - **`Dinheiro::paraCentavos` lança `TypeError` (500) com número gigante** (`'99999999999999999999'`: `(int) × 100` vira
   float e o retorno é `?int`). `Desconto::centavos` captura e devolve `null`; a raiz continua em `Dinheiro` (afeta também
@@ -1724,3 +1740,7 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
 - **Comportamento de tela sem teste automático:** não há jsdom nem Vue Test Utils (e dependência nova exige aprovação).
   "Trocar % ↔ R$ limpa o número", a trava e o aviso só se conferem no navegador; manter a lógica pura em `desconto.js` /
   `mascaras.js` (com `node --test`) e deixar no componente só a ligação. Pendente: conferência visual (Tarefa 8).
+- **Componente Vue dá para renderizar sem navegador:** `createServer` do Vite com `configFile: false` e só o
+  `@vitejs/plugin-vue` (o `laravel-vite-plugin` do projeto pode criar `public/hot`), `ssrLoadModule` +
+  `renderToString` de `vue/server-renderer`; o `Modal` sai em `ctx.teleports.body`. Serve para pegar erro de template e de
+  `<script setup>` na renderização inicial, não para interação (watch, trava, aviso).

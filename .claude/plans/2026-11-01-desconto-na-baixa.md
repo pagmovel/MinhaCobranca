@@ -124,7 +124,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
   formatado. (3) "Trocar limpa o número", a trava e o aviso são comportamento de tela: não há teste de componente
   (sem jsdom/Vue Test Utils e sem dependência nova); ficam para a conferência no navegador da Tarefa 8.
 
-### Tarefa 3 — Baixa em lote com percentual — **Estado: pendente**
+### Tarefa 3 — Baixa em lote com percentual — **Estado: testada**
 
 **Arquivos:** `CobrancaController::pagarEmLote` (linha ~244), `resources/js/Components/BaixaEmLote.vue`,
 `tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
@@ -132,15 +132,22 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 **Interfaces:** consome `Desconto::centavos(…, Desconto::PERCENTUAL, …)` e `descontoEmCentavos` (JS). Campo novo
 `desconto_percentual` (`nullable`, mesma regex de percentual, máximo 100).
 
-- [ ] **Passo 1: testes que falham** (em `AcoesEmLoteTest`): `test_lote_aplica_percentual_em_cada_cobranca` (valores
+- [x] **Passo 1: testes que falham** (em `AcoesEmLoteTest`): `test_lote_aplica_percentual_em_cada_cobranca` (valores
   10001 e 24757 a 10% → 1000 e 2476: arredondamento por cobrança; soma 3476); `test_lote_sem_percentual_continua_sem_desconto`;
   `test_lote_percentual_acima_de_100_e_recusado`; auditoria "Baixa em lote" com o rótulo do desconto.
-- [ ] **Passo 2:** rodar o arquivo → FALHAM.
-- [ ] **Passo 3:** servidor aplica o percentual a cada cobrança pendente selecionada, na transação de hoje.
-- [ ] **Passo 4:** `BaixaEmLote.vue`: campo "Desconto (%) para todas" com trava em 100; a prévia lista valor, desconto
+- [x] **Passo 2:** rodar o arquivo → FALHAM.
+- [x] **Passo 3:** servidor aplica o percentual a cada cobrança pendente selecionada, na transação de hoje.
+- [x] **Passo 4:** `BaixaEmLote.vue`: campo "Desconto (%) para todas" com trava em 100; a prévia lista valor, desconto
   e valor pago por cobrança (com `descontoEmCentavos`) e os totais.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: baixa em lote com percentual de desconto e prévia por cobrança`.
+- [x] **Passo 5:** testes + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: baixa em lote com percentual de desconto e prévia por cobrança`.
+
+  Registro: (1) `resumoDaBaixa` deixou de ler `desconto_tipo`/`desconto` do `Request`: recebe tipo e entrada por
+  parâmetro (e `emLote`), então serve à baixa individual e ao lote. (2) A validação do percentual ficou em
+  `Desconto::percentualValido` (formato + 0 a 100), com teste unitário; o erro sai em `desconto_percentual`. (3) A conta
+  da prévia ficou pura em `previaDoLote` (`desconto.js`), com o mesmo caso do teste PHP (10001 e 24757 a 10% → soma
+  3476), porque não há teste de componente; "Máximo: 100%", a rolagem da prévia e o layout em 390 px ficam para a
+  conferência no navegador da Tarefa 8.
 
 ### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: pendente**
 

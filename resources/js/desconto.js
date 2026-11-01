@@ -44,6 +44,21 @@ export function descontoEmCentavos(valorCentavos, tipo, entrada) {
     return pontos === null ? null : Number((BigInt(valorCentavos) * BigInt(pontos) + 5000n) / 10000n);
 }
 
+/**
+ * Prévia da baixa em lote: o mesmo percentual em cada valor, arredondado por cobrança (como o servidor grava),
+ * e os totais somam as linhas. A vírgula final ("12,") é digitação em curso: conta como o número antes dela.
+ */
+export function previaDoLote(valoresCentavos, entrada) {
+    const linhas = valoresCentavos.map((valor) => {
+        const desconto = descontoEmCentavos(valor, PERCENTUAL, String(entrada ?? '').replace(/[.,]$/, '')) ?? 0;
+
+        return { valor, desconto, pago: valor - desconto };
+    });
+    const somar = (campo) => linhas.reduce((total, linha) => total + linha[campo], 0);
+
+    return { linhas, totais: { valor: somar('valor'), desconto: somar('desconto'), pago: somar('pago') } };
+}
+
 /** O desconto nunca passa de 100% do valor: acima disso a entrada vira o limite. */
 export function travarDesconto(valorCentavos, tipo, entrada) {
     const texto = aparar(entrada);
