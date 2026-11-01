@@ -1728,7 +1728,23 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
   (`max-h-64 overflow-auto`, até 200 cobranças) e só o total pago leva `.destacar`.
 - **Aviso que some sozinho = `criarAvisoTemporario()` (`avisoTemporario.js`, com teste):** `{ aviso, mostrar, limpar }`, 2 s, cancela ao sair do componente; usado em `BaixaInline` e `BaixaEmLote` (o próximo usa o mesmo).
 
+### Acertos (Tarefa 4 — corrigir pagamento e desfazer baixa)
+- **Corrigir muda data e desconto** (`corrigirPagamento`): reaproveita `descontoValidado` (depois do `findOrFail` e da
+  checagem de status, como `pagar`). A tela abre em **R$ com o desconto atual** e sempre manda os dois campos; o servidor,
+  se o pedido vier **sem** `desconto`/`desconto_tipo`, corrige só a data e **mantém** o desconto (nunca zera calado). Campo
+  vazio com o tipo = tirar o desconto. `antes`/`depois` de `pagamento.corrigido` levam `pago_em` e `desconto_centavos`; o
+  `resumo` só cita o desconto quando ele muda ("…, desconto de R$ 10,00 para R$ 24,76"), senão fica o texto de sempre.
+- **Desfazer zera `desconto_centavos`** e grava o desconto desfeito em `antes`/`depois` de `baixa.desfeita` (senão o valor
+  some sem rastro). A tela do desfazer avisa "…e o desconto de R$ X é desfeito" quando há desconto.
+- **Lógica de tela dos campos do desconto = `usarDescontoDaBaixa(form, () => valorCentavos)`** (`usarDescontoDaBaixa.js`,
+  usada por `BaixaInline` e `CorrecaoPagamentoInline`): valor pago, integral, aviso, trava e "trocar limpa o número" ficam
+  num lugar só e **têm teste `node --test`** (um objeto `reactive` faz o papel do `useForm`; `await nextTick()` espera os
+  `watch`). Tela nova com desconto reaproveita; não copiar os `watch`.
+- `Cobranca::paraLista` traz `desconto_centavos` (a lista passa `valor-centavos` e `desconto-centavos` ao componente).
+
 ### Pegadinhas
+- **Teste antigo travava o formato do `antes`/`depois`:** `AuditoriaTest` comparava `['pago_em' => …]` exato; acrescentar
+  `desconto_centavos` exigiu atualizar a asserção. Ao acrescentar chave em dado de auditoria, procurar `->antes`/`->depois` nos testes.
 - **`Dinheiro::paraCentavos` lança `TypeError` (500) com número gigante** (`'99999999999999999999'`: `(int) × 100` vira
   float e o retorno é `?int`). `Desconto::centavos` captura e devolve `null`; a raiz continua em `Dinheiro` (afeta também
   a regra `ValorEmReais`) — não corrigida na Tarefa 1.
@@ -1739,8 +1755,9 @@ Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/
 - **`$attributes` é obrigatório para coluna nova com default:** sem `desconto_centavos => 0` ali, o objeto recém-criado
   pela factory vem com `null` até ser relido (mesma pegadinha de `User`, Fase 25).
 - **Comportamento de tela sem teste automático:** não há jsdom nem Vue Test Utils (e dependência nova exige aprovação).
-  "Trocar % ↔ R$ limpa o número", a trava e o aviso só se conferem no navegador; manter a lógica pura em `desconto.js` /
-  `mascaras.js` (com `node --test`) e deixar no componente só a ligação. Pendente: conferência visual (Tarefa 8).
+  Manter a lógica em módulos `.js` testados com `node --test` (`desconto.js`, `mascaras.js`, `usarDescontoDaBaixa.js` — este
+  cobre a trava, "trocar % ↔ R$ limpa o número" e o aviso) e deixar no componente só a ligação e o layout; o que sobra
+  (digitação com a máscara, aparência, 390 px) só se confere no navegador. Pendente: conferência visual (Tarefa 8).
 - **Componente Vue dá para renderizar sem navegador:** `createServer` do Vite com `configFile: false` e só o
   `@vitejs/plugin-vue` (o `laravel-vite-plugin` do projeto pode criar `public/hot`), `ssrLoadModule` +
   `renderToString` de `vue/server-renderer`; o `Modal` sai em `ctx.teleports.body`. Serve para pegar erro de template e de

@@ -1,9 +1,8 @@
 <script setup>
-import { computed, ref, useId, watch } from 'vue';
+import { ref, useId } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { criarAvisoTemporario } from '../avisoTemporario.js';
-import { descontoEmCentavos, travarDesconto } from '../desconto.js';
 import { formatarCentavos } from '../itens.js';
+import { TEXTO_INTEGRAL, usarDescontoDaBaixa } from '../usarDescontoDaBaixa.js';
 
 // naFaixa: aberto na faixa abaixo da linha da tabela; ao fechar, avisa a tabela em vez de mostrar o botão.
 // valorCentavos: valor da cobrança, para mostrar, calcular o valor pago e travar o desconto em 100%.
@@ -19,32 +18,7 @@ const aberto = ref(props.naFaixa);
 const hoje = new Date().toLocaleDateString('sv-SE'); // AAAA-MM-DD no fuso do aparelho
 const form = useForm({ pago_em: hoje, desconto_tipo: 'percentual', desconto: '' });
 
-const emReais = computed(() => form.desconto_tipo === 'valor');
-// A vírgula no fim ("12,") é digitação em curso: conta como o número antes dela, senão o valor pago pisca.
-const descontoCentavos = computed(() => descontoEmCentavos(props.valorCentavos, form.desconto_tipo, form.desconto.replace(/[.,]$/, '')) ?? 0);
-const valorPagoCentavos = computed(() => props.valorCentavos - descontoCentavos.value);
-const descontoIntegral = computed(() => props.valorCentavos > 0 && descontoCentavos.value === props.valorCentavos);
-
-const TEXTO_INTEGRAL = 'Desconto integral: nada será recebido.';
-const { aviso, mostrar: mostrarAviso, limpar: limparAviso } = criarAvisoTemporario();
-const anuncio = computed(() => aviso.value || (descontoIntegral.value ? TEXTO_INTEGRAL : ''));
-
-// Trocar % ↔ R$ limpa o número: 10% não pode virar R$ 0,10.
-watch(() => form.desconto_tipo, () => {
-    limparAviso();
-    form.desconto = '';
-});
-
-watch(() => form.desconto, () => {
-    form.clearErrors('desconto', 'desconto_tipo');
-    const { entrada, travou } = travarDesconto(props.valorCentavos, form.desconto_tipo, form.desconto);
-    if (travou) {
-        form.desconto = entrada;
-        mostrarAviso(emReais.value ? `Máximo: R$ ${formatarCentavos(props.valorCentavos)}` : 'Máximo: 100%');
-    }
-});
-
-const erroDoDesconto = computed(() => form.errors.desconto || form.errors.desconto_tipo);
+const { emReais, valorPagoCentavos, descontoIntegral, aviso, anuncio, erroDoDesconto } = usarDescontoDaBaixa(form, () => props.valorCentavos);
 
 const fechar = () => { aberto.value = false; emit('fechar'); };
 const confirmar = () => form.post(`/cobrancas/${props.cobrancaId}/pagar`, { preserveScroll: true, onSuccess: fechar });

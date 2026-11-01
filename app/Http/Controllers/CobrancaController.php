@@ -337,7 +337,7 @@ class CobrancaController extends Controller
         return back()->with('sucesso', 'Vencimento prorrogado.');
     }
 
-    /** Baixa com a data errada: troca a data do pagamento (senha + motivo, registrado na auditoria). */
+    /** Baixa com a data ou o desconto errados: troca os dois (senha + motivo, registrado na auditoria). */
     public function corrigirPagamento(Request $request, int $cobranca): RedirectResponse
     {
         $registro = $request->user()->cobrancas()->findOrFail($cobranca);
@@ -347,16 +347,27 @@ class CobrancaController extends Controller
             return back()->with('erro', 'Só cobranças pagas têm o pagamento corrigido.');
         }
 
+        // Pedido sem os campos do desconto corrige só a data: o desconto atual fica (a tela sempre os manda).
+        $descontoDepois = $request->hasAny(['desconto', 'desconto_tipo'])
+            ? $this->descontoValidado($request, $registro->valor_centavos)
+            : $registro->desconto_centavos;
         $antes = $registro->pago_em;
+        $descontoAntes = $registro->desconto_centavos;
 
-        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+        DB::transaction(function () use ($registro, $request, $dados, $antes, $descontoAntes, $descontoDepois) {
             $registro->pago_em = $dados['pago_em'];
+            $registro->desconto_centavos = $descontoDepois;
             $registro->save();
-            Auditoria::registrar($request, 'pagamento.corrigido', $registro, 'Pagamento corrigido (antes: '.$antes->format('d/m/Y').')',
-                ['pago_em' => $antes->toDateString()], ['pago_em' => $registro->pago_em->toDateString()], trim($dados['motivo']));
+            $resumo = 'Pagamento corrigido (antes: '.$antes->format('d/m/Y');
+            if ($descontoAntes !== $descontoDepois) {
+                $resumo .= ', desconto de R$ '.Dinheiro::formatar($descontoAntes).' para R$ '.Dinheiro::formatar($descontoDepois);
+            }
+            Auditoria::registrar($request, 'pagamento.corrigido', $registro, $resumo.')',
+                ['pago_em' => $antes->toDateString(), 'desconto_centavos' => $descontoAntes],
+                ['pago_em' => $registro->pago_em->toDateString(), 'desconto_centavos' => $descontoDepois], trim($dados['motivo']));
         });
 
-        return back()->with('sucesso', 'Data do pagamento corrigida. Se o recibo pago já foi enviado, envie de novo: ele sai com a data nova.');
+        return back()->with('sucesso', 'Pagamento corrigido. Se o recibo pago já foi enviado, envie de novo: ele sai com os dados novos.');
     }
 
     /** Baixa na cobrança errada: volta a pendente (senha + motivo, registrado na auditoria). */
@@ -370,13 +381,16 @@ class CobrancaController extends Controller
         }
 
         $antes = $registro->pago_em;
+        $descontoAntes = $registro->desconto_centavos;
 
-        DB::transaction(function () use ($registro, $request, $dados, $antes) {
+        DB::transaction(function () use ($registro, $request, $dados, $antes, $descontoAntes) {
             $registro->status = StatusCobranca::Pendente;
             $registro->pago_em = null;
+            $registro->desconto_centavos = 0;
             $registro->save();
             Auditoria::registrar($request, 'baixa.desfeita', $registro, 'Baixa desfeita (estava paga em '.$antes->format('d/m/Y').')',
-                ['status' => 'paga', 'pago_em' => $antes->toDateString()], ['status' => 'pendente', 'pago_em' => null], trim($dados['motivo']));
+                ['status' => 'paga', 'pago_em' => $antes->toDateString(), 'desconto_centavos' => $descontoAntes],
+                ['status' => 'pendente', 'pago_em' => null, 'desconto_centavos' => 0], trim($dados['motivo']));
         });
 
         return back()->with('sucesso', 'Baixa desfeita: a cobrança voltou a ficar em aberto.');

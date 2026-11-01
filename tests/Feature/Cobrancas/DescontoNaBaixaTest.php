@@ -7,6 +7,7 @@ use App\Models\Cobranca;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class DescontoNaBaixaTest extends TestCase
@@ -208,5 +209,134 @@ class DescontoNaBaixaTest extends TestCase
         $cobranca = (new Cobranca)->fill(['valor_centavos' => 26060, 'desconto_centavos' => 500]);
 
         $this->assertSame(0, $cobranca->desconto_centavos);
+    }
+
+    /** Cobrança paga de R$ 247,57 em 20/10/2026, com desconto de R$ 10,00 (a senha da factory é "password"). */
+    private function usuarioComCobrancaPaga(): array
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobranca();
+        $cobranca->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-20', 'desconto_centavos' => 1000])->save();
+
+        return [$usuario, $cobranca];
+    }
+
+    private function corrigir(Cobranca $cobranca, array $campos): TestResponse
+    {
+        return $this->post("/cobrancas/{$cobranca->id}/corrigir-pagamento", array_merge(['senha' => 'password', 'motivo' => 'Desconto combinado errado'], $campos));
+    }
+
+    public function test_corrigir_muda_data_e_desconto_com_auditoria_antes_e_depois(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-10-25', 'desconto_tipo' => 'percentual', 'desconto' => '10'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('sucesso');
+
+        $cobranca->refresh();
+        $this->assertSame('2026-10-25', $cobranca->pago_em->toDateString());
+        $this->assertSame(2476, $cobranca->desconto_centavos);
+        $this->assertSame(22281, $cobranca->valorPagoCentavos());
+
+        $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
+        $this->assertSame(['pago_em' => '2026-10-20', 'desconto_centavos' => 1000], $auditoria->antes);
+        $this->assertSame(['pago_em' => '2026-10-25', 'desconto_centavos' => 2476], $auditoria->depois);
+        $this->assertSame('Desconto combinado errado', $auditoria->motivo);
+        $this->assertSame('Pagamento corrigido (antes: 20/10/2026, desconto de R$ 10,00 para R$ 24,76)', $auditoria->resumo);
+    }
+
+    public function test_corrigir_sem_mexer_no_desconto_mantem_o_desconto(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        // A tela abre em R$ com o desconto atual; só a data muda.
+        $this->corrigir($cobranca, ['pago_em' => '2026-10-25', 'desconto_tipo' => 'valor', 'desconto' => '10,00'])
+            ->assertSessionHasNoErrors();
+
+        $cobranca->refresh();
+        $this->assertSame('2026-10-25', $cobranca->pago_em->toDateString());
+        $this->assertSame(1000, $cobranca->desconto_centavos);
+
+        $auditoria = $usuario->auditorias()->where('acao', 'pagamento.corrigido')->sole();
+        $this->assertSame(1000, $auditoria->antes['desconto_centavos']);
+        $this->assertSame(1000, $auditoria->depois['desconto_centavos']);
+        $this->assertSame('Pagamento corrigido (antes: 20/10/2026)', $auditoria->resumo);
+    }
+
+    public function test_corrigir_so_a_data_sem_os_campos_do_desconto_mantem_o_desconto(): void
+    {
+        [, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-10-25'])->assertSessionHasNoErrors();
+
+        $this->assertSame(1000, $cobranca->fresh()->desconto_centavos);
+    }
+
+    public function test_corrigir_com_o_campo_do_desconto_vazio_tira_o_desconto(): void
+    {
+        [, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        $this->corrigir($cobranca, ['pago_em' => '2026-10-20', 'desconto_tipo' => 'valor', 'desconto' => ''])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $cobranca->fresh()->desconto_centavos);
+    }
+
+    public function test_corrigir_desconto_exige_senha_e_motivo(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobrancaPaga();
+        $desconto = ['pago_em' => '2026-10-25', 'desconto_tipo' => 'percentual', 'desconto' => '50'];
+
+        $this->corrigir($cobranca, $desconto + ['senha' => 'errada'])->assertSessionHasErrors(['senha' => 'Senha incorreta.']);
+        $this->corrigir($cobranca, $desconto + ['motivo' => ' '])->assertSessionHasErrors('motivo');
+
+        $cobranca->refresh();
+        $this->assertSame('2026-10-20', $cobranca->pago_em->toDateString());
+        $this->assertSame(1000, $cobranca->desconto_centavos);
+        $this->assertSame(0, $usuario->auditorias()->count());
+    }
+
+    public function test_corrigir_desconto_acima_do_valor_ou_invalido_e_recusado(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobrancaPaga();
+        $data = ['pago_em' => '2026-10-25'];
+
+        $this->corrigir($cobranca, $data + ['desconto_tipo' => 'valor', 'desconto' => '247,58'])
+            ->assertSessionHasErrors(['desconto' => 'O desconto não pode passar do valor da cobrança.']);
+        $this->corrigir($cobranca, $data + ['desconto_tipo' => 'percentual', 'desconto' => 'abc'])
+            ->assertSessionHasErrors(['desconto' => 'Desconto inválido.']);
+        $this->corrigir($cobranca, $data + ['desconto' => '10'])->assertSessionHasErrors('desconto_tipo');
+
+        $cobranca->refresh();
+        $this->assertSame('2026-10-20', $cobranca->pago_em->toDateString());
+        $this->assertSame(1000, $cobranca->desconto_centavos);
+        $this->assertSame(0, $usuario->auditorias()->count());
+    }
+
+    public function test_desfazer_baixa_zera_o_desconto(): void
+    {
+        [$usuario, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        $this->post("/cobrancas/{$cobranca->id}/desfazer-baixa", ['senha' => 'password', 'motivo' => 'Baixa na cobrança errada'])
+            ->assertSessionHasNoErrors();
+
+        $cobranca->refresh();
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->status);
+        $this->assertSame(0, $cobranca->desconto_centavos);
+        $this->assertSame($cobranca->valor_centavos, $cobranca->valorPagoCentavos());
+
+        $auditoria = $usuario->auditorias()->where('acao', 'baixa.desfeita')->sole();
+        $this->assertSame(1000, $auditoria->antes['desconto_centavos']);
+        $this->assertSame(0, $auditoria->depois['desconto_centavos']);
+    }
+
+    public function test_lista_de_cobrancas_traz_o_desconto(): void
+    {
+        [, $cobranca] = $this->usuarioComCobrancaPaga();
+
+        $this->getJson('/cobrancas/dados?status=paga&mes=2026-10')
+            ->assertOk()
+            ->assertJsonPath('linhas.0.id', $cobranca->id)
+            ->assertJsonPath('linhas.0.desconto_centavos', 1000);
     }
 }

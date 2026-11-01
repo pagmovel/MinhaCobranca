@@ -418,6 +418,8 @@ async function fecharFaixa() {
                                         v-else
                                         :cobranca-id="cobranca.id"
                                         :enviada="cobranca.enviado"
+                                        :valor-centavos="cobranca.valor_centavos"
+                                        :desconto-centavos="cobranca.desconto_centavos"
                                         :modo-inicial="faixa.acao"
                                         @fechar="fecharFaixa"
                                     />

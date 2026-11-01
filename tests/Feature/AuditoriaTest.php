@@ -54,7 +54,10 @@ class AuditoriaTest extends TestCase
             'resumo' => 'Pagamento corrigido (antes: 17/06/2026)', 'motivo' => 'Data digitada errada',
         ]], $this->registros());
         $auditoria = $this->usuario->auditorias()->sole();
-        $this->assertSame([['pago_em' => '2026-06-17'], ['pago_em' => '2026-05-17'], '127.0.0.1'], [$auditoria->antes, $auditoria->depois, $auditoria->ip]);
+        $this->assertSame(
+            [['pago_em' => '2026-06-17', 'desconto_centavos' => 0], ['pago_em' => '2026-05-17', 'desconto_centavos' => 0], '127.0.0.1'],
+            [$auditoria->antes, $auditoria->depois, $auditoria->ip],
+        );
     }
 
     public function test_desfazer_baixa_volta_a_pendente_e_fica_registrado(): void

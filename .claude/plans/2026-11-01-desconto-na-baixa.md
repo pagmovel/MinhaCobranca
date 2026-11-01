@@ -149,7 +149,7 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
   3476), porque não há teste de componente; "Máximo: 100%", a rolagem da prévia e o layout em 390 px ficam para a
   conferência no navegador da Tarefa 8.
 
-### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: pendente**
+### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: testada**
 
 **Arquivos:** `CobrancaController::corrigirPagamento` (~332) e `desfazerBaixa` (~354),
 `resources/js/Components/CorrecaoPagamentoInline.vue`, `resources/js/Pages/Cobrancas/Index.vue:417` (passa
@@ -158,14 +158,24 @@ Recibo `webiss-v2`/`danfse-v2` preenche campos que o layout já tem; migração 
 **Interfaces:** consome `descontoValidado` (Tarefa 2). `CorrecaoPagamentoInline` ganha props `valorCentavos` e
 `descontoCentavos`; o formulário inicia com `desconto_tipo: 'valor'` e `desconto` = desconto atual formatado.
 
-- [ ] **Passo 1: testes que falham:** `test_corrigir_muda_data_e_desconto_com_auditoria_antes_e_depois`;
+- [x] **Passo 1: testes que falham:** `test_corrigir_muda_data_e_desconto_com_auditoria_antes_e_depois`;
   `test_corrigir_sem_mexer_no_desconto_mantem_o_desconto` (envia o desconto atual em R$ → igual);
   `test_corrigir_desconto_exige_senha_e_motivo`; `test_desfazer_baixa_zera_o_desconto`.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** implementar (auditoria `pagamento.corrigido` com antes/depois de `pago_em` e `desconto_centavos`).
-- [ ] **Passo 4:** tela de correção com os campos de desconto e o valor pago novo.
-- [ ] **Passo 5:** testes + build → PASSAM. Pint.
-- [ ] **Passo 6:** commit `feat: corrigir pagamento muda o desconto; desfazer baixa zera`.
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** implementar (auditoria `pagamento.corrigido` com antes/depois de `pago_em` e `desconto_centavos`).
+- [x] **Passo 4:** tela de correção com os campos de desconto e o valor pago novo.
+- [x] **Passo 5:** testes + build → PASSAM. Pint.
+- [x] **Passo 6:** commit `feat: corrigir pagamento muda o desconto; desfazer baixa zera`.
+
+  Registro: (1) Pedido **sem** `desconto`/`desconto_tipo` corrige só a data e **mantém** o desconto (a tela sempre manda
+  os dois; campo vazio com o tipo = tirar o desconto). (2) `antes`/`depois` de `pagamento.corrigido` ganharam
+  `desconto_centavos` (o `AuditoriaTest` antigo, que esperava só `pago_em`, foi atualizado) e o `resumo` só cita o
+  desconto quando ele muda; `baixa.desfeita` também grava o desconto desfeito em `antes`/`depois`. (3) A lógica da tela
+  (valor pago, trava, trocar tipo limpa, aviso) saiu do `BaixaInline` para `usarDescontoDaBaixa.js` e é usada pelos dois
+  componentes; por ser função sobre um `useForm`, ganhou teste `node --test` (trava, troca limpa, vírgula final,
+  integral), o que cobre o ponto de revisão 2 sem navegador. (4) `Cobranca::paraLista` ganhou `desconto_centavos`
+  (decisão do controlador). (5) Texto do desfazer cita o desconto que será desfeito. (6) Só a renderização inicial dos
+  dois componentes foi conferida (SSR do Vite, sem navegador); interação e layout em 390 px ficam para a Tarefa 8.
 
 ### Tarefa 5 — Lista de cobranças e painel — **Estado: pendente**
 
