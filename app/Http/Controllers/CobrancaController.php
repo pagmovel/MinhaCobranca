@@ -13,6 +13,7 @@ use App\Rules\AnoValido;
 use App\Services\EmissorDeRecibos;
 use App\Services\GeradorDeCobrancas;
 use App\Services\ListaDeCobrancas;
+use App\Services\ValoresDaBaixa;
 use App\Support\BlocoDePaginas;
 use App\Support\Desconto;
 use App\Support\Dinheiro;
@@ -249,8 +250,8 @@ class CobrancaController extends Controller
             'ids' => ['required', 'array', 'max:200'],
             'ids.*' => ['integer'],
             'modo' => ['required', Rule::in(['vencimento', 'hoje'])],
-            ...$this->regrasDoDesconto(),
-        ], self::MENSAGENS_DO_DESCONTO);
+            ...ValoresDaBaixa::regrasDoDesconto(),
+        ], ValoresDaBaixa::MENSAGENS);
 
         $hoje = CarbonImmutable::today();
         $tipo = $dados['desconto_tipo'] ?? Desconto::PERCENTUAL;
@@ -268,7 +269,11 @@ class CobrancaController extends Controller
                 $registro->pago_em = $pagoEm;
                 $registro->desconto_centavos = Desconto::centavos($registro->valor_centavos, $tipo, $entrada);
                 $registro->save();
-                Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $tipo, $entrada, emLote: true));
+                Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa(
+                    $registro,
+                    Desconto::rotulo($registro->valor_centavos, $registro->desconto_centavos, $tipo, $entrada),
+                    emLote: true,
+                ));
             }
         });
 
@@ -439,74 +444,62 @@ class CobrancaController extends Controller
 
     public function pagar(Request $request, int $cobranca): RedirectResponse
     {
-        $registro = $request->user()->cobrancas()->findOrFail($cobranca);
+        $registro = $request->user()->cobrancas()->with('contrato')->findOrFail($cobranca);
         $dados = $request->validate(['pago_em' => ['required', 'date_format:Y-m-d', new AnoValido, 'before_or_equal:today']]);
 
         if ($registro->status !== StatusCobranca::Pendente) {
             return back()->with('erro', 'Só cobranças pendentes recebem baixa.');
         }
 
-        $descontoCentavos = $this->descontoValidado($request, $registro->valor_centavos);
+        $valores = ValoresDaBaixa::resolver(
+            $registro,
+            CarbonImmutable::parse($dados['pago_em']),
+            $request->validate(ValoresDaBaixa::regras(), ValoresDaBaixa::MENSAGENS),
+            ValoresDaBaixa::INDIVIDUAL,
+        );
 
-        DB::transaction(function () use ($registro, $dados, $descontoCentavos, $request) {
+        DB::transaction(function () use ($registro, $dados, $valores, $request) {
             $registro->status = StatusCobranca::Paga;
             $registro->pago_em = $dados['pago_em'];
-            $registro->desconto_centavos = $descontoCentavos;
+            $registro->desconto_centavos = $valores['desconto_centavos'];
+            $registro->multa_centavos = $valores['multa_centavos'];
+            $registro->juros_centavos = $valores['juros_centavos'];
+            $registro->outros_centavos = $valores['outros_centavos'];
             $registro->save();
-            Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, (string) $request->input('desconto_tipo'), $request->input('desconto')));
+            Auditoria::registrar($request, 'cobranca.paga', $registro, $this->resumoDaBaixa($registro, $valores['rotulo_desconto']));
         });
 
         return back()->with('sucesso', 'Baixa registrada.');
     }
 
-    private const MENSAGENS_DO_DESCONTO = [
-        'desconto_tipo.required_with' => 'Escolha se o desconto é em % ou em R$.',
-        'desconto_tipo.in' => 'Tipo de desconto inválido.',
-    ];
-
-    /**
-     * Campos do desconto, iguais na baixa individual, na correção e no lote.
-     *
-     * @return array<string, list<mixed>>
-     */
-    private function regrasDoDesconto(): array
-    {
-        return [
-            'desconto_tipo' => ['nullable', 'required_with:desconto', Rule::in([Desconto::PERCENTUAL, Desconto::VALOR])],
-            'desconto' => ['nullable', 'string', 'max:20'],
-        ];
-    }
-
-    /**
-     * Desconto da baixa em centavos, conferido de novo no servidor (a tela já trava em 100%):
-     * 0 ≤ desconto ≤ valor. Sem desconto digitado, 0.
-     */
+    /** Desconto da baixa em centavos, validado e conferido (0 ≤ desconto ≤ valor); sem desconto digitado, 0. */
     private function descontoValidado(Request $request, int $valorCentavos): int
     {
-        $dados = $request->validate($this->regrasDoDesconto(), self::MENSAGENS_DO_DESCONTO);
+        $dados = $request->validate(ValoresDaBaixa::regrasDoDesconto(), ValoresDaBaixa::MENSAGENS);
 
-        $centavos = Desconto::centavos($valorCentavos, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
-
-        if ($centavos === null) {
-            throw ValidationException::withMessages(['desconto' => 'Desconto inválido.']);
-        }
-
-        if ($centavos > $valorCentavos) {
-            throw ValidationException::withMessages(['desconto' => 'O desconto não pode passar do valor da cobrança.']);
-        }
-
-        return $centavos;
+        return ValoresDaBaixa::descontoDigitado($valorCentavos, $dados['desconto_tipo'] ?? Desconto::PERCENTUAL, $dados['desconto'] ?? null);
     }
 
     /**
-     * Texto da auditoria da baixa (individual ou em lote): sem desconto, o de sempre; com desconto, mostra o
-     * desconto e o valor pago. Tipo e entrada são o que a pessoa digitou (o rótulo do desconto sai deles).
+     * Texto da auditoria da baixa (individual ou em lote). Sem acréscimos, o da Fase 26: sem desconto o de sempre, com
+     * desconto mostra o desconto e o valor pago. Com multa, juros ou outros acréscimos, mostra só os que existem e sempre o
+     * desconto, mesmo R$ 0,00. `$rotuloDoDesconto` é o texto do desconto ("10% = R$ 24,76").
      */
-    private function resumoDaBaixa(Cobranca $registro, string $tipo, ?string $entrada, bool $emLote = false): string
+    private function resumoDaBaixa(Cobranca $registro, string $rotuloDoDesconto, bool $emLote = false): string
     {
         $valor = 'R$ '.Dinheiro::formatar($registro->valor_centavos);
         $pagoEm = $registro->pago_em->format('d/m/Y');
         $titulo = $emLote ? 'Baixa em lote' : 'Baixa registrada';
+        $pago = 'R$ '.Dinheiro::formatar($registro->valorPagoCentavos());
+
+        if ($registro->acrescimosCentavos() > 0) {
+            $acrescimos = collect(['multa' => $registro->multa_centavos, 'juros' => $registro->juros_centavos, 'outros' => $registro->outros_centavos])
+                ->filter(fn (int $centavos) => $centavos > 0)
+                ->map(fn (int $centavos, string $nome) => "{$nome} R$ ".Dinheiro::formatar($centavos))
+                ->implode(', ');
+
+            return "{$titulo} ({$valor}, {$acrescimos}, desconto {$rotuloDoDesconto}, pago {$pago}, em {$pagoEm})";
+        }
 
         if ($registro->desconto_centavos === 0) {
             return "{$titulo} ({$valor}, paga em {$pagoEm})";
@@ -516,9 +509,7 @@ class CobrancaController extends Controller
             return ($emLote ? 'Baixa em lote com' : 'Baixa com')." desconto integral (100% = {$valor}, pago R$ 0,00, em {$pagoEm})";
         }
 
-        $desconto = Desconto::rotulo($registro->valor_centavos, $registro->desconto_centavos, $tipo, $entrada);
-
-        return "{$titulo} ({$valor}, desconto {$desconto}, pago R$ ".Dinheiro::formatar($registro->valorPagoCentavos()).", em {$pagoEm})";
+        return "{$titulo} ({$valor}, desconto {$rotuloDoDesconto}, pago {$pago}, em {$pagoEm})";
     }
 
     /** Chamado pelo botão Enviar depois que a folha de compartilhamento (ou o download) concluiu. */

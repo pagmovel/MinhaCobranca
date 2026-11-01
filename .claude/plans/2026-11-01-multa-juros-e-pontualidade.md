@@ -137,7 +137,7 @@ recomeço ~363, renovação de vencido ~445), `resources/js/Pages/Contratos/Form
 (`condicoes.test.js`) e `totalDosItens` (`itens.test.js`). Falta conferir no navegador (390 px e 1280 px, digitação com a máscara, trava
 e exemplo ao vivo): fica para a Tarefa 10.
 
-### Tarefa 3 — Baixa individual — **Estado: pendente**
+### Tarefa 3 — Baixa individual — **Estado: testada**
 
 **Arquivos:** criar `app/Services/ValoresDaBaixa.php`, `tests/Feature/Cobrancas/AcrescimosNaBaixaTest.php`; modificar
 `CobrancaController` (`pagar`, `resumoDaBaixa`), `Cobranca::paraLista`, `ListaDeCobrancas` (~89) e `PainelController` (~89)
@@ -153,7 +153,7 @@ e exemplo ao vivo): fica para a Tarefa 10.
 - Produz: `ValoresDaBaixa::regras(): array` (regras do `validate` dos sete campos).
 - `paraLista` ganha `vencimento_iso` e `regras` (`Contrato::regrasDePagamento()`, com `contrato` carregado junto).
 
-- [ ] **Passo 1: testes que falham** (`AcrescimosNaBaixaTest`), valor 21000, vencimento 05/01/2026, `comCondicoes()` com multa
+- [x] **Passo 1: testes que falham** (`AcrescimosNaBaixaTest`), valor 21000, vencimento 05/01/2026, `comCondicoes()` com multa
   2% e juros 1%: `test_pedido_sem_campos_usa_o_contrato` (em 01/11/2026 → multa 420, juros 2100);
   `test_valor_digitado_vence_o_contrato`; `test_campo_vazio_fica_sem_valor`; `test_zero_fica_sem_valor`;
   `test_outros_soma_e_audita` (500 → texto exato da restrição global, pago R$ 240,20 com multa e juros);
@@ -163,14 +163,24 @@ e exemplo ao vivo): fica para a Tarefa 10.
   `test_cobranca_alheia_da_404_antes_da_validacao`; `test_mudar_contrato_depois_nao_muda_o_valor_gravado`;
   `test_lista_nao_faz_consulta_por_linha_ao_carregar_contrato` (contar consultas com 1 e com 5 cobranças: iguais).
   Em `DescontoNaBaixaTest`, nada muda de asserção.
-- [ ] **Passo 2:** rodar → FALHAM.
-- [ ] **Passo 3:** `ValoresDaBaixa`, `pagar` e `resumoDaBaixa` (troca `descontoValidado` por `resolver`). Desconto integral sem
+- [x] **Passo 2:** rodar → FALHAM.
+- [x] **Passo 3:** `ValoresDaBaixa`, `pagar` e `resumoDaBaixa` (troca `descontoValidado` por `resolver`). Desconto integral sem
   acréscimos mantém o texto da Fase 26.
-- [ ] **Passo 4:** `BaixaInline.vue` conforme spec §2, usando `CampoValorOuPercentual` e `condicoes.js`; lógica de "trocar a data
+- [x] **Passo 4:** `BaixaInline.vue` conforme spec §2, usando `CampoValorOuPercentual` e `condicoes.js`; lógica de "trocar a data
   recalcula o não editado" e "Recalcular" em função pura testada em `usarDescontoDaBaixa.test.js`.
   Painel e lista passam `:vencimento-iso="cobranca.vencimento_iso"` e `:regras="cobranca.regras"`.
-- [ ] **Passo 5:** testes + JS + build → PASSAM. Suíte da Fase 25 verde. Pint.
-- [ ] **Passo 6:** commit `feat: baixa traz multa e juros do contrato e aceita outros acréscimos`.
+- [x] **Passo 5:** testes + JS + build → PASSAM. Suíte da Fase 25 verde. Pint.
+- [x] **Passo 6:** commit `feat: baixa traz multa e juros do contrato e aceita outros acréscimos`.
+
+**Registro (2026-11-01):** os 14 testes do passo 1 mais `test_juros_em_reais_digitado_e_ao_mes`, `test_tipo_ausente_ou_invalido_da_erro_no_tipo`,
+`test_com_acrescimo_a_auditoria_mostra_o_desconto_mesmo_integral`, `test_acima_do_teto_em_reais_e_recusado` (multa, juros e outros, no teto passa),
+`test_lista_e_painel_levam_o_vencimento_e_as_regras_do_contrato` e três do `resolver` nos modos lote e correção (a tabela da spec). A lista e o painel
+carregam o contrato junto (`ListaDeCobrancas` e `PainelController` são os únicos chamadores de `paraLista`). Decisões do controlador cumpridas:
+`CampoValorOuPercentual` ganhou `complementoDoMaximo`, o evento `digitar` (limpa o erro do servidor) e o slot `calculado`; a etiqueta "contrato" usa
+`Etiqueta.vue` com a variante `compacta`; o teto de R$ vale para `outros` pela mesma `regraDaEntrada`, no servidor e na trava da tela. **Desvio:** a trava e o
+aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `CorrecaoPagamentoInline` ainda a usam (as Tarefas 4 e 5 trocam por
+`CampoValorOuPercentual` e apagam a função); a `BaixaInline` já não a usa, então a trava não roda duas vezes. Falta conferir no navegador (390 px e
+1280 px, digitação com a máscara, "Recalcular", o valor calculado embaixo de cada campo): fica para a Tarefa 10.
 
 ### Tarefa 4 — Baixa em lote — **Estado: pendente**
 
@@ -314,3 +324,4 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
   ponytail lite, modelo informado e nunca Opus nem Fable, sem acesso à VPS). Implementação ainda não iniciada: depende do merge da
   Fase 26.
 - 2026-11-01: Tarefa 2 testada (PHPUnit 752, JS 258, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).
+- 2026-11-01: Tarefa 3 testada (PHPUnit 784, JS 277, `npm run build` ok). Sem conferência no navegador (a subagente não abre navegador).

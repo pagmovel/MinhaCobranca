@@ -154,6 +154,9 @@ class Cobranca extends Model
             'cliente' => $this->cliente->exibicao(),
             'cliente_oficial' => $this->cliente->nomeOficial(),
             'vencimento' => $this->vencimento->format('d/m/Y'),
+            'vencimento_iso' => $this->vencimento->toDateString(),
+            // As regras do contrato (null sem contrato ou sem regra): a baixa as mostra preenchidas. O contrato vem carregado.
+            'regras' => $this->contrato?->regrasDePagamento(),
             'periodo' => $this->periodo_inicio->format('d/m/Y').' a '.$this->periodo_fim->format('d/m/Y'),
             'valor' => Dinheiro::formatar($this->valor_centavos),
             'valor_centavos' => $this->valor_centavos,

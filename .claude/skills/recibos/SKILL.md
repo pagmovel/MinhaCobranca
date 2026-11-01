@@ -1878,3 +1878,28 @@ Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md`. Spec: `docs/sup
   15,00, de no máximo R$ 99.999.999,99." A spec §1 regra 5 deixou de dizer "R$ sem teto". `renovarVencido` também recusa desconto em R$ maior que o novo total dos itens (mesma mensagem do cadastro, erro em
   `desconto_pontualidade`, antes de encerrar o contrato antigo); o erro aparece na seção "Renovar contrato" com as duas saídas (subir o preço dos itens ou reduzir o desconto e salvar antes), porque o campo do desconto está no
   formulário principal, fora dessa seção. Armadilha: o desconto da renovação vem do contrato antigo, não do pedido, então a checagem fica no controlador e não no `RenovarContratoVencidoRequest`.
+
+### Acertos (Tarefa 3 — baixa individual)
+- **`App\Services\ValoresDaBaixa` decide o que vale em cada valor da baixa** (desconto, multa, juros, outros), pela tabela "Entrada na baixa" da spec, nos modos `individual`, `lote` e
+  `correcao` (os dois últimos já estão prontos e testados, as Tarefas 4 e 5 só os ligam). `resolver($cobranca, $pagoEm, $dados, $modo)` recebe o que o pedido **validou**: chave ausente e
+  chave vazia (`null`, porque o middleware troca `''` por `null`) valem coisas diferentes, então o controlador passa `$request->validate(ValoresDaBaixa::regras(), ValoresDaBaixa::MENSAGENS)`
+  e não o `$request->all()`. Devolve os quatro valores em centavos e `rotulo_desconto` (`10% = R$ 24,76`, `R$ 24,76`, `R$ 0,00`). Sem atraso zera multa, juros e outros **depois** de conferir tudo
+  (valor inválido dá erro mesmo sem atraso). O desconto do contrato só vale até o vencimento.
+- **Multa, juros e outros passam pela mesma `CondicoesDePagamento::regraDaEntrada`** (inválido, % acima de 100 e R$ acima do teto dão erro no campo, sem gravar); `outros` entra com tipo `valor`, então o
+  teto não tem cópia. Mensagens: `Percentual inválido: use de 0 a 100, com até 2 casas decimais.` e `Valor inválido: use reais, como 15,00, de no máximo R$ 99.999.999,99.` O desconto digitado segue com as
+  mensagens da Fase 26 (`ValoresDaBaixa::descontoDigitado`, que `descontoValidado` da correção também usa até a Tarefa 5).
+- **Ordem em `pagar`:** `findOrFail` (404) → `pago_em` → situação (paga recusa com `erro`, antes dos campos novos) → `resolver`. Os campos novos só são validados depois, como o desconto já era.
+- **Auditoria:** com algum acréscimo, `Baixa registrada (R$ 210,00, multa R$ 4,20, juros R$ 21,00, outros R$ 5,00, desconto R$ 0,00, pago R$ 240,20, em 01/11/2026)` (só os acréscimos maiores que zero; o desconto
+  aparece sempre, até integral). Sem acréscimos, os textos da Fase 26. `resumoDaBaixa($registro, $rotuloDoDesconto, $emLote)` já não lê tipo nem entrada.
+- **`paraLista` manda `vencimento_iso` e `regras`** (`Contrato::regrasDePagamento()`); `ListaDeCobrancas` e `PainelController` são os únicos chamadores e carregam `contrato` junto
+  (`test_lista_nao_faz_consulta_por_linha_ao_carregar_contrato` falha com 17 × 13 consultas sem o `with`). Cobrança sem contrato não consulta nada: `belongsTo` com chave nula devolve `null`.
+- **Tela (`BaixaInline`):** sete campos no `useForm`, abertos pela regra do dia (`camposDaRegra` + `paraOForm`); com atraso mostra Multa, Juros e Outros, sem atraso só o Desconto. Em `usarDescontoDaBaixa.js`:
+  `calcularBaixa` (a conta, em função pura), `camposAoTrocarAData` e `usarValoresDaBaixa`. **"Não editado" = igual ao que a regra da data anterior preencheu** (sem flag por campo): trocar a data troca só esses; o que a
+  pessoa mexeu ou esvaziou fica; "Recalcular" aparece só com regra no contrato e campo visível diferente dela. A etiqueta "contrato" também sai quando o campo deixa de ser o da regra.
+- **`CampoValorOuPercentual` agora serve à baixa:** `complementoDoMaximo`, evento `digitar` (`@input` e troca de tipo; o pai chama `clearErrors`), slot `calculado` (recebe o `id` que entra no `aria-describedby`)
+  e a etiqueta por `Etiqueta.vue` (`tom="apagado"`, variante `compacta`, com `id` para o `aria-describedby`). A `BaixaInline` **não usa mais** a trava do `usarDescontoDaBaixa`, então ela roda só no componente;
+  a função segue para `BaixaEmLote` e `CorrecaoPagamentoInline` até as Tarefas 4 e 5 adotarem o componente (aí sai).
+- **Envio sem `transform`:** o `@change` do componente já tira a vírgula final antes de qualquer envio (Tarefa 2); a `BaixaInline` não repete isso.
+- **Renderização sem navegador** (técnica da Fase 26; num script fora do projeto, importar `vite` e `@vitejs/plugin-vue/dist/index.mjs` por caminho absoluto, porque o pacote não é resolvido): com
+  atraso e regra saem Multa/Juros com "contrato", "= R$ 4,20" e "= R$ 21,00", valor pago R$ 235,20 e "300 dias de atraso"; a vencer só o Desconto com "= R$ 31,50"; sem regra, campos vazios. **Não conferido:**
+  digitação com a máscara, a trava, "12," enviado como "12" sem o `transform`, "Recalcular", o alinhamento (as colunas ganharam `gap-1` e os botões `mt-5`) e 390 px/1280 px. Fica na Tarefa 10.
