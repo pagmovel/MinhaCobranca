@@ -4,7 +4,18 @@
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
-## 0. RETOMAR AQUI — estado em 2026-10-12
+## 0. RETOMAR AQUI — estado em 2026-11-01 (a seção 0.00 vale; as demais são histórico de 2026-10-12)
+
+### 0.00 Fases 26 e 27 em produção (ler primeiro)
+
+- `main` = `origin/main` (`1793158`), árvore limpa, nenhum branch aberto. **Fase 26** (valor e desconto na baixa) e **Fase 27** (multa, juros, outros acréscimos e desconto por pontualidade) estão no `main`, com deploy feito e **validado em produção pelo Marcos** (2026-11-01). 886 PHP + 294 JS, build ok; Postgres local sem migração pendente.
+- Onde está o detalhe: planos `2026-11-01-desconto-na-baixa.md` e `2026-11-01-multa-juros-e-pontualidade.md` (decisões R1–R15, "Para o Marcos decidir", "Menores adiados") e a skill `recibos`, seções "Fase 26" e "Fase 27".
+- **Em aberto, sem prazo:**
+  1. **Ordenação pelo cabeçalho das tabelas.** Em 2026-11-01 o Marcos perguntou por que `/cobrancas` não ordena, lembrando de uma regra para todas as tabelas. O registro (item 4 do backlog abaixo e padrão 12 da skill) diz "cancelada a pedido dele em 2026-10-12, não implementar sem pedido novo"; hoje só `/admin/usuarios` ordena. Ele ainda **não respondeu** se quer retomar. Proposta feita: todas as telas com tabela (Cobranças, Clientes, Contratos, Produtos e serviços, Auditoria, Relatórios), com um componente único de cabeçalho, depois da Fase 27. Cobranças é a mais trabalhosa (a lista mistura cobranças do banco e previstas calculadas, com paginação). Perguntar antes de começar.
+  2. **Decisões do Marcos da Fase 27** (plano, "Para o Marcos decidir"): frases de `{condicao}` em lote com várias datas, mensagem sugerida emendada, chave PIX no lote (a consulta do aviso passou a ordenar por vencimento e id), letra do WebISS (8 pt com linhas novas), título da auditoria do lote e juros da correção como total em R$.
+  3. **Defeitos antigos, fora das fases:** (a) em 1280 px o coach flutuante cobre a última linha do painel (o ancestral `.aparecer` mantém `transform` e o `fixed` vira relativo ao conteúdo); (b) `Dinheiro::paraCentavos` com número de 20 dígitos lança `TypeError` (erro 500) nos campos de valor mais antigos e em `ValorEmReais`; o desconto e as condições já têm guarda.
+  4. **Não verificado por script nas Fases 26 e 27:** 390 px, coach aberto e recolhido na faixa de baixa, foco do botão do aviso do lote e a aparência dos PDFs `amostra-*-fase27-*.pdf`.
+- **Para a próxima sessão:** subagentes recebem o prompt com context-mode, ponytail lite e modelo informado (nunca Opus nem Fable), sem VPS; VPS só com autorização expressa do Marcos; `php artisan migrate` no Postgres local tem autorização antecipada (memória `migrate-local-autorizado` do Claude), mas migração de dados que reescreve registros pede "sim"; merge e push de fase concluída têm autorização permanente. Rode os testes JS com `node --test 'resources/js/**/*.test.js'` (Node 24). O MCP do Playwright não abre (falta o Chrome): a conferência de tela da Fase 26 foi por scripts com `playwright-core`, SQLite temporário e um roteador que confere a conexão (receita na skill, "Pegadinha da conferência").
 
 ### 0.0a Segurança do Postgres concluída + bug real achado em produção (2026-10-12, mesma sessão)
 - **Segurança do PostgreSQL 100% concluída**: SSL no `postgres_prod` (TLS 1.3, confirmado pelo app implantado) e
