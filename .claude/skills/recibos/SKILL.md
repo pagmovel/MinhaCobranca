@@ -1689,7 +1689,7 @@ Plano: `.claude/plans/2026-10-12-sequencia-de-configuracao-inicial.md`. Spec:
 ## Fase 26 — valor e desconto na baixa (2026-11-01)
 
 Plano: `.claude/plans/2026-11-01-desconto-na-baixa.md`. Spec: `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md`.
-Estado: tarefas testadas, conferência no navegador feita e merge no `main` (2026-11-01). Pegadinha da conferência: `php artisan serve` pode reler o `.env`;
+Estado: tarefas validadas em produção (deploy feito e testado pelo Marcos em 2026-11-01, junto com a Fase 27); conferência no navegador feita e merge no `main`. Pegadinha da conferência: `php artisan serve` pode reler o `.env`;
 para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite temporário e um roteador que confere a conexão antes de tudo. **Deploy:** as duas migrações rodam no `migrate --force`; a segunda **altera todos os recibos**
 (só o campo `modelo`): avisar o Marcos e fazer backup antes.
 
@@ -1832,7 +1832,7 @@ para testar sem tocar no Postgres, usar `php -S` com as variáveis de um SQLite 
 ## Fase 27 — multa, juros, outros acréscimos e desconto por pontualidade (2026-11-01)
 
 Plano: `.claude/plans/2026-11-01-multa-juros-e-pontualidade.md` (decisões R1 a R15 e pendências do Marcos no "Registro de execução"). Spec: `docs/superpowers/specs/2026-11-01-multa-juros-e-pontualidade-design.md`.
-Estado: Tarefas 1 a 12 concluídas e testadas (PHPUnit 886, JS 294, `npm run build` ok). Merge no `main` em 2026-11-01, depois do teste do Marcos no servidor dele ("testei e funcionou"). **Não verificados por mim no navegador:** 390 px, coach, foco do botão do aviso do lote e a aparência dos PDFs `amostra-*-fase27-*`; conferir antes do deploy.
+Estado: Tarefas 1 a 12 concluídas e testadas (PHPUnit 886, JS 294, `npm run build` ok). Merge no `main` em 2026-11-01, depois do teste do Marcos no servidor dele ("testei e funcionou"); **deploy feito e todas as funcionalidades testadas em produção pelo Marcos (2026-11-01): fase validada.** **Não verificados por mim no navegador:** 390 px, coach, foco do botão do aviso do lote e a aparência dos PDFs `amostra-*-fase27-*`; conferir antes do deploy.
 **Deploy (avisar o Marcos):** rodam duas migrações **aditivas** (`contratos` e `cobrancas`), sem migração de dados. Ao definir regra num contrato, os recibos **pendentes** dele passam a sair com o valor do dia (desconto até o vencimento; multa e juros depois);
 um PIX já enviado fica com o valor antigo; baixa já feita não muda (os valores ficam gravados). Sem regra e sem valores gravados, tudo sai como antes.
 **Exceção consciente à regra do `-v2` (a segunda, depois da Fase 26):** os novos dados do recibo (`desconto`, `valor_pago`, a lista `informacoes`) só aparecem **quando existem**, sem `webiss-v3`/`danfse-v3`. Sem regra e sem valores o HTML sai idêntico ao da Fase 26 (`ReciboIdenticoSemRegraTest`),

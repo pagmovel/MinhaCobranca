@@ -57,7 +57,7 @@ contrato. Valor pago continua derivado.
 
 ---
 
-### Tarefa 1 — Dados e regra de cálculo — **Estado: testada**
+### Tarefa 1 — Dados e regra de cálculo — **Estado: validada**
 
 **Arquivos:**
 - Criar: migrações `add_condicoes_de_pagamento_to_contratos_table` e `add_acrescimos_to_cobrancas_table`,
@@ -102,7 +102,7 @@ contrato. Valor pago continua derivado.
 - [x] **Passo 4:** os mesmos comandos → PASSAM. Suíte inteira verde (a fórmula nova não muda quem tem zero). Pint.
 - [x] **Passo 5:** commit `feat: regra única de multa, juros e desconto por pontualidade (PHP e JS)`.
 
-### Tarefa 2 — Condições no contrato — **Estado: testada**
+### Tarefa 2 — Condições no contrato — **Estado: validada**
 
 **Arquivos:** `app/Http/Requests/ContratoRequest.php`, `app/Http/Controllers/ContratoController.php` (`store`, `update`,
 recomeço ~363, renovação de vencido ~445), `resources/js/Pages/Contratos/Form.vue`, criar
@@ -137,7 +137,7 @@ recomeço ~363, renovação de vencido ~445), `resources/js/Pages/Contratos/Form
 (`condicoes.test.js`) e `totalDosItens` (`itens.test.js`). Falta conferir no navegador (390 px e 1280 px, digitação com a máscara, trava
 e exemplo ao vivo): fica para a Tarefa 10.
 
-### Tarefa 3 — Baixa individual — **Estado: testada**
+### Tarefa 3 — Baixa individual — **Estado: validada**
 
 **Arquivos:** criar `app/Services/ValoresDaBaixa.php`, `tests/Feature/Cobrancas/AcrescimosNaBaixaTest.php`; modificar
 `CobrancaController` (`pagar`, `resumoDaBaixa`), `Cobranca::paraLista`, `ListaDeCobrancas` (~89) e `PainelController` (~89)
@@ -182,7 +182,7 @@ aviso de `usarDescontoDaBaixa` não foram apagados, porque `BaixaEmLote` e `Corr
 `CampoValorOuPercentual` e apagam a função); a `BaixaInline` já não a usa, então a trava não roda duas vezes. Falta conferir no navegador (390 px e
 1280 px, digitação com a máscara, "Recalcular", o valor calculado embaixo de cada campo): fica para a Tarefa 10.
 
-### Tarefa 4 — Baixa em lote — **Estado: testada**
+### Tarefa 4 — Baixa em lote — **Estado: validada**
 
 **Arquivos:** `CobrancaController::pagarEmLote` e `conferirDescontoDoLote`, `BaixaEmLote.vue`, `resources/js/desconto.js`
 (`previaDoLote`), `tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
@@ -214,7 +214,7 @@ usava); a trava e o aviso ficam porque `CorrecaoPagamentoInline` ainda os usa, e
 individual); sem acréscimo segue "Baixa em lote". Falta conferir no navegador: digitação com a máscara, a trava e o aviso nos quatro campos, 390 px e 1280 px, a prévia com os totais e o aviso da data de vencimento
 (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
-### Tarefa 5 — Corrigir pagamento e desfazer baixa — **Estado: testada**
+### Tarefa 5 — Corrigir pagamento e desfazer baixa — **Estado: validada**
 
 **Arquivos:** `CobrancaController::corrigirPagamento` e `desfazerBaixa`, `CorrecaoPagamentoInline.vue`,
 `Cobrancas/Index.vue`, `Cobranca::paraLista`, `tests/Feature/Cobrancas/AcrescimosNaBaixaTest.php`, `AuditoriaTest`.
@@ -243,7 +243,7 @@ A primeira solução (juros em branco que não ia no pedido) foi trocada: na cor
 Falta conferir no
 navegador: digitação com a máscara, a trava, 390 px e 1280 px, o alinhamento dos campos e o aviso de "sem atraso" (a renderização inicial foi conferida sem navegador): fica para a Tarefa 10.
 
-### Tarefa 6 — Lista e painel — **Estado: testada**
+### Tarefa 6 — Lista e painel — **Estado: validada**
 
 **Arquivos:** `Cobranca::paraLista`, `app/Services/ListaDeCobrancas.php`, `resources/js/Pages/Cobrancas/Index.vue`, `resources/js/Components/LinhaCobranca.vue`,
 `tests/Feature/Cobrancas/DadosDaListaTest.php`, `tests/Feature/Cobrancas/FiltroSituacaoTest.php`, `tests/Feature/PainelTest.php`.
@@ -264,7 +264,7 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 
 **Registro (Tarefa 6):** o teste da soma das pagas com acréscimos pegou um defeito da Tarefa 1: `ListaDeCobrancas::montar` lia as cobranças com `get([...colunas])` sem `multa_centavos`, `juros_centavos` e `outros_centavos`, e a coluna que falta fica `null` (o `newFromBuilder` chama `setRawAttributes`, que substitui o `$attributes`; o `null` vira 0 na soma, sem erro), então `totais` e `total_geral` da lista ignoravam os acréscimos (a aba "Pagas" e o painel usavam `VALOR_PAGO_SQL` e estavam certos). Corrigido incluindo as três colunas. Falta conferir no navegador (Tarefa 10): a linha embaixo do valor em 390 px e 1280 px.
 
-### Tarefa 7 — Relatórios — **Estado: testada**
+### Tarefa 7 — Relatórios — **Estado: validada**
 
 **Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porProduto`), `tests/Feature/Relatorios/*`.
 
@@ -286,7 +286,7 @@ paga e em cancelada, e quando o valor do dia é igual ao valor. `valor_pago` só
 uma consulta só (`toBase()`, sem `ORDER BY`), e um teste com `DB::listen` falha se alguma consulta de relatório juntar agregado e `ORDER BY`. Por cliente já usava `VALOR_PAGO_SQL`: só o teste e o texto
 mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa vencida de contrato com regra). Suíte: PHPUnit 830, JS 278. Sem `.vue`/`.js` alterado: sem `npm run build`.
 
-### Tarefa 8 — Recibo e PIX — **Estado: testada**
+### Tarefa 8 — Recibo e PIX — **Estado: validada**
 
 **Arquivos:** `app/Services/RenderizadorDeRecibo.php` (`dados`, `pagamento`), `app/Models/Cobranca.php`,
 `tests/Feature/Recibos/RenderizadorDeReciboTest.php`, `PdfReciboTest.php`, `AmostrasVisuaisTest.php`. **Os templates quase não mudam:** usam
@@ -319,7 +319,7 @@ mudaram. Contas a receber ficou intocado (teste novo prova o valor original numa
 informações" (~10pt) levava o recibo à página 2. Correção: com mais de uma informação, as linhas da descrição têm 8pt em vez de 8,4pt (sem regra continua 8,4pt, e a prova de igualdade confirma). `array_merge` no helper `pdf()` de
 `AmostrasVisuaisTest` (com `+` a base vencia o `vencimento` pedido). Suíte: PHPUnit 862, JS 278 (sem `.vue`/`.js` alterado).
 
-### Tarefa 9 — Mensagem de WhatsApp — **Estado: testada**
+### Tarefa 9 — Mensagem de WhatsApp — **Estado: validada**
 
 **Arquivos:** `app/Http/Controllers/AvisoWhatsappController.php`, `resources/js/mensagemWhatsapp.js` e teste,
 `resources/js/Components/AvisarWhatsapp.vue`, `MensagensWhatsapp.vue`, `tests/Feature/AvisoWhatsappTest.php`.
@@ -340,7 +340,7 @@ por espaço, na ordem do vencimento (a consulta ganhou `orderBy('vencimento')->o
 antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mudar. A legenda (`VARIAVEIS`) mudou de `MensagensWhatsapp.vue` para `mensagemWhatsapp.js` para ser testável: o teste exige que toda variável da legenda seja reconhecida
 (não fique literal). A prévia da tela de modelos agora usa o exemplo com desconto (total R$ 76,41 e a frase). Suíte: PHPUnit 876, JS 283, `npm run build` ok. Não conferido (sem navegador): a janela de aviso e a prévia na tela, 390 px.
 
-### Tarefa 10 — Wizard, conferência e documentação — **Estado: testada**
+### Tarefa 10 — Wizard, conferência e documentação — **Estado: validada**
 
 **Arquivos:** `.claude/skills/recibos/SKILL.md`, `.claude/plans/2026-10-10-roteiro-modulos.md`, README (só se algo de uso mudou: nada mudou, o README não descreve baixa nem contrato).
 
@@ -361,7 +361,7 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
   **Falta (controlador):** com tudo `testada`, merge `--no-ff` no `main` + push. Avisar o Marcos de que o deploy roda as duas migrações **aditivas** (sem migração de dados) e de que, ao definir
   regra num contrato, os recibos **pendentes** dele passam a sair com o valor do dia (um PIX já enviado fica com o valor antigo).
 
-### Tarefa 11 — "Outros" vale em qualquer data da baixa — **Estado: testada**
+### Tarefa 11 — "Outros" vale em qualquer data da baixa — **Estado: validada**
 
 **Pedido do Marcos (2026-11-01, ao testar a tela):** "baixa em qualquer data tem que permitir adicionar valor no campo outros". Decisão R13: "outros" é lançamento manual, sem relação com atraso e sem regra no contrato; a regra "sem atraso, sem acréscimo" vale **só para multa e juros**.
 
@@ -373,7 +373,7 @@ antes da quebra de linha), e o teste antigo de `MENSAGEM_SUGERIDA` passou sem mu
 - [x] Relatórios: `outros` pago em dia entra no Recebido, em Acréscimos e na linha "Outros acréscimos" (testes ponta a ponta pela baixa).
 - Testes: PHPUnit e JS conforme o registro abaixo, `npm run build` ok. Sem navegador (a subagente não o abre): aparência do campo sem atraso, alinhamento e 390 px ficam para o Passo 4 da Tarefa 10.
 
-### Tarefa 12 — Lote avisa quando multa e juros não entram e oferece a data de hoje — **Estado: testada**
+### Tarefa 12 — Lote avisa quando multa e juros não entram e oferece a data de hoje — **Estado: validada**
 
 **Pedido do Marcos (2026-11-01, ao testar a tela):** "na baixa em lote, ao adicionar um acréscimo não está calculando os resultados". Diagnóstico: o cálculo estava certo. Multa e juros só entram em cobrança em atraso na data da baixa, e com a data padrão do lote ("usar a data de vencimento de cada cobrança") ninguém tem atraso; o único aviso era uma frase cinza e pequena. Faltava a saída na tela (padrão de usabilidade 2). **Servidor e regra não mudam.**
 

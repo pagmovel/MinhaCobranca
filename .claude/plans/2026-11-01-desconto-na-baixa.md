@@ -49,7 +49,7 @@ os acertos de cada tarefa estão na skill, seção "Fase 26" (`.claude/skills/re
 
 ---
 
-### Tarefa 1 — Dado e regra do desconto — **Estado: testada**
+### Tarefa 1 — Dado e regra do desconto — **Estado: validada**
 
 **Arquivos:** migração `add_desconto_centavos_to_cobrancas_table`, `app/Support/Desconto.php`, `resources/js/desconto.js` e
 `desconto.test.js`, `tests/Unit/DescontoTest.php`, `app/Models/Cobranca.php` (cast, `$attributes` com `desconto_centavos => 0`,
@@ -68,7 +68,7 @@ entrada)` e `travarDesconto(valor, tipo, entrada) → { entrada, travou }` (% ac
   Registro: o JS em R$ espelha `Dinheiro::paraCentavos` (não "centavos = dígitos"), por decisão do controlador; PHP e JS
   conferidos com 8.000 entradas sorteadas; divergem só em R$ com dígitos demais (20 dígitos: PHP `null`, JS `1e22`; a trava da tela limita) e em tab no meio de `"R$\t5"` (PHP 500 via `Dinheiro::paraCentavos`, JS `null`); os dois cortam só espaço ASCII nas pontas.
 
-### Tarefa 2 — Baixa individual com valor e desconto — **Estado: testada**
+### Tarefa 2 — Baixa individual com valor e desconto — **Estado: validada**
 
 **Arquivos:** `CobrancaController::pagar`, `BaixaInline.vue`, `Painel.vue`, `Cobrancas/Index.vue`,
 `tests/Feature/Cobrancas/DescontoNaBaixaTest.php`.
@@ -85,7 +85,7 @@ erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória)
   trava roda num `watch` do número, não num `@input` (a ordem entre `v-model`, `@input` e `v-mascara` muda o que cada um enxerga).
   (3) Sem teste de componente (sem jsdom nem Vue Test Utils): "trocar limpa o número", trava e aviso foram para módulo `.js` na Tarefa 4.
 
-### Tarefa 3 — Baixa em lote com percentual — **Estado: testada** (o campo mudou na Tarefa 3b)
+### Tarefa 3 — Baixa em lote com percentual — **Estado: validada** (o campo mudou na Tarefa 3b)
 
 **Arquivos:** `CobrancaController::pagarEmLote`, `BaixaEmLote.vue`, `tests/Feature/Cobrancas/AcoesEmLoteTest.php`.
 
@@ -96,7 +96,7 @@ erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória)
   Registro: `resumoDaBaixa` deixou de ler o `Request` (recebe tipo, entrada e `emLote`); a validação do percentual ficou em
   `Desconto::percentualValido`; a conta da prévia ficou pura em `previaDoLote` (`desconto.js`), com o mesmo caso do teste PHP.
 
-### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: testada**
+### Tarefa 4 — Corrigir pagamento e desfazer baixa — **Estado: validada**
 
 **Arquivos:** `CobrancaController::corrigirPagamento` e `desfazerBaixa`, `CorrecaoPagamentoInline.vue`, `Cobrancas/Index.vue`
 (passa `valor-centavos` e `desconto-centavos`), `usarDescontoDaBaixa.js`, `DescontoNaBaixaTest`.
@@ -109,7 +109,7 @@ erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória)
   `AuditoriaTest` antigo foi atualizado). (3) A lógica de tela saiu do `BaixaInline` para `usarDescontoDaBaixa.js`, com teste `node --test`
   (cobre o ponto de revisão 2 sem navegador). (4) `Cobranca::paraLista` ganhou `desconto_centavos`.
 
-### Tarefa 5 — Lista de cobranças e painel — **Estado: testada**
+### Tarefa 5 — Lista de cobranças e painel — **Estado: validada**
 
 **Arquivos:** `Cobranca::paraLista`, `ListaDeCobrancas`, `PainelController`, `Cobrancas/Index.vue`, `LinhaCobranca.vue`, testes
 `DadosDaListaTest`, `FiltroSituacaoTest`, `PainelTest`.
@@ -121,7 +121,7 @@ erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória)
   `Cobranca::VALOR_PAGO_SQL` é a conta em SQL (a Tarefa 6 reusa); `paraLista` ganhou `valor_pago`; a tela mostra "pago R$ …" só com
   `situacao === 'paga'` e desconto > 0. **Não conferido no PostgreSQL** (a coluna ainda não existia no banco local).
 
-### Tarefa 6 — Relatórios — **Estado: testada**
+### Tarefa 6 — Relatórios — **Estado: validada**
 
 **Arquivos:** `app/Services/Relatorios.php` (`faturamento`, `porCliente`, `porProduto`), `itens.js`, `Dinheiro`, `tests/Feature/Relatorios/*`
 (inclui `FaturamentoTest::test_csv_para_o_excel_em_portugues`).
@@ -134,7 +134,7 @@ erro no campo `desconto`); `BaixaInline` com prop `valorCentavos` (obrigatória)
   do painel (provado em teste). (3) **Achado fora da lista:** `Dinheiro::formatar` e `formatarCentavos` (JS) não formatavam negativo e o CSV
   poria apóstrofo em `-22,00`; corrigidos nos três lugares, com teste. (4) Contas a receber não mudou. **Não conferido no PostgreSQL.**
 
-### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: testada**
+### Tarefa 7 — Recibo v2 substitui o v1 — **Estado: validada**
 
 **Arquivos:** `ModeloRecibo`, `FamiliaModelo::versaoAtual`, `RenderizadorDeRecibo::dados`, templates `webiss-v2` e `danfse-v2` (v1 apagados),
 migração `troca_modelo_dos_recibos_para_v2`, `MigracaoReciboV2Test`, `AmostrasVisuaisTest` e os 5 testes que citavam v1.
@@ -154,7 +154,7 @@ WebISS: `Desc. Cond. (R$)` = `$desconto ?? '0,00'` e `Valor Líquido (R$)` = `$v
   `PdfReciboTest` e `UsuarioModeloTest`. (5) `AmostrasVisuaisTest::test_paga_com_desconto_cabe_em_uma_pagina_nos_dois_modelos` é guarda contra o v2
   estourar a página (não podia ficar vermelho antes: o v1 ignora o desconto).
 
-### Tarefa 3b — Desconto em R$ no lote e texto de ajuda — **Estado: testada**
+### Tarefa 3b — Desconto em R$ no lote e texto de ajuda — **Estado: validada**
 
 Pedido do Marcos ao ver a tela (2026-11-01): o lote ganha o mesmo seletor `% | R$` da baixa individual (R$ = o mesmo valor em cada
 cobrança, limite na menor pendente selecionada), e as três telas ganham um texto de ajuda sobre o seletor. Substitui o
@@ -175,7 +175,7 @@ cobrança, limite na menor pendente selecionada), e as três telas ganham um tex
   nenhuma foi enfraquecida. (5) **Sem navegador:** a ajuda embaixo do campo, o alinhamento depois do `items-start`, a quebra do texto e o modal em
   390 px só se conferem no passo 4 da Tarefa 8.
 
-### Tarefa 8 — Wizard, conferência e documentação — **Estado: testada**
+### Tarefa 8 — Wizard, conferência e documentação — **Estado: validada**
 
 **Arquivos:** `.claude/skills/recibos/SKILL.md` (acertos e pegadinhas da Fase 26; exceção consciente à regra do `-v2`),
 `.claude/plans/2026-10-10-roteiro-modulos.md` (estado), README (nada mudou no uso: sem alteração).
