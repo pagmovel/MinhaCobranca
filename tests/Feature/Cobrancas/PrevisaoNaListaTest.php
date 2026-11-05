@@ -75,6 +75,20 @@ class PrevisaoNaListaTest extends TestCase
         }
     }
 
+    public function test_proximos_dias_trazem_tambem_as_previstas_da_janela(): void
+    {
+        // Dia 29 fica a 14 dias de hoje, além da antecedência de 10: ainda é prevista (nada gravado).
+        Contrato::factory()->for($this->usuario)->for($this->contrato->cliente)->create(['dia_vencimento' => 29, 'data_inicio' => '2026-09-29']);
+
+        foreach (['', '&mes=2026-12'] as $periodo) {
+            $this->assertSame([['21/10/2026', 'a_vencer']], $this->linhas('?status=proximos_7'.$periodo));
+            $this->assertSame([['21/10/2026', 'a_vencer'], ['29/10/2026', 'prevista']], $this->linhas('?status=proximos_15'.$periodo));
+        }
+        $abas = collect($this->getJson('/cobrancas/dados?status=paga')->assertOk()->json('abas'))->keyBy('chave');
+        $this->assertSame(1, $abas['proximos_7']['quantidade']);
+        $this->assertSame(2, $abas['proximos_15']['quantidade']);
+    }
+
     public function test_filtro_de_cliente_vale_para_as_previstas(): void
     {
         $outro = Cliente::factory()->for($this->usuario)->create();

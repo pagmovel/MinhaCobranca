@@ -67,6 +67,27 @@ class FiltroSituacaoTest extends TestCase
         $this->assertSame(['7,00'], $this->valores('/cobrancas?status=a_vencer&mes=2026-11'));
     }
 
+    /**
+     * "Próximos N dias": pendentes de amanhã (16/10) até hoje + N, de qualquer mês, com as bordas (7 e 15 dias) dentro e
+     * o dia seguinte à borda fora; hoje, pagas e canceladas ficam de fora.
+     */
+    public function test_proximos_dias_pegam_so_as_pendentes_da_janela_em_qualquer_mes(): void
+    {
+        $cliente = $this->usuario->clientes()->firstOrFail();
+        foreach ([['2026-10-16', 800], ['2026-10-22', 900], ['2026-10-23', 1100], ['2026-10-30', 1200], ['2026-10-31', 1300]] as [$vencimento, $valor]) {
+            Cobranca::factory()->for($this->usuario)->for($cliente)->create(['vencimento' => $vencimento, 'valor_centavos' => $valor]);
+        }
+        Cobranca::factory()->for($this->usuario)->for($cliente)->create(['vencimento' => '2026-10-17', 'valor_centavos' => 1400, 'status' => StatusCobranca::Paga, 'pago_em' => '2026-10-15']);
+
+        foreach (['', '&mes=2026-08', '&mes=2026-12'] as $periodo) {
+            $this->assertSame(['8,00', '9,00'], $this->valores('/cobrancas?status=proximos_7'.$periodo), "7 dias{$periodo}");
+            $this->assertSame(['8,00', '9,00', '11,00', '6,00', '12,00'], $this->valores('/cobrancas?status=proximos_15'.$periodo), "15 dias{$periodo}");
+        }
+        $abas = $this->getJson('/cobrancas/dados?status=vencida')->assertOk()->json('abas');
+        $this->assertContains(['chave' => 'proximos_7', 'quantidade' => 2, 'soma_centavos' => 1700], $abas);
+        $this->assertContains(['chave' => 'proximos_15', 'quantidade' => 5, 'soma_centavos' => 4600], $abas);
+    }
+
     public function test_todas_deixa_canceladas_de_fora_salvo_quando_pedidas(): void
     {
         $this->assertSame(['2,00', '3,00', '4,00', '6,00'], $this->valores('/cobrancas'));
@@ -93,6 +114,8 @@ class FiltroSituacaoTest extends TestCase
             ['chave' => 'todas', 'quantidade' => 5, 'soma_centavos' => 1600],
             ['chave' => 'vencida', 'quantidade' => 2, 'soma_centavos' => 300],
             ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'proximos_7', 'quantidade' => 0, 'soma_centavos' => 0],
+            ['chave' => 'proximos_15', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'paga', 'quantidade' => 1, 'soma_centavos' => 400],
         ];
@@ -122,6 +145,8 @@ class FiltroSituacaoTest extends TestCase
             ['chave' => 'todas', 'quantidade' => 6, 'soma_centavos' => 2000],
             ['chave' => 'vencida', 'quantidade' => 2, 'soma_centavos' => 300],
             ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'proximos_7', 'quantidade' => 0, 'soma_centavos' => 0],
+            ['chave' => 'proximos_15', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'paga', 'quantidade' => 2, 'soma_centavos' => 800],
         ]);
@@ -155,6 +180,8 @@ class FiltroSituacaoTest extends TestCase
             ['chave' => 'todas', 'quantidade' => 7, 'soma_centavos' => 3500],
             ['chave' => 'vencida', 'quantidade' => 3, 'soma_centavos' => 1300],
             ['chave' => 'vence_hoje', 'quantidade' => 1, 'soma_centavos' => 300],
+            ['chave' => 'proximos_7', 'quantidade' => 0, 'soma_centavos' => 0],
+            ['chave' => 'proximos_15', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'a_vencer', 'quantidade' => 1, 'soma_centavos' => 600],
             ['chave' => 'paga', 'quantidade' => 2, 'soma_centavos' => 1300],
         ]);

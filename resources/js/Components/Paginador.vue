@@ -9,6 +9,8 @@ const props = defineProps({
     porPagina: { type: Number, required: true },
     total: { type: Number, required: true },
     carregando: { type: Boolean, default: false },
+    // Aviso na mesma linha do "Mostrando…" (ex.: "(buscando em todos os meses)").
+    nota: { type: String, default: null },
     opcoes: { type: Array, default: () => [25, 50, 100] },
     // Leitor de tela lista os "nav" pelo rótulo: o de baixo e os do Painel (três listas) precisam de nomes distintos.
     rotulo: { type: String, default: null },
@@ -24,6 +26,7 @@ const ate = computed(() => Math.min(props.pagina * props.porPagina, props.total)
     <nav :id="id" tabindex="-1" :aria-label="rotulo ?? (id.endsWith('-base') ? 'Páginas (fim da lista)' : 'Páginas')" class="flex flex-wrap items-center justify-between gap-3 py-3 text-sm focus:outline-none">
         <p class="flex items-center gap-2 font-estreita text-xs text-grafite/75">
             Mostrando {{ de }}–{{ ate }} de {{ total }}
+            <span v-if="nota">{{ nota }}</span>
             <span v-if="carregando" class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-carbono/25 border-t-carbono" aria-hidden="true" />
             <span v-if="carregando" class="sr-only" role="status">Carregando…</span>
         </p>

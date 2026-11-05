@@ -590,9 +590,14 @@ o relatório mostra a parte que existe.
     vencido → 419 ou redirect. Não muda dado.
 - **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
   "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
-  setembro aparece em outubro; o rótulo do mês avisa "buscando em todos os meses"). Trocar situação ou mês aplica o
+  setembro aparece em outubro; o aviso "(buscando em todos os meses)" fica no `Paginador`, na linha do "Mostrando x–n de n",
+  prop `nota`, e não mais no rótulo do mês). Trocar situação ou mês aplica o
   filtro na hora (`@change`), sem clicar em "Filtrar". **Campo de mês nunca fica bloqueado** (o usuário achou que era
   defeito): escolher um mês nesse estado volta a situação para "Todas" e mostra o mês escolhido. Teste: `tests/Feature/Cobrancas/FiltroSituacaoTest.php`.
+  **"Próximos 7 dias" e "Próximos 15 dias" (`proximos_7`, `proximos_15`, pedido do usuário, 2026-11-05):** só pendentes,
+  de amanhã até hoje + N (a borda entra; hoje fica em "Hoje"), também **ignoram o mês** e levam as previstas da janela
+  (`ListaDeCobrancas::PROXIMOS_DIAS`; uma segunda chamada a `PrevisaoDeCobrancas::entre` cobre os 15 dias). São subconjuntos
+  de "A vencer": não entram na soma de "Todas". Abas e select na ordem Hoje · Próximos 7 · Próximos 15 · A vencer.
 - **Fase 17 — cadastro rápido sem sair da tela (regra do usuário, 2026-10-10):** cliente (`CampoCliente.vue` +
   `CadastroRapidoCliente.vue`), produto/serviço (`CadastroRapidoProduto.vue`, `CatalogoItens.vue` "Ver catálogo") e
   chave PIX (`CadastroRapidoChavePix.vue` em `CamposPagamento`) em **modal**; o registro novo volta já escolhido e o
