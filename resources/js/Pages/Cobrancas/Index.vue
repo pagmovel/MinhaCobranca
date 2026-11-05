@@ -39,7 +39,9 @@ const props = defineProps({
 
 const filtro = reactive({ ...props.filtros });
 // Vencendo hoje, vencidas e próximos dias valem para qualquer mês (o servidor ignora o mês nesses filtros).
-const todosOsMeses = computed(() => ['vence_hoje', 'vencida', 'proximos_7', 'proximos_15'].includes(filtro.status));
+const ignoraOMes = computed(() => ['vence_hoje', 'vencida', 'proximos_7', 'proximos_15'].includes(filtro.status));
+// Só "Vencidas" varre meses de fato; hoje e próximos dias são janelas de datas, e o aviso seria enganoso.
+const buscaEmTodosOsMeses = computed(() => filtro.status === 'vencida');
 const vazio = computed(() => ({
     vence_hoje: 'Nenhuma cobrança vence hoje.',
     vencida: 'Nenhuma cobrança vencida em aberto.',
@@ -87,7 +89,7 @@ const semContrato = computed(() => `/cobrancas?${new URLSearchParams({
 // O campo de mês muda a cada dígito e a cada parte: o pedido sai 400 ms depois da última mudança.
 const filtrarPeriodo = adiar(() => filtrar());
 function escolheuPeriodo() {
-    if (todosOsMeses.value) {
+    if (ignoraOMes.value) {
         filtro.status = '';
     }
     filtrarPeriodo();
@@ -291,7 +293,7 @@ async function fecharFaixa() {
                 :por-pagina="filtro.por_pagina"
                 :total="resumo.pagina.total"
                 :carregando="carregando"
-                :nota="todosOsMeses ? '(buscando em todos os meses)' : null"
+                :nota="buscaEmTodosOsMeses ? '(buscando em todos os meses)' : null"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />
@@ -471,7 +473,7 @@ async function fecharFaixa() {
                 :por-pagina="filtro.por_pagina"
                 :total="resumo.pagina.total"
                 :carregando="carregando"
-                :nota="todosOsMeses ? '(buscando em todos os meses)' : null"
+                :nota="buscaEmTodosOsMeses ? '(buscando em todos os meses)' : null"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />
