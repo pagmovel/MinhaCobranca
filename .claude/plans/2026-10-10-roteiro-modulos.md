@@ -4,9 +4,29 @@
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
-## 0. RETOMAR AQUI — estado em 2026-11-01 (a seção 0.00 vale; as demais são histórico de 2026-10-12)
+## 0. RETOMAR AQUI — estado em 2026-11-05 (as seções 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.00 Fases 26 e 27 em produção (ler primeiro)
+### 0.000 Filtros da lista no main e Fase 28 planejada (2026-11-05, ler primeiro)
+
+- `main` = `origin/main`, árvore limpa, nenhum branch aberto. 889 PHP + 294 JS verdes, build ok. Nada desta data tem
+  migração.
+- **No `main`, sem deploy confirmado:** em `/cobrancas`, os filtros "Próximos 7 dias" e "Próximos 15 dias" (abas e
+  select); o aviso "(buscando em todos os meses)" saiu do rótulo do mês para o paginador e aparece **só em Vencidas**;
+  e "Pagas" filtra pelo mês do **pagamento** (`pago_em`), com o rótulo "Mês do pagamento". Detalhe na skill `recibos`,
+  item "Filtro de situação das cobranças". O Marcos ainda não disse se fez o deploy nem se testou.
+- **Fase 28 — agentes pessoais pelo MCP:** spec `docs/superpowers/specs/2026-11-05-agentes-mcp-design.md` (aprovada) e
+  plano `.claude/plans/2026-11-05-agentes-mcp.md` (9 tarefas, todas pendentes). **Não implementar sem o comando do
+  Marcos.** Ele ainda não revisou o plano nem escolheu o modo de execução (recomendado: por subagentes). Dependências
+  `laravel/mcp` e `laravel/passport` já aprovadas por ele. Dois `[A VERIFICAR]` só se resolvem com os pacotes
+  instalados (renomear todas as tabelas do Passport para `tbl_`; trocar o nível na aprovação OAuth), com saída prevista
+  no plano.
+- **Regras novas desta data:** commit, merge `--no-ff` no `main` e push são decididos pelo Claude sem perguntar (memória
+  `commit-merge-push-sem-perguntar`); deploy, VPS, banco além do `migrate` local e `push --force` continuam pedindo. Toda
+  tabela nova leva prefixo `tbl_` e todo teste fica em `tests/` (regras globais de 2026-11-02).
+- Os itens em aberto da seção 0.00 abaixo continuam abertos (ordenação pelo cabeçalho, decisões da Fase 27, dois
+  defeitos antigos, itens não verificados por script).
+
+### 0.00 Fases 26 e 27 em produção
 
 - `main` = `origin/main` (`1793158`), árvore limpa, nenhum branch aberto. **Fase 26** (valor e desconto na baixa) e **Fase 27** (multa, juros, outros acréscimos e desconto por pontualidade) estão no `main`, com deploy feito e **validado em produção pelo Marcos** (2026-11-01). 886 PHP + 294 JS, build ok; Postgres local sem migração pendente.
 - Onde está o detalhe: planos `2026-11-01-desconto-na-baixa.md` e `2026-11-01-multa-juros-e-pontualidade.md` (decisões R1–R15, "Para o Marcos decidir", "Menores adiados") e a skill `recibos`, seções "Fase 26" e "Fase 27".
@@ -15,7 +35,7 @@ sem depender do histórico.
   2. **Decisões do Marcos da Fase 27** (plano, "Para o Marcos decidir"): frases de `{condicao}` em lote com várias datas, mensagem sugerida emendada, chave PIX no lote (a consulta do aviso passou a ordenar por vencimento e id), letra do WebISS (8 pt com linhas novas), título da auditoria do lote e juros da correção como total em R$.
   3. **Defeitos antigos, fora das fases:** (a) em 1280 px o coach flutuante cobre a última linha do painel (o ancestral `.aparecer` mantém `transform` e o `fixed` vira relativo ao conteúdo); (b) `Dinheiro::paraCentavos` com número de 20 dígitos lança `TypeError` (erro 500) nos campos de valor mais antigos e em `ValorEmReais`; o desconto e as condições já têm guarda.
   4. **Não verificado por script nas Fases 26 e 27:** 390 px, coach aberto e recolhido na faixa de baixa, foco do botão do aviso do lote e a aparência dos PDFs `amostra-*-fase27-*.pdf`.
-- **Para a próxima sessão:** subagentes recebem o prompt com context-mode, ponytail lite e modelo informado (nunca Opus nem Fable), sem VPS; VPS só com autorização expressa do Marcos; `php artisan migrate` no Postgres local tem autorização antecipada (memória `migrate-local-autorizado` do Claude), mas migração de dados que reescreve registros pede "sim"; merge e push de fase concluída têm autorização permanente. Rode os testes JS com `node --test 'resources/js/**/*.test.js'` (Node 24). O MCP do Playwright não abre (falta o Chrome): a conferência de tela da Fase 26 foi por scripts com `playwright-core`, SQLite temporário e um roteador que confere a conexão (receita na skill, "Pegadinha da conferência").
+- **Para a próxima sessão:** subagentes recebem o prompt com context-mode, ponytail lite e modelo informado (nunca Opus nem Fable), sem VPS; VPS só com autorização expressa do Marcos; `php artisan migrate` no Postgres local tem autorização antecipada (memória `migrate-local-autorizado` do Claude), mas migração de dados que reescreve registros pede "sim"; merge e push: ver 0.000. Rode os testes JS com `node --test 'resources/js/**/*.test.js'` (Node 24). O MCP do Playwright não abre (falta o Chrome): a conferência de tela da Fase 26 foi por scripts com `playwright-core`, SQLite temporário e um roteador que confere a conexão (receita na skill, "Pegadinha da conferência").
 
 ### 0.0a Segurança do Postgres concluída + bug real achado em produção (2026-10-12, mesma sessão)
 - **Segurança do PostgreSQL 100% concluída**: SSL no `postgres_prod` (TLS 1.3, confirmado pelo app implantado) e
