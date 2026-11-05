@@ -626,7 +626,7 @@ class AcrescimosNaBaixaTest extends TestCase
     {
         [, $cobranca] = $this->cenarioPago(desconto: 300);
 
-        $linha = $this->getJson('/cobrancas/dados?status=paga&mes=2026-01')->assertOk()->json('linhas.0');
+        $linha = $this->getJson('/cobrancas/dados?status=paga&mes=2026-11')->assertOk()->json('linhas.0'); // pago em 2026-11-01
 
         $this->assertSame($cobranca->id, $linha['id']);
         $this->assertSame([300, 420, 2100, 500], [$linha['desconto_centavos'], $linha['multa_centavos'], $linha['juros_centavos'], $linha['outros_centavos']]);

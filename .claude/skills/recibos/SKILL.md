@@ -599,6 +599,9 @@ o relatório mostra a parte que existe.
   de amanhã até hoje + N (a borda entra; hoje fica em "Hoje"), também **ignoram o mês** e levam as previstas da janela
   (`ListaDeCobrancas::PROXIMOS_DIAS`; uma segunda chamada a `PrevisaoDeCobrancas::entre` cobre os 15 dias). São subconjuntos
   de "A vencer": não entram na soma de "Todas". Abas e select na ordem Hoje · Próximos 7 · Próximos 15 · A vencer.
+  **"Pagas" filtra pelo mês do pagamento (`pago_em`), não pelo do vencimento** (pedido do usuário, 2026-11-05): a paga em
+  outubro que venceu em setembro aparece em outubro. Vale para a lista e para a aba "Pagas"; o rótulo do campo vira
+  "Mês do pagamento". As demais situações e "Todas" seguem pelo vencimento.
 - **Fase 17 — cadastro rápido sem sair da tela (regra do usuário, 2026-10-10):** cliente (`CampoCliente.vue` +
   `CadastroRapidoCliente.vue`), produto/serviço (`CadastroRapidoProduto.vue`, `CatalogoItens.vue` "Ver catálogo") e
   chave PIX (`CadastroRapidoChavePix.vue` em `CamposPagamento`) em **modal**; o registro novo volta já escolhido e o

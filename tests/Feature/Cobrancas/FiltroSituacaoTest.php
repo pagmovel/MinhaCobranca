@@ -88,6 +88,22 @@ class FiltroSituacaoTest extends TestCase
         $this->assertContains(['chave' => 'proximos_15', 'quantidade' => 5, 'soma_centavos' => 4600], $abas);
     }
 
+    /** "Pagas" é o que foi pago no período (mês de `pago_em`), mesmo vencido em outro mês; a aba conta pelo mesmo critério. */
+    public function test_pagas_pegam_o_periodo_do_pagamento_e_nao_o_do_vencimento(): void
+    {
+        $cliente = $this->usuario->clientes()->firstOrFail();
+        $paga = fn (string $vencimento, int $valor, string $pagoEm) => Cobranca::factory()->for($this->usuario)->for($cliente)
+            ->create(['vencimento' => $vencimento, 'valor_centavos' => $valor])
+            ->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => $pagoEm])->save();
+        $paga('2026-09-10', 1500, '2026-10-02'); // venceu em setembro, pagou em outubro
+        $paga('2026-10-20', 1600, '2026-11-03'); // venceria em outubro, pagou em novembro
+
+        $this->assertSame(['15,00', '4,00'], $this->valores('/cobrancas?status=paga'));
+        $this->assertSame(['16,00'], $this->valores('/cobrancas?status=paga&mes=2026-11'));
+        $this->assertSame([], $this->valores('/cobrancas?status=paga&mes=2026-09'));
+        $this->assertContains(['chave' => 'paga', 'quantidade' => 2, 'soma_centavos' => 1900], $this->getJson('/cobrancas/dados')->json('abas'));
+    }
+
     public function test_todas_deixa_canceladas_de_fora_salvo_quando_pedidas(): void
     {
         $this->assertSame(['2,00', '3,00', '4,00', '6,00'], $this->valores('/cobrancas'));
