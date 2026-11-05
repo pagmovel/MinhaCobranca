@@ -591,7 +591,8 @@ o relatório mostra a parte que existe.
 - **Filtro de situação das cobranças (pedido do usuário, 2026-10-10):** "Vencendo hoje", "Vencidas", "A vencer",
   "Pendentes (todas em aberto)", "Pagas", "Canceladas". Vencendo hoje e Vencidas **ignoram o mês** (a vencida de
   setembro aparece em outubro; o aviso "(buscando em todos os meses)" fica no `Paginador`, na linha do "Mostrando x–n de n",
-  prop `nota`, e não mais no rótulo do mês). Trocar situação ou mês aplica o
+  prop `nota`, e não mais no rótulo do mês; **só em "Vencidas"**, o único que varre meses: "Hoje" e "Próximos N dias" são
+  janelas de datas, o aviso ali foi corrigido a pedido do usuário em 2026-11-05). Trocar situação ou mês aplica o
   filtro na hora (`@change`), sem clicar em "Filtrar". **Campo de mês nunca fica bloqueado** (o usuário achou que era
   defeito): escolher um mês nesse estado volta a situação para "Todas" e mostra o mês escolhido. Teste: `tests/Feature/Cobrancas/FiltroSituacaoTest.php`.
   **"Próximos 7 dias" e "Próximos 15 dias" (`proximos_7`, `proximos_15`, pedido do usuário, 2026-11-05):** só pendentes,
