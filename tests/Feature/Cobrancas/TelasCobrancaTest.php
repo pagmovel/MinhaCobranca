@@ -83,8 +83,10 @@ class TelasCobrancaTest extends TestCase
         $deOutro = Cobranca::factory()->for($this->usuario)->for($outroCliente)->create(['vencimento' => '2026-11-07']);
 
         $this->actingAs($this->usuario);
-        $this->getJson('/cobrancas/dados?mes=2026-11&status=paga')
+        // "Pagas" olha o mês do pagamento (outubro), não o do vencimento (novembro).
+        $this->getJson('/cobrancas/dados?mes=2026-10&status=paga')
             ->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $paga->id);
+        $this->getJson('/cobrancas/dados?mes=2026-11&status=paga')->assertJsonCount(0, 'linhas');
         $this->getJson("/cobrancas/dados?mes=2026-11&cliente_id={$outroCliente->id}")
             ->assertJsonCount(1, 'linhas')->assertJsonPath('linhas.0.id', $deOutro->id);
         $this->get('/cobrancas?mes=novembro')->assertSessionHasErrors('mes');

@@ -30,7 +30,8 @@ final class ListaDeCobrancas
         // "Vencendo hoje", "Vencidas" e "Próximos N dias" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
         $dias = self::PROXIMOS_DIAS[$status] ?? null;
         if ($dias === null && ! in_array($status, ['vence_hoje', 'vencida'], true)) {
-            $consulta->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]);
+            // "Pagas" é o que foi pago no período, mesmo que tenha vencido em outro (pedido do usuário, 2026-11-05).
+            $consulta->whereBetween($status === 'paga' ? 'pago_em' : 'vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]);
         }
 
         match ($status) {
@@ -148,7 +149,7 @@ final class ListaDeCobrancas
         }
         // A aba "Pagas" soma o valor pago (com desconto e acréscimos), coerente com o "recebido" do painel.
         $paga = $agregar($base()->where('status', StatusCobranca::Paga)
-            ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]), Cobranca::VALOR_PAGO_SQL);
+            ->whereBetween('pago_em', [$filtros['mes'], $filtros['ate']->endOfMonth()]), Cobranca::VALOR_PAGO_SQL);
 
         $aVencer = [
             'quantidade' => $aVencerReal['quantidade'] + count($previstas),

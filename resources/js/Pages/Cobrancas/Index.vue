@@ -47,6 +47,7 @@ const vazio = computed(() => ({
     vencida: 'Nenhuma cobrança vencida em aberto.',
     proximos_7: 'Nenhuma cobrança vence nos próximos 7 dias.',
     proximos_15: 'Nenhuma cobrança vence nos próximos 15 dias.',
+    paga: 'Nenhuma cobrança paga neste período.',
 }[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste período e filtros.'));
 
 // O "Até" se ajusta sozinho (filtroPeriodo.js): o servidor nunca recusa o período por um campo que a pessoa não mexeu.
@@ -192,7 +193,7 @@ async function fecharFaixa() {
         <!-- Datas com largura fixa (o mês cabe em 11rem); situação e cliente dividem o resto; a última coluna é do tamanho
              da caixa + botão, que ficam na mesma linha (pedido do usuário, 2026-10-11). -->
         <form class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-[11rem_11rem_minmax(0,1fr)_minmax(0,1.4fr)_auto]" @submit.prevent="filtrar">
-            <Campo id="mes" rotulo="Mês do vencimento">
+            <Campo id="mes" :rotulo="filtro.status === 'paga' ? 'Mês do pagamento' : 'Mês do vencimento'">
                 <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
             </Campo>
             <Campo id="ate" rotulo="Até" :erro="erroAte || $page.props.errors?.ate">
