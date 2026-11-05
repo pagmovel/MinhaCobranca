@@ -13,6 +13,9 @@ final class ListaDeCobrancas
 {
     private const ORDEM = ['vencida', 'vence_hoje', 'a_vencer', 'prevista', 'paga', 'cancelada'];
 
+    /** "Próximos N dias": pendentes de amanhã até hoje + N, de qualquer mês (como "Vencidas" e "Hoje"). */
+    private const PROXIMOS_DIAS = ['proximos_7' => 7, 'proximos_15' => 15];
+
     public function __construct(private PrevisaoDeCobrancas $previsao) {}
 
     /**
@@ -24,8 +27,9 @@ final class ListaDeCobrancas
         $status = $filtros['status'];
         $consulta = $usuario->cobrancas()->orderBy('vencimento')->orderBy('id');
 
-        // "Vencendo hoje" e "Vencidas" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
-        if (! in_array($status, ['vence_hoje', 'vencida'], true)) {
+        // "Vencendo hoje", "Vencidas" e "Próximos N dias" valem para qualquer mês: a vencida de setembro precisa aparecer em outubro.
+        $dias = self::PROXIMOS_DIAS[$status] ?? null;
+        if ($dias === null && ! in_array($status, ['vence_hoje', 'vencida'], true)) {
             $consulta->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]);
         }
 
@@ -35,21 +39,28 @@ final class ListaDeCobrancas
             'vence_hoje' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]),
             'vencida' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '<', $hoje),
             'a_vencer' => $consulta->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay()),
+            'proximos_7', 'proximos_15' => $consulta->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje->addDay(), $hoje->addDays($dias)->endOfDay()]),
             default => $consulta->where('status', $status),
         };
 
         // Previstas (calculadas pelos contratos, nada gravado): calculadas sempre (as abas de situação, mais abaixo,
         // precisam delas mesmo numa aba diferente de "A vencer"), mas só entram na listagem onde já entravam.
-        $previstas = $this->previsao->entre($usuario, $filtros['mes']->max($hoje->addDay()), $filtros['ate']->endOfMonth());
+        $soDoFiltro = fn (array $lista) => array_filter($lista, fn (array $prevista) => ($filtros['cliente_id'] === null || $prevista['cliente_id'] === $filtros['cliente_id'])
+            && ($filtros['contrato_id'] === null || $prevista['contrato_id'] === $filtros['contrato_id']));
+        $previstas = $soDoFiltro($this->previsao->entre($usuario, $filtros['mes']->max($hoje->addDay()), $filtros['ate']->endOfMonth()));
+        // As dos próximos dias não dependem do mês escolhido; as abas "Próximos N dias" também precisam delas.
+        $proximas = $soDoFiltro($this->previsao->entre($usuario, $hoje->addDay(), $hoje->addDays(max(self::PROXIMOS_DIAS))->endOfDay()));
         if ($filtros['cliente_id'] !== null) {
             $consulta->where('cliente_id', $filtros['cliente_id']);
-            $previstas = array_filter($previstas, fn (array $prevista) => $prevista['cliente_id'] === $filtros['cliente_id']);
         }
         if ($filtros['contrato_id'] !== null) {
             $consulta->where('contrato_id', $filtros['contrato_id']);
-            $previstas = array_filter($previstas, fn (array $prevista) => $prevista['contrato_id'] === $filtros['contrato_id']);
         }
-        $incluirPrevistasNaLista = in_array($status, [null, 'a_vencer', 'pendente'], true);
+        $previstasDaLista = match (true) {
+            $dias !== null => $this->ate($proximas, $hoje->addDays($dias)),
+            in_array($status, [null, 'a_vencer', 'pendente'], true) => $previstas,
+            default => [],
+        };
 
         // ponytail: a lista leve fica inteira na memória (até 36 meses); agregar no SQL se passar de dezenas de milhares de linhas.
         $leves = $consulta->get(['id', 'vencimento', 'status', 'valor_centavos', 'desconto_centavos', 'multa_centavos', 'juros_centavos', 'outros_centavos'])
@@ -61,13 +72,13 @@ final class ListaDeCobrancas
                 'valor_centavos' => $cobranca->status === StatusCobranca::Paga ? $cobranca->valorPagoCentavos() : $cobranca->valor_centavos,
                 'prevista' => null,
             ])
-            ->concat($incluirPrevistasNaLista ? array_map(fn (array $prevista) => [
+            ->concat(array_map(fn (array $prevista) => [
                 'id' => $prevista['id'],
                 'vencimento' => CarbonImmutable::createFromFormat('!d/m/Y', $prevista['vencimento'])->toDateString(),
                 'situacao' => 'prevista',
                 'valor_centavos' => $prevista['valor_centavos'],
                 'prevista' => $prevista,
-            ], array_values($previstas)) : [])
+            ], array_values($previstasDaLista)))
             ->sortBy('vencimento') // estável: no mesmo dia, a real (que veio antes) fica antes da prevista
             ->values();
 
@@ -94,7 +105,7 @@ final class ListaDeCobrancas
             'linhas' => $bloco['itens']->map(fn (array $leve) => $leve['prevista'] ?? $completas[$leve['id']]->paraLista($hoje))->all(),
             'totais' => $totais,
             'total_geral' => ['quantidade' => $aReceber->count(), 'soma_centavos' => (int) $aReceber->sum('valor_centavos')],
-            'abas' => $this->abas($usuario, $filtros, $hoje, $previstas),
+            'abas' => $this->abas($usuario, $filtros, $hoje, $previstas, $proximas),
             'pagina' => $bloco['pagina'],
         ];
     }
@@ -105,9 +116,10 @@ final class ListaDeCobrancas
      * listagem, senão as abas não selecionadas "zerariam" ao clicar numa delas.
      *
      * @param  list<array<string, mixed>>  $previstas  já filtradas por cliente/contrato (ver montar())
+     * @param  list<array<string, mixed>>  $proximas  as previstas dos próximos dias, também filtradas
      * @return list<array{chave: string, quantidade: int, soma_centavos: int}>
      */
-    private function abas(User $usuario, array $filtros, CarbonImmutable $hoje, array $previstas): array
+    private function abas(User $usuario, array $filtros, CarbonImmutable $hoje, array $previstas, array $proximas): array
     {
         $base = fn () => $usuario->cobrancas()
             ->when($filtros['cliente_id'] !== null, fn ($q) => $q->where('cliente_id', $filtros['cliente_id']))
@@ -124,6 +136,16 @@ final class ListaDeCobrancas
         $venceHoje = $agregar($base()->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje, $hoje->endOfDay()]));
         $aVencerReal = $agregar($base()->where('status', StatusCobranca::Pendente)->where('vencimento', '>', $hoje->endOfDay())
             ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]));
+        $proximos = [];
+        foreach (self::PROXIMOS_DIAS as $chave => $dias) {
+            $reais = $agregar($base()->where('status', StatusCobranca::Pendente)->whereBetween('vencimento', [$hoje->addDay(), $hoje->addDays($dias)->endOfDay()]));
+            $previstasDaAba = $this->ate($proximas, $hoje->addDays($dias));
+            $proximos[] = [
+                'chave' => $chave,
+                'quantidade' => $reais['quantidade'] + count($previstasDaAba),
+                'soma_centavos' => $reais['soma_centavos'] + (int) array_sum(array_column($previstasDaAba, 'valor_centavos')),
+            ];
+        }
         // A aba "Pagas" soma o valor pago (com desconto e acréscimos), coerente com o "recebido" do painel.
         $paga = $agregar($base()->where('status', StatusCobranca::Paga)
             ->whereBetween('vencimento', [$filtros['mes'], $filtros['ate']->endOfMonth()]), Cobranca::VALOR_PAGO_SQL);
@@ -141,8 +163,18 @@ final class ListaDeCobrancas
             ['chave' => 'todas', ...$todas],
             ['chave' => 'vencida', ...$vencida],
             ['chave' => 'vence_hoje', ...$venceHoje],
+            ...$proximos,
             ['chave' => 'a_vencer', ...$aVencer],
             ['chave' => 'paga', ...$paga],
         ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $previstas
+     * @return array<int, array<string, mixed>>
+     */
+    private function ate(array $previstas, CarbonImmutable $limite): array
+    {
+        return array_filter($previstas, fn (array $prevista) => CarbonImmutable::createFromFormat('!d/m/Y', $prevista['vencimento'])->lte($limite));
     }
 }

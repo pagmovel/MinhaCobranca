@@ -38,11 +38,13 @@ const props = defineProps({
 });
 
 const filtro = reactive({ ...props.filtros });
-// Vencendo hoje e vencidas valem para qualquer mês (o servidor ignora o mês nesses dois).
-const todosOsMeses = computed(() => ['vence_hoje', 'vencida'].includes(filtro.status));
+// Vencendo hoje, vencidas e próximos dias valem para qualquer mês (o servidor ignora o mês nesses filtros).
+const todosOsMeses = computed(() => ['vence_hoje', 'vencida', 'proximos_7', 'proximos_15'].includes(filtro.status));
 const vazio = computed(() => ({
     vence_hoje: 'Nenhuma cobrança vence hoje.',
     vencida: 'Nenhuma cobrança vencida em aberto.',
+    proximos_7: 'Nenhuma cobrança vence nos próximos 7 dias.',
+    proximos_15: 'Nenhuma cobrança vence nos próximos 15 dias.',
 }[props.filtros.status] ?? 'Nenhuma cobrança com vencimento neste período e filtros.'));
 
 // O "Até" se ajusta sozinho (filtroPeriodo.js): o servidor nunca recusa o período por um campo que a pessoa não mexeu.
@@ -96,7 +98,7 @@ const temPrevistas = computed(() => Boolean(resumo.value?.totais.some((total) =>
 
 // T17.16: abas de situação com contagem e soma, sempre do conjunto inteiro (o servidor não zera as outras
 // abas quando uma está selecionada). "Todas" é status === '' na mesma variável do select "Situação" abaixo.
-const ROTULO_DA_ABA = { todas: 'Todas', vencida: 'Vencidas', vence_hoje: 'Hoje', a_vencer: 'A vencer', paga: 'Pagas' };
+const ROTULO_DA_ABA = { todas: 'Todas', vencida: 'Vencidas', vence_hoje: 'Hoje', proximos_7: 'Próximos 7 dias', proximos_15: 'Próximos 15 dias', a_vencer: 'A vencer', paga: 'Pagas' };
 const ABAS = Object.keys(ROTULO_DA_ABA);
 const abaAtiva = computed(() => filtro.status || 'todas');
 function valorDaAba(chave) {
@@ -188,7 +190,7 @@ async function fecharFaixa() {
         <!-- Datas com largura fixa (o mês cabe em 11rem); situação e cliente dividem o resto; a última coluna é do tamanho
              da caixa + botão, que ficam na mesma linha (pedido do usuário, 2026-10-11). -->
         <form class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-[11rem_11rem_minmax(0,1fr)_minmax(0,1.4fr)_auto]" @submit.prevent="filtrar">
-            <Campo id="mes" :rotulo="todosOsMeses ? 'Mês do vencimento (buscando em todos os meses)' : 'Mês do vencimento'">
+            <Campo id="mes" rotulo="Mês do vencimento">
                 <input id="mes" v-model="filtro.mes" type="month" class="entrada" @change="escolheuMes">
             </Campo>
             <Campo id="ate" rotulo="Até" :erro="erroAte || $page.props.errors?.ate">
@@ -199,6 +201,8 @@ async function fecharFaixa() {
                     <option value="">Todas</option>
                     <option value="vence_hoje">Vencendo hoje</option>
                     <option value="vencida">Vencidas</option>
+                    <option value="proximos_7">Próximos 7 dias</option>
+                    <option value="proximos_15">Próximos 15 dias</option>
                     <option value="a_vencer">A vencer</option>
                     <option value="pendente">Pendentes (todas em aberto)</option>
                     <option value="paga">Pagas</option>
@@ -287,6 +291,7 @@ async function fecharFaixa() {
                 :por-pagina="filtro.por_pagina"
                 :total="resumo.pagina.total"
                 :carregando="carregando"
+                :nota="todosOsMeses ? '(buscando em todos os meses)' : null"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />
@@ -466,6 +471,7 @@ async function fecharFaixa() {
                 :por-pagina="filtro.por_pagina"
                 :total="resumo.pagina.total"
                 :carregando="carregando"
+                :nota="todosOsMeses ? '(buscando em todos os meses)' : null"
                 @ir="irPara($event, { focar: true })"
                 @por-pagina="escolheuPorPagina"
             />

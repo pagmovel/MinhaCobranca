@@ -88,7 +88,7 @@ class CobrancaController extends Controller
         $validados = $request->validate([
             'mes' => ['nullable', 'date_format:Y-m', new AnoValido],
             'ate' => ['nullable', 'date_format:Y-m', new AnoValido],
-            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'paga', 'cancelada'])],
+            'status' => ['nullable', Rule::in(['pendente', 'vence_hoje', 'vencida', 'a_vencer', 'proximos_7', 'proximos_15', 'paga', 'cancelada'])],
             'cliente_id' => ['nullable', 'integer'],
             'contrato_id' => ['nullable', 'integer'],
             'canceladas' => ['nullable', 'boolean'],
