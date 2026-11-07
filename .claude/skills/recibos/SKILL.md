@@ -2017,7 +2017,7 @@ Exemplo: um tema `fluxo`. Use `regua` (casca e composição próprias) ou `alman
 - **Quem já viu o popup não o vê de novo:** `novidade_temas_vista` é um booleano. Tema novo não reabre o aviso para quem o dispensou; reabrir exigiria zerar a coluna (escrita em banco: pede autorização).
 
 ### Como o `TEMA_PADRAO` funciona
-- `config/temas.php` é o único lugar que chama `env()`: `'padrao' => env('TEMA_PADRAO', 'talao')`. O `.env.example` já traz `TEMA_PADRAO=talao` com comentário. Valores aceitos hoje: `talao`, `regua`, `almanaque`.
+- `config/temas.php` é o único lugar que chama `env()`: `'padrao' => env('TEMA_PADRAO', 'talao')`. O `.env.example` traz `TEMA_PADRAO=almanaque` com comentário (decisão do Marcos, 2026-11-07: usuário novo começa no Almanaque; o valor padrão do código continua `talao`, e o `phpunit.xml` fixa `talao` para a suíte não depender do `.env` de quem a roda). Valores aceitos hoje: `talao`, `regua`, `almanaque`.
 - `TemaVisual::padrao()` faz `tryFrom((string) config('temas.padrao')) ?? Talao`: valor desconhecido, vazio ou com erro de digitação cai no Talão, sem erro.
 - **Só vale para usuário novo.** `User::booted()` (evento `creating`) grava `tema = padrao()` e `novidade_temas_vista = true` (quem acabou de se cadastrar já tem o `ModalBoasVindas` e não vê o popup). Não muda o tema de quem já existe e não vale para visitante (telas públicas, sempre Talão).
 - **Usuário antigo:** a migração deixou `tema = 'talao'` e `novidade_temas_vista = false`; ele vê o popup uma vez (só se o enum tiver mais de um caso e a apresentação inicial não for abrir) e escolhe o tema no painel do usuário.
@@ -2055,7 +2055,7 @@ Comando dele: "implemente painel-bento-timeline e painel-linha-do-tempo. Vai fic
 - **Merge e deploy:** merge `--no-ff` no `main` e push (permissão permanente do Marcos), com PHP, JS e `npm run build` verdes; **deploy e `TEMA_PADRAO` no `.env` de produção são dele**. Nenhum acesso à VPS.
 
 ### Achados abertos (não corrigidos; decisão do Marcos)
-- `desfazer-baixa` e `corrigir-pagamento` dão 500 com `senha[]=x` (`CobrancaController::confirmacao()`, falta `bail`) e o campo `senha` das baixas ainda é aparado pelo `TrimStrings`.
+- **Corrigidos em 2026-11-07 (commit `4acc8c2`, pedido do Marcos):** `desfazer-baixa` e `corrigir-pagamento` davam 500 com `senha[]=x` (`password_verify()` recebia a lista; `CobrancaController::confirmacao()` agora tem `bail` e a mensagem `senha.string`) e o campo `senha` das baixas era aparado pelo `TrimStrings` (entrou em `trimStrings(except: [...])`). Testes em `tests/Feature/AuditoriaTest.php`.
 - **Contraste do Talão:** 11 a 12 usos de `text-grafite/60` (4,05 sobre a superfície, 3,98 sobre o papel; a 3.1 contou 11, a 9.1 contou 12 em 8 arquivos) e 1 de `/50` (3,06). O item bloqueado do menu (`text-menu-texto/50`) é controle desativado, isento do WCAG: Talão 3,06, Régua 2,36, Almanaque 3,52.
 - **Bricolage mais larga que nos protótipos** (sem `font-stretch`). Saída, se o Marcos quiser a fidelidade: fonte local variável (provedor `local` do plugin; exige guardar o arquivo no repositório, o que pede pasta nova aprovada).
 - **"Previsto" difere entre temas:** na Régua é recebido + aguardando + a enviar do mês (regime de caixa); no Talão é a soma de quem vence no mês. Também sem decisão: a regra da etapa triplicada, "Para avisar" (cobranças) × "Vencendo" (clientes), e `throttle:30,1` (CNPJ e CEP) e `throttle:6,1` (baixas) compartilhando o contador.

@@ -29,7 +29,7 @@ sem depender do histórico.
   perde uma baixa aberta; Safari, Firefox e leitor de tela não testados; `docs/modelos-painel.html` e
   `docs/painel-lista.html` (protótipos não escolhidos) sem commit, esperando o Marcos dizer se apaga.
 - **É do Marcos:** o **deploy** e a variável **`TEMA_PADRAO`** no `.env` de produção (`talao`, `regua` ou `almanaque`;
-  padrão `talao`; só vale para usuário novo e a configuração é cacheada na subida do container). A migração
+  **o Marcos quer `almanaque`** (2026-11-07; já está no `.env` local e no `.env.example`, falta o `.env` de produção); padrão do código `talao`; só vale para usuário novo e a configuração é cacheada na subida do container). A migração
   (`2026_11_07_103510_add_tema_e_novidade_to_users_table`, **só duas colunas em `users`**, nenhuma tabela) **roda sozinha**
   no `CMD` do `Dockerfile` (`php artisan migrate --force`; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`). Já
   foi rodada no Postgres local (12 usuários antigos com `tema = talao` e popup pendente). Nenhum acesso à VPS.

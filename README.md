@@ -40,8 +40,8 @@ sistema vê um aviso da novidade uma vez.
 | Almanaque (`almanaque`) | Menu lateral azul-marinho, painel em blocos de cantos bem arredondados e a linha do tempo do mês. |
 
 **Variável de ambiente `TEMA_PADRAO`:** tema de quem se cadastra daqui para frente (`talao`, `regua` ou
-`almanaque`; padrão `talao`). Valor desconhecido cai no Talão. É lida em `config/temas.php` (o `.env.example` já
-traz a linha) e não muda o tema de quem já tem conta. Em produção a configuração é cacheada na subida do
+`almanaque`; padrão `talao`). Valor desconhecido cai no Talão. É lida em `config/temas.php` (o `.env.example` traz
+`TEMA_PADRAO=almanaque`, decisão do Marcos de 2026-11-07; o padrão do código, sem a variável, continua `talao`) e não muda o tema de quem já tem conta. Em produção a configuração é cacheada na subida do
 container: depois de mudar a variável, reinicie ou refaça o deploy.
 
 As fontes de cada tema são baixadas do Bunny Fonts no `npm run build` (essa etapa precisa de rede) e servidas pelo

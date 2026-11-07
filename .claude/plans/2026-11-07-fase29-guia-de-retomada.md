@@ -94,6 +94,19 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 > 4. **Pergunta aberta ao Marcos, ainda sem resposta:** apagar `docs/modelos-painel.html` e `docs/painel-lista.html`? E
 >    corrigir o 500 com `senha[]=x` e o `trim` do campo `senha` das baixas (seção 5)?
 
+> **Atualização 3 (FASE 29 MESCLADA NO `main` e enviada ao GitHub, `5404af9`; pedidos novos do Marcos depois do merge):**
+> 1. **Feito (commits `4acc8c2`, `7ffcc34`, `4d0a731`, PHP 967 e JS 434 verdes):** 500 do `senha[]=x` nas baixas e `trim` do
+>    campo `senha` corrigidos (com testes); ícone da linha "Alterar senha" trocado de "link externo" por uma chave;
+>    `TEMA_PADRAO=almanaque` no `.env` local (não versionado) e no `.env.example`, e `TEMA_PADRAO=talao` fixo no
+>    `phpunit.xml`. **Produção:** a variável no `.env` do painel continua do Marcos (e só vale depois de reiniciar o
+>    container).
+> 2. **Em andamento:** (a) subagente `ac7b3affc8521592c`: **"o Wizard (Fase 25) quebra com os novos temas?"**, prova no
+>    navegador nos 3 temas, mais usuário novo caindo no Almanaque e o ícone novo; relatório em
+>    `.../scratchpad/relatorio-wizard-temas.md`; (b) subagente `a8fec0fb411f32a71`, **só leitura**: investigar por que o
+>    "Previsto" difere entre o Talão e a Régua/Almanaque (o Marcos respondeu "não sei, precisa ser investigado");
+>    relatório em `.../scratchpad/relatorio-previsto.md`. Ao retomar: `git status`, `ListAgents`, ler os relatórios.
+>    Depois do (b): decidir com o Marcos (ou aplicar a recomendação, se for inequívoca) e corrigir com testes.
+
 ### Histórico (12:45)
 
 - Branch `feature/temas-visuais`, **20 commits à frente do `main`**, nada enviado ao `origin`, nada em produção.
@@ -199,7 +212,7 @@ produção são do Marcos**; a migração das colunas de `users` roda sozinha na
 
 ## 5. Achados abertos (não corrigidos, para o Marcos decidir)
 
-- `desfazer-baixa` e `corrigir-pagamento` dão erro 500 com `senha[]=x` (`CobrancaController::confirmacao()`, falta um `bail`).
+- ~~`desfazer-baixa` e `corrigir-pagamento` dão erro 500 com `senha[]=x`~~ **corrigido em 2026-11-07** (`4acc8c2`, junto do `trim` do campo `senha`).
 - 11 textos `text-grafite/60` (4,05:1) e 1 `/50` (3,06:1) do Talão abaixo de 4,5:1.
 - Fontes estáticas do Bunny sem eixo de largura: títulos da Bricolage mais largos que nos protótipos.
 - O Tailwind v4 lê também os `.md` de `.claude/` e gera estilo solto de exemplos de classe no texto (inofensivo).
