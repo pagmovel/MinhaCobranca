@@ -56,9 +56,17 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 >    com qualquer Modal por cima), `3a60d18` (`.aparecer` com `backwards`: Coach e Holofote voltam ao canto da janela,
 >    também no Talão), `c7f1ea9` (docs). PHP 965 e JS 420 verdes, build ok. Relatório em `.../scratchpad/relatorio-f29-s9.md`.
 >    Não coberto pela matriz: listas vazias, erros de validação, usuário não administrador; Safari, Firefox, leitor de tela.
->    **Despacho E EM ANDAMENTO** (correções da revisão + contraste dos temas novos; subagente `a0bf56cb61958c5da`,
->    `sonnet`; relatório em `.../scratchpad/relatorio-f29-s10.md`). Ao retomar: `git status`, `ListAgents`, ler o relatório.
->    Depois do E: **D** (9.2, documentação final) e o merge. Escopo do E (era "só depois que o C terminar"):
+>    **Despacho E FEITO e conferido por quem coordena** (subagente `a0bf56cb61958c5da`): `c353a54` (M1: voltar no
+>    histórico não desfaz o tema; reproduzido no navegador antes e provado depois), `0b05ac5` (M2: teto de 6 níveis por
+>    dia e pílula "+N"), `62acaf4` (baixas 1, 2, 3, 4, 10, 11), `2ebdff4` (`--color-grafite` escurecida só na Régua e no
+>    Almanaque, `text-grafite/60` passa de 4,5:1), `a508686` (docs). **PHP 965 e JS 434 verdes.** Relatório em
+>    `.../scratchpad/relatorio-f29-s10.md`. `[A VERIFICAR]` do E: a 390 px o bloco com 6 níveis cheios tem 768 px (se
+>    o Marcos achar alto, baixar o teto só no celular); `TemaVisual::amostra` guarda a tinta antiga (só a miniatura do
+>    seletor); uma baixa que cai num dia já cheio (6 ou mais pagamentos) joga o ponto novo na pílula, sem salto.
+>    **Despacho D EM ANDAMENTO** (9.2, documentação final, só texto; subagente `a32e7ed7c023ca3e4`, `sonnet`; relatório
+>    em `.../scratchpad/relatorio-f29-s11.md`; um commit; não mexe neste guia). Ao retomar: `git status`, `ListAgents`,
+>    ler o relatório. **Depois do D: merge `--no-ff` no `main` e push** (com PHP, JS e build verdes). Escopo do E, já
+>    cumprido (era "só depois que o C terminar"):
 >    **M1** voltar no histórico restaura as props antigas (Inertia 3.9.0 dispara `navigate` com `type:'history'`,
 >    `usarTema.js` `sincronizarTemaDaPagina` + `app.js:13`) e a tela volta ao tema antigo: provar no navegador e
 >    corrigir guardando o último tema confirmado; **M2** linha do tempo sem teto de pontos por dia
