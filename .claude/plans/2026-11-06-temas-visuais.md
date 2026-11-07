@@ -185,7 +185,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 4: Painel em colunas, Fluxo, Livro-caixa e popup (Marco 2)
 
-### Tarefa 4.1: extrair o Painel atual e despachar por tema. Estado: pendente
+### Tarefa 4.1: extrair o Painel atual e despachar por tema. Estado: testada (2026-11-07; Painel a 1440 e 390 px em 2 estados, antes e depois: 0 pixels e 0 estilos computados diferentes e `innerHTML` idêntico; testes JS, `--filter=Painel` e `npm run build` verdes; detalhes na skill, "Acertos (Tarefa 4.1)")
 - Mover o corpo de `Pages/Painel.vue` para `Components/Painel/PainelEmpilhado.vue` sem mudar nada visível; `Painel.vue` escolhe o componente por `temaAtual.painel`. `temas.js`: `componenteDoPainel(painel: string): string` (desconhecido = `empilhado`).
 - **Testes:** `tests/js/temas.test.js` (`painel_desconhecido_usa_empilhado`); `PainelTest` inteiro continua verde.
 
