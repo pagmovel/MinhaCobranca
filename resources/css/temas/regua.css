@@ -11,6 +11,12 @@ html[data-tema='regua'] {
     --color-superficie: #FFFFFF;
     --color-sobre-acao: #FFFFFF;
 
+    --color-apagado: #46526F; /* --apagado */
+    --color-faixa: #E8EEF8; /* --faixa */
+    --color-fim-de-semana: #D6E0F0; /* --sombra-fds */
+    --color-feriado: #D0DBEC; /* --sombra-fer */
+    --color-linha-forte: #B7C1D5; /* --linha-forte */
+
     --color-menu-fundo: #FFFFFF; /* .topo-app */
     --color-menu-texto: #46526F; /* --apagado: link do menu */
     --color-menu-ativo: #F0F3FA; /* hover do menu */

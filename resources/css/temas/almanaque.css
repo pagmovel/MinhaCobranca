@@ -11,6 +11,12 @@ html[data-tema='almanaque'] {
     --color-superficie: #FFFFFF; /* .lista, .mes, .vencidas */
     --color-sobre-acao: #FFFFFF;
 
+    --color-apagado: #4B5470; /* --apagado */
+    --color-faixa: #FFFFFF; /* a linha do tempo fica dentro do bloco branco, sem faixa própria */
+    --color-fim-de-semana: #EDEFF8; /* --sombra-fds */
+    --color-feriado: #FFF0CC; /* --sombra-fer */
+    --color-linha-forte: #C7CDDF; /* --linha-forte */
+
     --color-menu-fundo: #18214A; /* --menu */
     --color-menu-texto: #C3CCEB; /* --menu-texto */
     --color-menu-ativo: #2C3768; /* --menu-ativo */

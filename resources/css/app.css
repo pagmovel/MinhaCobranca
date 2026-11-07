@@ -31,9 +31,16 @@
     --color-menu-linha: #C9D1DA;
     --color-menu-logo: var(--color-carbono); /* cor do recibo (logo) no menu */
     --color-ouro: #F2B544; /* ponto de aviso do "Mais" da barra superior (item escondido com contador) */
-    --color-etapa-enviar: #3B47C4; /* sem uso ainda: os painéis novos */
+    --color-etapa-enviar: #3B47C4; /* linha do tempo e números do Painel dos temas novos */
     --color-etapa-aguardando: #B45309;
     --color-etapa-recebida: #0F766E;
+
+    /* Linha do tempo (só os temas Régua e Almanaque a desenham; o Talão fica com estes valores sem usá-los). */
+    --color-apagado: #4B5762; /* texto secundário sobre papel, superfície e faixa */
+    --color-faixa: #E9EDF2; /* fundo da faixa do mês */
+    --color-fim-de-semana: #DCE2E9; /* sombra do sábado e do domingo */
+    --color-feriado: #D3DAE2; /* fundo do feriado (leva hachura) */
+    --color-linha-forte: #AAB4C0; /* borda de botão e de ponto vazio */
 
     --raio-controle: var(--radius-sm); /* .entrada, .botao*, Carimbo, Etiqueta, esqueleto de carregamento */
     --raio-bloco: 0; /* sem uso ainda: valor neutro (os blocos do Talão têm cantos retos) */
@@ -57,6 +64,11 @@
 
     .entrada {
         @apply w-full rounded-(--raio-controle) border border-linha bg-superficie px-3 py-2 text-sm text-grafite tabular-nums focus:border-carbono focus:outline-2 focus:outline-carbono/30;
+    }
+
+    /* Linha da lista acesa por um ponto da linha do tempo (composição Régua) ou por estar com o mouse ou o foco. */
+    .linha-acesa {
+        background-color: color-mix(in srgb, var(--color-carbono) 8%, var(--color-superficie));
     }
 
     .botao {

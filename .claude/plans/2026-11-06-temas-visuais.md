@@ -294,7 +294,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - `linhaDoTempo.js`: `empilharPontos(pontos): Array<{ ponto, nivel }>` (mesmo dia sobe um nível), `acumuladoPorDia(pontos, dias: number): number[]` (régua de dinheiro), `posicaoDoDia(dia: number, dias: number): number` (0 a 1).
 - **Testes** (`tests/js/linhaDoTempo.test.js`): `dois_no_mesmo_dia_empilham`, `acumulado_so_soma_recebidos`, `mes_de_28_dias`, `mes_de_31_dias`, `sem_pontos_devolve_zeros`.
 
-### Tarefa 7.2: `LinhaDoTempoDoMes.vue`. Estado: pendente
+### Tarefa 7.2: `LinhaDoTempoDoMes.vue`. Estado: testada (2026-11-07; 19 testes JS em `tests/js/linhaDoTempo.test.js` (os da 7.1 mais os novos), 393 JS e 962 PHP verdes e `npm run build` ok; conferida no browser-agent a 1440x900 e 390x844: pontos, dica, popover, Tab, setas, Esc, baixa com o salto, rolagem interna com "hoje" à vista, `prefers-reduced-motion`, falhas com "Tentar de novo"; o teste PHP do 404 já é o da 5.2; detalhes na skill, "Acertos (Tarefa 7.2)")
 - Eixo de dias (fim de semana sombreado, feriado hachurado, "Hoje"), pontos como botões na ordem de tabulação com setas, pílulas com a cor da etapa e valor legível (≥ 12 px), vencida em vermelho com "!", marcador "Anteriores", régua de dinheiro com o previsto pontilhado. Clicar num ponto abre um popover que busca a linha (5.2) e mostra a ação principal com os componentes existentes. Foco e hover ligam ponto e linha da lista nos dois sentidos. Em tela estreita rola dentro do próprio bloco, já mostrando "hoje".
 - **Testes:** as funções puras da 7.1; `test_ponto_de_outro_usuario_nao_abre` (a busca da 5.2 devolve 404 e o popover mostra "Não foi possível abrir esta cobrança." com "Tentar de novo"). Smoke test: Tab percorre os pontos, setas movem, Esc fecha o popover.
 

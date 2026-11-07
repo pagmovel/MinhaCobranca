@@ -42,6 +42,18 @@ const PARES = [
     // o ativo fica sobre um azul escuro: `text-carbono` dava 1,56 (ilegível); por isso o token próprio.
     ['--color-menu-texto-ativo', '--color-menu-ativo'],
     ['--color-menu-texto-ativo', '--color-menu-fundo'],
+    // Linha do tempo: texto secundário e dias do eixo sobre a faixa e sobre a sombra de fim de semana e de feriado;
+    // `text-white` literal sobre laranja (pílula "vence hoje").
+    ['--color-apagado', '--color-papel'],
+    ['--color-apagado', '--color-superficie'],
+    ['--color-apagado', '--color-faixa'],
+    ['--color-carbono', '--color-faixa'], // links dos avisos do topo
+    ['--color-apagado', '--color-fim-de-semana'],
+    ['--color-apagado', '--color-feriado'],
+    ['--color-grafite', '--color-faixa'],
+    ['--color-grafite', '--color-fim-de-semana'],
+    ['--color-grafite', '--color-feriado'],
+    ['#FFFFFF', '--color-tinta-laranja'],
 ];
 
 const caminho = (relativo) => new URL(`../../${relativo}`, import.meta.url);
