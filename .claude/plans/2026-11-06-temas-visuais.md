@@ -208,7 +208,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - `PainelController::mes` devolve `{ mes, hoje, dias, feriados: { dia: nome }, fim_de_semana: number[], pontos: Array<{ id, cliente, valor_centavos, vencimento_dia, etapa, situacao, pago_dia, pago_centavos }>, vencidas: { quantidade, soma_centavos, itens }, hoje_resumo: { vence_hoje, para_avisar, para_enviar }, anteriores: { quantidade, soma_centavos } }`. Vencidas e anteriores incluem meses passados; usa `DiasUteis` para feriados e fins de semana; carrega o cliente de uma vez (sem N+1).
 - **Testes** (`tests/Feature/Temas/PainelMesTest.php`): `test_so_traz_cobrancas_do_usuario_logado` (foco 3), `test_vencida_de_mes_anterior_entra_em_vencidas_e_anteriores`, `test_pago_fora_do_mes_nao_entra_nos_pontos`, `test_marca_feriado_e_fim_de_semana`, `test_numero_de_consultas_nao_cresce_com_as_cobrancas`.
 
-### Tarefa 5.2: `GET /painel/cobrancas/{cobranca}`. Estado: pendente
+### Tarefa 5.2: `GET /painel/cobrancas/{cobranca}`. Estado: testada (2026-11-07; 4 testes PHP verdes em `PainelCobrancaTest`; sem front, `npm run build` não se aplica)
 - Devolve a mesma linha (`paraLista($hoje)`) que a lista usa, sob demanda, para o ponto clicado abrir as ações sem repetir lógica.
 - **Testes:** `test_devolve_a_linha_da_propria_cobranca`, `test_cobranca_de_outro_usuario_da_404`, `test_visitante_vai_para_o_login`.
 

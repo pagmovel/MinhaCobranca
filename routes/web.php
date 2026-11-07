@@ -34,6 +34,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/painel', PainelController::class)->name('painel');
     Route::get('/painel/dados', [PainelController::class, 'dados']);
     Route::get('/painel/mes', [PainelController::class, 'mes']);
+    Route::get('/painel/cobrancas/{cobranca}', [PainelController::class, 'cobranca']);
 
     Route::get('/perfil', [PerfilController::class, 'edit']);
     Route::post('/perfil', [PerfilController::class, 'update']);

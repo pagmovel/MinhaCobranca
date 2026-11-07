@@ -172,6 +172,14 @@ class PainelController extends Controller
         ]);
     }
 
+    /** A linha de uma cobrança, a mesma das listas, para o ponto clicado abrir as ações. Cobrança alheia: 404. */
+    public function cobranca(Request $request, int $cobranca): JsonResponse
+    {
+        $registro = $request->user()->cobrancas()->with(['cliente', 'recibo', 'contrato'])->findOrFail($cobranca);
+
+        return response()->json($registro->paraLista(CarbonImmutable::today()));
+    }
+
     /** @return array{quantidade: int, soma_centavos: int} */
     private function somar(HasMany $consulta): array
     {
