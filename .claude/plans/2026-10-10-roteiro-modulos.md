@@ -35,7 +35,7 @@ sem depender do histórico.
   502 cai para ~10 s. O valor mora no **banco do bunker**, não no compose. Documentado no README ("Produção na VPS"), na
   skill ("Pegadinhas do deploy") e em `/srv/CONTABOO/bunker/README.md`.
 - **Decisões que esperam o Marcos (nenhuma bloqueia o sistema):**
-  1. **Atualizar o BunkerWeb 1.6.15 → 1.6.17** (estável de 21/10; a 1.6.18 é só candidata). O compose do bunker fixa a
+  1. ~~**Atualizar o BunkerWeb 1.6.15 → 1.6.17**~~ **FEITO em 2026-11-07 (~19:05 local), pelo Marcos no Easypanel:** o painel do bunker mostra "Version: 1.6.17 — You are running the latest version" e o log do `bunkerweb` subiu sem `[error]`. Compose local e README do bunker já estão em 1.6.17. **`[A VERIFICAR]`** (ele ainda não respondeu): `cobrancas.smartcontroladoria.com.br` responde, `DNS_RESOLVERS` continua `127.0.0.11 valid=10s`, log do scheduler sem `[ERROR]`. Histórico do plano (estável de 21/10; a 1.6.18 é só candidata). O compose do bunker fixa a
      tag nos 3 serviços (`bunkerweb`, `scheduler`, `ui`) e é colado à mão no Easypanel
      (`/srv/CONTABOO/bunker/docker-compose.easypanel.yml`): **Deploy sozinho não atualiza**. A regra global proíbe o Claude
      de atualizar software da produção: quem faz é o Marcos. Antes, confirmar o backup externo (`/srv/CONTABOO/backup-vps/`;
