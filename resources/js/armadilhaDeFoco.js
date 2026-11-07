@@ -12,3 +12,19 @@ export function proximoDaArmadilha(total, indice, voltar) {
 
     return (indice + (voltar ? -1 : 1) + total) % total;
 }
+
+/**
+ * O Tab (ou Shift+Tab) deste índice tiraria o foco do diálogo? Só nesse caso a armadilha intervém: no meio da
+ * lista vale a ordem natural do navegador (grupos de rádio, tabindex), que a ordem do DOM não reproduz.
+ * Foco fora da lista (índice desconhecido) também precisa voltar. Lista vazia não prende nada.
+ */
+export function saindoDaArmadilha(total, indice, voltar) {
+    if (total <= 0) {
+        return false;
+    }
+    if (indice < 0 || indice >= total) {
+        return true;
+    }
+
+    return voltar ? indice === 0 : indice === total - 1;
+}

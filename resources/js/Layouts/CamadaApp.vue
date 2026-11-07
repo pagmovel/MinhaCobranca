@@ -6,6 +6,7 @@ import { usarTema } from '../usarTema.js';
 import MenuLateral from '../Components/MenuLateral.vue';
 import MenuSuperior from '../Components/MenuSuperior.vue';
 import ModalBoasVindas from '../Components/ModalBoasVindas.vue';
+import PainelDoUsuario from '../Components/PainelDoUsuario.vue';
 
 const page = usePage();
 const usuario = computed(() => page.props.auth.user);
@@ -54,5 +55,6 @@ function abrirPainel(evento) {
         </main>
 
         <ModalBoasVindas v-if="page.props.mostrarApresentacao" :progresso="page.props.progresso" />
+        <PainelDoUsuario :aberto="painelAberto" @fechar="painelAberto = false" />
     </div>
 </template>

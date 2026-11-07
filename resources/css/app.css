@@ -116,7 +116,8 @@
 /* O que está saindo não recebe clique: durante os 180 ms o "Usar…" de um aviso velho continuava clicável (Fase 23). */
 .surgir-leave-active,
 .lista-leave-active,
-.modal-leave-active {
+.modal-leave-active,
+.painel-lateral-leave-active {
     pointer-events: none;
 }
 
@@ -157,6 +158,24 @@ ul > .lista-leave-active {
 .modal-enter-from > [role='dialog'],
 .modal-leave-to > [role='dialog'] {
     transform: scale(0.96) translateY(8px);
+}
+
+/* Painel lateral do usuário: o fundo escurece e o painel entra pela direita. */
+.painel-lateral-enter-active,
+.painel-lateral-leave-active {
+    transition: opacity 220ms ease;
+}
+.painel-lateral-enter-active > [role='dialog'],
+.painel-lateral-leave-active > [role='dialog'] {
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.painel-lateral-enter-from,
+.painel-lateral-leave-to {
+    opacity: 0;
+}
+.painel-lateral-enter-from > [role='dialog'],
+.painel-lateral-leave-to > [role='dialog'] {
+    transform: translateX(100%);
 }
 
 /* Conteúdo da página ao navegar e destaque de um número que mudou (total). */
