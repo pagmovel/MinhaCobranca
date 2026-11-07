@@ -438,7 +438,8 @@ class CobrancaController extends Controller
     private function confirmacao(): array
     {
         return [
-            'senha' => ['required', 'string', 'current_password'],
+            // `bail`: `senha[]=x` falha em `string` e para ali; sem ele `current_password` receberia a lista e daria erro 500.
+            'senha' => ['bail', 'required', 'string', 'current_password'],
             'motivo' => ['required', 'string', 'max:500'],
         ];
     }
@@ -447,6 +448,7 @@ class CobrancaController extends Controller
     {
         return [
             'senha.required' => 'Digite sua senha para confirmar.',
+            'senha.string' => 'Digite sua senha para confirmar.',
             'senha.current_password' => 'Senha incorreta.',
             'motivo.required' => 'Escreva o motivo da correção.',
         ];

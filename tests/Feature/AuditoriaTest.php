@@ -77,6 +77,33 @@ class AuditoriaTest extends TestCase
         $this->assertSame(['baixa.desfeita', 'Baixa desfeita (estava paga em 17/06/2026)'], [$this->registros()[0]['acao'], $this->registros()[0]['resumo']]);
     }
 
+    public function test_senha_em_formato_de_lista_e_recusada_sem_erro_500(): void
+    {
+        $cobranca = $this->paga($this->usuario);
+        $this->actingAs($this->usuario);
+
+        $this->post("/cobrancas/{$cobranca->id}/corrigir-pagamento", ['pago_em' => '2026-05-17', 'senha' => ['x'], 'motivo' => 'x'])
+            ->assertSessionHasErrors(['senha' => 'Digite sua senha para confirmar.']);
+        $this->post("/cobrancas/{$cobranca->id}/desfazer-baixa", ['senha' => ['x'], 'motivo' => 'x'])
+            ->assertSessionHasErrors(['senha' => 'Digite sua senha para confirmar.']);
+
+        $this->assertSame(StatusCobranca::Paga, $cobranca->fresh()->status);
+        $this->assertSame([], $this->registros());
+    }
+
+    /** O login não apara a senha; a confirmação da baixa também não pode, senão quem tem espaço nas pontas nunca confirma. */
+    public function test_senha_com_espaco_nas_pontas_confirma_a_baixa_sem_ser_aparada(): void
+    {
+        $this->usuario->forceFill(['password' => ' senha com espaco '])->save();
+        $cobranca = $this->paga($this->usuario);
+
+        $this->actingAs($this->usuario)->post("/cobrancas/{$cobranca->id}/desfazer-baixa", [
+            'senha' => ' senha com espaco ', 'motivo' => 'Baixa na cobrança errada',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(StatusCobranca::Pendente, $cobranca->fresh()->status);
+    }
+
     public function test_senha_errada_ou_sem_motivo_nada_muda(): void
     {
         $cobranca = $this->paga($this->usuario);
