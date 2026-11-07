@@ -23,6 +23,16 @@ export function razaoDeContraste(corA, corB) {
     return (maior + 0.05) / (menor + 0.05);
 }
 
+/**
+ * Cor que o olho vê quando `texto` é pintado com `opacidade` (0 a 1) sobre `fundo`, como o `text-grafite/60` do Tailwind:
+ * mistura canal a canal em sRGB, a mesma conta de composição do navegador. Devolve hexadecimal de 6 dígitos com `#`.
+ */
+export function misturarComFundo(texto, fundo, opacidade) {
+    const [a, b] = [paraCanais(texto), paraCanais(fundo)];
+
+    return `#${a.map((canal, indice) => Math.round((canal * opacidade + b[indice] * (1 - opacidade)) * 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
 /** A cor, entre `clara` e `escura`, que se lê melhor sobre `fundo` (a de maior razão de contraste; empate fica com a clara). */
 export function corLegivelSobre(fundo, clara, escura) {
     return razaoDeContraste(fundo, clara) >= razaoDeContraste(fundo, escura) ? clara : escura;

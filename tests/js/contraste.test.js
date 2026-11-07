@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { corLegivelSobre, lerTokens, razaoDeContraste, tokensDoTema } from '../../resources/js/contraste.js';
+import { corLegivelSobre, lerTokens, misturarComFundo, razaoDeContraste, tokensDoTema } from '../../resources/js/contraste.js';
 
 const MINIMO = 4.5;
 
@@ -57,6 +57,18 @@ const PARES = [
     // Contador do menu: o do Talão e da Régua é vermelho com texto branco; o do Almanaque, dourado com texto azul-marinho.
     ['--color-contador-texto', '--color-contador-fundo'],
 ];
+
+/**
+ * Texto com opacidade (`text-grafite/60`, 12 usos: etiquetas, contagens das abas, paginador, carimbo) sobre o papel e
+ * sobre a superfície: [texto, fundo, opacidade]. Só os temas novos (`resources/css/temas`) são cobrados: o do Talão
+ * (4,05 e 3,98) é um achado conhecido e a decisão de mexer nele é do Marcos.
+ */
+const PARES_COM_OPACIDADE = [
+    ['--color-grafite', '--color-papel', 0.6],
+    ['--color-grafite', '--color-superficie', 0.6],
+];
+/** Folga sobre o mínimo: o texto com opacidade tem de passar com margem, não raspando. */
+const FOLGA_COM_OPACIDADE = 0.25;
 
 /**
  * Pares dos blocos do Painel (PainelMosaico), só dos temas que usam a composição `mosaico`: cada arquivo de tema
@@ -140,6 +152,23 @@ test('todos_os_temas_passam_nos_pares_de_texto', () => {
     assert.ok(arquivosDosTemas.length > 0, 'nenhum tema em resources/css/temas');
     for (const arquivo of arquivosDosTemas) {
         verificarPares(tokensDoTema(cssBase, readFileSync(new URL(arquivo, pastaDosTemas), 'utf8')), arquivo);
+    }
+});
+
+test('mistura_com_o_fundo_e_a_conta_do_navegador', () => {
+    assert.equal(misturarComFundo('#000000', '#FFFFFF', 0.6), '#666666');
+    assert.equal(misturarComFundo('#102030', '#FFFFFF', 1), '#102030');
+    assert.equal(misturarComFundo('#102030', '#FFFFFF', 0), '#FFFFFF');
+});
+
+test('temas_novos_passam_no_texto_com_opacidade_com_folga', () => {
+    for (const arquivo of arquivosDosTemas) {
+        const tokens = tokensDoTema(cssBase, readFileSync(new URL(arquivo, pastaDosTemas), 'utf8'));
+        for (const [texto, fundo, opacidade] of PARES_COM_OPACIDADE) {
+            const visto = misturarComFundo(tokens[texto], tokens[fundo], opacidade);
+            const razao = razaoDeContraste(visto, tokens[fundo]);
+            assert.ok(razao >= MINIMO + FOLGA_COM_OPACIDADE, `${arquivo}: ${texto}/${opacidade * 100} sobre ${fundo} (${tokens[fundo]}) = ${razao.toFixed(2)}, mínimo ${MINIMO + FOLGA_COM_OPACIDADE}`);
+        }
     }
 });
 

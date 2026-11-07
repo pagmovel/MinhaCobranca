@@ -5,7 +5,7 @@
  */
 html[data-tema='almanaque'] {
     --color-papel: #F2F3F8; /* --fundo */
-    --color-grafite: #161B33; /* --tinta */
+    --color-grafite: #0B0F22; /* --tinta (protótipo #161B33, escurecida: o `text-grafite/60` sobre o papel passa de 4,36 para 4,85) */
     --color-carbono: #3B47C4; /* --acao */
     --color-linha: #DCE0EC; /* --linha */
     --color-superficie: #FFFFFF; /* .lista, .mes, .vencidas */

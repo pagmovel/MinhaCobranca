@@ -5,7 +5,7 @@
  */
 html[data-tema='regua'] {
     --color-papel: #F7F9FC; /* --papel */
-    --color-grafite: #0F1B33; /* --tinta */
+    --color-grafite: #081022; /* --tinta (protótipo #0F1B33, escurecida: o `text-grafite/60` sobre o papel passa de 4,46 para 4,91) */
     --color-carbono: #3B47C4; /* --acao */
     --color-linha: #D5DCE9; /* --linha */
     --color-superficie: #FFFFFF;
@@ -20,7 +20,7 @@ html[data-tema='regua'] {
     --color-menu-fundo: #FFFFFF; /* .topo-app */
     --color-menu-texto: #46526F; /* --apagado: link do menu */
     --color-menu-ativo: #F0F3FA; /* hover do menu */
-    --color-menu-texto-ativo: #0F1B33; /* --tinta: link ativo e hover do menu */
+    --color-menu-texto-ativo: #081022; /* --tinta: link ativo e hover do menu */
     --color-menu-linha: #D5DCE9; /* --linha */
     --color-contador-fundo: #9F1F17; /* --vermelho: o contador do menu continua vermelho */
     --color-contador-texto: #FFFFFF;
