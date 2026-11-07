@@ -1,7 +1,7 @@
 # Fase 29: temas visuais escolhidos pelo usuário (plano)
 
 > **Para quem executa:** SUB-SKILL OBRIGATÓRIA: `superpowers:subagent-driven-development` (recomendado) ou `superpowers:executing-plans`.
-> **Não implementar sem o comando do Marcos.** Plano escrito em 2026-11-06; todas as tarefas estão **pendentes**.
+> **Em execução desde 2026-11-07**, por comando do Marcos (escopo na seção 0). Plano escrito em 2026-11-06. **O quadro "Andamento" logo abaixo diz em que fase estamos e o que falta**; o Estado de cada tarefa (nos títulos `### Tarefa N.N`) é a fonte da verdade.
 
 **Objetivo:** o usuário clica no próprio nome, abre um painel lateral à direita e escolhe a aparência do sistema entre 6 temas, altera a senha e sai. A escolha fica gravada na tabela do usuário.
 
@@ -10,6 +10,58 @@
 **Tecnologia:** Laravel 13, Inertia v3, Vue 3, Tailwind v4 (`@theme`), fontes Bunny via `laravel-vite-plugin/fonts`, PHPUnit, `node --test`.
 
 **Spec:** não há documento à parte; os requisitos estão na seção 1 e os protótipos aprovados estão em `docs/` (seção 2).
+
+---
+
+## Andamento (atualizado em 2026-11-07, 12:00)
+
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (19 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **15 estão prontas, 2 em andamento e 6 faltam**. Estamos entre o **Marco 2** (fundação visual feita; falta o seletor de temas e o popup) e o **Marco 3/4** (linha do tempo, Mosaico/Almanaque e Régua, ainda não começados).
+
+| Fase | Tarefa | Estado | Commit |
+|---|---|---|---|
+| 1 dados e rotas | 1.1 enum, `.env`, colunas | pronta | `8696a2e` |
+| | 1.2 Inertia e `data-tema` | pronta | `d4fa4ac` |
+| | 1.3 rotas de tema e novidade | pronta | `e7ee850` |
+| 2 painel do usuário | 2.1 alterar senha (back-end) | pronta | `b7d7414`, `1c948aa` |
+| | 2.2 painel lateral e "Sair" | pronta | `47f7a69` |
+| | 2.3 formulário de senha | pronta | `48151fc` |
+| | 2.4 seletor de tema | **em andamento** | `6481d9d` (parte: `usarTema`) |
+| 3 fundação visual | 3.1 inventário | pronta | `3ee011b` |
+| | 3.2 tokens, Talão idêntico | pronta | `0cc8820` |
+| | 3.3 fontes por tema | pronta | `e5a0fbe` |
+| | 3.4 cascas e menu responsivo | pronta | `3c60af3` |
+| | 3.5 guarda de contraste | pronta (feita ao longo da 3.1, 3.2, 3.4 e da base dos temas) | `c53199c` e seguintes |
+| 4 Painel e popup | 4.1 Painel extraído | pronta | `6af185f` |
+| | 4.5 popup da novidade | **em andamento** | |
+| 5 dados do mês | 5.1 `GET /painel/mes` | pronta | `79fdee0` |
+| | 5.2 `GET /painel/cobrancas/{id}` | pronta | `da91134` |
+| 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | falta | |
+| 7 Régua | 7.1 funções da linha do tempo | pronta (entregue junto da 3.1) | `c53199c` |
+| | 7.2 `LinhaDoTempoDoMes.vue` | falta | |
+| | 7.3 `PainelRegua` e tema Régua | falta (base pronta: enum, tokens, fontes) | `24873a2`, `cc7d1c2` |
+| 8 Almanaque | 8.1 tema Almanaque | falta (base pronta) | |
+| 9 fechamento | 9.1 conferência geral | falta | |
+| | 9.2 documentação final | falta | |
+
+**O que falta, em ordem:**
+1. Terminar a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
+2. 7.2 e 7.3: a linha do tempo e a composição da Régua (menu superior já existe).
+3. 6.1 e 8.1: o Mosaico em blocos com a linha do tempo, que é o Almanaque (faltam também os ícones e as pílulas do menu do protótipo e o contador dourado).
+4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
+5. **Deploy é do Marcos:** a migração das duas colunas de `users` e a variável `TEMA_PADRAO` no `.env` de produção.
+
+**Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
+
+**Testes agora:** PHP 961 verdes; JS 350 (um teste instável apareceu e sumiu enquanto o agente da 2.4 editava; reconferir ao fim dela).
+
+**Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
+
+**Achados que pedem atenção do Marcos:**
+- Defeito antigo, não corrigido: `desfazer-baixa` e `corrigir-pagamento` dão erro 500 se alguém mandar `senha[]=x`.
+- Contraste do Talão: 11 textos `text-grafite/60` (4,05:1) e 1 `/50` (3,06:1) ficam abaixo de 4,5:1. Não mexi no Talão.
+- As fontes estáticas do Bunny não têm eixo de largura: os títulos da Bricolage saem mais largos que nos protótipos da Régua.
+- `docs/modelos-painel.html` e `docs/painel-lista.html` continuam sem commit (protótipos não escolhidos). Apagar?
+- O Tailwind v4 lê também os `.md` de `.claude/` e gera estilo solto a partir de exemplos de classe no texto (inofensivo).
 
 ---
 
@@ -182,7 +234,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - **Feito:** `MenuLateral.vue`, `MenuSuperior.vue` (com "Mais ▾"), `LogoRecibo.vue` (logo por variável CSS: `--logo-exibicao` e `--marca-exibicao`), `iniciais.js`, `explicacaoDoBloqueio` e o token `--color-menu-texto-ativo` (com os pares no `contraste.test.js`). O botão do usuário abre o painel da 2.2.
 - **Testes** (`tests/js/menuPrincipal.test.js`, `menuResponsivo.test.js`): `admin_ve_usuarios_com_contador`, `item_bloqueado_segue_o_progresso`, `todos_cabem_nao_mostra_mais`, `sobra_vai_para_o_mais`, `nunca_deixa_zero_itens_na_barra`. Smoke test: digitar num campo de Cobranças, trocar de casca, o campo mantém o valor.
 
-### Tarefa 3.5: guarda de contraste. Estado: pendente
+### Tarefa 3.5: guarda de contraste. Estado: testada (2026-11-07; `contraste.js` e `tests/js/contraste.test.js` entregues na 3.1 e ampliados na 3.2, na base dos temas e na 3.4; o teste percorre `resources/css/temas/*.css` e exige 4,5:1 nos pares de texto, ação, etapas e menu)
 - `contraste.js`: `razaoDeContraste(corA: string, corB: string): number` (WCAG). Teste que lê os tokens de `app.css` (`@theme`) e de `resources/css/temas/*.css` e exige ≥ 4,5 nos pares: texto/fundo, texto/superfície, sobre-ação/ação, cada tinta/superfície, cada cor de etapa/superfície, menu-texto/menu-fundo e menu-texto/menu-ativo.
 - **Testes** (`tests/js/contraste.test.js`): `preto_sobre_branco_e_21`, `cores_iguais_dao_1`, `todos_os_temas_passam_nos_pares_de_texto`.
 
@@ -232,7 +284,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 7: Régua (Marco 4)
 
-### Tarefa 7.1: funções puras da linha do tempo. Estado: pendente
+### Tarefa 7.1: funções puras da linha do tempo. Estado: testada (2026-11-07; `resources/js/linhaDoTempo.js` e `tests/js/linhaDoTempo.test.js` entregues junto da 3.1, commit `c53199c`)
 - `linhaDoTempo.js`: `empilharPontos(pontos): Array<{ ponto, nivel }>` (mesmo dia sobe um nível), `acumuladoPorDia(pontos, dias: number): number[]` (régua de dinheiro), `posicaoDoDia(dia: number, dias: number): number` (0 a 1).
 - **Testes** (`tests/js/linhaDoTempo.test.js`): `dois_no_mesmo_dia_empilham`, `acumulado_so_soma_recebidos`, `mes_de_28_dias`, `mes_de_31_dias`, `sem_pontos_devolve_zeros`.
 

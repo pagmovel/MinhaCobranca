@@ -4,11 +4,33 @@
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
-## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
+## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.00000, 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.0000 Fase 29 (temas visuais) planejada, esperando o comando do Marcos (2026-11-06, ler primeiro)
+### 0.00000 Fase 29 (temas visuais) EM EXECUÇÃO, ler primeiro (2026-11-07, 12:00)
 
-- `main` = `origin/main` (`b54835f`). Nada desta data mexe em código de produção nem em banco. Árvore com 2 arquivos não
+- **Onde estamos:** execução no branch **`feature/temas-visuais`** (19 commits à frente do `main`; **não mesclado, não
+  enviado, nada em produção**). O quadro tarefa a tarefa está na seção **"Andamento"** do plano
+  `.claude/plans/2026-11-06-temas-visuais.md`. Resumo: das 23 tarefas do escopo, 15 prontas, 2 em andamento (2.4 seletor
+  de tema e 4.5 popup) e 6 faltando (6.1, 7.2, 7.3, 8.1, 9.1, 9.2).
+- **Escopo por comando do Marcos (2026-11-07):** só os temas **Almanaque** (`painel-bento-timeline`) e **Régua**
+  (`painel-linha-do-tempo`), mais o Talão. **Pendentes para o futuro:** Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3,
+  4.4 e 6.2).
+- **Feito no ambiente local:** migração `2026_11_07_103510_add_tema_e_novidade_to_users_table` rodada no Postgres local
+  (12 usuários antigos com `tema = talao` e popup pendente). **Produção:** nada; o deploy, a migração lá e
+  `TEMA_PADRAO` no `.env` de produção são do Marcos.
+- **Como retomar:** `git switch feature/temas-visuais`; ler a seção "Andamento" do plano; conferir `git status` (há
+  trabalho de agente em andamento se houver arquivos modificados); rodar `php artisan test --compact` e
+  `node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'`. A skill `recibos` tem a seção "Fase 29: temas
+  visuais" com os Acertos e as Pegadinhas de cada tarefa (ler antes de mexer). Regras de despacho: subagentes `sonnet`
+  com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de VPS; **um agente por vez usa o
+  browser-agent (porta 9333)**; nunca `pkill` genérico; agentes não gravam em banco (quem coordena roda `migrate` local).
+- **Achados abertos:** `desfazer-baixa` e `corrigir-pagamento` dão erro 500 com `senha[]=x` (antigo, não corrigido);
+  11 textos `text-grafite/60` do Talão com contraste 4,05:1; as fontes do Bunny não têm eixo de largura (títulos da
+  Bricolage mais largos que nos protótipos).
+
+### 0.0000 Fase 29 (temas visuais), planejamento (2026-11-06)
+
+- No momento do planejamento: `main` = `origin/main` (`b54835f`). Árvore com 2 arquivos não
   rastreados em `docs/` (`modelos-painel.html`, `painel-lista.html`): protótipos **não escolhidos**; perguntar se apaga.
   Os testes não foram rodados nesta sessão (último registro: 889 PHP + 294 JS verdes, na seção 0.000).
 - **O que o Marcos pediu:** redesenhar o Painel ("está muito simples e feio", "os cards quadrados é o que tem no projeto,
