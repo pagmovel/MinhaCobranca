@@ -6,34 +6,42 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.00000, 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.00000 Fase 29 (temas visuais) EM EXECUÇÃO, ler primeiro (2026-11-07, 12:45)
+### 0.00000 Fase 29 (temas visuais) CONCLUÍDA no branch, aguardando o merge, ler primeiro (2026-11-07)
 
-- **Guia de retomada e de despacho (ler antes de tudo):** `.claude/plans/2026-11-07-fase29-guia-de-retomada.md`. Traz o
-  agente que rodava (`a4f6fb1c95cf12464`, 2.4 e 4.5; **terminou e commitou**, nenhum agente em andamento, árvore limpa),
-  o que cada despacho que falta deve conter (7.2 e 7.3; 6.1 e 8.1; 9.1; 9.2), o checklist das regras globais para
-  todo prompt de subagente e as decisões já tomadas.
-- **Onde estamos:** execução no branch **`feature/temas-visuais`** (29 commits à frente do `main`, 2026-11-07, depois do despacho A; **não mesclado, não
-  enviado, nada em produção**). O quadro tarefa a tarefa está na seção **"Andamento"** do plano
-  `.claude/plans/2026-11-06-temas-visuais.md`. Resumo: das 23 tarefas do escopo, 19 prontas (inclui o seletor, o popup,
-  a linha do tempo e a Régua) e 4 faltando (6.1, 8.1, 9.1, 9.2).
-- **Escopo por comando do Marcos (2026-11-07):** só os temas **Almanaque** (`painel-bento-timeline`) e **Régua**
-  (`painel-linha-do-tempo`), mais o Talão. **Pendentes para o futuro:** Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3,
-  4.4 e 6.2).
-- **Feito no ambiente local:** migração `2026_11_07_103510_add_tema_e_novidade_to_users_table` rodada no Postgres local
-  (12 usuários antigos com `tema = talao` e popup pendente). **Produção:** nada feito por mim; o deploy e
-  `TEMA_PADRAO` no `.env` de produção são do Marcos. A migração roda sozinha na subida do container (`CMD` do
-  `Dockerfile`: `php artisan migrate --force`; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`).
-- **Como retomar:** `git switch feature/temas-visuais`; ler a seção "Andamento" do plano; conferir `git status` (há
-  trabalho de agente em andamento se houver arquivos modificados); rodar `php artisan test --compact` e
-  `node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'`. A skill `recibos` tem a seção "Fase 29: temas
-  visuais" com os Acertos e as Pegadinhas de cada tarefa (ler antes de mexer). Regras de despacho: subagentes `sonnet`
-  com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de VPS; **um agente por vez usa o
-  browser-agent (porta 9333)**; nunca `pkill` genérico; agentes não gravam em banco (quem coordena roda `migrate` local).
-- **Achados abertos:** `desfazer-baixa` e `corrigir-pagamento` dão erro 500 com `senha[]=x` (antigo, não corrigido);
-  11 textos `text-grafite/60` do Talão com contraste 4,05:1; as fontes do Bunny não têm eixo de largura (títulos da
-  Bricolage mais largos que nos protótipos).
+- **Estado:** execução terminada no branch **`feature/temas-visuais`** (43 commits à frente do `main` antes do commit da
+  documentação final; **não mesclado, não enviado, nada em produção**; **a data do merge não existe ainda**). As 23
+  tarefas do escopo estão prontas (a 9.2 é a documentação final); "validada" é do Marcos, depois de olhar as telas.
+  **PHP 965 e JS 434 verdes, `npm run build` ok.** Quadro tarefa a tarefa: seção "Andamento" do plano
+  `.claude/plans/2026-11-06-temas-visuais.md`. Guia de retomada (decisões, achados, checklist de despacho):
+  `.claude/plans/2026-11-07-fase29-guia-de-retomada.md`.
+- **O que entrou** (escopo por comando do Marcos, 2026-11-07: só `painel-bento-timeline` e `painel-linha-do-tempo`):
+  os temas **Talão** (o de sempre), **Régua** (menu no topo e linha do tempo do mês) e **Almanaque** (menu lateral
+  azul-marinho, blocos arredondados e linha do tempo); o painel lateral do usuário (clicar no nome) com a Aparência
+  (troca sem recarregar), "Alterar senha" (popup, auditada sem a senha) e "Sair"; o popup da novidade para usuários
+  antigos; `GET /painel/mes` e `GET /painel/cobrancas/{id}`; a guarda de contraste; e a revisão independente do branch
+  tratada (M1, M2, baixas e contraste). Três defeitos que já existiam no `main` foram corrigidos no caminho (Perfil:
+  "Cadastrar/Salvar feriado" não gravava; Coach e Holofote fora do canto da janela; Esc fechando dois diálogos).
+- **Pendente para o futuro, por decisão do Marcos:** os temas **Fluxo**, **Livro-caixa** e **Mosaico** (tarefas 4.2,
+  4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia". **Achados abertos** (lista completa na skill
+  `recibos`, "Fase 29: temas visuais", "Achados abertos"): `desfazer-baixa` e `corrigir-pagamento` dão 500 com
+  `senha[]=x` e o campo `senha` das baixas ainda é aparado; contraste do Talão (`text-grafite/60`, 4,05:1); títulos da
+  Bricolage mais largos que nos protótipos; "Previsto" diferente entre Talão e Régua; trocar de tema na tela do Painel
+  perde uma baixa aberta; Safari, Firefox e leitor de tela não testados; `docs/modelos-painel.html` e
+  `docs/painel-lista.html` (protótipos não escolhidos) sem commit, esperando o Marcos dizer se apaga.
+- **É do Marcos:** o **deploy** e a variável **`TEMA_PADRAO`** no `.env` de produção (`talao`, `regua` ou `almanaque`;
+  padrão `talao`; só vale para usuário novo e a configuração é cacheada na subida do container). A migração
+  (`2026_11_07_103510_add_tema_e_novidade_to_users_table`, **só duas colunas em `users`**, nenhuma tabela) **roda sozinha**
+  no `CMD` do `Dockerfile` (`php artisan migrate --force`; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`). Já
+  foi rodada no Postgres local (12 usuários antigos com `tema = talao` e popup pendente). Nenhum acesso à VPS.
+- **Falta:** o merge `--no-ff` no `main` e o push (permissão permanente do Marcos, memória
+  `commit-merge-push-sem-perguntar`), só com PHP, JS e `npm run build` verdes.
+- **Como retomar:** `git switch feature/temas-visuais`; ler a seção "Andamento" do plano e a seção "Fase 29: temas
+  visuais" da skill `recibos` (visão geral, como criar um tema novo, `TEMA_PADRAO`, pegadinhas, pendências); conferir
+  `git status`; rodar `php artisan test --compact` e `node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'`.
+  Regras de despacho: subagentes `sonnet` com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de
+  VPS; **um agente por vez usa o browser-agent (porta 9333)**; nunca `pkill` genérico; agentes não gravam em banco.
 
-### 0.0000 Fase 29 (temas visuais), planejamento (2026-11-06)
+### 0.0000 Fase 29 (temas visuais), planejamento (2026-11-06; histórico, executada em 2026-11-07, ver 0.00000)
 
 - No momento do planejamento: `main` = `origin/main` (`b54835f`). Árvore com 2 arquivos não
   rastreados em `docs/` (`modelos-painel.html`, `painel-lista.html`): protótipos **não escolhidos**; perguntar se apaga.
@@ -45,11 +53,11 @@ sem depender do histórico.
   Mosaico, Régua, Almanaque), escolhidos clicando no nome do usuário (painel lateral à direita, com lista de temas,
   alterar senha e sair). `.env` `TEMA_PADRAO` define o tema dos novos; usuários antigos veem um popup da novidade; a
   escolha fica em `users.tema` (coluna nova, sem tabela nova).
-- **Plano:** `.claude/plans/2026-11-06-temas-visuais.md` (27 tarefas, 9 fases, 4 marcos, **todas pendentes**).
-  **Não implementar sem o comando do Marcos.** Falta ele escolher o marco (recomendado: M1, painel do usuário com senha
-  e sair) e o modo de execução (recomendado: subagentes, modelo `sonnet`). A seção 7 do plano tem 7 decisões dele
+- **Plano:** `.claude/plans/2026-11-06-temas-visuais.md` (27 tarefas, 9 fases, 4 marcos; no planejamento todas pendentes).
+  O comando do Marcos veio em 2026-11-07 (só Régua e Almanaque entram; ver a seção 0.00000). A seção 7 do plano
+  tem 7 decisões dele, assumidas pela recomendação na execução
   (nomes, "Sair" só no painel, rosa do Livro-caixa, sessões após trocar a senha, popup só para antigos, pastas novas,
-  linha do tempo só do mês corrente). Três `[A VERIFICAR]` no plano: Tailwind v4 com variáveis por tema (tarefa 3.1),
+  linha do tempo só do mês corrente). Três `[A VERIFICAR]` do plano, **resolvidos na execução**: Tailwind v4 com variáveis por tema (tarefa 3.1),
   fontes só do tema ativo (3.3) e rótulo `usuario.*` na Auditoria (2.1).
 - **Preferências do Marcos para telas (valem para qualquer redesenho):** nada com "cara de IA/slop" (o escuro azul-noite
   com néon e vidro foi recusado por isso); efeitos que chamam a atenção, sempre desligados em `prefers-reduced-motion`;
@@ -178,6 +186,7 @@ apagada — decisão de não apagar branches sem pedido explícito).
 | 24 | Aviso de vencimento pelo WhatsApp: modelos de mensagem, bloco "Vencendo" no Painel, ação no menu de cobranças, link wa.me, variáveis `{item}`/`{chave_pix}`/`{contato}`/`{apelido}`/`{razao_social}`/`{saudacao}` com cascata `{a\|b\|c}`, pré-seleção automática do modelo pela situação da cobrança | `2026-10-11-aviso-whatsapp.md` · spec `docs/superpowers/specs/2026-10-11-aviso-whatsapp-design.md` | **validada** (2026-10-11, merge `e59745e` + extensões pós-merge) |
 | 26 | Valor e desconto na baixa: seletor `% \| R$` (trava em 100%) na baixa individual, no lote (Tarefa 3b: R$ igual em cada cobrança, trava na menor) e em corrigir pagamento; valor pago na lista, no painel e nos relatórios; recibo `webiss-v2`/`danfse-v2` com desconto e valor líquido, substituindo o v1 | `2026-11-01-desconto-na-baixa.md` · spec `docs/superpowers/specs/2026-11-01-desconto-na-baixa-design.md` | **Validada em produção** (2026-11-01: 659 PHP + 170 JS, build ok; conferência no navegador feita; deploy feito e testado pelo Marcos junto com a Fase 27). O deploy roda duas migrações; a dos recibos altera todos (só `modelo`): backup antes |
 | 27 | Multa, juros, outros acréscimos e desconto por pontualidade: condições no contrato (% ou R$), baixa individual, em lote e correção com a regra do contrato preenchida e editável, valor do dia na lista, no recibo, na mensagem e no PIX, relatórios com acréscimos, variável `{condicao}` | `2026-11-01-multa-juros-e-pontualidade.md` · spec `docs/superpowers/specs/2026-11-01-multa-juros-e-pontualidade-design.md` | **Validada em produção** (2026-11-01: 886 PHP + 294 JS, build ok; deploy feito e todas as funcionalidades testadas em produção pelo Marcos). Eu não verifiquei por script 390 px, coach, foco do aviso do lote nem a aparência dos PDFs. Deploy: duas migrações **aditivas**, sem migração de dados; ao definir regra num contrato, os recibos pendentes dele passam a sair com o valor do dia (PIX já enviado fica com o valor antigo). Decisões para o Marcos no "Registro de execução" do plano |
+| 29 | Temas visuais escolhidos pelo usuário: Talão (o de sempre), Régua (menu no topo, linha do tempo do mês) e Almanaque (menu lateral azul-marinho, blocos arredondados e linha do tempo); painel do usuário no nome (aparência, alterar senha em popup, sair); popup da novidade para usuários antigos; `TEMA_PADRAO` | `2026-11-06-temas-visuais.md` · guia `2026-11-07-fase29-guia-de-retomada.md` | **Concluída no branch `feature/temas-visuais`, aguardando merge** (43 commits à frente do `main`; PHP 965 + JS 434 verdes, build ok; merge ainda não feito). Pendente para o futuro: temas Fluxo, Livro-caixa e Mosaico. Deploy e `TEMA_PADRAO` no `.env` de produção são do Marcos; a migração (só duas colunas em `users`) roda sozinha no `Dockerfile`. |
 
 **Backlog — o que ainda falta (para virar spec + plano quando o usuário escolher)**
 0. **PEDIDO NOVO (2026-10-11), PRÓXIMO TRABALHO — vencimento em dia útil.** Palavras do usuário: "antes de gerar uma
