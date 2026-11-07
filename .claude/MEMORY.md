@@ -4,6 +4,7 @@
 - [Produto em módulos](memory/produto-em-modulos.md) — SaaS por planos de assinatura; documentação por módulo
 - [Roteiro do produto](plans/2026-10-10-roteiro-modulos.md) — estado atual, próximo passo e backlog por módulo (ler ao retomar)
 - [Usabilidade: antecipar e animar](memory/usabilidade-antecipar-e-animar.md) — prever o atrito (lista/catálogo vazio), padronizar entre telas, animar interações
-- [Fase 29: temas visuais](skills/recibos/SKILL.md) — pronta no branch `feature/temas-visuais`, aguardando merge; ler na skill a seção "Fase 29: temas visuais" (visão geral, como criar tema, `TEMA_PADRAO`, pegadinhas, pendências) antes de mexer em tema, menu, Painel ou `app.css`
+- [Fase 29: temas visuais](skills/recibos/SKILL.md) — mesclada no `main` e no ar desde 2026-11-07; ler na skill a seção "Fase 29: temas visuais" (visão geral, como criar tema, `TEMA_PADRAO`, pegadinhas, pendências) antes de mexer em tema, menu, Painel ou `app.css`
 - [Temas: o que não quebrar](skills/recibos/SKILL.md) — arquivo de tema só com variáveis; trocar de tema nunca recarrega; `users.tema` não é cast de enum; `TEMA_PADRAO` só vale para usuário novo (antigo vê o popup uma vez)
 - [Fase 29: pendente por decisão do Marcos](plans/2026-11-06-temas-visuais.md) — temas Fluxo, Livro-caixa e Mosaico e os blocos "Semana à frente"/"Recebido por dia" ficam para o futuro; deploy e `TEMA_PADRAO` de produção são dele (a migração roda sozinha no `Dockerfile`)
+- [Estado pós-deploy da Fase 29 e pendências](plans/2026-10-10-roteiro-modulos.md) — seção 0.00000 do roteiro: o que veio depois do merge (Previsto, textos, senha, `TEMA_PADRAO`, DNS do bunker), decisões esperando o Marcos (atualizar BunkerWeb 1.6.17, `.env` de produção) e achados abertos

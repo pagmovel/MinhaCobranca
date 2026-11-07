@@ -1,44 +1,74 @@
 # Roteiro do produto — onde estamos e o que vem (handoff entre sessões)
 
-**Atualizado:** 2026-10-11 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
+**Atualizado:** 2026-11-07 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.00000, 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.00000 Fase 29 (temas visuais) CONCLUÍDA no branch, aguardando o merge, ler primeiro (2026-11-07)
+### 0.00000 Fase 29 (temas visuais) NO AR + o que veio depois, ler primeiro (handoff de 2026-11-07, noite)
 
-- **Estado:** execução terminada no branch **`feature/temas-visuais`** (43 commits à frente do `main` antes do commit da
-  documentação final; **não mesclado, não enviado, nada em produção**; **a data do merge não existe ainda**). As 23
-  tarefas do escopo estão prontas (a 9.2 é a documentação final); "validada" é do Marcos, depois de olhar as telas.
-  **PHP 965 e JS 434 verdes, `npm run build` ok.** Quadro tarefa a tarefa: seção "Andamento" do plano
-  `.claude/plans/2026-11-06-temas-visuais.md`. Guia de retomada (decisões, achados, checklist de despacho):
-  `.claude/plans/2026-11-07-fase29-guia-de-retomada.md`.
-- **O que entrou** (escopo por comando do Marcos, 2026-11-07: só `painel-bento-timeline` e `painel-linha-do-tempo`):
-  os temas **Talão** (o de sempre), **Régua** (menu no topo e linha do tempo do mês) e **Almanaque** (menu lateral
-  azul-marinho, blocos arredondados e linha do tempo); o painel lateral do usuário (clicar no nome) com a Aparência
-  (troca sem recarregar), "Alterar senha" (popup, auditada sem a senha) e "Sair"; o popup da novidade para usuários
-  antigos; `GET /painel/mes` e `GET /painel/cobrancas/{id}`; a guarda de contraste; e a revisão independente do branch
-  tratada (M1, M2, baixas e contraste). Três defeitos que já existiam no `main` foram corrigidos no caminho (Perfil:
-  "Cadastrar/Salvar feriado" não gravava; Coach e Holofote fora do canto da janela; Esc fechando dois diálogos).
-- **Pendente para o futuro, por decisão do Marcos:** os temas **Fluxo**, **Livro-caixa** e **Mosaico** (tarefas 4.2,
-  4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia". **Achados abertos** (lista completa na skill
-  `recibos`, "Fase 29: temas visuais", "Achados abertos"): contraste do Talão (`text-grafite/60`, 4,05:1); títulos da
-  Bricolage mais largos que nos protótipos; trocar de tema na tela do Painel
-  perde uma baixa aberta; Safari, Firefox e leitor de tela não testados; `docs/modelos-painel.html` e
-  `docs/painel-lista.html` (protótipos não escolhidos) sem commit, esperando o Marcos dizer se apaga.
-- **É do Marcos:** o **deploy** e a variável **`TEMA_PADRAO`** no `.env` de produção (`talao`, `regua` ou `almanaque`;
-  **o Marcos quer `almanaque`** (2026-11-07; já está no `.env` local e no `.env.example`, falta o `.env` de produção); padrão do código `talao`; só vale para usuário novo e a configuração é cacheada na subida do container). A migração
-  (`2026_11_07_103510_add_tema_e_novidade_to_users_table`, **só duas colunas em `users`**, nenhuma tabela) **roda sozinha**
-  no `CMD` do `Dockerfile` (`php artisan migrate --force`; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`). Já
-  foi rodada no Postgres local (12 usuários antigos com `tema = talao` e popup pendente). Nenhum acesso à VPS.
-- **Falta:** o merge `--no-ff` no `main` e o push (permissão permanente do Marcos, memória
-  `commit-merge-push-sem-perguntar`), só com PHP, JS e `npm run build` verdes.
-- **Como retomar:** `git switch feature/temas-visuais`; ler a seção "Andamento" do plano e a seção "Fase 29: temas
-  visuais" da skill `recibos` (visão geral, como criar um tema novo, `TEMA_PADRAO`, pegadinhas, pendências); conferir
-  `git status`; rodar `php artisan test --compact` e `node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'`.
-  Regras de despacho: subagentes `sonnet` com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de
-  VPS; **um agente por vez usa o browser-agent (porta 9333)**; nunca `pkill` genérico; agentes não gravam em banco.
+- **Estado:** Fase 29 **mesclada no `main`** (`5404af9`, `--no-ff`) e enviada ao GitHub; **deploy feito pelo Marcos em
+  2026-11-07 (~18:14, horário local)**: a migração `2026_11_07_103510_add_tema_e_novidade_to_users_table` rodou sozinha
+  no boot do container ("DONE", 61 ms) e `cobrancas.smartcontroladoria.com.br` responde 200. `main` = `origin/main` =
+  `cb2cb67` (antes do commit deste handoff). **PHP 969 e JS 438 verdes, `npm run build` ok.** O branch
+  `feature/temas-visuais` ainda existe local (já mesclado; pode apagar). Árvore: só os dois protótipos de `docs/` sem commit.
+  Nenhum agente vivo. O Vite (5173, `public/hot`) e o `php artisan serve` são do Marcos: não encerrar.
+- **O que a Fase 29 entregou:** temas **Talão**, **Régua** e **Almanaque**; painel lateral do usuário (clicar no nome) com
+  Aparência (troca sem recarregar), "Alterar senha" (popup centralizado) e "Sair"; `TEMA_PADRAO`; popup da novidade para
+  usuários antigos. Detalhes, como criar tema novo e pegadinhas: skill `recibos`, seção "Fase 29: temas visuais"; quadro
+  de tarefas: `.claude/plans/2026-11-06-temas-visuais.md`; guia antigo de despacho: `2026-11-07-fase29-guia-de-retomada.md` (histórico).
+- **Pedidos do Marcos depois do merge (todos feitos, commits no `main`):** (1) 500 com `senha[]=x` em desfazer baixa e
+  corrigir pagamento e `trim` do campo `senha` das baixas (`4acc8c2`); (2) ícone da linha "Alterar senha": chave, no lugar do
+  de link externo (`7ffcc34`); (3) `TEMA_PADRAO=almanaque` no `.env` local e no `.env.example`, e `phpunit.xml` fixa `talao`
+  para a suíte não depender do `.env` (`4d0a731`); (4) "Para enviar" virou **"Recibos a enviar"** (aba "A enviar", frase
+  explicando cada etapa, atalho "Cobranças a avisar"), textos em `resources/js/textosDoPainel.js` (`f0f6620`); (5) **"Previsto"
+  do Talão = recebido + pendentes do mês**, o mesmo número da Régua e do Almanaque, depois de investigação (`c9b5065`; o
+  Relatório de Faturamento não mudou); (6) conferência de que o **Wizard da Fase 25 não quebra** nos 3 temas (`4640bef`);
+  (7) teste de guarda de que o `Dockerfile` migra sozinho a cada subida (`e0d16eb`; regra permanente, ver memória
+  `dockerfile-migra-no-deploy`).
+- **VPS (o acesso valeu só para a mensagem em que o Marcos autorizou; por mim foi só leitura):** logo depois do deploy o
+  domínio deu **502 por ~3 min** (21:14:41 a 21:17:47 UTC): o BunkerWeb tentava o IP antigo do container (10.11.0.22, o novo
+  era 10.11.0.23) e voltou sozinho; o app ficou de pé. O Marcos aplicou **pela UI do bunker** `DNS_RESOLVERS` =
+  `127.0.0.11 valid=10s` (Global Settings → General); conferi: `resolver 127.0.0.11 valid=10s ipv6=off;` em
+  `/etc/nginx/http.conf`, `nginx -t` ok, "Successfully reloaded bunkerweb". **`[A VERIFICAR]` no próximo Deploy do app:** se o
+  502 cai para ~10 s. O valor mora no **banco do bunker**, não no compose. Documentado no README ("Produção na VPS"), na
+  skill ("Pegadinhas do deploy") e em `/srv/CONTABOO/bunker/README.md`.
+- **Decisões que esperam o Marcos (nenhuma bloqueia o sistema):**
+  1. **Atualizar o BunkerWeb 1.6.15 → 1.6.17** (estável de 21/10; a 1.6.18 é só candidata). O compose do bunker fixa a
+     tag nos 3 serviços (`bunkerweb`, `scheduler`, `ui`) e é colado à mão no Easypanel
+     (`/srv/CONTABOO/bunker/docker-compose.easypanel.yml`): **Deploy sozinho não atualiza**. A regra global proíbe o Claude
+     de atualizar software da produção: quem faz é o Marcos. Antes, confirmar o backup externo (`/srv/CONTABOO/backup-vps/`;
+     os backups do próprio bunker, 7 × ~18,5 MiB = 130 MB em `/data/lib/backups` do volume `bw-storage`, ficam no mesmo
+     volume e não valem como seguro). A 1.6.16 tem quebra só em `METRICS_REDIS_TTL` (o compose não usa); voltar de versão pode
+     exigir restaurar o banco. Se atualizar, pôr `DNS_RESOLVERS: "127.0.0.11 valid=10s"` no mesmo Deploy. O Marcos ainda não
+     respondeu se quer que eu edite o compose local com as 3 tags novas.
+  2. **`TEMA_PADRAO=almanaque` no `.env` de produção** (painel do Easypanel; só vale para usuário novo e depois de reiniciar o
+     container): `[A VERIFICAR]` se já foi posto.
+  3. Aviso `AH00558 ServerName` do Apache no log: inofensivo; silenciar = uma linha no `Dockerfile` e novo Deploy (deixado como está).
+  4. Apagar `docs/modelos-painel.html` e `docs/painel-lista.html` (protótipos não escolhidos, sem commit)?
+- **Achados abertos (só relatados, nenhum corrigido):** do Wizard, nos 3 temas (vêm da Fase 25): o Holofote é um balão `fixed`,
+  não rola até o campo e cobre campos próximos (Cidade a 1440, Telefone a 390); o Coach cobre UF, Bairro e `dias_*` do Perfil
+  entre 640 e ~1100 px; a mensagem do item bloqueado só existe no `title`; contraste do item bloqueado da Régua 2,38:1
+  (isento do WCAG, decisão visual). Outros: `text-grafite/60` do Talão (4,05:1); "Para avisar" (cobranças) × "Vencendo"
+  (clientes); regra da etapa triplicada (servidor, `AcoesDaCobranca.vue`, `PopoverDaCobranca.vue`); `throttle:30,1` e
+  `throttle:6,1` compartilham contador; corrida da troca rápida de tema; trocar de tema na tela do Painel perde uma baixa
+  aberta; a 390 px o bloco com 6 níveis cheios tem 768 px; `TemaVisual::amostra` guarda a tinta antiga da Régua e do
+  Almanaque; baixa num dia já cheio (6+) não faz o salto; Safari, Firefox, leitor de tela e conta de administrador sem teste.
+- **Futuro, por decisão do Marcos:** temas **Fluxo**, **Livro-caixa** e **Mosaico** (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos
+  "Semana à frente" e "Recebido por dia".
+- **Regras vivas desta sessão:** VPS só com autorização expressa por mensagem e só para o que ele pediu
+  (`ssh -o BatchMode=yes root@207.180.205.211`; leitura direta, gravação só com "sim" por comando); nunca atualizar software
+  de produção; subagentes `sonnet` com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de VPS; um agente
+  por vez no browser-agent (porta 9333); nada de `pkill` genérico; commit, merge e push sem perguntar (memória
+  `commit-merge-push-sem-perguntar`); deploy, VPS e banco pedem autorização. O Marcos ligou o `/caveman` (respostas curtas
+  e simples); a documentação continua em pt-BR normal.
+- **Como retomar:** `git status`; `git log --oneline -15`; `php artisan test --compact` e `node --test 'tests/js/**/*.test.js'
+  'resources/js/**/*.test.js'`; ler este bloco, a skill (seções "Fase 29", "Previsto do Painel", "Textos das etapas do Painel" e
+  "Pegadinhas do deploy") e o README "Produção na VPS". Relatórios dos agentes (pasta temporária, pode sumir):
+  `/tmp/claude-1000/-srv-conteiners-MinhaCobranca/84c5a1aa-b391-4976-961a-ebfec88938e7/scratchpad/` (`relatorio-previsto.md`,
+  `relatorio-wizard-temas.md`, `relatorio-f29-s*.md`); a transcrição completa da sessão está em
+  `/home/marcos/.claude/projects/-srv-conteiners-MinhaCobranca/84c5a1aa-b391-4976-961a-ebfec88938e7.jsonl`.
 
 ### 0.0000 Fase 29 (temas visuais), planejamento (2026-11-06; histórico, executada em 2026-11-07, ver 0.00000)
 

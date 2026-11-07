@@ -1,5 +1,8 @@
 # Fase 29: guia de retomada e de despacho (handoff de contexto, 2026-11-07)
 
+> **OBSOLETO (2026-11-07, noite):** a Fase 29 foi mesclada, publicada e está no ar. O estado atual e as pendências estão na
+> seção 0.00000 do roteiro (`2026-10-10-roteiro-modulos.md`). Este guia fica só como histórico dos despachos.
+
 Para quem retoma depois de compactar a conversa ou numa sessão nova. Ler junto com a seção "Andamento" do plano
 `.claude/plans/2026-11-06-temas-visuais.md` e a seção 0.00000 do roteiro `.claude/plans/2026-10-10-roteiro-modulos.md`.
 O briefing comum que os agentes recebem está em `.claude/plans/2026-11-07-fase29-briefing-dos-agentes.md` (cópia do
