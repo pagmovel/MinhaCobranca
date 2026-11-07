@@ -50,7 +50,7 @@ sem depender do histórico.
      Marcos disser que atualizou (evita divergir do que está no Easypanel).
   2. **`TEMA_PADRAO=almanaque` no `.env` de produção** (painel do Easypanel; só vale para usuário novo e depois de reiniciar o
      container): `[A VERIFICAR]` se já foi posto.
-  3. Aviso `AH00558 ServerName` do Apache no log: inofensivo; silenciar = uma linha no `Dockerfile` e novo Deploy (deixado como está).
+  3. Aviso `AH00558 ServerName` do Apache no log: inofensivo; silenciar = uma linha no `Dockerfile` e novo Deploy. **Decidido pelo Marcos em 2026-11-07: deixar como está.**
   4. Apagar `docs/modelos-painel.html` e `docs/painel-lista.html` (protótipos não escolhidos, sem commit)?
 - **Achados abertos (só relatados, nenhum corrigido):** do Wizard, nos 3 temas (vêm da Fase 25): o Holofote é um balão `fixed`,
   não rola até o campo e cobre campos próximos (Cidade a 1440, Telefone a 390); o Coach cobre UF, Bairro e `dias_*` do Perfil
