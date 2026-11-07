@@ -14,6 +14,7 @@ defineProps({
     itens: { type: Array, required: true },
     usuario: { type: Object, required: true },
     painelAberto: { type: Boolean, default: false },
+    pulsando: { type: Boolean, default: false }, // chama a atenção para o botão do nome (popup da novidade)
 });
 defineEmits(['abrir-painel']);
 
@@ -32,6 +33,7 @@ const ativo = (href) => page.url.startsWith(href);
             <button
                 type="button"
                 class="grid size-[30px] place-items-center rounded-full bg-carbono text-xs font-semibold text-sobre-acao focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono"
+                :class="pulsando ? 'pulsar-botao' : ''"
                 :aria-label="usuario.name"
                 data-botao-do-usuario
                 aria-haspopup="dialog"
@@ -92,6 +94,7 @@ const ativo = (href) => page.url.startsWith(href);
             <button
                 type="button"
                 class="flex w-full items-center gap-3 px-5 py-3 text-left text-sm hover:bg-menu-ativo focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-carbono"
+                :class="pulsando ? 'pulsar-botao-linha' : ''"
                 data-botao-do-usuario
                 aria-haspopup="dialog"
                 :aria-expanded="painelAberto"

@@ -1,11 +1,14 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { botaoDoUsuarioVisivel } from '../botaoDoUsuario.js';
 import { itensDoMenu } from '../menuPrincipal.js';
+import { novidadeDispensada } from '../novidadeDosTemas.js';
 import { usarTema } from '../usarTema.js';
 import MenuLateral from '../Components/MenuLateral.vue';
 import MenuSuperior from '../Components/MenuSuperior.vue';
 import ModalBoasVindas from '../Components/ModalBoasVindas.vue';
+import ModalNovidadeTemas from '../Components/ModalNovidadeTemas.vue';
 import PainelDoUsuario from '../Components/PainelDoUsuario.vue';
 
 const page = usePage();
@@ -25,6 +28,24 @@ function abrirPainel(evento) {
     evento.currentTarget.focus();
     painelAberto.value = true;
 }
+
+// Depois do popup da novidade dos temas: "Escolher meu tema agora" abre o painel (a seção Aparência é a primeira) e
+// "Agora não" faz o botão do nome pulsar por ~4 s (3 pulsos de 1,1 s; sem movimento com prefers-reduced-motion).
+const pulsando = ref(false);
+let temporizadorDoPulso = null;
+async function depoisDaNovidade(abrirPainel) {
+    await nextTick(); // o popup já saiu e devolveu a rolagem; o foco vai para o botão que o painel guarda
+    botaoDoUsuarioVisivel()?.focus();
+    if (abrirPainel) {
+        painelAberto.value = true;
+
+        return;
+    }
+    pulsando.value = true;
+    clearTimeout(temporizadorDoPulso);
+    temporizadorDoPulso = setTimeout(() => { pulsando.value = false; }, 4000);
+}
+onBeforeUnmount(() => clearTimeout(temporizadorDoPulso));
 </script>
 
 <template>
@@ -34,6 +55,7 @@ function abrirPainel(evento) {
             :itens="itens"
             :usuario="usuario"
             :painel-aberto="painelAberto"
+            :pulsando="pulsando"
             @abrir-painel="abrirPainel"
         />
 
@@ -55,6 +77,14 @@ function abrirPainel(evento) {
         </main>
 
         <ModalBoasVindas v-if="page.props.mostrarApresentacao" :progresso="page.props.progresso" />
+        <!-- Nunca junto da apresentação inicial: o servidor já garante, e aqui também. -->
+        <ModalNovidadeTemas
+            v-if="page.props.mostrarNovidadeTemas && !page.props.mostrarApresentacao && !novidadeDispensada"
+            :temas="page.props.temas"
+            :casca="atual?.casca ?? 'lateral'"
+            @escolher="depoisDaNovidade(true)"
+            @depois="depoisDaNovidade(false)"
+        />
         <PainelDoUsuario :aberto="painelAberto" @fechar="painelAberto = false" />
     </div>
 </template>

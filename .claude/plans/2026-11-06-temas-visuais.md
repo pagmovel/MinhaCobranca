@@ -259,9 +259,10 @@ Os protótipos usam dados fictícios em memória. No app:
 - Pendente da seção 7, item 3 (cor do botão principal).
 - **Testes:** contraste passa; `test_tema_livro_caixa_e_aceito_na_troca`. Smoke test: campos de data e select legíveis no escuro.
 
-### Tarefa 4.5: popup da novidade para usuários antigos. Estado: pendente
+### Tarefa 4.5: popup da novidade para usuários antigos. Estado: testada (2026-11-07; usuário antigo vê uma vez, "Escolher meu tema agora" abre o painel na Aparência, "Agora não", Esc e fundo marcam como visto e o botão do nome pulsa 3 vezes; usuário novo e usuário com apresentação aberta não o veem; `POST` falho fecha mesmo assim; 375 testes JS, 961 PHP e `npm run build` verdes; detalhes na skill, "Acertos (Tarefa 4.5)")
 - `ModalNovidadeTemas.vue` (usa `Modal.vue`), renderizado no `CamadaApp.vue` quando `mostrarNovidadeTemas`: título "Agora você escolhe a aparência do sistema", texto "Clique no seu nome e escolha entre N temas. Também dá para alterar a senha ali.", miniaturas, botões **"Escolher meu tema agora"** (marca como visto e abre o painel do usuário já na aparência) e **"Agora não"**. Fechar por Esc ou fundo também marca como visto (`POST /perfil/novidade-temas`). Depois de "Agora não", o botão do nome pulsa até 3 vezes para mostrar onde fica.
 - **Testes** (`NovidadeDosTemasTest.php`): `test_antigo_com_apresentacao_vista_ve_a_novidade`, `test_antigo_sem_apresentacao_vista_nao_ve`, `test_novo_usuario_nao_ve`, `test_some_depois_de_marcada_como_vista`, `test_nao_aparece_com_um_unico_tema`.
+- **Feito (2026-11-07):** `ModalNovidadeTemas.vue` (usa `Modal.vue`, que ganhou a propriedade `fecharNoFundo`), renderizado em `CamadaApp.vue` só com `mostrarNovidadeTemas` e `! mostrarApresentacao`; `resources/js/novidadeDosTemas.js` com `textoDoLugar(casca, celular = false)` (o segundo parâmetro é um acréscimo: no celular o botão do nome da casca lateral fica no cabeçalho, "no canto de cima, à direita"), `textoDaNovidade` e `novidadeDispensada`; botão do nome pulsa por `.pulsar-botao` e `.pulsar-botao-linha` (`app.css`), desligado em `prefers-reduced-motion`. O lado PHP (os cinco testes acima, com outros nomes) já estava em `CompartilhamentoDoTemaTest` (tarefa 1.2 e a base dos temas), então não há `NovidadeDosTemasTest.php` novo. Teste JS: `tests/js/novidadeDosTemas.test.js`.
 
 ## Fase 5: dados do mês (Marco 3)
 

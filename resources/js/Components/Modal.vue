@@ -3,12 +3,14 @@ import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 
 /**
  * Janela por cima do formulário (cadastro rápido, catálogo). O formulário de fundo fica intacto.
- * Fecha com Esc ou pelo botão; clique fora não fecha (não perder o que foi digitado por acidente).
+ * Fecha com Esc ou pelo botão; clique fora não fecha (não perder o que foi digitado por acidente), a não ser que a
+ * janela só informe e não tenha nada digitado (`fecharNoFundo`, como o popup da novidade dos temas).
  */
 const props = defineProps({
     aberto: { type: Boolean, required: true },
     titulo: { type: String, required: true },
     largura: { type: String, default: 'max-w-lg' },
+    fecharNoFundo: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['fechar']);
@@ -83,7 +85,7 @@ onBeforeUnmount(() => {
 <template>
     <Teleport to="body">
         <Transition name="modal">
-            <div v-if="aberto" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-grafite/40 px-4 py-10">
+            <div v-if="aberto" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-grafite/40 px-4 py-10" @click.self="fecharNoFundo && emit('fechar')">
                 <div
                     ref="painel"
                     role="dialog"

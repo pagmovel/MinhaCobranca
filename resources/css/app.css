@@ -194,9 +194,32 @@ ul > .lista-leave-active {
     animation: destacar 700ms ease;
 }
 
+/*
+ * Botão do nome do usuário: depois do popup da novidade dos temas ele "pisca" um anel três vezes, para mostrar onde
+ * clicar (o CamadaApp tira a classe depois de ~4 s). `pulsar-botao`: anel por fora (avatar); `pulsar-botao-linha`: por
+ * dentro (a linha do rodapé do menu lateral, que ocupa a largura toda). A cor é a do texto ativo do menu do tema.
+ */
+@keyframes pulsar-botao {
+    0%, 100% { box-shadow: 0 0 0 0 transparent; }
+    40% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-menu-texto-ativo) 70%, transparent); }
+}
+@keyframes pulsar-botao-linha {
+    0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+    40% { box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--color-menu-texto-ativo) 80%, transparent); }
+}
+.pulsar-botao {
+    animation: pulsar-botao 1.1s ease-in-out 3;
+}
+.pulsar-botao-linha {
+    animation: pulsar-botao-linha 1.1s ease-in-out 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         transition-duration: 0s !important;
         animation-duration: 0s !important;
+    }
+    .pulsar-botao, .pulsar-botao-linha {
+        animation: none;
     }
 }

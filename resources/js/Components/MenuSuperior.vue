@@ -15,6 +15,7 @@ const props = defineProps({
     itens: { type: Array, required: true },
     usuario: { type: Object, required: true },
     painelAberto: { type: Boolean, default: false },
+    pulsando: { type: Boolean, default: false }, // chama a atenção para o botão do nome (popup da novidade)
 });
 const emit = defineEmits(['abrir-painel']);
 
@@ -224,6 +225,7 @@ onBeforeUnmount(() => {
         <button
             type="button"
             class="flex min-h-11 items-center gap-2 rounded-(--raio-controle) px-2 text-sm font-semibold hover:bg-menu-ativo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono"
+            :class="pulsando ? 'pulsar-botao' : ''"
             :aria-label="usuario.name"
             data-botao-do-usuario
             aria-haspopup="dialog"
