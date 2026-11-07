@@ -157,7 +157,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 3: fundação visual (Marco 2)
 
-### Tarefa 3.1: inventário e prova técnica. Estado: pendente
+### Tarefa 3.1: inventário e prova técnica. Estado: testada (2026-11-07; resultado na seção "Inventário (Tarefa 3.1)", no fim)
 - Provar com o build que as utilidades do Tailwind v4 usam `var(--color-*)` (então sobrescrever sob `html[data-tema]` funciona). Contar `bg-white`, `text-white`, `rounded-*`, `shadow-*`, cores soltas (`#...`, `style=`) nas 33 telas/componentes. Anotar o resultado numa seção "Inventário" deste plano. Também ler a skill `recibos` inteira antes de mexer (regra do projeto).
 - **Verificação:** o comando e a saída colados no plano.
 
@@ -186,8 +186,8 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ### Tarefa 4.2: `PainelColunas` e barra do mês. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - `ListaDoPainel.vue` passa a emitir `resumo` (`{ lista, quantidade, soma_centavos }`); `PainelColunas.vue` junta as três listas e o `BlocoVencendo` e alimenta `BarraDoMes.vue`.
-- `fatiasDoMes({ previsto, recebido, aguardando, paraEnviar }): Array<{ chave, centavos, porcento }>` (maior resto: soma 100; `previsto` 0 devolve lista vazia).
-- **Testes** (`tests/js/fatiasDoMes.test.js`): `porcentos_somam_100`, `previsto_zero_nao_divide_por_zero`, `fatia_zerada_continua_na_lista`.
+- `fatiasDoMes({ recebido, aguardando, paraEnviar }): Array<{ chave, centavos, porcento }>` (maior resto: soma 100; a base é a soma das três partes, sem `previsto`; soma 0 devolve lista vazia). Módulo e testes já prontos (ver "Inventário", item D).
+- **Testes** (`tests/js/fatiasDoMes.test.js`): `porcentos_somam_100`, `soma_zero_nao_divide_por_zero`, `fatia_zerada_continua_na_lista`, `maior_resto_desempata_pela_ordem`.
 
 ### Tarefa 4.3: tema Fluxo. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - Caso `Fluxo` no enum; `resources/css/temas/fluxo.css` (paleta e fontes do protótipo); casca lateral azul-marinho; painel `colunas`. Efeitos: barra enche na abertura e números contam, número que muda pisca (`.destacar`), carimbo PAGO na baixa, vencida pulsa no máximo 3 vezes, aviso na tela com linha do tempo. Tudo desligado em `prefers-reduced-motion`.
@@ -275,3 +275,65 @@ superpowers (writing-plans, subagent-driven-development, test-driven-development
 ## Menores adiados
 
 Voo do cartão entre colunas; agrupamento "Atrasadas / Hoje / Próximos dias" na Régua; navegar entre meses na linha do tempo; prévia do tema ao passar o mouse; tema `painel-lista`.
+
+## Inventário (Tarefa 3.1)
+
+Feito em 2026-11-07, só leitura mais `npm run build` (o `public/build` é ignorado pelo git). Contagens sobre `resources/js` (61 `.vue`; o plano falava em 33 telas/componentes, o número real é maior) e `resources/css/app.css`.
+
+### A. Prova: as utilidades do Tailwind v4 usam `var(--color-*)`
+
+- **Comando:** `npm run build` (saída: `✓ built in 1.05s`, CSS em `public/build/assets/app-<hash>.css`, 56 KB). Tailwind instalado: 4.3.3.
+- **Camadas do CSS gerado** (blocos, nesta ordem): `@layer properties`, `theme`, `base`, `components`, `utilities`. As variáveis do `@theme` estão em `@layer theme { :root,:host{ ... } }` (55 variáveis `--color-*` distintas).
+- **Utilidades de cor leem a variável** (trecho literal do CSS gerado): `.text-carbono{color:var(--color-carbono)}`, `.bg-white{background-color:var(--color-white)}`, `.border-linha{border-color:var(--color-linha)}`, `.bg-papel{...var(--color-papel)}`, `.bg-carbono{...var(--color-carbono)}`, `.text-tinta-vermelha{color:var(--color-tinta-vermelha)}`, `.font-estreita{font-family:var(--font-estreita)}`, `.rounded-sm{border-radius:var(--radius-sm)}`. Conclusão: sobrescrever as variáveis sob `html[data-tema='x']` troca as cores, as fontes e os cantos sem mexer nos componentes.
+- **Variantes com opacidade** (`border-carbono/10`, `hover:bg-carbono/90`, `text-grafite/60`; 185 usos nas `.vue`) saem em duas regras: um hex fixo (plano B, `#2f3c9e1a`) e, dentro de `@supports (color:color-mix(in lab, red, red))`, `color-mix(in oklab, var(--color-carbono) 10%, transparent)`. Em navegador com `color-mix` (o caso real) a variável do tema vale; o hex fixo só aparece em navegador antigo. `[A VERIFICAR]` no navegador na 3.2.
+- **Sombras não vêm de variável:** `.shadow-sm` e as outras saem com valor fixo (`0 1px 3px 0 var(--tw-shadow-color,#0000001a)`); o CSS não tem nenhuma `--shadow-*`. Para o `--sombra-bloco` valer, o componente precisa usá-lo de forma explícita (ex.: `shadow-(--sombra-bloco)` ou uma classe própria em `@layer components`). Sobrescrever só a variável não troca as 6 sombras atuais.
+- **Cantos:** como `rounded-sm` lê `--radius-sm`, sobrescrever essa variável mudaria **todos** os `rounded-sm` de uma vez (controles, `Carimbo`, `Etiqueta`, `EstadoDaLista`). Por isso a 3.2 cria `--raio-controle` e troca só os controles.
+- **`--color-white: #fff` existe no `:root`** e é lida por `bg-white` **e** por `text-white`. Sobrescrevê-la num tema escuro deixaria o texto sobre ação escuro junto com a superfície. Por isso os dois tokens são separados (`--color-superficie` e `--color-sobre-acao`, tarefa 3.2).
+- **Pegadinha de camada:** regra **fora** de `@layer` vence qualquer utilidade, mesmo com especificidade menor. Os arquivos `resources/css/temas/*.css` devem trazer **só variáveis** sob `html[data-tema='x']`; regra de classe nesses arquivos vai dentro de `@layer components` ou `@layer utilities`, senão atropela as utilidades do Tailwind.
+- **Não provado em navegador:** tentei `chromium --headless=new --dump-dom` numa página de teste com `html[data-tema]` sobrescrevendo as variáveis; o processo ficou pendurado (o stderr só mostrou erros de registro GCM) e não devolveu o DOM em 40 s. A prova acima é a leitura do CSS gerado. A conferência visual real é a captura antes/depois da 3.2 com o browser-agent.
+- Observação: as variáveis `--color-amber-*`, `--color-emerald-*` etc. do `:root` vêm das views Blade compiladas em `storage/framework/views` (pegas pelo `@source` do `app.css`), não de `resources/js`. Não afetam os temas.
+
+### B. Contagem em `resources/js` (comandos: scripts `node` com `readdirSync` e regex, e `grep -rEoh`)
+
+| Item | Total | Onde |
+|---|---|---|
+| `bg-white` | **49** em 32 arquivos `.vue` (+3 em `app.css`: `.entrada`, `.botao-secundario`, `.botao-perigo`) | `EstadoDaLista` 4, `CamadaApp` 4, `Contratos/Form` 4, `Painel` 3, `BaixaEmLote` 2, `Feriados` 2, `CamadaPublica` 2, `Cobrancas/Form` 2, `Relatorios/Ver` 2, `ProdutosServicos/Reajuste` 2, os outros 1 cada |
+| `text-white` | **3** `.vue` (+2 em `app.css`: `.botao`, `.botao-perigo-confirmar`) | `IndicadorDeCarregamento`, `CamadaApp` (contador de pendentes, `bg-tinta-vermelha`), `Cobrancas/Index` (`text-white/80` na aba ativa) |
+| `border-white` | 1 linha | `IndicadorDeCarregamento` (`border-white/30 border-t-white`, o girador) |
+| `rounded-*` | **16**: `rounded-full` 9 e `rounded-sm` 7 (+5 `rounded-sm` em `app.css`: `.entrada`, `.botao`, `.botao-secundario`, `.botao-perigo`, `.botao-perigo-confirmar`) | `rounded-sm`: `EstadoDaLista` 5, `Carimbo` 1, `Etiqueta` 1. `rounded-full`: contadores, bolinhas, `Paginador`, girador |
+| `shadow-*` | **6**: `shadow-lg` 4, `shadow-md` 1, `shadow-sm` 1 | `Modal`, `CoachDeConfiguracao`, `HolofoteDePendencia`, `IndicadorDeCarregamento` (lg); `BuscaAutosugestao` (md); `MenuAcoes` (sm) |
+| cor solta `#hex` | **0** | nenhuma |
+| `rgb(` / `rgba(` / `hsl(` | **0** | nenhuma |
+| cor da paleta Tailwind (`blue-500`, `gray-200`...) | **0** | nenhuma |
+| `bg-black` / `text-black` | **0** | nenhuma |
+| `style=` / `:style=` | **2**, ambos `:style="{ width }"` | `Relatorios/Ver.vue` linhas 81 e 82: só largura de barra, **sem cor** |
+| `font-estreita` | **99** em 34 arquivos | `Cobrancas/Index` 13, `Clientes/Index` 6, `CorrecaoPagamentoInline` 5, `Admin/Usuarios` 5, `Contratos/Index` 5, `ProdutosServicos/Index` 5... (a 3.3 troca a fonte pela variável `--font-estreita`) |
+| `accent-carbono` | 7 | checkboxes e rádios |
+| tokens do projeto mais usados | `text-grafite` 165, `border-linha` 48, `text-tinta-vermelha` 41, `border-carbono` 36, `text-carbono` 32, `bg-papel` 16, `divide-linha` 10, `text-tinta-laranja` 8 | |
+
+Resumo: **não há cor solta no código**; tudo passa pelos tokens do projeto (`carbono`, `grafite`, `papel`, `linha`, `tinta-*`) e por `white`. Por isso um tema muda quase tudo só trocando variáveis. Os pontos que **precisam de token novo** (tarefa 3.2) são:
+
+1. **`bg-white` (49 + 3)** vira `bg-superficie`: superfície de lista, cartão, modal, menu e campo. É a troca mais volumosa e mecânica.
+2. **`text-white` sobre fundo de ação** vira `text-sobre-acao`: `.botao`, `.botao-perigo-confirmar`, `IndicadorDeCarregamento` (texto e girador), contador de `CamadaApp`, aba ativa de `Cobrancas/Index`.
+3. **Menu** (`CamadaApp.vue` linhas 32, 48, 55, 65, 66, 73, 79): hoje `bg-white`, `border-linha`, `hover:bg-papel`, item ativo `bg-papel text-carbono`, `text-grafite/50`. Para a lateral azul-marinho e a superior precisa dos `--color-menu-fundo|texto|ativo|linha`.
+4. **Etapas** (enviar, aguardando, recebida): `Carimbo.vue` e `Etiqueta.vue` não têm cor fixa, usam `carbono`, `tinta-verde|laranja|vermelha` e `grafite/40|50|60|70`, então seguem os tokens sozinhos. As cores novas de etapa (`--color-etapa-*`) valem para a linha do tempo e os blocos novos, não para estes dois.
+5. **`.carimbo { mix-blend-mode: multiply }`** (`app.css`): em fundo escuro o carimbo some. Só importa para tema escuro (Livro-caixa, futuro): ali precisa de `mix-blend-mode: normal`. Não afeta Talão, Régua nem Almanaque se eles tiverem superfície clara.
+6. **Sombras (6) e cantos (`rounded-sm`, 7 + 5 em `app.css`)**: ver a seção A.
+7. **`color-scheme`** por tema (campos nativos): `app.blade.php` não declara nenhum hoje.
+8. **`<html data-tema>`**: já feito na 1.2 (conferir ao integrar).
+
+### C. Achado de contraste do Talão (para a 3.5; sem correção aqui)
+
+Calculado com `razaoDeContraste` (mistura do `grafite` com o fundo). Sobre branco: `text-grafite/60` = **4,05**, `/50` = **3,06**, `/70` = 5,56; `/75` e `/80` ficam acima de `/70`. Pares sólidos do Talão: grafite sobre papel 13,74; carbono sobre branco 9,29; tinta-verde 5,05 (sobre papel 4,70); tinta-vermelha 6,54; tinta-laranja 5,18 (sobre papel 4,82). Portanto o Talão **tem 11 usos de `text-grafite/60` e 1 de `text-grafite/50` abaixo de 4,5:1** (entre eles `Etiqueta` tom `apagado`, `Carimbo` cancelada e o item bloqueado do menu; os demais pontos não foram listados). `[A VERIFICAR]`: se a regra dos 4,5:1 vale para esses textos "apagados" (estado desativado costuma ficar de fora do WCAG) ou se sobem para `/70`. Não mexi: o Talão deve continuar idêntico (3.2).
+
+### D. Módulos JS puros já prontos (Tarefas 2.2, 2.4, 3.4, 3.5, 4.1, 4.2 e 7.1)
+
+Só os módulos puros e seus testes foram feitos nesta rodada; **as tarefas continuam no estado em que estão** (falta a parte de interface e de PHP de cada uma). Arquivos novos: `resources/js/{armadilhaDeFoco,temas,menuPrincipal,menuResponsivo,contraste,fatiasDoMes,linhaDoTempo}.js` e `tests/js/*.test.js` com o mesmo nome (35 testes). Diferenças em relação ao texto das tarefas:
+
+- **`temaValido` mora em `temas.js`** (com `componenteDoPainel`), não em `usarTema.js`; o teste é `tests/js/temas.test.js`. A 2.4 só precisa importar de lá.
+- **`itensDoMenu(progresso, administrador, pendentes)`** (3 parâmetros, não `(props, admin)`): extraído fielmente da lista de `CamadaApp.vue` (mesmos itens, mesma ordem, mesmo `itemBloqueado`), **sem** "Sair". A 3.4 troca a lista do `CamadaApp.vue` por esta função.
+- **`componenteDoPainel`** aceita `empilhado | mosaico | regua`; `colunas` entra com a 4.2 (futuro).
+- **`fatiasDoMes({ recebido, aguardando, paraEnviar })`** não tem `previsto`: a base dos porcentos é a soma das três partes. A assinatura da 4.2 foi corrigida acima.
+- **`linhaDoTempo.js`** ganhou `diaDoPonto(ponto)` além das três funções da 7.1; `posicaoDoDia` devolve o centro da célula, `(dia - 0.5) / dias`.
+- **`contraste.js`** tem `razaoDeContraste`, `lerTokens` e `tokensDoTema`. `tests/js/contraste.test.js` tem `const PARES` no topo (hoje os 5 pares de texto do Talão, mínimo 4,5) e percorre `resources/css/temas/*.css` **se a pasta existir**. Quem criar tokens novos (3.2) amplia os `PARES`; um par com `#FFFFFF` literal só serve para tema de superfície branca, para os demais usar o token da superfície.
+- `tests/js/recebidoPorDia.test.js` (6.1) **não** foi feito: o bloco "Recebido por dia" está fora desta execução.
