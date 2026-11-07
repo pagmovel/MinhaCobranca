@@ -105,7 +105,18 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 >    `.../scratchpad/relatorio-wizard-temas.md`; (b) subagente `a8fec0fb411f32a71`, **só leitura**: investigar por que o
 >    "Previsto" difere entre o Talão e a Régua/Almanaque (o Marcos respondeu "não sei, precisa ser investigado");
 >    relatório em `.../scratchpad/relatorio-previsto.md`. Ao retomar: `git status`, `ListAgents`, ler os relatórios.
->    Depois do (b): decidir com o Marcos (ou aplicar a recomendação, se for inequívoca) e corrigir com testes.
+>    **(b) TERMINOU, nada aplicado, espera o "sim" do Marcos:** hoje os dados locais dão o MESMO número nos dois (nov
+>    R$ 702,57, out R$ 1.037,57; `[INCONCLUSIVO]` o que ele viu). Fórmulas: Talão (`PainelController.php:55`) = valor
+>    cheio das não canceladas com vencimento no mês; Régua/Almanaque (`linhaDoTempo.js:142-154`) = valor PAGO das pagas
+>    com `pago_em` no mês + pendentes com vencimento no mês. Só diverge nas pagas (desconto/acréscimo na baixa e
+>    pagamento em mês diferente do vencimento; nos dados locais jan a set divergem). **Recomendação do agente:** adotar
+>    a da Régua/Almanaque também no Talão (regime de caixa, fecha com "recebidos de previstos", com o anel e o
+>    pontilhado, é a do protótipo); a do Talão fica para o Relatório de Faturamento. Correção mínima: `PainelController.php`
+>    linhas 36-38 e 54-59 (`previsto = recebido + pendentes do mês`, tirar `$doMes`); testes `PainelTest.php` (linhas
+>    131, 150, 172, mais um de mistura), `PainelMesTest.php` (paridade), `linhaDoTempo.test.js`; docs em `SKILL.md`
+>    (`:351, 546-547, 1756, 1918, 2061, 2233`). `[A VERIFICAR]` se a baixa aceita `pago_em` futuro.
+> 3. **Feito (commit `f0f6620`):** "Para enviar" virou **"Recibos a enviar"** nas 3 telas (aba "A enviar", dica sob o
+>    título, atalho "Cobranças a avisar"), tudo em `resources/js/textosDoPainel.js`; JS 437 e PHP 967 verdes.
 
 ### Histórico (12:45)
 
