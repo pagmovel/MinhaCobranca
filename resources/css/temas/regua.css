@@ -1,0 +1,7 @@
+/* Tema Régua (docs/painel-linha-do-tempo.html). Só variáveis: regra de classe aqui vence qualquer utilidade do Tailwind. */
+html[data-tema='regua'] {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    --font-estreita: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    --font-titulo: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    --font-numeros: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+}

@@ -28,6 +28,30 @@ class TrocaDeTemaTest extends TestCase
         }
     }
 
+    public function test_tema_regua_e_aceito_na_troca(): void
+    {
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)->from('/painel')->put('/perfil/tema', ['tema' => 'regua'])
+            ->assertRedirect('/painel')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('regua', $usuario->refresh()->getRawOriginal('tema'));
+        $this->assertSame(TemaVisual::Regua, $usuario->tema);
+    }
+
+    public function test_tema_almanaque_e_aceito_na_troca(): void
+    {
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)->from('/painel')->put('/perfil/tema', ['tema' => 'almanaque'])
+            ->assertRedirect('/painel')
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('almanaque', $usuario->refresh()->getRawOriginal('tema'));
+        $this->assertSame(TemaVisual::Almanaque, $usuario->tema);
+    }
+
     public function test_recusa_tema_inexistente(): void
     {
         $usuario = User::factory()->create();

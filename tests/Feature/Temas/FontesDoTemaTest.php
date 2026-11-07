@@ -34,6 +34,21 @@ class FontesDoTemaTest extends TestCase
     public function test_aliases_seguem_o_slug_que_o_plugin_do_vite_usa(): void
     {
         $this->assertSame(['archivo', 'archivo-narrow'], TemaVisual::Talao->aliasesDasFontes());
+        $this->assertSame(['bricolage-grotesque', 'figtree'], TemaVisual::Regua->aliasesDasFontes());
+        $this->assertSame(['bricolage-grotesque', 'onest'], TemaVisual::Almanaque->aliasesDasFontes());
+    }
+
+    public function test_familia_dividida_entre_temas_tem_os_mesmos_pesos(): void
+    {
+        // O vite.config.js declara cada família uma vez só: dois temas com a mesma família não podem divergir nos pesos.
+        $pesosPorFamilia = [];
+
+        foreach (TemaVisual::cases() as $tema) {
+            foreach ($tema->fontes() as $familia => $pesos) {
+                $this->assertSame($pesosPorFamilia[$familia] ?? $pesos, $pesos, "{$tema->value}: pesos de {$familia} diferentes dos de outro tema");
+                $pesosPorFamilia[$familia] = $pesos;
+            }
+        }
     }
 
     /**
@@ -92,14 +107,15 @@ class FontesDoTemaTest extends TestCase
                 $this->assertStringStartsWith('<!DOCTYPE html>', $html);
                 $this->assertStringContainsString("data-tema=\"{$tema->value}\"", $html);
 
+                // Uma família pode ser de mais de um tema (Bricolage Grotesque na Régua e no Almanaque): sai se for deste.
                 foreach (TemaVisual::cases() as $outro) {
                     foreach ($outro->fontes() as $familia => $pesos) {
-                        $esperado = $outro === $tema;
+                        $esperado = array_key_exists($familia, $tema->fontes());
                         $this->assertSame($esperado, str_contains($html, "font-family: \"{$familia}\""), "{$tema->value}: @font-face de {$familia} ".($esperado ? 'faltou' : 'não devia sair'));
                     }
 
                     foreach ($outro->aliasesDasFontes() as $alias) {
-                        $this->assertSame($outro === $tema, str_contains($html, "assets/{$alias}-400.woff2"), "{$tema->value}: preload de {$alias}");
+                        $this->assertSame(in_array($alias, $tema->aliasesDasFontes(), true), str_contains($html, "assets/{$alias}-400.woff2"), "{$tema->value}: preload de {$alias}");
                     }
                 }
 

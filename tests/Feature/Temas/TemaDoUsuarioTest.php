@@ -14,7 +14,7 @@ class TemaDoUsuarioTest extends TestCase
 
     public function test_usuario_novo_nasce_com_o_tema_do_env(): void
     {
-        // Só o Talão existe por enquanto; cada tema novo ganha o próprio caso neste laço.
+        // Cada tema novo entra neste laço sozinho, pelo enum.
         foreach (TemaVisual::cases() as $tema) {
             config(['temas.padrao' => $tema->value]);
 
@@ -91,6 +91,24 @@ class TemaDoUsuarioTest extends TestCase
         $this->assertArrayNotHasKey('novidade_temas_vista', $usuario->getAttributes());
     }
 
+    public function test_casca_painel_e_linha_do_tempo_de_cada_tema(): void
+    {
+        $esperado = [
+            'talao' => ['lateral', 'empilhado', false],
+            'regua' => ['superior', 'regua', false],
+            'almanaque' => ['lateral', 'mosaico', true],
+        ];
+
+        $this->assertSame(array_keys($esperado), array_map(fn (TemaVisual $tema) => $tema->value, TemaVisual::cases()));
+
+        foreach (TemaVisual::cases() as $tema) {
+            $this->assertSame($esperado[$tema->value], [$tema->casca(), $tema->painel(), $tema->comLinhaDoTempo()], $tema->value);
+        }
+
+        $this->assertSame('Régua', TemaVisual::Regua->rotulo());
+        $this->assertSame('Almanaque', TemaVisual::Almanaque->rotulo());
+    }
+
     public function test_listas_do_enum_estao_completas(): void
     {
         foreach (TemaVisual::cases() as $tema) {
@@ -99,6 +117,9 @@ class TemaDoUsuarioTest extends TestCase
             $this->assertContains($tema->casca(), ['lateral', 'superior']);
             $this->assertContains($tema->painel(), ['empilhado', 'colunas', 'mosaico', 'regua']);
             $this->assertCount(4, $tema->amostra());
+            foreach ($tema->amostra() as $cor) {
+                $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/', $cor, "{$tema->value}: cor de amostra inválida");
+            }
             $this->assertNotEmpty($tema->fontes());
         }
 

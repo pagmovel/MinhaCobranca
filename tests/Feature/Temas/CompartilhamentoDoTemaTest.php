@@ -31,6 +31,28 @@ class CompartilhamentoDoTemaTest extends TestCase
             ->assertSee('<html lang="pt-BR" data-tema="'.$usuario->tema->value.'"', false);
     }
 
+    public function test_html_traz_data_tema_regua(): void
+    {
+        $usuario = User::factory()->create();
+        $usuario->forceFill(['tema' => TemaVisual::Regua])->save();
+
+        $this->actingAs($usuario)->get('/painel')
+            ->assertOk()
+            ->assertSee('<html lang="pt-BR" data-tema="regua"', false)
+            ->assertInertia(fn (Assert $pagina) => $pagina->where('auth.user.tema', 'regua'));
+    }
+
+    public function test_html_traz_data_tema_almanaque(): void
+    {
+        $usuario = User::factory()->create();
+        $usuario->forceFill(['tema' => TemaVisual::Almanaque])->save();
+
+        $this->actingAs($usuario)->get('/painel')
+            ->assertOk()
+            ->assertSee('<html lang="pt-BR" data-tema="almanaque"', false)
+            ->assertInertia(fn (Assert $pagina) => $pagina->where('auth.user.tema', 'almanaque'));
+    }
+
     public function test_visitante_recebe_talao(): void
     {
         $this->get('/entrar')->assertOk()->assertSee('data-tema="talao"', false);
@@ -60,20 +82,33 @@ class CompartilhamentoDoTemaTest extends TestCase
                 ->where('temas', TemaVisual::paraOFront()));
     }
 
-    public function test_visitante_nao_recebe_usuario_nos_props(): void
+    public function test_props_trazem_os_tres_temas_na_ordem_do_seletor(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/painel')
+            ->assertInertia(fn (Assert $pagina) => $pagina
+                ->has('temas', 3)
+                ->where('temas.0.id', 'talao')
+                ->where('temas.1', fn ($regua) => $regua['id'] === 'regua' && $regua['nome'] === 'Régua'
+                    && $regua['casca'] === 'superior' && $regua['painel'] === 'regua' && $regua['linha_do_tempo'] === false)
+                ->where('temas.2', fn ($almanaque) => $almanaque['id'] === 'almanaque' && $almanaque['nome'] === 'Almanaque'
+                    && $almanaque['casca'] === 'lateral' && $almanaque['painel'] === 'mosaico' && $almanaque['linha_do_tempo'] === true));
+    }
+
+    public function test_visitante_recebe_a_lista_de_temas_e_nao_recebe_usuario_nos_props(): void
     {
         $this->get('/entrar')->assertInertia(fn (Assert $pagina) => $pagina
             ->where('auth.user', null)
+            ->has('temas', 3)
             ->where('mostrarNovidadeTemas', false));
     }
 
-    public function test_novidade_nao_aparece_com_um_unico_tema(): void
+    public function test_antigo_com_apresentacao_vista_ve_a_novidade(): void
     {
-        // Enquanto o enum tiver um caso só, não há o que escolher e o popup não abre.
-        $esperado = count(TemaVisual::cases()) > 1;
-
+        // Positivo: quem já existia, ainda não viu a novidade e não tem a apresentação aberta; agora há mais de um tema.
         $this->actingAs($this->usuarioAntigo())->get('/painel')
-            ->assertInertia(fn (Assert $pagina) => $pagina->where('mostrarNovidadeTemas', $esperado));
+            ->assertInertia(fn (Assert $pagina) => $pagina
+                ->where('mostrarApresentacao', false)
+                ->where('mostrarNovidadeTemas', true));
     }
 
     public function test_novidade_ja_vista_nao_volta(): void

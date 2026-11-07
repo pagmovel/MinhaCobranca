@@ -1,0 +1,7 @@
+/* Tema Almanaque (docs/painel-bento-timeline.html). Só variáveis: regra de classe aqui vence qualquer utilidade do Tailwind. */
+html[data-tema='almanaque'] {
+    --font-sans: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-estreita: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-titulo: 'Bricolage Grotesque', 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-numeros: 'Bricolage Grotesque', 'Onest', ui-sans-serif, system-ui, sans-serif;
+}
