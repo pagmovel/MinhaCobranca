@@ -73,12 +73,27 @@ export function tipoDoPonto(ponto) {
     return ponto.situacao === 'vence_hoje' ? 'hoje' : ponto.etapa;
 }
 
+/** Quantos níveis cabem na pilha de um dia, de cada lado do eixo; acima disso o último nível vira a pílula "+N". */
+export const NIVEIS_POR_DIA = 6;
+
+/** Pilha com no máximo `NIVEIS_POR_DIA` níveis: passou do teto, ficam os primeiros e o resto vira o "+N" (nunca "+1"). */
+function limitarPilha(itens) {
+    if (itens.length <= NIVEIS_POR_DIA) {
+        return { visiveis: itens, mais: 0 };
+    }
+    const visiveis = itens.slice(0, NIVEIS_POR_DIA - 1);
+
+    return { visiveis, mais: itens.length - visiveis.length };
+}
+
 /**
- * Uma coluna por dia: vencimentos (acima do eixo) e pagamentos (abaixo), cada lista já com o nível de empilhamento.
- * A ordem das colunas, e dentro delas vencimentos antes de pagamentos, é a ordem de tabulação dos pontos.
+ * Uma coluna por dia: vencimentos (acima do eixo) e pagamentos (abaixo), cada lista já com o nível de empilhamento e
+ * limitada a `NIVEIS_POR_DIA` (`maisVencimentos` e `maisPagamentos` dizem quantos ficaram de fora, para a pílula "+N").
+ * A ordem das colunas, e dentro delas vencimentos antes de pagamentos, é a ordem de tabulação dos pontos. O teto vale só
+ * para o desenho: a régua de dinheiro (`acumuladoPorDia`) continua somando todos os pontos.
  */
 export function colunasDoMes(pontos, dias) {
-    const colunas = Array.from({ length: dias }, (_, indice) => ({ dia: indice + 1, vencimentos: [], pagamentos: [] }));
+    const colunas = Array.from({ length: dias }, (_, indice) => ({ dia: indice + 1, vencimentos: [], pagamentos: [], maisVencimentos: 0, maisPagamentos: 0 }));
     for (const item of empilharPontos(pontos.filter((ponto) => ponto.etapa !== 'recebida'))) {
         colunas[diaDoPonto(item.ponto) - 1]?.vencimentos.push(item);
     }
@@ -86,8 +101,14 @@ export function colunasDoMes(pontos, dias) {
         colunas[diaDoPonto(item.ponto) - 1]?.pagamentos.push(item);
     }
     for (const coluna of colunas) {
-        coluna.vencimentos.sort((a, b) => a.nivel - b.nivel);
-        coluna.pagamentos.sort((a, b) => a.nivel - b.nivel);
+        const vencimentos = limitarPilha(coluna.vencimentos.sort((a, b) => a.nivel - b.nivel));
+        const pagamentos = limitarPilha(coluna.pagamentos.sort((a, b) => a.nivel - b.nivel));
+        Object.assign(coluna, {
+            vencimentos: vencimentos.visiveis,
+            maisVencimentos: vencimentos.mais,
+            pagamentos: pagamentos.visiveis,
+            maisPagamentos: pagamentos.mais,
+        });
     }
 
     return colunas;

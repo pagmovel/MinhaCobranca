@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    acumuladoPorDia, caminhosDaRegua, colunasDoMes, descricaoDoPonto, diaDaSemana, diaDoPonto, empilharPontos, frasePeloDia,
+    NIVEIS_POR_DIA, acumuladoPorDia, caminhosDaRegua, colunasDoMes, descricaoDoPonto, diaDaSemana, diaDoPonto, empilharPontos, frasePeloDia,
     linhasDaGrade, ordemDeTabulacao, posicaoDoDia, previstoPorDia, somasPorEtapa, tipoDoPonto, valorCompacto, vizinhoDoPonto,
 } from '../../resources/js/linhaDoTempo.js';
 
@@ -110,6 +110,42 @@ test('colunas_separam_vencimentos_e_pagamentos_por_dia', () => {
     assert.deepEqual(colunas[9].pagamentos.map(({ ponto: p, nivel }) => [p.id, nivel]), [[5, 0]]);
     assert.equal(colunas[1].pagamentos.length + colunas[1].vencimentos.length, 0);
     assert.deepEqual(ordemDeTabulacao(colunas), [3, 7, 5, 9]);
+});
+
+test('pilha_ate_o_teto_nao_tem_pilula_e_acima_dele_o_ultimo_nivel_vira_o_mais_n', () => {
+    const noDia = (quantidade, etapa = 'aguardando') => Array.from({ length: quantidade }, (_, i) => ponto(i + 1, etapa, 10));
+
+    const noTeto = colunasDoMes(noDia(NIVEIS_POR_DIA), 30)[9];
+    assert.equal(noTeto.vencimentos.length, NIVEIS_POR_DIA);
+    assert.equal(noTeto.maisVencimentos, 0);
+
+    const acima = colunasDoMes(noDia(NIVEIS_POR_DIA + 1), 30)[9];
+    assert.equal(acima.vencimentos.length, NIVEIS_POR_DIA - 1);
+    assert.equal(acima.maisVencimentos, 2); // o "+N" ocupa o último nível: nunca esconde um ponto só
+    assert.deepEqual(acima.vencimentos.map(({ ponto: p }) => p.id), [1, 2, 3, 4, 5]);
+});
+
+test('quarenta_no_mesmo_dia_ficam_em_seis_niveis_nos_dois_lados_e_a_ordem_do_tab_so_tem_os_visiveis', () => {
+    const pontos = [
+        ...Array.from({ length: 40 }, (_, i) => ponto(i + 1, 'aguardando', 10)),
+        ...Array.from({ length: 40 }, (_, i) => ponto(100 + i, 'recebida', 3, 10, 5000)),
+    ];
+    const coluna = colunasDoMes(pontos, 30)[9];
+
+    assert.equal(coluna.vencimentos.length + (coluna.maisVencimentos ? 1 : 0), NIVEIS_POR_DIA);
+    assert.equal(coluna.pagamentos.length + (coluna.maisPagamentos ? 1 : 0), NIVEIS_POR_DIA);
+    assert.equal(coluna.maisVencimentos, 35);
+    assert.equal(coluna.maisPagamentos, 35);
+    assert.ok(coluna.vencimentos.every(({ nivel }) => nivel < NIVEIS_POR_DIA));
+    assert.equal(ordemDeTabulacao(colunasDoMes(pontos, 30)).length, 10);
+});
+
+test('os_pontos_escondidos_continuam_na_regua_de_dinheiro', () => {
+    const pontos = Array.from({ length: 40 }, (_, i) => ponto(i + 1, 'recebida', 3, 10, 5000));
+
+    assert.equal(colunasDoMes(pontos, 30)[9].pagamentos.length, NIVEIS_POR_DIA - 1);
+    assert.equal(acumuladoPorDia(pontos, 30)[29], 40 * 5000);
+    assert.equal(somasPorEtapa(pontos).recebido, 40 * 5000);
 });
 
 test('vizinho_do_ponto_para_nas_pontas', () => {

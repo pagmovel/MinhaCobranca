@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { formatarCentavos } from '../itens.js';
 import {
     acumuladoPorDia, caminhosDaRegua, colunasDoMes, descricaoDoPonto, diaDaSemana, linhasDaGrade, ordemDeTabulacao,
-    posicaoDoDia, previstoPorDia, tipoDoPonto, valorCompacto, vizinhoDoPonto,
+    NIVEIS_POR_DIA, posicaoDoDia, previstoPorDia, tipoDoPonto, valorCompacto, vizinhoDoPonto,
 } from '../linhaDoTempo.js';
 import PopoverDaCobranca from './Painel/PopoverDaCobranca.vue';
 
@@ -45,8 +45,9 @@ const anteriores = computed(() => props.dados?.anteriores ?? { quantidade: 0, so
 const linhasDeVencimento = ref(2);
 const linhasDePagamento = ref(1);
 watch(colunas, (lista) => {
-    linhasDeVencimento.value = Math.max(linhasDeVencimento.value, ...lista.map((coluna) => coluna.vencimentos.length));
-    linhasDePagamento.value = Math.max(linhasDePagamento.value, ...lista.map((coluna) => coluna.pagamentos.length));
+    // A pílula "+N" ocupa um nível da pilha.
+    linhasDeVencimento.value = Math.max(linhasDeVencimento.value, ...lista.map((coluna) => coluna.vencimentos.length + (coluna.maisVencimentos ? 1 : 0)));
+    linhasDePagamento.value = Math.max(linhasDePagamento.value, ...lista.map((coluna) => coluna.pagamentos.length + (coluna.maisPagamentos ? 1 : 0)));
 }, { immediate: true });
 
 const regua = computed(() => {
@@ -74,6 +75,8 @@ const feriadoDo = (dia) => props.dados.feriados[dia];
 const tipo = tipoDoPonto;
 const textoDoPonto = (ponto) => descricaoDoPonto(ponto, props.dados);
 const rotuloDoPonto = (ponto) => `${ponto.cliente}, R$ ${formatarCentavos(ponto.etapa === 'recebida' ? ponto.pago_centavos : ponto.valor_centavos)}. ${textoDoPonto(ponto)}`;
+const rotuloDoMais = (quantidade) => `${quantidade} cobranças a mais neste dia; veja nas listas abaixo`;
+const textoDoMais = (quantidade) => `+${quantidade > 999 ? '999+' : quantidade}`;
 const valorDoPonto = (ponto) => (ponto.etapa === 'recebida' ? ponto.pago_centavos : ponto.valor_centavos);
 
 // ---------- Abertura: a linha se desenha e os pontos caem (uma vez só) ----------
@@ -303,8 +306,8 @@ function reiniciar(elemento, classe) {
     elemento?.classList.add(classe);
 }
 
-function verAnteriores() {
-    // Vai até as listas, a pedido de quem clicou (a vencida de mês passado não é ponto; está nas listas de baixo).
+function irParaAsListas() {
+    // Vai até as listas, a pedido de quem clicou (a vencida de mês passado e os pontos escondidos pelo "+N" estão nas listas de baixo).
     document.getElementById('o-que-fazer')?.scrollIntoView({ block: 'start', behavior: semMovimento() ? 'auto' : 'smooth' });
 }
 </script>
@@ -343,7 +346,7 @@ function verAnteriores() {
                             type="button"
                             class="anteriores"
                             :aria-label="`Anteriores: ${anteriores.quantidade} ${anteriores.quantidade === 1 ? 'cobrança vencida' : 'cobranças vencidas'} de meses passados, R$ ${formatarCentavos(anteriores.soma_centavos)}. Ir para as listas`"
-                            @click="verAnteriores"
+                            @click="irParaAsListas"
                         >
                             <span aria-hidden="true" class="anteriores-seta">‹</span>
                             <span aria-hidden="true" class="anteriores-rotulo">Anteriores</span>
@@ -402,6 +405,16 @@ function verAnteriores() {
                                             <span class="pt-alerta" aria-hidden="true">!</span>
                                         </template>
                                     </button>
+                                    <button
+                                        v-if="coluna.maisVencimentos"
+                                        type="button"
+                                        class="pt pt-mais"
+                                        :style="{ '--j': NIVEIS_POR_DIA - 1 }"
+                                        :aria-label="rotuloDoMais(coluna.maisVencimentos)"
+                                        @click="irParaAsListas"
+                                    >
+                                        <span aria-hidden="true">{{ textoDoMais(coluna.maisVencimentos) }}</span>
+                                    </button>
                                 </div>
                                 <div class="dia-eixo" :title="feriadoDo(coluna.dia) ? `${coluna.dia}, feriado: ${feriadoDo(coluna.dia)}` : undefined">
                                     <span class="dia-num">{{ coluna.dia }}</span>
@@ -430,6 +443,16 @@ function verAnteriores() {
                                     >
                                         <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7.5-8" /></svg>
                                         <span class="rompe" aria-hidden="true"><i v-for="k in 10" :key="k" :style="{ '--a': `${(k - 1) * 36}deg` }" /><b /></span>
+                                    </button>
+                                    <button
+                                        v-if="coluna.maisPagamentos"
+                                        type="button"
+                                        class="pt pt-mais"
+                                        :style="{ '--j': NIVEIS_POR_DIA - 1 }"
+                                        :aria-label="rotuloDoMais(coluna.maisPagamentos)"
+                                        @click="irParaAsListas"
+                                    >
+                                        <span aria-hidden="true">{{ textoDoMais(coluna.maisPagamentos) }}</span>
                                     </button>
                                 </div>
                             </div>
@@ -549,6 +572,8 @@ function verAnteriores() {
 .pt-hoje { background: var(--color-tinta-laranja); color: #fff; }
 .pt-vencida { background: var(--color-tinta-vermelha); color: #fff; }
 .pt-recebida { background: var(--recebido); width: var(--pt-alt); }
+/* "+N": o que passou do teto da pilha do dia; as listas abaixo mostram tudo. Tracejado = não é uma cobrança só. */
+.pt-mais { background: var(--color-superficie); border: 2px dashed var(--tinta); color: var(--tinta); font-size: 12px; }
 .pt:hover, .pt.aceso { transform: scale(1.12); z-index: 5; }
 .pt.aceso { box-shadow: 0 0 0 2px var(--color-superficie), 0 0 0 4.5px var(--color-carbono); }
 .pt.sel { box-shadow: 0 0 0 2px var(--color-superficie), 0 0 0 4.5px var(--tinta); z-index: 5; }
