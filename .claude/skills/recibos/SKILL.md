@@ -1056,6 +1056,11 @@ o relatório mostra a parte que existe.
   (`node:util` sem `styleText`). E o App passa **todas** as variáveis como `--build-arg` — senhas ficam no log do
   build. Por isso Compose.
 - **Domínio com "Compose Service" vazio** = 502 "Service is not reachable", sem nenhuma requisição no log do Apache.
+- **502 por ~3 min logo depois de cada Deploy (visto em 2026-11-07, só no domínio que passa pelo bunker):** o container
+  novo ganha IP novo e o BunkerWeb tenta o antigo (`connect() failed (113: Host is unreachable) ... upstream:
+  "http://10.11.0.22:80"`; 21:14:41 a 21:17:47). Some sozinho; o app não caiu e o `Dockerfile`/compose não mudaram. Teste
+  rápido: `*.easypanel.host/up` (direto no app) responde 200 enquanto o domínio do bunker dá 502. Detalhes e comandos de
+  conferência no README, "Produção na VPS". Diagnóstico feito por SSH só com leitura (Marcos autorizou naquela mensagem).
 - O container só entra na rede interna do EasyPanel (IP `10.11.x.x`) depois que o domínio aponta para ele; antes
   ficava só na rede do compose (`172.20.x.x`).
 - Erro `could not translate host name` = `DB_HOST` errado no painel (aconteceu com um `1` sobrando). O `.env` local

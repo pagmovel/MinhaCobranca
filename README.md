@@ -59,6 +59,14 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
   passarem a gerar links `http://` (conteúdo misto), o problema está nesse cabeçalho, não no Laravel.
 - Métodos liberados no BunkerWeb: `GET|POST|HEAD|PUT|PATCH|DELETE`. Rota nova com outro método (ou webhook de
   gateway de pagamento) precisa ser liberada lá também — senão volta 405/403 do BunkerWeb, não do Laravel.
+- **Logo depois de um Deploy o domínio pode dar 502 por uns 3 minutos, e some sozinho.** Medido em 2026-11-07: de 21:14:41
+  a 21:17:47, 11 erros `connect() failed (113: Host is unreachable) ... upstream: "http://10.11.0.22:80"` no log do
+  BunkerWeb. O container novo ganha IP novo (10.11.0.22 → 10.11.0.23) e o BunkerWeb ainda tenta o antigo; o app estava de
+  pé o tempo todo (`restart=0`, Apache em `resuming normal operations`). Não vem do `Dockerfile`, do compose nem da
+  migração. Para conferir: `docker exec meus_projetos_bunker-bunkerweb-1 nslookup meus_projetos_gerenciador_cobrancas_app`
+  (tem de dar o IP atual do container) e abrir o endereço de reserva `*.easypanel.host/up` (vai direto no app, sem o
+  bunker). `[A VERIFICAR]` quanto tempo o BunkerWeb guarda o IP e se dá para encurtar (`resolver 127.0.0.11` em
+  `/etc/nginx/http.conf` do container do bunker; `proxy_pass $backend0` no site). Houve 1 erro igual em 2026-11-05 09:17.
 - Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
 - **Migração no deploy:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` a cada subida do container
   (só aplica o que está pendente; decisão do Marcos, reafirmada em 2026-11-07; travado por
