@@ -33,9 +33,12 @@ class PainelController extends Controller
 
         $inicio = $hoje->startOfMonth();
         $fim = $hoje->endOfMonth();
-        $doMes = fn () => $usuario->cobrancas()
-            ->where('status', '!=', StatusCobranca::Cancelada)
-            ->whereBetween('vencimento', [$inicio, $fim]);
+        // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento — o valor pago, já sem o desconto.
+        $recebido = (int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)
+            ->whereBetween('pago_em', [$inicio, $fim])->sum(DB::raw(Cobranca::VALOR_PAGO_SQL));
+        // O que ainda falta entrar: as pendentes que vencem no mês, pelo valor cheio. Cancelada e paga em outro mês ficam fora.
+        $aReceber = (int) $usuario->cobrancas()->where('status', StatusCobranca::Pendente)
+            ->whereBetween('vencimento', [$inicio, $fim])->sum('valor_centavos');
 
         // As três listas vêm por ajax de /painel/dados; só a página gera.
         return Inertia::render('Painel', [
@@ -51,11 +54,12 @@ class PainelController extends Controller
             'diasAviso' => $usuario->dias_aviso,
             'modelosMensagem' => $usuario->opcoesDeModelosMensagem(),
             'prestadorNome' => $usuario->nome_fantasia ?: $usuario->name,
+            // Decisão do Marcos (2026-11-07): o previsto é o mesmo número da Régua e do Almanaque (a soma dos pontos de
+            // `mes()`): recebido + pendentes do mês. Antes era o valor cheio de tudo que vencia no mês, e o desconto
+            // de uma cobrança já paga aparecia como se ainda faltasse receber.
             'resumo' => [
-                'previsto' => Dinheiro::formatar((int) $doMes()->sum('valor_centavos')),
-                // Regime de caixa (D1): o que entrou no mês, qualquer que seja o vencimento — o valor pago, já sem o desconto.
-                'recebido' => Dinheiro::formatar((int) $usuario->cobrancas()->where('status', StatusCobranca::Paga)
-                    ->whereBetween('pago_em', [$inicio, $fim])->sum(DB::raw(Cobranca::VALOR_PAGO_SQL))),
+                'previsto' => Dinheiro::formatar($recebido + $aReceber),
+                'recebido' => Dinheiro::formatar($recebido),
             ],
         ]);
     }

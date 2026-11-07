@@ -23,9 +23,8 @@ sem depender do histórico.
   "Cadastrar/Salvar feriado" não gravava; Coach e Holofote fora do canto da janela; Esc fechando dois diálogos).
 - **Pendente para o futuro, por decisão do Marcos:** os temas **Fluxo**, **Livro-caixa** e **Mosaico** (tarefas 4.2,
   4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia". **Achados abertos** (lista completa na skill
-  `recibos`, "Fase 29: temas visuais", "Achados abertos"): `desfazer-baixa` e `corrigir-pagamento` dão 500 com
-  `senha[]=x` e o campo `senha` das baixas ainda é aparado; contraste do Talão (`text-grafite/60`, 4,05:1); títulos da
-  Bricolage mais largos que nos protótipos; "Previsto" diferente entre Talão e Régua; trocar de tema na tela do Painel
+  `recibos`, "Fase 29: temas visuais", "Achados abertos"): contraste do Talão (`text-grafite/60`, 4,05:1); títulos da
+  Bricolage mais largos que nos protótipos; trocar de tema na tela do Painel
   perde uma baixa aberta; Safari, Firefox e leitor de tela não testados; `docs/modelos-painel.html` e
   `docs/painel-lista.html` (protótipos não escolhidos) sem commit, esperando o Marcos dizer se apaga.
 - **É do Marcos:** o **deploy** e a variável **`TEMA_PADRAO`** no `.env` de produção (`talao`, `regua` ou `almanaque`;

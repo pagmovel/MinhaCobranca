@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 /**
@@ -194,6 +195,25 @@ class PainelMesTest extends TestCase
         $recebidas = $lista('recebidas');
         $this->assertSame($recebidas['quantidade'], $etapas['recebida']);
         $this->assertSame($recebidas['soma_centavos'], array_sum(array_column(array_filter($resposta['pontos'], fn (array $ponto) => $ponto['etapa'] === 'recebida'), 'pago_centavos')));
+    }
+
+    /** O "Previsto" do Talão (servidor) e o da Régua e do Almanaque (soma dos pontos, no navegador) são o mesmo número. */
+    public function test_previsto_do_painel_e_a_soma_dos_pontos_do_mes(): void
+    {
+        $this->cobranca(['valor_centavos' => 10000]);                                                                       // a enviar
+        $this->cobranca(['valor_centavos' => 4000, 'enviado_em' => now()]);                                                 // aguardando
+        $this->cobranca(['valor_centavos' => 21000, 'desconto_centavos' => 2000] + $this->paga('2026-10-02', '2026-10-03')); // paga: 190,00
+        $this->cobranca(['valor_centavos' => 5000] + $this->paga('2026-10-04', '2026-09-25'));                              // venceu em setembro, pagou em outubro
+        $this->cobranca(['valor_centavos' => 7000] + $this->paga('2026-09-20', '2026-10-15'));                              // pagou em setembro: fora
+        $this->cobranca(['valor_centavos' => 9000, 'status' => StatusCobranca::Cancelada]);                                 // cancelada: fora
+
+        $somaDosPontos = array_sum(array_map(
+            fn (array $ponto) => $ponto['etapa'] === 'recebida' ? $ponto['pago_centavos'] : $ponto['valor_centavos'],
+            $this->mes()['pontos'],
+        ));
+
+        $this->assertSame(38000, $somaDosPontos);
+        $this->actingAs($this->usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page->where('resumo.previsto', '380,00'));
     }
 
     public function test_resumo_de_hoje(): void

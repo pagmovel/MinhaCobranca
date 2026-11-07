@@ -175,6 +175,16 @@ test('somas_por_etapa', () => {
     assert.deepEqual(somasPorEtapa(pontos), { recebido: 9000, aguardando: 10000, enviar: 20000, previsto: 39000 });
 });
 
+test('previsto_e_o_mesmo_numero_no_total_e_no_ultimo_dia_da_linha', () => {
+    // O servidor (Talão) soma recebido + pendentes do mês; a Régua e o Almanaque somam os pontos: tem de dar igual.
+    const pontos = [ponto(1, 'recebida', 2, 2, 19000), ponto(2, 'recebida', 3, 4, 5000), ponto(3, 'aguardando', 4), ponto(4, 'enviar', 20)];
+    const { recebido, aguardando, enviar, previsto } = somasPorEtapa(pontos);
+
+    assert.equal(previsto, recebido + aguardando + enviar);
+    assert.equal(previsto, 24000 + 20000);
+    assert.equal(previstoPorDia(pontos, 30, 10).at(-1), previsto);
+});
+
 test('regua_comeca_embaixo_e_termina_no_previsto', () => {
     const pontos = [ponto(1, 'recebida', 1, 1, 5000), ponto(2, 'enviar', 3)];
     const recebido = acumuladoPorDia(pontos, 4);

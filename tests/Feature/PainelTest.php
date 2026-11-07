@@ -128,10 +128,10 @@ class PainelTest extends TestCase
 
         $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
             ->where('resumo.recebido', '150,00')
-            ->where('resumo.previsto', '120,00'));
+            ->where('resumo.previsto', '150,00')); // sem pendente no mês: o previsto é só o que entrou
     }
 
-    /** Fase 26: o recebido é o valor pago (valor − desconto); o previsto continua com o valor cheio. */
+    /** Fase 26: o recebido é o valor pago (valor − desconto); o previsto parte dele (sem pendente no mês, é igual). */
     public function test_recebido_do_mes_e_as_recebidas_somam_o_valor_pago(): void
     {
         $usuario = User::factory()->create();
@@ -147,13 +147,13 @@ class PainelTest extends TestCase
 
         $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
             ->where('resumo.recebido', '125,00')
-            ->where('resumo.previsto', '260,00'));
+            ->where('resumo.previsto', '125,00'));
         $recebidas = $this->getJson('/painel/dados?lista=recebidas')->assertOk()
             ->assertJsonPath('total_geral', ['quantidade' => 3, 'soma_centavos' => 12500]);
         $this->assertEqualsCanonicalizing(['75,00', '50,00', '0,00'], array_column($recebidas->json('linhas'), 'valor_pago'));
     }
 
-    /** Fase 27: o recebido soma também multa, juros e outros; o previsto continua com o valor cheio. */
+    /** Fase 27: o recebido soma também multa, juros e outros; o previsto parte dele (sem pendente no mês, é igual). */
     public function test_recebido_do_mes_e_as_recebidas_somam_os_acrescimos(): void
     {
         $usuario = User::factory()->create();
@@ -169,10 +169,36 @@ class PainelTest extends TestCase
 
         $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
             ->where('resumo.recebido', '383,20')
-            ->where('resumo.previsto', '430,00'));
+            ->where('resumo.previsto', '383,20'));
         $recebidas = $this->getJson('/painel/dados?lista=recebidas')->assertOk()
             ->assertJsonPath('total_geral', ['quantidade' => 3, 'soma_centavos' => 38320]);
         $this->assertEqualsCanonicalizing(['240,20', '50,00', '93,00'], array_column($recebidas->json('linhas'), 'valor_pago'));
+    }
+
+    /**
+     * Decisão do Marcos (2026-11-07): o "Previsto" do Talão é o mesmo da Régua e do Almanaque, em regime de caixa: o que
+     * já entrou no mês (valor pago, qualquer que seja o vencimento) mais as pendentes que vencem no mês, pelo valor cheio.
+     * Cancelada fica fora; paga em outro mês também.
+     */
+    public function test_previsto_e_o_recebido_do_mes_mais_as_pendentes_que_vencem_no_mes(): void
+    {
+        $usuario = User::factory()->create();
+        $cliente = Cliente::factory()->for($usuario)->create();
+        $nova = fn (array $dados) => Cobranca::factory()->for($usuario)->for($cliente)->create($dados);
+        $nova(['vencimento' => '2026-10-20', 'valor_centavos' => 10000]); // pendente do mês: 100,00
+        $nova(['vencimento' => '2026-11-02', 'valor_centavos' => 3000]);  // pendente de novembro: fora
+        $nova(['vencimento' => '2026-10-03', 'valor_centavos' => 21000])
+            ->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-02', 'desconto_centavos' => 2000])->save(); // pago 190,00
+        $nova(['vencimento' => '2026-09-25', 'valor_centavos' => 5000])
+            ->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-10-04'])->save(); // venceu em setembro, pago em outubro: 50,00
+        $nova(['vencimento' => '2026-10-15', 'valor_centavos' => 7000])
+            ->forceFill(['status' => StatusCobranca::Paga, 'pago_em' => '2026-09-20'])->save(); // pago em setembro: fora
+        $nova(['vencimento' => '2026-10-12', 'valor_centavos' => 9000, 'status' => StatusCobranca::Cancelada]); // cancelada: fora
+
+        // Pelo vencimento (a conta antiga) daria 380,00: aqui são 240,00 recebidos + 100,00 por receber.
+        $this->actingAs($usuario)->get('/painel')->assertInertia(fn (Assert $page) => $page
+            ->where('resumo.recebido', '240,00')
+            ->where('resumo.previsto', '340,00'));
     }
 
     /** Fase 27: o painel mostra o valor do dia de cada pendente com regra, mas soma as pendentes pelo valor cheio. */
