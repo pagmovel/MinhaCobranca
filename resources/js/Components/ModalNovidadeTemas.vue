@@ -45,7 +45,7 @@ function depois() {
 </script>
 
 <template>
-    <Modal :aberto="true" titulo="Agora você escolhe a aparência do sistema" largura="max-w-xl" fechar-no-fundo @fechar="depois">
+    <Modal :aberto="true" titulo="Agora você escolhe a aparência do sistema" largura="max-w-xl" centralizado fechar-no-fundo @fechar="depois">
         <div class="flex flex-col gap-5 text-sm">
             <p class="leading-relaxed">{{ texto }}</p>
 

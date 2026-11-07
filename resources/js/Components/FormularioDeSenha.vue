@@ -2,19 +2,22 @@
 import { computed, nextTick, reactive, ref, useId } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import Campo from './Campo.vue';
-import { MENSAGEM_DE_FALHA, mensagemDaFalhaHttp, primeiroCampoComErro, validarCamposDeSenha } from '../senha.js';
+import { CAMPOS_DA_SENHA, MENSAGEM_DE_FALHA, mensagemDaFalhaHttp, primeiroCampoComErro, validarCamposDeSenha } from '../senha.js';
 
 /**
- * Seção "Alterar senha" do painel do usuário. Erro aparece junto do campo e o foco vai ao primeiro campo com erro; os
- * campos só são limpos no sucesso (a senha nunca volta do servidor, então apagar no erro obrigaria a digitar tudo de
- * novo). A senha só passa pelo `router.put`: não vai para `console`, `localStorage` nem props. Fechar o painel
- * desmonta o formulário e descarta o que foi digitado, de propósito.
+ * Formulário "Alterar senha", dentro do popup `ModalAlterarSenha.vue`. Erro aparece junto do campo e o foco vai ao
+ * primeiro campo com erro; os campos só são limpos no sucesso (a senha nunca volta do servidor, então apagar no erro
+ * obrigaria a digitar tudo de novo). No sucesso a tela troca os campos pela confirmação e pelo botão "Fechar", que
+ * recebe o foco. A senha só passa pelo `router.put`: não vai para `console`, `localStorage` nem props. Quem fecha o
+ * popup chama `limpar()` (exposto), que apaga estado e DOM na hora: a janela leva ~200 ms para sair da tela e o que foi
+ * digitado não pode ficar nela.
  */
+const emit = defineEmits(['alterada', 'fechar']);
+
 const pagina = usePage();
 const email = computed(() => pagina.props.auth.user?.email ?? '');
 
 const base = useId();
-const idCorpo = `${base}-corpo`;
 const idDoCampo = (nome) => `${base}-${nome}`;
 
 const campos = [
@@ -23,13 +26,13 @@ const campos = [
     { nome: 'nova_senha_confirmation', rotulo: 'Repita a nova senha', autocomplete: 'new-password' },
 ];
 
-const aberta = ref(false);
 const mostrar = ref(false);
 const enviando = ref(false);
 const valores = reactive({ senha_atual: '', nova_senha: '', nova_senha_confirmation: '' });
 const erros = ref({});
 const aviso = ref(''); // limite de tentativas, erro de servidor ou de rede
 const sucesso = ref(false);
+const botaoFechar = ref(null);
 
 function focarPrimeiroComErro() {
     const campo = primeiroCampoComErro(erros.value);
@@ -46,10 +49,24 @@ function digitou(nome) {
     }
 }
 
-function limpar() {
+function apagarCampos() {
     Object.keys(valores).forEach((nome) => { valores[nome] = ''; });
     mostrar.value = false;
 }
+
+/** Apaga as senhas do estado e do DOM. O DOM é direto: a janela que está saindo não reage mais ao estado. */
+function limpar() {
+    apagarCampos();
+    CAMPOS_DA_SENHA.forEach((nome) => {
+        const entrada = document.getElementById(idDoCampo(nome));
+        if (entrada) {
+            entrada.value = '';
+            entrada.type = 'password';
+        }
+    });
+}
+
+defineExpose({ limpar });
 
 function enviar() {
     if (enviando.value) {
@@ -69,8 +86,11 @@ function enviar() {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
-            limpar();
+            apagarCampos();
             sucesso.value = true;
+            emit('alterada');
+            // Os campos e o "Salvar" saem da tela; sem isto o foco cairia no `body`.
+            nextTick(() => botaoFechar.value?.focus());
         },
         onError: (erro) => {
             erros.value = erro;
@@ -93,70 +113,48 @@ function enviar() {
 </script>
 
 <template>
-    <section class="px-6 py-5">
-        <h3 class="font-titulo text-base font-semibold">
-            <button
-                type="button"
-                class="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-carbono"
-                :aria-expanded="aberta"
-                :aria-controls="idCorpo"
-                @click="aberta = !aberta"
-            >
-                Alterar senha
-                <svg
-                    aria-hidden="true"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="flex-none transition-transform"
-                    :class="aberta ? 'rotate-180' : ''"
+    <form class="flex flex-col gap-4" novalidate @submit.prevent="enviar">
+        <!-- Só para o gerenciador de senhas do navegador saber de qual conta é a senha nova. -->
+        <input type="text" autocomplete="username" :value="email" readonly tabindex="-1" aria-hidden="true" class="sr-only">
+
+        <template v-if="!sucesso">
+            <Campo v-for="campo in campos" :id="idDoCampo(campo.nome)" :key="campo.nome" :rotulo="campo.rotulo" :erro="erros[campo.nome] ?? ''">
+                <input
+                    :id="idDoCampo(campo.nome)"
+                    v-model="valores[campo.nome]"
+                    :type="mostrar ? 'text' : 'password'"
+                    :name="campo.nome"
+                    :autocomplete="campo.autocomplete"
+                    :autofocus="campo.nome === 'senha_atual' ? true : undefined"
+                    class="entrada"
+                    :class="erros[campo.nome] ? 'border-tinta-vermelha' : ''"
+                    :aria-invalid="erros[campo.nome] ? 'true' : undefined"
+                    :aria-describedby="erros[campo.nome] ? `${idDoCampo(campo.nome)}-erro` : undefined"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    @input="digitou(campo.nome)"
                 >
-                    <path d="M2.5 4.5L6 8l3.5-3.5" />
-                </svg>
+            </Campo>
+
+            <button type="button" class="botao-secundario self-start px-3 py-1 text-xs" @click="mostrar = !mostrar">
+                {{ mostrar ? 'Ocultar senhas' : 'Mostrar senhas' }}
             </button>
-        </h3>
+        </template>
 
-        <Transition name="surgir">
-            <form v-show="aberta" :id="idCorpo" class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="enviar">
-                <!-- Só para o gerenciador de senhas do navegador saber de qual conta é a senha nova. -->
-                <input type="text" autocomplete="username" :value="email" readonly tabindex="-1" aria-hidden="true" class="sr-only">
+        <p v-if="aviso" role="alert" class="border-l-4 border-tinta-vermelha pl-3 text-sm">{{ aviso }}</p>
+        <div role="status">
+            <p v-if="sucesso" class="border-l-4 border-tinta-verde pl-3 text-sm">Senha alterada.</p>
+        </div>
 
-                <Campo v-for="campo in campos" :id="idDoCampo(campo.nome)" :key="campo.nome" :rotulo="campo.rotulo" :erro="erros[campo.nome] ?? ''">
-                    <input
-                        :id="idDoCampo(campo.nome)"
-                        v-model="valores[campo.nome]"
-                        :type="mostrar ? 'text' : 'password'"
-                        :name="campo.nome"
-                        :autocomplete="campo.autocomplete"
-                        class="entrada"
-                        :class="erros[campo.nome] ? 'border-tinta-vermelha' : ''"
-                        :aria-invalid="erros[campo.nome] ? 'true' : undefined"
-                        :aria-describedby="erros[campo.nome] ? `${idDoCampo(campo.nome)}-erro` : undefined"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        @input="digitou(campo.nome)"
-                    >
-                </Campo>
-
-                <button type="button" class="botao-secundario self-start px-3 py-1 text-xs" @click="mostrar = !mostrar">
-                    {{ mostrar ? 'Ocultar senhas' : 'Mostrar senhas' }}
-                </button>
-
-                <p v-if="aviso" role="alert" class="border-l-4 border-tinta-vermelha pl-3 text-sm">{{ aviso }}</p>
-                <div role="status">
-                    <p v-if="sucesso" class="border-l-4 border-tinta-verde pl-3 text-sm">Senha alterada.</p>
-                </div>
-
-                <!-- Sem `disabled` durante o envio: um botão desativado perde o foco e o teclado voltaria ao início do painel. -->
-                <button type="submit" class="botao w-full" :class="enviando ? 'opacity-50' : ''" :aria-disabled="enviando">
+        <div class="flex flex-wrap justify-end gap-2">
+            <button v-if="sucesso" ref="botaoFechar" type="button" class="botao" @click="emit('fechar')">Fechar</button>
+            <template v-else>
+                <button type="button" class="botao-secundario" @click="emit('fechar')">Cancelar</button>
+                <!-- Sem `disabled` durante o envio: um botão desativado perde o foco e o teclado voltaria ao início da janela. -->
+                <button type="submit" class="botao" :class="enviando ? 'opacity-50' : ''" :aria-disabled="enviando">
                     {{ enviando ? 'Salvando…' : 'Salvar nova senha' }}
                 </button>
-            </form>
-        </Transition>
-    </section>
+            </template>
+        </div>
+    </form>
 </template>
