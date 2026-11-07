@@ -204,7 +204,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 5: dados do mês (Marco 3)
 
-### Tarefa 5.1: `GET /painel/mes`. Estado: pendente
+### Tarefa 5.1: `GET /painel/mes`. Estado: testada (2026-11-07; 10 testes PHP verdes em `PainelMesTest`; sem front, `npm run build` não se aplica)
 - `PainelController::mes` devolve `{ mes, hoje, dias, feriados: { dia: nome }, fim_de_semana: number[], pontos: Array<{ id, cliente, valor_centavos, vencimento_dia, etapa, situacao, pago_dia, pago_centavos }>, vencidas: { quantidade, soma_centavos, itens }, hoje_resumo: { vence_hoje, para_avisar, para_enviar }, anteriores: { quantidade, soma_centavos } }`. Vencidas e anteriores incluem meses passados; usa `DiasUteis` para feriados e fins de semana; carrega o cliente de uma vez (sem N+1).
 - **Testes** (`tests/Feature/Temas/PainelMesTest.php`): `test_so_traz_cobrancas_do_usuario_logado` (foco 3), `test_vencida_de_mes_anterior_entra_em_vencidas_e_anteriores`, `test_pago_fora_do_mes_nao_entra_nos_pontos`, `test_marca_feriado_e_fim_de_semana`, `test_numero_de_consultas_nao_cresce_com_as_cobrancas`.
 
