@@ -13,9 +13,9 @@
 
 ---
 
-## Andamento (atualizado em 2026-11-07, depois do despacho B: tarefas 6.1 e 8.1)
+## Andamento (atualizado em 2026-11-07, depois da conferência geral: tarefa 9.1)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (33 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **21 estão prontas e 2 faltam** (9.1 e 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); falta só o fechamento: a conferência geral e a documentação final (o **Marco 4**, Régua e Almanaque, está pronto). PHP 965 e JS 414 verdes.
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (37 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **22 estão prontas e 1 falta** (9.2, a documentação final); nenhum agente de interface em andamento. Os **Marcos 1, 2, 3 e 4** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e os temas **Régua** e **Almanaque**) e a conferência geral foi feita (matriz de 132 células sem reprovação, ver a Tarefa 9.1). PHP 965 e JS 420 verdes.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -40,23 +40,26 @@
 | | 7.2 `LinhaDoTempoDoMes.vue` | pronta (testada) | `97071a0` |
 | | 7.3 `PainelRegua` e tema Régua | pronta (testada) | `24873a2`, `cc7d1c2`, `58929b9` |
 | 8 Almanaque | 8.1 tema Almanaque | pronta (testada) | commit da 8.1 (`git log --grep 'Tarefa 8.1'`), mais `24873a2` e `cc7d1c2` da base |
-| 9 fechamento | 9.1 conferência geral | falta | |
+| 9 fechamento | 9.1 conferência geral | pronta (testada) | `7d3fc73`, `0dc6b4d`, `3a60d18` (defeitos achados) e o commit da 9.1 (`git log --grep 'Tarefa 9.1'`) |
 | | 9.2 documentação final | falta | |
 
 **O que falta, em ordem:**
 1. **Feitas:** a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
 2. **Feitas:** 7.2 e 7.3 (linha do tempo e composição da Régua).
 3. **Feitas:** 6.1 (o Mosaico em blocos com a linha do tempo, composição do Almanaque) e 8.1 (ícones e pílulas do menu, contador dourado, ajuste fino do tema).
-4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
+4. **Feita:** 9.1 (matriz de conferência: 3 temas, 22 telas logadas, 1440 e 390 px). **Falta:** 9.2 (documentação), o merge `--no-ff` no `main` e o push.
 5. **Deploy é do Marcos**, e a variável `TEMA_PADRAO` no `.env` de produção também. **A migração das duas colunas de `users` não precisa de passo manual:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` em toda subida do container (decisão do Marcos, 2026-10-12, reafirmada em 2026-11-07; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`).
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 
-**Testes agora:** PHP 965 verdes (os 3 testes a mais, da guarda do Dockerfile, vieram do commit `e0d16eb`) e JS 414 verdes (conferidos pelo agente do despacho B, depois do último commit; quem coordena reconfere).
+**Testes agora:** PHP 965 verdes (os 3 testes a mais, da guarda do Dockerfile, vieram do commit `e0d16eb`) e JS 420 verdes (414 do despacho B mais 6 da 9.1: `camposDoUseForm` 2, `pilhaDeDialogos` 3 e `aparecerSemPreenchimento` 1; `npm run build` ok na árvore e na cópia).
 
 **Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
 
 **Achados que pedem atenção do Marcos:**
+- **Corrigidos na 9.1, três defeitos que já existiam no `main`:** (1) **"Cadastrar feriado" e "Salvar feriado" no Perfil não gravavam nada** (o campo `data` do `useForm` de `Feriados.vue` sobrescreve o método `data()` do Inertia; era o erro de console de `/perfil`; `7d3fc73`); (2) o **Coach "Primeiros passos" e o Holofote** ficavam no fim do conteúdo e não no canto da janela (a animação da página usava `both`; no Almanaque a 1440x900 o Coach caía fora da tela; `3a60d18`); (3) com qualquer `Modal` por cima do painel do usuário, um Esc fechava os dois (hoje só alcançável forçando, `0dc6b4d`). **O deploy do `main` ainda leva o defeito dos feriados**: sai com o merge desta branch.
+- Contraste (9.1): no Talão, 12 usos de `text-grafite/60` (4,05 sobre a superfície) e, em todos os temas, o item bloqueado do menu (`text-menu-texto/50`: Talão 3,06, **Régua 2,36**, Almanaque 3,52). Sobre o papel, `grafite/60` fica em 4,46 (Régua) e 4,36 (Almanaque). Nenhum corrigido.
+- Exceção conhecida da 9.1: no próprio Painel, trocar de tema refaz a composição e um formulário de baixa aberto numa linha se perde (o `<main>` e as outras telas ficam intactos).
 - **Corrigido (`803acd9`):** a troca de senha aparava espaços nas pontas (`TrimStrings`), e quem tinha espaço na senha nunca conseguia trocá-la. **Aberto:** o campo `senha` das baixas e correções ainda é aparado (mesmo defeito para esse tipo de senha); não mexi por mudar uma tela antiga.
 - Defeito antigo, não corrigido: `desfazer-baixa` e `corrigir-pagamento` dão erro 500 se alguém mandar `senha[]=x`.
 - Fontes do Vite em dobro (woff2 e woff por peso; a página usa o `.woff`): os preloads de woff2 são em parte inúteis. Já era assim; tamanho não medido.
@@ -313,8 +316,8 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 9: fechamento
 
-### Tarefa 9.1: conferência geral. Estado: pendente
-- Matriz **6 temas × telas logadas × 1440 e 390** com o browser-agent: sem erro de console, sem rolagem horizontal, sem texto ilegível, modais (`Modal`, `ModalBoasVindas`, popup, `CoachDeConfiguracao`) acima do painel lateral e legíveis. Repetir a prova do foco de revisão 1. Suíte completa: PHP, JS e `npm run build`.
+### Tarefa 9.1: conferência geral. Estado: testada (2026-11-07; matriz de 3 temas x 22 telas logadas x 1440x900 e 390x844 = 132 células no browser-agent, todas sem erro de console, sem rolagem lateral, sem texto cortado, com tema e fonte certos desde o primeiro desenho e o painel do usuário abrindo e fechando; foco de revisão 1 provado com o seletor de verdade; modais acima do painel nos 3 temas e 2 larguras; 3 defeitos antigos corrigidos com teste; 965 PHP e 420 JS verdes e `npm run build` ok; detalhes na skill, "Acertos (Tarefa 9.1)". Não é "validada": falta o Marcos olhar as telas.)
+- Matriz **3 temas (Talão, Régua, Almanaque) × telas logadas × 1440 e 390** com o browser-agent: sem erro de console, sem rolagem horizontal, sem texto ilegível, modais (`Modal`, `ModalBoasVindas`, popup, `CoachDeConfiguracao`) acima do painel lateral e legíveis. Repetir a prova do foco de revisão 1. Suíte completa: PHP, JS e `npm run build`. (Os outros 3 temas do plano original, Fluxo, Livro-caixa e Mosaico, estão fora desta execução.)
 
 ### Tarefa 9.2: documentação. Estado: pendente
 - Skill `recibos`: seção "Fase 29, temas" (acertos e pegadinhas, `TEMA_PADRAO`, como criar um tema novo em 4 passos). Handoff no roteiro, `.claude/MEMORY.md`, `README` (variável de ambiente e inventário). Avisar o Marcos de que `TEMA_PADRAO` precisa estar no `.env` de produção e que o deploy roda a migração.
