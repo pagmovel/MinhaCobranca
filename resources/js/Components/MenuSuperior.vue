@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
                         {{ item.rotulo }}
                         <span
                             v-if="item.contador"
-                            class="rounded-full bg-tinta-vermelha px-2 text-xs font-semibold text-white"
+                            class="rounded-full bg-contador-fundo px-2 text-xs font-semibold text-contador-texto"
                             :aria-label="`${item.contador} cadastros aguardando liberação`"
                         >{{ item.contador }}</span>
                     </Link>
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
                                 {{ item.rotulo }}
                                 <span
                                     v-if="item.contador"
-                                    class="rounded-full bg-tinta-vermelha px-2 text-xs font-semibold text-white"
+                                    class="rounded-full bg-contador-fundo px-2 text-xs font-semibold text-contador-texto"
                                     :aria-label="`${item.contador} cadastros aguardando liberação`"
                                 >{{ item.contador }}</span>
                             </Link>

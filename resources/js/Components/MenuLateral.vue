@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { explicacaoDoBloqueio } from '../menuPrincipal.js';
+import { explicacaoDoBloqueio, iconeDoItem } from '../menuPrincipal.js';
 import { iniciaisDoNome } from '../iniciais.js';
 import LogoRecibo from './LogoRecibo.vue';
 
@@ -25,7 +25,7 @@ const ativo = (href) => page.url.startsWith(href);
 
 <template>
     <header class="flex items-center justify-between border-b border-menu-linha bg-menu-fundo px-4 py-3 text-menu-texto md:hidden">
-        <span class="items-center gap-2 font-semibold [display:var(--marca-exibicao,block)]">
+        <span class="items-center gap-2 font-titulo font-semibold [display:var(--marca-exibicao,block)] [padding-right:var(--marca-folga,0px)]">
             <LogoRecibo class="size-6" />
             Gerenciador de Cobranças
         </span>
@@ -59,15 +59,16 @@ const ativo = (href) => page.url.startsWith(href);
         aria-label="Principal"
         :class="[menuAberto ? 'block' : 'hidden', 'border-b border-menu-linha bg-menu-fundo text-menu-texto md:flex md:flex-col md:border-b-0 md:border-r']"
     >
-        <p class="hidden items-center gap-3 px-5 pt-6 pb-4 font-semibold md:[display:var(--marca-exibicao,block)]">
+        <p class="hidden items-center gap-3 px-5 pt-6 pb-4 font-titulo font-semibold md:[display:var(--marca-exibicao,block)]">
             <LogoRecibo />
             Gerenciador de Cobranças
         </p>
-        <ul class="flex flex-col py-2">
+        <!-- Ícone, pílula e contador dourado vêm de variáveis do tema (almanaque.css); sem elas o item é o reto do Talão. -->
+        <ul class="flex flex-col py-2 [gap:var(--menu-lista-gap,0px)] [padding-inline:var(--menu-lista-px,0px)]">
             <li v-for="item in itens" :key="item.href">
                 <span
                     v-if="item.bloqueado"
-                    class="flex items-center justify-between px-5 py-2 text-sm text-menu-texto/50"
+                    class="flex items-center justify-between py-2 text-sm text-menu-texto/50 [border-radius:var(--menu-item-raio,0px)] [min-height:var(--menu-item-altura,0px)] [padding-inline:var(--menu-item-px,1.25rem)]"
                     :title="explicacaoDoBloqueio(item.href)"
                 >
                     🔒 {{ item.rotulo }}
@@ -75,15 +76,18 @@ const ativo = (href) => page.url.startsWith(href);
                 <Link
                     v-else
                     :href="item.href"
-                    class="flex items-center justify-between px-5 py-2 text-sm hover:bg-menu-ativo"
+                    class="flex items-center py-2 text-sm hover:bg-menu-ativo [border-radius:var(--menu-item-raio,0px)] [gap:var(--menu-item-gap,0px)] [min-height:var(--menu-item-altura,0px)] [padding-inline:var(--menu-item-px,1.25rem)]"
                     :class="ativo(item.href) ? 'bg-menu-ativo font-semibold text-menu-texto-ativo' : ''"
                     :aria-current="ativo(item.href) ? 'page' : undefined"
                     @click="menuAberto = false"
                 >
+                    <svg class="flex-none [display:var(--menu-icone-exibicao,none)]" aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path :d="iconeDoItem(item.href)" />
+                    </svg>
                     {{ item.rotulo }}
                     <span
                         v-if="item.contador"
-                        class="rounded-full bg-tinta-vermelha px-2 text-xs font-semibold text-white"
+                        class="ml-auto rounded-full bg-contador-fundo px-2 text-center text-xs leading-[var(--contador-altura,1rem)] font-semibold text-contador-texto [height:var(--contador-altura,auto)] [min-width:var(--contador-largura,0px)]"
                         :aria-label="`${item.contador} cadastros aguardando liberação`"
                     >{{ item.contador }}</span>
                 </Link>

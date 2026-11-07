@@ -23,12 +23,26 @@ html[data-tema='almanaque'] {
     --color-menu-texto-ativo: #FFFFFF; /* .menu a[aria-current] */
     --color-menu-logo: var(--color-ouro); /* .marca svg usa --ouro */
     --color-menu-linha: #2C3768; /* borda do rodapé do menu (usa --menu-ativo) */
+    --color-contador-fundo: #F2B544; /* .contador usa --ouro */
+    --color-contador-texto: #18214A; /* .contador usa --menu */
 
     /* Blocos do Painel (PainelMosaico). O anel fica sobre o bloco Dinheiro (azul de ação): tons claros dos três estados. */
     --color-hoje-fundo: #FFEEDD; /* .hoje */
     --color-anel-recebida: #7DE3D1; /* arco "recebida" do anel */
     --color-anel-aguardando: #F6BE5A;
     --color-anel-enviar: #AEB4F0;
+
+    /* Itens do menu lateral em pílula, com ícone (o Talão não define estas: ícone escondido, item reto e sem altura mínima). */
+    --menu-icone-exibicao: block; /* .menu a svg */
+    --marca-folga: 8px; /* respiro entre o nome do sistema e o avatar no cabeçalho do celular */
+    --menu-lista-px: 8px; /* alinha o ícone com o logo (20px da borda) */
+    --menu-lista-gap: 2px; /* .menu ul */
+    --menu-item-altura: 44px; /* .menu a */
+    --menu-item-px: 12px;
+    --menu-item-gap: 12px;
+    --menu-item-raio: 12px;
+    --contador-largura: 22px; /* .contador */
+    --contador-altura: 22px;
 
     --color-etapa-enviar: #3B47C4; /* --enviar */
     --color-etapa-aguardando: #B45309; /* --aguardando */

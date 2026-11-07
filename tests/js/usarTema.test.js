@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ref } from 'vue';
-import { trocarTema } from '../../resources/js/usarTema.js';
+import { sincronizarTemaDaPagina, trocarTema } from '../../resources/js/usarTema.js';
 
 const talao = { id: 'talao', nome: 'Talão', casca: 'lateral', painel: 'empilhado', linha_do_tempo: false, amostra: ['#F5F7F9'] };
 const regua = { id: 'regua', nome: 'Régua', casca: 'superior', painel: 'regua', linha_do_tempo: true, amostra: ['#FFFFFF'] };
@@ -169,4 +169,48 @@ test('mesmo_tema_grava_e_nao_pede_nada_de_diferente', async () => {
 
     assert.deepEqual(resultado, { ok: true, fontes: 'ok' });
     assert.equal(c.dataset.tema, 'talao');
+});
+
+/** Cenário da visita do Inertia que muda o usuário (login e saída), sem navegador. */
+function visita(temaNaPagina, usuario, emTrocaNaVisita = null) {
+    const dataset = { tema: temaNaPagina };
+    const fontesPedidas = [];
+    sincronizarTemaDaPagina(
+        { props: { auth: { user: usuario }, temas: lista } },
+        { documento: { documentElement: { dataset } }, fontes: (id) => fontesPedidas.push(id), emTroca: ref(emTrocaNaVisita) },
+    );
+
+    return { dataset, fontesPedidas };
+}
+
+test('login_aplica_o_tema_do_usuario_e_busca_as_fontes_dele', () => {
+    const { dataset, fontesPedidas } = visita('talao', { tema: 'almanaque' });
+
+    assert.equal(dataset.tema, 'almanaque');
+    assert.deepEqual(fontesPedidas, ['almanaque']);
+});
+
+test('saida_volta_a_tela_publica_para_o_talao_sem_buscar_fontes', () => {
+    const { dataset, fontesPedidas } = visita('almanaque', null);
+
+    assert.equal(dataset.tema, 'talao');
+    assert.deepEqual(fontesPedidas, []);
+});
+
+test('mesmo_tema_na_pagina_nao_faz_nada', () => {
+    const { dataset, fontesPedidas } = visita('regua', { tema: 'regua' });
+
+    assert.equal(dataset.tema, 'regua');
+    assert.deepEqual(fontesPedidas, []);
+});
+
+test('tema_desconhecido_do_usuario_cai_no_primeiro_da_lista', () => {
+    assert.equal(visita('almanaque', { tema: 'inexistente' }).dataset.tema, 'talao');
+});
+
+test('nao_mexe_durante_uma_troca_em_andamento', () => {
+    const { dataset, fontesPedidas } = visita('almanaque', { tema: 'talao' }, 'almanaque');
+
+    assert.equal(dataset.tema, 'almanaque');
+    assert.deepEqual(fontesPedidas, []);
 });

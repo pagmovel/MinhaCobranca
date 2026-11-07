@@ -31,6 +31,8 @@
     --color-menu-linha: #C9D1DA;
     --color-menu-logo: var(--color-carbono); /* cor do recibo (logo) no menu */
     --color-ouro: #F2B544; /* ponto de aviso do "Mais" da barra superior (item escondido com contador) */
+    --color-contador-fundo: #B3261E; /* contador do menu ("Usuários"): no Talão é o vermelho de sempre, o Almanaque o põe dourado */
+    --color-contador-texto: #FFFFFF;
     --color-etapa-enviar: #3B47C4; /* linha do tempo e números do Painel dos temas novos */
     --color-etapa-aguardando: #B45309;
     --color-etapa-recebida: #0F766E;

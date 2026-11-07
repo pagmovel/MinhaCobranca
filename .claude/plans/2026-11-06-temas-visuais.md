@@ -13,9 +13,9 @@
 
 ---
 
-## Andamento (atualizado em 2026-11-07, depois da tarefa 6.1)
+## Andamento (atualizado em 2026-11-07, depois do despacho B: tarefas 6.1 e 8.1)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (30 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **20 estão prontas e 3 faltam** (8.1, 9.1, 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); faltam o **Marco 4** (Almanaque), a conferência geral e a documentação final. PHP 962 e JS 408 verdes.
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (33 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **21 estão prontas e 2 faltam** (9.1 e 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); falta só o fechamento: a conferência geral e a documentação final (o **Marco 4**, Régua e Almanaque, está pronto). PHP 965 e JS 414 verdes.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -35,24 +35,24 @@
 | | 4.5 popup da novidade | pronta | `25502c3` |
 | 5 dados do mês | 5.1 `GET /painel/mes` | pronta | `79fdee0` |
 | | 5.2 `GET /painel/cobrancas/{id}` | pronta | `da91134` |
-| 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | pronta (testada) | commit da 6.1 (`git log --grep 'Tarefa 6.1'`) |
+| 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | pronta (testada) | `9817e58` |
 | 7 Régua | 7.1 funções da linha do tempo | pronta (entregue junto da 3.1) | `c53199c` |
 | | 7.2 `LinhaDoTempoDoMes.vue` | pronta (testada) | `97071a0` |
 | | 7.3 `PainelRegua` e tema Régua | pronta (testada) | `24873a2`, `cc7d1c2`, `58929b9` |
-| 8 Almanaque | 8.1 tema Almanaque | falta (base pronta) | |
+| 8 Almanaque | 8.1 tema Almanaque | pronta (testada) | commit da 8.1 (`git log --grep 'Tarefa 8.1'`), mais `24873a2` e `cc7d1c2` da base |
 | 9 fechamento | 9.1 conferência geral | falta | |
 | | 9.2 documentação final | falta | |
 
 **O que falta, em ordem:**
 1. **Feitas:** a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
 2. **Feitas:** 7.2 e 7.3 (linha do tempo e composição da Régua).
-3. **Feita:** 6.1 (o Mosaico em blocos com a linha do tempo, composição do Almanaque). Falta a 8.1: ícones e pílulas do menu, contador dourado e o ajuste fino do tema.
+3. **Feitas:** 6.1 (o Mosaico em blocos com a linha do tempo, composição do Almanaque) e 8.1 (ícones e pílulas do menu, contador dourado, ajuste fino do tema).
 4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
 5. **Deploy é do Marcos**, e a variável `TEMA_PADRAO` no `.env` de produção também. **A migração das duas colunas de `users` não precisa de passo manual:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` em toda subida do container (decisão do Marcos, 2026-10-12, reafirmada em 2026-11-07; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`).
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 
-**Testes agora:** PHP 962 verdes e JS 408 verdes (conferidos pelo agente da 6.1, depois do último commit; quem coordena reconfere).
+**Testes agora:** PHP 965 verdes (os 3 testes a mais, da guarda do Dockerfile, vieram do commit `e0d16eb`) e JS 414 verdes (conferidos pelo agente do despacho B, depois do último commit; quem coordena reconfere).
 
 **Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
 
@@ -305,10 +305,11 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 8: Almanaque (Marco 4)
 
-### Tarefa 8.1: Mosaico com linha do tempo. Estado: pendente
+### Tarefa 8.1: Mosaico com linha do tempo. Estado: testada (2026-11-07; Almanaque a 1440x900 e 390x844 no browser-agent: menu com ícones, pílula e contador dourado, Painel (tarefa 6.1), 12 telas logadas sem rolagem lateral e sem erro de console (salvo um erro antigo do Inertia em `/perfil`); Talão sem nenhuma diferença de estilo e Régua só com a correção do Perfil, em 5 telas a 1440 e 390 px; 414 JS e 965 PHP verdes e `npm run build` ok; detalhes na skill, "Acertos (Tarefa 8.1)")
 - Caso `Almanaque`: `PainelMosaico` com `comLinhaDoTempo` (sem os blocos "Semana à frente" e "Recebido por dia"; `LinhaDoTempoDoMes` em largura total entre a fileira de cima e a lista). `almanaque.css` herda os tokens do Mosaico. A página nunca rola sozinha ao dar baixa.
 - **Testes:** contraste; `test_tema_almanaque_e_aceito_na_troca`.
 - **Base pronta (2026-11-07, commits `24873a2` e o seguinte; o Estado acima NÃO mudou):** feitos o caso `Almanaque` do enum (casca `lateral`, painel `mosaico`, com linha do tempo, `descricao`, `amostra`, `fontes`: Bricolage Grotesque 700 e 800 + Onest 400 a 700), as famílias no `vite.config.js`, `resources/css/temas/almanaque.css` (tokens do protótipo `painel-bento-timeline.html`, já com `--raio-bloco: 28px` e `--sombra-bloco`; o "herda os tokens do Mosaico" acima não se aplica porque o Mosaico não entra nesta execução), os pares de contraste e `test_tema_almanaque_e_aceito_na_troca` e `test_html_traz_data_tema_almanaque`. **Falta** `PainelMosaico` com a linha do tempo e o smoke test. **Atenção na 3.4:** o item ativo do menu usa `text-carbono`, que no Almanaque (`#3B47C4` sobre o ativo `#2C3768`) dá 1,56:1; é preciso o token `--color-menu-texto-ativo` (Almanaque `#FFFFFF`) e o par no teste de contraste. Mesmos limites de fonte da 7.3 (sem `font-stretch`; `--font-estreita` = Onest).
+- **Feito na execução de 2026-11-07:** `PainelMosaico` (6.1); menu lateral do Almanaque por variáveis (`--menu-*` e `--contador-*` em `almanaque.css`; ícones por `iconeDoItem`); contador dourado (`--color-contador-*`, também no Talão e na Régua, com os valores de antes); pares de contraste novos (contador e blocos do Mosaico); **correção do tema da tela depois de entrar e sair** (`sincronizarTemaDaPagina`, que faltava: o Almanaque abria com as cores do Talão depois do login); `min-w-0 grid-cols-1` nos `fieldset` do Perfil (rolagem lateral a 390 px). **Fora, com motivo (ver a skill):** carimbo grande "PAGO" sobre a linha recém-paga, voo da cobrança até a aba e pontinho dourado numa aba com novidade.
 
 ## Fase 9: fechamento
 

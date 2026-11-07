@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { explicacaoDoBloqueio, itensDoMenu } from '../../resources/js/menuPrincipal.js';
+import { explicacaoDoBloqueio, iconeDoItem, itensDoMenu } from '../../resources/js/menuPrincipal.js';
 
 const progressoVazio = { perfil: false, catalogo: false, liberado: false, pendencias: [] };
 const progressoCompleto = { perfil: true, catalogo: true, liberado: true, pendencias: [] };
@@ -43,4 +43,12 @@ test('explicacao_do_bloqueio_depende_do_item', () => {
     assert.equal(explicacaoDoBloqueio('/contratos'), explicacaoDoBloqueio('/cobrancas'));
     assert.match(explicacaoDoBloqueio('/clientes'), /Complete seu perfil/);
     assert.equal(explicacaoDoBloqueio('/produtos-servicos'), explicacaoDoBloqueio('/clientes'));
+});
+
+test('todo_item_do_menu_tem_icone', () => {
+    const progresso = { perfil: true, catalogo: true, liberado: true, pendencias: [] };
+    for (const item of itensDoMenu(progresso, true, 1)) {
+        assert.match(iconeDoItem(item.href), /^M[\d.\-\sMLHVCSQTAZmlhvcsqtaz]+$/, `${item.href} sem ícone`);
+    }
+    assert.equal(iconeDoItem('/nao-existe'), '');
 });

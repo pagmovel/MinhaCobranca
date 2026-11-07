@@ -54,6 +54,8 @@ const PARES = [
     ['--color-grafite', '--color-fim-de-semana'],
     ['--color-grafite', '--color-feriado'],
     ['#FFFFFF', '--color-tinta-laranja'],
+    // Contador do menu: o do Talão e da Régua é vermelho com texto branco; o do Almanaque, dourado com texto azul-marinho.
+    ['--color-contador-texto', '--color-contador-fundo'],
 ];
 
 /**

@@ -64,6 +64,28 @@ export async function trocarTema(id, {
 }
 
 /**
+ * Uma visita do Inertia que troca o usuário (entrar, sair) tem de trocar também o tema da tela: o `data-tema` do `<html>`
+ * só vem do Blade (carga completa) e de `trocarTema`, então sem isto o Almanaque abria, depois do login, com a composição
+ * dele e as cores e as fontes do Talão. Telas sem usuário (entrar, cadastro) ficam sempre no Talão. Não mexe durante uma
+ * troca em andamento (quem escolheu o tema mandou nela). shortcut: sem usuário as fontes do Talão não são buscadas
+ * (a rota de fontes pede login); quem sai do sistema vê a tela de entrada com as fontes de reserva até recarregar.
+ */
+export function sincronizarTemaDaPagina(pagina, { documento = document, fontes = carregarFontesDoTema, emTroca = temaEmTroca } = {}) {
+    if (emTroca.value) {
+        return;
+    }
+    const usuario = pagina.props.auth?.user;
+    const id = usuario ? temaValido(usuario.tema, pagina.props.temas ?? []) : 'talao';
+    const raiz = documento.documentElement;
+    if (raiz.dataset.tema !== id) {
+        raiz.dataset.tema = id;
+        if (usuario) {
+            fontes(id);
+        }
+    }
+}
+
+/**
  * `lista` e `gravado` (o tema que está no banco) são reativos: o Inertia troca `page.props` a cada visita. `atual` é o
  * que a tela mostra: o tema em troca, se houver, senão o gravado.
  */

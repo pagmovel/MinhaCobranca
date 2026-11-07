@@ -22,6 +22,8 @@ html[data-tema='regua'] {
     --color-menu-ativo: #F0F3FA; /* hover do menu */
     --color-menu-texto-ativo: #0F1B33; /* --tinta: link ativo e hover do menu */
     --color-menu-linha: #D5DCE9; /* --linha */
+    --color-contador-fundo: #9F1F17; /* --vermelho: o contador do menu continua vermelho */
+    --color-contador-texto: #FFFFFF;
 
     --color-etapa-enviar: #3B47C4; /* --enviar */
     --color-etapa-aguardando: #B45309; /* --aguardando */
