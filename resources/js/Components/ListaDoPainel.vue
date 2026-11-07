@@ -16,6 +16,7 @@ import { usarListaPaginada } from '../usarListaPaginada.js';
 const props = defineProps({
     lista: { type: String, required: true },
     titulo: { type: String, required: true },
+    dica: { type: String, default: '' }, // uma frase sob o título explicando a etapa
     vazio: { type: String, required: true },
 });
 const emit = defineEmits(['resumo']);
@@ -41,6 +42,7 @@ watch(resumo, (carga) => {
                 ({{ resumo.total_geral.quantidade }})<template v-if="resumo.total_geral.quantidade"> · R$ {{ formatarCentavos(resumo.total_geral.soma_centavos) }}</template>
             </span>
         </h2>
+        <p v-if="dica" class="-mt-1 mb-2 text-sm text-grafite/70">{{ dica }}</p>
         <EstadoDaLista :estado="estado" :falha="falha" :carregando="`Carregando ${titulo.toLowerCase()}…`" :vazio="vazio" :linhas="3" @tentar="recarregar">
             <ul
                 :id="`lista-${lista}`"

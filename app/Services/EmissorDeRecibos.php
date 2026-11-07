@@ -50,7 +50,7 @@ final class EmissorDeRecibos
 
     /**
      * Cliente trocou o modelo do recibo (Fase 22): refaz, no modelo novo e com o mesmo número, os recibos das cobranças
-     * em aberto e não enviadas; com `$incluirEnviadas`, também as enviadas e não pagas, que voltam para "Para enviar"
+     * em aberto e não enviadas; com `$incluirEnviadas`, também as enviadas e não pagas, que voltam para "Recibos a enviar"
      * (o cliente precisa receber o PDF novo). Pagas e canceladas nunca mudam: o comprovante já entregue vale.
      */
     public function aplicarModeloDoCliente(Cliente $cliente, bool $incluirEnviadas): int

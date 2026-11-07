@@ -97,7 +97,7 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                             <span>
                                 Gerar de novo também {{ enviadas === 1 ? 'a cobrança já enviada' : `as ${enviadas} cobranças já enviadas` }}
                                 e ainda não {{ enviadas === 1 ? 'paga' : 'pagas' }}. {{ enviadas === 1 ? 'Ela volta' : 'Elas voltam' }} para
-                                "Para enviar" no painel, para você mandar o PDF novo.
+                                "Recibos a enviar" no painel, para você mandar o PDF novo.
                             </span>
                         </label>
                         <p class="font-estreita text-xs text-grafite/70">Recibos pagos e cancelados não mudam. As próximas cobranças já saem no modelo novo.</p>

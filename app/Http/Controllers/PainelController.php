@@ -101,7 +101,7 @@ class PainelController extends Controller
      * Linha do tempo do mês (JSON, só leitura): os pontos do mês corrente e, fora dos pontos, o que atravessa meses
      * (vencidas e anteriores). Ponto = pendente com vencimento no mês ou paga com pagamento no mês (no dia do pagamento);
      * cancelada nunca entra. `para_avisar` usa o mesmo conjunto do bloco "Vencendo" (de hoje a "dias_aviso" dias), só as
-     * sem aviso; `para_enviar` é o total da lista "Para enviar" (todas as pendentes sem envio, de qualquer mês).
+     * sem aviso; `para_enviar` é o total da lista "Recibos a enviar" (todas as pendentes sem envio, de qualquer mês).
      */
     public function mes(Request $request): JsonResponse
     {

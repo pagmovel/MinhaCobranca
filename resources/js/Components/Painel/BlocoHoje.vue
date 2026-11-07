@@ -3,11 +3,12 @@ import { computed } from 'vue';
 import { formatarCentavos } from '../../itens.js';
 import { tipoDoPonto } from '../../linhaDoTempo.js';
 import { notaDoDia } from '../../painelMosaico.js';
+import { textosDoPainel } from '../../textosDoPainel.js';
 import NumeroQueConta from './NumeroQueConta.vue';
 
 /**
  * Bloco "Hoje" do Almanaque: o que vence hoje (quantas, a soma e as três primeiras, cada uma um botão que abre a
- * cobrança com as ações) e dois atalhos de trabalho, "Para avisar" e "Para enviar", que levam à aba certa (`ir`).
+ * cobrança com as ações) e dois atalhos de trabalho, "Cobranças a avisar" e "Recibos a enviar", que levam à aba certa (`ir`).
  * Os dados são `hoje_resumo` e os pontos de `GET /painel/mes`.
  */
 const props = defineProps({
@@ -21,8 +22,8 @@ const venceHoje = computed(() => props.dados?.hoje_resumo.vence_hoje ?? { quanti
 const nomes = computed(() => (props.dados?.pontos ?? []).filter((ponto) => tipoDoPonto(ponto) === 'hoje').slice(0, 3));
 const faltam = computed(() => Math.max(0, venceHoje.value.quantidade - nomes.value.length));
 const afazeres = computed(() => [
-    { rotulo: 'Para avisar', valor: props.dados?.hoje_resumo.para_avisar ?? 0, etapa: 'aguardando' },
-    { rotulo: 'Para enviar', valor: props.dados?.hoje_resumo.para_enviar ?? 0, etapa: 'enviar' },
+    { rotulo: textosDoPainel.avisar, valor: props.dados?.hoje_resumo.para_avisar ?? 0, etapa: 'aguardando' },
+    { rotulo: textosDoPainel.enviar.titulo, valor: props.dados?.hoje_resumo.para_enviar ?? 0, etapa: 'enviar' },
 ]);
 const texto = computed(() => {
     if (!props.dados) {

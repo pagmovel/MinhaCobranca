@@ -3,6 +3,7 @@ import { computed, provide, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import { avisosDoPainel } from '../../avisosDoPainel.js';
 import { frasePeloDia, somasPorEtapa } from '../../linhaDoTempo.js';
+import { textosDoPainel, vazioDeEnviar } from '../../textosDoPainel.js';
 import { usarMesDoPainel } from '../../usarMesDoPainel.js';
 import BlocoVencendo from '../BlocoVencendo.vue';
 import LinhaDoTempoDoMes from '../LinhaDoTempoDoMes.vue';
@@ -107,13 +108,14 @@ const avisos = computed(() => avisosDoPainel(props));
             <ListaDoPainel
                 v-slot="{ cobranca }"
                 lista="para_enviar"
-                titulo="Para enviar"
-                :vazio="`Nada para enviar agora. Cobranças novas aparecem aqui ${diasAntecedencia} dias antes do vencimento.`"
+                :titulo="textosDoPainel.enviar.titulo"
+                :dica="textosDoPainel.enviar.dica"
+                :vazio="vazioDeEnviar(diasAntecedencia)"
             >
                 <AcoesDaCobranca :cobranca="cobranca" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
             </ListaDoPainel>
 
-            <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" titulo="Aguardando pagamento" vazio="Nenhuma cobrança enviada esperando pagamento.">
+            <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" :titulo="textosDoPainel.aguardando.titulo" :dica="textosDoPainel.aguardando.dica" :vazio="textosDoPainel.aguardando.vazio">
                 <AcoesDaCobranca :cobranca="cobranca" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
             </ListaDoPainel>
         </div>

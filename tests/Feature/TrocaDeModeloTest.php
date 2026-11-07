@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 /**
  * Fase 22 (pedido do usuário, 2026-10-11): trocar o modelo do recibo no cliente refaz na hora os recibos das cobranças
- * em aberto e não enviadas; as enviadas e não pagas só com a caixa marcada (e voltam para "Para enviar"); pagas e
+ * em aberto e não enviadas; as enviadas e não pagas só com a caixa marcada (e voltam para "Recibos a enviar"); pagas e
  * canceladas nunca mudam.
  */
 class TrocaDeModeloTest extends TestCase

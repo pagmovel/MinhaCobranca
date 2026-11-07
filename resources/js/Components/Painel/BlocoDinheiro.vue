@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { fatiasDoMes } from '../../fatiasDoMes.js';
 import { somasPorEtapa } from '../../linhaDoTempo.js';
 import { arcosDoAnel, textoDoAnel } from '../../painelMosaico.js';
+import { textosDoPainel } from '../../textosDoPainel.js';
 import NumeroQueConta from './NumeroQueConta.vue';
 
 /**
@@ -23,7 +24,7 @@ const indisponivel = computed(() => !props.dados && props.estado === 'falha'); /
 const LEGENDA = [
     { chave: 'recebida', rotulo: 'Recebido', soma: 'recebido' },
     { chave: 'aguardando', rotulo: 'Aguardando', soma: 'aguardando' },
-    { chave: 'enviar', rotulo: 'Para enviar', soma: 'enviar' },
+    { chave: 'enviar', rotulo: textosDoPainel.enviar.titulo, soma: 'enviar' },
 ];
 
 const somas = computed(() => (props.dados ? somasPorEtapa(props.dados.pontos) : { recebido: 0, aguardando: 0, enviar: 0, previsto: 0 }));

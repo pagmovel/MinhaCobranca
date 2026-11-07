@@ -1,5 +1,6 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import { textosDoPainel, vazioDeEnviar } from '../../textosDoPainel.js';
 import ListaDoPainel from '../ListaDoPainel.vue';
 import BlocoVencendo from '../BlocoVencendo.vue';
 import BotaoEnviar from '../BotaoEnviar.vue';
@@ -47,13 +48,14 @@ defineProps({
     <ListaDoPainel
         v-slot="{ cobranca }"
         lista="para_enviar"
-        titulo="Para enviar"
-        :vazio="`Nada para enviar agora. Cobranças novas aparecem aqui ${diasAntecedencia} dias antes do vencimento.`"
+        :titulo="textosDoPainel.enviar.titulo"
+        :dica="textosDoPainel.enviar.dica"
+        :vazio="vazioDeEnviar(diasAntecedencia)"
     >
         <BotaoEnviar v-if="cobranca.recibo" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
     </ListaDoPainel>
 
-    <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" titulo="Aguardando pagamento" vazio="Nenhuma cobrança enviada esperando pagamento.">
+    <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" :titulo="textosDoPainel.aguardando.titulo" :dica="textosDoPainel.aguardando.dica" :vazio="textosDoPainel.aguardando.vazio">
         <BaixaInline :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" :vencimento-iso="cobranca.vencimento_iso" :regras="cobranca.regras" />
         <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
         <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />

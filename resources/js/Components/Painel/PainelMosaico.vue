@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import { avisosDoPainel } from '../../avisosDoPainel.js';
 import { frasePeloDia } from '../../linhaDoTempo.js';
 import { abaPorTecla, esvaziou } from '../../painelMosaico.js';
+import { textosDoPainel, vazioDeEnviar } from '../../textosDoPainel.js';
 import { usarMesDoPainel } from '../../usarMesDoPainel.js';
 import BlocoVencendo from '../BlocoVencendo.vue';
 import LinhaDoTempoDoMes from '../LinhaDoTempoDoMes.vue';
@@ -44,8 +45,8 @@ const avisos = computed(() => avisosDoPainel(props));
 // As três listas ficam montadas e só a da aba ativa aparece: assim as contagens das abas ficam certas e o que foi
 // digitado numa aba (a baixa aberta numa linha) não se perde ao trocar de aba.
 const ABAS = [
-    { chave: 'enviar', lista: 'para_enviar', rotulo: 'Enviar', cor: 'var(--color-etapa-enviar)' },
-    { chave: 'aguardando', lista: 'aguardando', rotulo: 'Aguardando', cor: 'var(--color-etapa-aguardando)' },
+    { chave: 'enviar', lista: 'para_enviar', rotulo: textosDoPainel.enviar.aba, cor: 'var(--color-etapa-enviar)' },
+    { chave: 'aguardando', lista: 'aguardando', rotulo: textosDoPainel.aguardando.aba, cor: 'var(--color-etapa-aguardando)' },
     { chave: 'recebida', lista: 'recebidas', rotulo: 'Recebidas', cor: 'var(--color-etapa-recebida)' },
 ];
 const aba = ref('aguardando');
@@ -99,7 +100,7 @@ function registrarResumo({ lista, quantidade }) {
     }
 }
 
-// Confete discreto quando "Para enviar" ou "Aguardando" chega a zero depois de uma ação: o trabalho da etapa acabou.
+// Confete discreto quando "Recibos a enviar" ou "Aguardando" chega a zero depois de uma ação: o trabalho da etapa acabou.
 function confete() {
     if (semMovimento() || !blocoDaLista.value) {
         return;
@@ -257,8 +258,9 @@ onBeforeUnmount(() => {
                         <ListaDoPainel
                             v-slot="{ cobranca }"
                             lista="para_enviar"
-                            titulo="Para enviar"
-                            :vazio="`Nada para enviar agora. Cobranças novas aparecem aqui ${diasAntecedencia} dias antes do vencimento.`"
+                            :titulo="textosDoPainel.enviar.titulo"
+                            :dica="textosDoPainel.enviar.dica"
+                            :vazio="vazioDeEnviar(diasAntecedencia)"
                             @resumo="registrarResumo"
                         >
                             <AcoesDaCobranca :cobranca="cobranca" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
@@ -269,8 +271,9 @@ onBeforeUnmount(() => {
                         <ListaDoPainel
                             v-slot="{ cobranca }"
                             lista="aguardando"
-                            titulo="Aguardando pagamento"
-                            vazio="Nenhuma cobrança enviada esperando pagamento."
+                            :titulo="textosDoPainel.aguardando.titulo"
+                            :dica="textosDoPainel.aguardando.dica"
+                            :vazio="textosDoPainel.aguardando.vazio"
                             @resumo="registrarResumo"
                         >
                             <AcoesDaCobranca :cobranca="cobranca" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />

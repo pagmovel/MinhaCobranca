@@ -186,7 +186,7 @@ class PainelMesTest extends TestCase
         $etapas = array_count_values(array_column($resposta['pontos'], 'etapa'));
         $lista = fn (string $nome) => $this->getJson("/painel/dados?lista={$nome}")->assertOk()->json('total_geral');
 
-        // "Para enviar" atravessa meses; a pendente de setembro está nele e não é ponto do mês.
+        // "Recibos a enviar" atravessa meses; a pendente de setembro está nele e não é ponto do mês.
         $paraEnviar = $lista('para_enviar');
         $this->assertSame($paraEnviar['quantidade'], $resposta['hoje_resumo']['para_enviar']);
         $this->assertSame($paraEnviar['quantidade'] - $resposta['anteriores']['quantidade'], $etapas['enviar']);
