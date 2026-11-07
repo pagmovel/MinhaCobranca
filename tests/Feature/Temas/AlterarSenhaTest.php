@@ -60,6 +60,19 @@ class AlterarSenhaTest extends TestCase
         $this->assertSame(0, Auditoria::count());
     }
 
+    /** O login não apara a senha, então a troca também não pode aparar: senão quem tem espaço nas pontas nunca consegue trocar. */
+    public function test_senha_com_espaco_nas_pontas_nao_e_aparada(): void
+    {
+        $this->usuario->forceFill(['password' => ' senha com espaco '])->save();
+        $nova = ' Nova Senha#2026 ';
+
+        $this->enviar(['senha_atual' => ' senha com espaco ', 'nova_senha' => $nova, 'nova_senha_confirmation' => $nova])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('sucesso', 'Senha alterada.');
+
+        $this->assertTrue(Hash::check($nova, $this->senhaAtualDoBanco()));
+    }
+
     public function test_recusa_senha_atual_em_branco(): void
     {
         $this->enviar(['senha_atual' => ''])->assertSessionHasErrors(['senha_atual' => 'Digite a senha atual.']);
