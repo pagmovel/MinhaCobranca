@@ -65,8 +65,12 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
   pé o tempo todo (`restart=0`, Apache em `resuming normal operations`). Não vem do `Dockerfile`, do compose nem da
   migração. Para conferir: `docker exec meus_projetos_bunker-bunkerweb-1 nslookup meus_projetos_gerenciador_cobrancas_app`
   (tem de dar o IP atual do container) e abrir o endereço de reserva `*.easypanel.host/up` (vai direto no app, sem o
-  bunker). `[A VERIFICAR]` quanto tempo o BunkerWeb guarda o IP e se dá para encurtar (`resolver 127.0.0.11` em
-  `/etc/nginx/http.conf` do container do bunker; `proxy_pass $backend0` no site). Houve 1 erro igual em 2026-11-05 09:17.
+  bunker). **Ajuste aplicado em 2026-11-07 (Marcos, pela UI do bunker):** `DNS_RESOLVERS` = `127.0.0.11 valid=10s`
+  (Global Settings → General → "DNS resolvers", dois valores). O nginx do bunker agora relê o IP do container a cada
+  10 s (`resolver 127.0.0.11 valid=10s ipv6=off;` em `/etc/nginx/http.conf`; recarregado sozinho, sem derrubar os sites).
+  O efeito só se confirma no próximo Deploy do app (esperado: ~10 s de 502 em vez de ~3 min) `[A VERIFICAR]`. Esse valor
+  mora no **banco do bunker**, não no compose: se o bunker for recriado do zero, refazer (ou pôr
+  `DNS_RESOLVERS: "127.0.0.11 valid=10s"` no `environment` do `bw-scheduler`). Houve 1 erro igual em 2026-11-05 09:17.
 - Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
 - **Migração no deploy:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` a cada subida do container
   (só aplica o que está pendente; decisão do Marcos, reafirmada em 2026-11-07; travado por

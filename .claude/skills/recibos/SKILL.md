@@ -1060,7 +1060,8 @@ o relatório mostra a parte que existe.
   novo ganha IP novo e o BunkerWeb tenta o antigo (`connect() failed (113: Host is unreachable) ... upstream:
   "http://10.11.0.22:80"`; 21:14:41 a 21:17:47). Some sozinho; o app não caiu e o `Dockerfile`/compose não mudaram. Teste
   rápido: `*.easypanel.host/up` (direto no app) responde 200 enquanto o domínio do bunker dá 502. Detalhes e comandos de
-  conferência no README, "Produção na VPS". Diagnóstico feito por SSH só com leitura (Marcos autorizou naquela mensagem).
+  conferência no README, "Produção na VPS". **Mitigação aplicada em 2026-11-07:** `DNS_RESOLVERS` do bunker passou a
+  `127.0.0.11 valid=10s` (feito pela UI; fica no banco do bunker, não no compose); confirmar no próximo Deploy. Diagnóstico feito por SSH só com leitura (Marcos autorizou naquela mensagem).
 - O container só entra na rede interna do EasyPanel (IP `10.11.x.x`) depois que o domínio aponta para ele; antes
   ficava só na rede do compose (`172.20.x.x`).
 - Erro `could not translate host name` = `DB_HOST` errado no painel (aconteceu com um `1` sobrando). O `.env` local
