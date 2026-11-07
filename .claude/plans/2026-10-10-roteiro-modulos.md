@@ -12,10 +12,10 @@ sem depender do histórico.
   agente que rodava (`a4f6fb1c95cf12464`, 2.4 e 4.5; **terminou e commitou**, nenhum agente em andamento, árvore limpa),
   o que cada despacho que falta deve conter (7.2 e 7.3; 6.1 e 8.1; 9.1; 9.2), o checklist das regras globais para
   todo prompt de subagente e as decisões já tomadas.
-- **Onde estamos:** execução no branch **`feature/temas-visuais`** (24 commits à frente do `main`, 2026-11-07 13:20; **não mesclado, não
+- **Onde estamos:** execução no branch **`feature/temas-visuais`** (29 commits à frente do `main`, 2026-11-07, depois do despacho A; **não mesclado, não
   enviado, nada em produção**). O quadro tarefa a tarefa está na seção **"Andamento"** do plano
-  `.claude/plans/2026-11-06-temas-visuais.md`. Resumo: das 23 tarefas do escopo, 17 prontas (inclui 2.4 seletor
-  de tema e 4.5 popup) e 6 faltando (6.1, 7.2, 7.3, 8.1, 9.1, 9.2).
+  `.claude/plans/2026-11-06-temas-visuais.md`. Resumo: das 23 tarefas do escopo, 19 prontas (inclui o seletor, o popup,
+  a linha do tempo e a Régua) e 4 faltando (6.1, 8.1, 9.1, 9.2).
 - **Escopo por comando do Marcos (2026-11-07):** só os temas **Almanaque** (`painel-bento-timeline`) e **Régua**
   (`painel-linha-do-tempo`), mais o Talão. **Pendentes para o futuro:** Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3,
   4.4 e 6.2).

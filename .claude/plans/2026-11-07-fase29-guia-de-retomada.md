@@ -29,7 +29,18 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 >    `ModalAlterarSenha.vue`, `pilhaDeDialogos.js` (Esc e trava de rolagem por dono; painel em `z-40`, todo `Modal`
 >    acima). **PHP 962 e JS 381 verdes, build ok**; capturas dos 3 temas em 1440x900 e 390x844 mostram o popup no centro.
 >    Relatório em `/tmp/claude-1000/-srv-conteiners-MinhaCobranca/84c5a1aa-b391-4976-961a-ebfec88938e7/scratchpad/relatorio-f29-s6.md`.
->    **Não há subagente em andamento.** Próximo: despacho **A**.
+>    **Despacho A FEITO e conferido por quem coordena** (tarefas 7.2 e 7.3, subagente `ad8bf2a466dbcca90`, `sonnet`):
+>    commits `97071a0` (linha do tempo com popover) e `58929b9` (composição Régua). PHP 962 e JS 393 verdes, build ok,
+>    capturas da Régua em 1440 e 390 conferidas. Relatório em `.../scratchpad/relatorio-f29-s7.md`. **Nenhum subagente em
+>    andamento.** Próximo: despacho **B** (6.1 e 8.1, Almanaque), depois **C** e **D**.
+>    Para o Marcos decidir (do relatório do A): (1) "Previsto em novembro" na Régua = recebido + aguardando + a enviar do
+>    mês (regime de caixa); no Talão é a soma de quem vence no mês, então os dois números diferem; (2) trocar entre Talão
+>    e Régua **na própria tela do Painel** troca a composição inteira: um formulário de baixa aberto numa linha da lista
+>    se perde (o `<main>` e as outras telas ficam intactos). **A prova do foco de revisão 1 (9.1) deve usar um formulário
+>    de outra tela e registrar essa exceção do Painel**; (3) o popover fecha sozinho depois de enviar ou dar baixa, para o
+>    salto do ponto aparecer; (4) ficaram fora da Régua o botão "Nova cobrança" do protótipo e o agrupamento Atrasadas/
+>    Hoje/Próximos dias; (5) Safari, Firefox e leitor de tela não testados; a régua animada usa transição CSS do `d` do
+>    SVG (Chrome).
 >    Pontos em aberto dessa revisão: (a) o aviso "Senha alterada." também aparece no `<main>` por trás do popup (vem do
 >    `back()->with('sucesso')`; tirar mexe no PHP e no `AlterarSenhaTest`); (b) se o usuário cancelar com o envio em
 >    andamento e a senha for trocada, o painel não mostra a confirmação; (c) Safari, Firefox e leitor de tela não

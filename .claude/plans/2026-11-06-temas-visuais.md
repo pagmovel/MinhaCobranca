@@ -13,9 +13,9 @@
 
 ---
 
-## Andamento (atualizado em 2026-11-07, 13:20)
+## Andamento (atualizado em 2026-11-07, depois do despacho A)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (24 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **17 estão prontas e 6 faltam**; nenhum agente em andamento. Os **Marcos 1 e 2** do escopo estão prontos (painel do usuário com senha, seletor de temas, popup e fundação visual); faltam os **Marcos 3 e 4** (linha do tempo, Mosaico/Almanaque e Régua), a conferência geral e a documentação final.
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (29 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **19 estão prontas e 4 faltam** (6.1, 8.1, 9.1, 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); faltam o **Marco 4** (Almanaque), a conferência geral e a documentação final. PHP 962 e JS 393 verdes.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -24,7 +24,7 @@
 | | 1.3 rotas de tema e novidade | pronta | `e7ee850` |
 | 2 painel do usuário | 2.1 alterar senha (back-end) | pronta | `b7d7414`, `1c948aa` |
 | | 2.2 painel lateral e "Sair" | pronta | `47f7a69` |
-| | 2.3 formulário de senha | pronta | `48151fc` |
+| | 2.3 formulário de senha (revisada: popup centralizado, pedido do Marcos) | pronta | `48151fc`, `3adae1d` |
 | | 2.4 seletor de tema, sem recarregar | pronta | `6481d9d`, `ad4f0d0` |
 | 3 fundação visual | 3.1 inventário | pronta | `3ee011b` |
 | | 3.2 tokens, Talão idêntico | pronta | `0cc8820` |
@@ -37,15 +37,15 @@
 | | 5.2 `GET /painel/cobrancas/{id}` | pronta | `da91134` |
 | 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | falta | |
 | 7 Régua | 7.1 funções da linha do tempo | pronta (entregue junto da 3.1) | `c53199c` |
-| | 7.2 `LinhaDoTempoDoMes.vue` | falta | |
-| | 7.3 `PainelRegua` e tema Régua | falta (base pronta: enum, tokens, fontes) | `24873a2`, `cc7d1c2` |
+| | 7.2 `LinhaDoTempoDoMes.vue` | pronta (testada) | `97071a0` |
+| | 7.3 `PainelRegua` e tema Régua | pronta (testada) | `24873a2`, `cc7d1c2`, `58929b9` |
 | 8 Almanaque | 8.1 tema Almanaque | falta (base pronta) | |
 | 9 fechamento | 9.1 conferência geral | falta | |
 | | 9.2 documentação final | falta | |
 
 **O que falta, em ordem:**
 1. **Feitas:** a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
-2. 7.2 e 7.3: a linha do tempo e a composição da Régua (menu superior já existe).
+2. **Feitas:** 7.2 e 7.3 (linha do tempo e composição da Régua).
 3. 6.1 e 8.1: o Mosaico em blocos com a linha do tempo, que é o Almanaque (faltam também os ícones e as pílulas do menu do protótipo e o contador dourado).
 4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
 5. **Deploy é do Marcos:** a migração das duas colunas de `users` e a variável `TEMA_PADRAO` no `.env` de produção.
