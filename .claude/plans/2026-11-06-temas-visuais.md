@@ -15,7 +15,7 @@
 
 ## Andamento (atualizado em 2026-11-07, depois da conferência geral: tarefa 9.1)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (37 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **22 estão prontas e 1 falta** (9.2, a documentação final); nenhum agente de interface em andamento. Os **Marcos 1, 2, 3 e 4** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e os temas **Régua** e **Almanaque**) e a conferência geral foi feita (matriz de 132 células sem reprovação, ver a Tarefa 9.1). PHP 965 e JS 420 verdes.
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (43 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **22 estão prontas e 1 falta** (9.2, a documentação final); nenhum agente de interface em andamento. Os **Marcos 1, 2, 3 e 4** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e os temas **Régua** e **Almanaque**) e a conferência geral foi feita (matriz de 132 células sem reprovação, ver a Tarefa 9.1) e a revisão independente do branch foi tratada (M1, M2 e as baixas, mais o contraste dos temas novos: `c353a54`, `0b05ac5`, `62acaf4`, `2ebdff4`). PHP 965 e JS 434 verdes.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -40,7 +40,7 @@
 | | 7.2 `LinhaDoTempoDoMes.vue` | pronta (testada) | `97071a0` |
 | | 7.3 `PainelRegua` e tema Régua | pronta (testada) | `24873a2`, `cc7d1c2`, `58929b9` |
 | 8 Almanaque | 8.1 tema Almanaque | pronta (testada) | commit da 8.1 (`git log --grep 'Tarefa 8.1'`), mais `24873a2` e `cc7d1c2` da base |
-| 9 fechamento | 9.1 conferência geral | pronta (testada) | `7d3fc73`, `0dc6b4d`, `3a60d18` (defeitos achados) e o commit da 9.1 (`git log --grep 'Tarefa 9.1'`) |
+| 9 fechamento | 9.1 conferência geral | pronta (testada) | `7d3fc73`, `0dc6b4d`, `3a60d18` (defeitos achados), o commit da 9.1 (`git log --grep 'Tarefa 9.1'`) e as correções da revisão `c353a54`, `0b05ac5`, `62acaf4`, `2ebdff4` |
 | | 9.2 documentação final | falta | |
 
 **O que falta, em ordem:**
@@ -52,7 +52,7 @@
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 
-**Testes agora:** PHP 965 verdes (os 3 testes a mais, da guarda do Dockerfile, vieram do commit `e0d16eb`) e JS 420 verdes (414 do despacho B mais 6 da 9.1: `camposDoUseForm` 2, `pilhaDeDialogos` 3 e `aparecerSemPreenchimento` 1; `npm run build` ok na árvore e na cópia).
+**Testes agora:** PHP 965 verdes (os 3 testes a mais, da guarda do Dockerfile, vieram do commit `e0d16eb`) e JS 434 verdes (420 da 9.1 mais 14 do despacho E; `npm run build` ok na árvore e na cópia).
 
 **Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
 
@@ -317,6 +317,7 @@ Os protótipos usam dados fictícios em memória. No app:
 ## Fase 9: fechamento
 
 ### Tarefa 9.1: conferência geral. Estado: testada (2026-11-07; matriz de 3 temas x 22 telas logadas x 1440x900 e 390x844 = 132 células no browser-agent, todas sem erro de console, sem rolagem lateral, sem texto cortado, com tema e fonte certos desde o primeiro desenho e o painel do usuário abrindo e fechando; foco de revisão 1 provado com o seletor de verdade; modais acima do painel nos 3 temas e 2 larguras; 3 defeitos antigos corrigidos com teste; 965 PHP e 420 JS verdes e `npm run build` ok; detalhes na skill, "Acertos (Tarefa 9.1)". Não é "validada": falta o Marcos olhar as telas.)
+- **Revisão independente do branch e achados da conferência: tratados (despacho E, 2026-11-07).** M1 (Voltar no histórico desfazia o tema escolhido) reproduzido e corrigido (`c353a54`); M2 (linha do tempo sem teto de pontos por dia) corrigido com teto de 6 níveis e pílula "+N" (`0b05ac5`); baixas 1, 2, 3, 4, 10 e 11 (`62acaf4`); contraste de `text-grafite/60` sobre o papel na Régua e no Almanaque (`2ebdff4`). Ficaram **sem correção, de propósito** (decisão do Marcos ou fora do escopo): regra da etapa triplicada (baixa 5), "Para avisar" × "Vencendo" (6), "Previsto" diferente entre temas (7), contadores `throttle:30,1` e `throttle:6,1` compartilhados (8), corrida da troca rápida de tema (9) e os textos `/60` do Talão (4,05 e 3,98). Detalhes na skill, "Acertos (Despacho E)".
 - Matriz **3 temas (Talão, Régua, Almanaque) × telas logadas × 1440 e 390** com o browser-agent: sem erro de console, sem rolagem horizontal, sem texto ilegível, modais (`Modal`, `ModalBoasVindas`, popup, `CoachDeConfiguracao`) acima do painel lateral e legíveis. Repetir a prova do foco de revisão 1. Suíte completa: PHP, JS e `npm run build`. (Os outros 3 temas do plano original, Fluxo, Livro-caixa e Mosaico, estão fora desta execução.)
 
 ### Tarefa 9.2: documentação. Estado: pendente
