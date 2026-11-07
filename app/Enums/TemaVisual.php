@@ -68,6 +68,20 @@ enum TemaVisual: string
         };
     }
 
+    /**
+     * Aliases das fontes do tema no manifesto do Vite: o plugin usa o slug da família ("Archivo Narrow" vira
+     * "archivo-narrow"). É o argumento do `@fonts` no layout, para a página só carregar as fontes do tema ativo.
+     *
+     * @return list<string>
+     */
+    public function aliasesDasFontes(): array
+    {
+        return array_map(
+            fn (string $familia) => trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($familia)), '-'),
+            array_keys($this->fontes()),
+        );
+    }
+
     /** Tema de quem acabou de se cadastrar (`TEMA_PADRAO` no `.env`); valor desconhecido cai no Talão. */
     public static function padrao(): self
     {
