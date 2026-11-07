@@ -23,6 +23,11 @@ export function razaoDeContraste(corA, corB) {
     return (maior + 0.05) / (menor + 0.05);
 }
 
+/** A cor, entre `clara` e `escura`, que se lê melhor sobre `fundo` (a de maior razão de contraste; empate fica com a clara). */
+export function corLegivelSobre(fundo, clara, escura) {
+    return razaoDeContraste(fundo, clara) >= razaoDeContraste(fundo, escura) ? clara : escura;
+}
+
 /** Extrai `--nome: #hex;` de qualquer trecho de CSS; ignora comentários e valores que não sejam hex (var(), oklch...). */
 export function lerTokens(css) {
     const tokens = {};

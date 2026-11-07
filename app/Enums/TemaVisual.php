@@ -55,16 +55,17 @@ enum TemaVisual: string
     }
 
     /**
-     * Cores da miniatura no seletor: fundo, texto, destaque e linha.
+     * Cores da miniatura no seletor: fundo, texto, destaque, linha e fundo do menu (a mesma cor de `--color-menu-fundo`
+     * do tema, para o Almanaque não parecer o Talão).
      *
      * @return list<string>
      */
     public function amostra(): array
     {
         return match ($this) {
-            self::Talao => ['#F5F7F9', '#1F2933', '#2F3C9E', '#C9D1DA'],
-            self::Regua => ['#F7F9FC', '#0F1B33', '#3B47C4', '#D5DCE9'],
-            self::Almanaque => ['#F2F3F8', '#161B33', '#3B47C4', '#DCE0EC'],
+            self::Talao => ['#F5F7F9', '#1F2933', '#2F3C9E', '#C9D1DA', '#FFFFFF'],
+            self::Regua => ['#F7F9FC', '#0F1B33', '#3B47C4', '#D5DCE9', '#FFFFFF'],
+            self::Almanaque => ['#F2F3F8', '#161B33', '#3B47C4', '#DCE0EC', '#18214A'],
         };
     }
 

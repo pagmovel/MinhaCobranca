@@ -41,6 +41,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::get('/perfil/logo', [PerfilController::class, 'logo']);
     Route::post('/perfil/apresentacao', [PerfilController::class, 'apresentacao']);
     Route::put('/perfil/tema', [PerfilController::class, 'tema']);
+    Route::get('/perfil/tema/{tema}/fontes', [PerfilController::class, 'fontesDoTema']);
     Route::post('/perfil/novidade-temas', [PerfilController::class, 'novidadeDosTemas']);
     Route::post('/perfil/chaves-pix', [ChavePixController::class, 'store']);
     Route::put('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'update']);

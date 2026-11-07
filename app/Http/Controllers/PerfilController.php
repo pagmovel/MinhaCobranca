@@ -14,9 +14,11 @@ use App\Services\AjusteDeVencimentos;
 use App\Support\DiasUteis;
 use App\Support\Ufs;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Vite;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -107,6 +109,19 @@ class PerfilController extends Controller
         $usuario->save();
 
         return back();
+    }
+
+    /**
+     * Fontes de um tema para o navegador acrescentar ao `<head>` sem recarregar a página: o mesmo HTML que o `@fonts` do
+     * layout gera para os aliases do tema (preloads e `@font-face`) e as famílias com os pesos, para o front esperar
+     * as fontes carregarem. `{tema}` fora do enum dá 404.
+     */
+    public function fontesDoTema(TemaVisual $tema): JsonResponse
+    {
+        return response()->json([
+            'html' => (string) Vite::fonts($tema->aliasesDasFontes()),
+            'familias' => $tema->fontes(),
+        ]);
     }
 
     public function novidadeDosTemas(Request $request): RedirectResponse

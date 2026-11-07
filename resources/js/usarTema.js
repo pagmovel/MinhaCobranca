@@ -1,33 +1,36 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { router as roteadorDoInertia, usePage } from '@inertiajs/vue3';
+import { carregarFontesDoTema } from './fontesDoTema.js';
 import { temaValido } from './temas.js';
 
 /**
- * Trocar de tema pede recarga completa: o `<head>` com as fontes vem do Blade e a navegação do Inertia não o refaz.
- * O payload de `temas` não traz as fontes (só id, casca, painel, linha do tempo e amostra), então não dá para
- * saber se duas fontes diferem; na dúvida recarrega, por segurança. Só deixa de recarregar quando é o mesmo tema
- * (por exemplo, a amostra ou o texto mudaram, o que não toca no `<head>`).
- * shortcut: recarrega até quando duas fontes seriam iguais; refinar se o payload ganhar `fontes`.
+ * Tema que já está na tela mas o servidor ainda não confirmou (a troca está em andamento). Faz o menu e o Painel
+ * trocarem junto com as cores, sem esperar a resposta; falhando, volta a ser `null` e o tema gravado reaparece.
  */
-export function precisaRecarregar(anterior, novo) {
-    return anterior?.id !== novo?.id;
-}
+export const temaEmTroca = ref(null);
 
 /**
- * Aplica o tema na hora (`data-tema`), grava com `PUT /perfil/tema` e, se falhar, volta ao tema anterior.
- * Resolve `{ ok }`; nunca rejeita. `anterior` é o tema gravado hoje (item de `lista`). `documento`, `roteador` e
- * `recarregar` existem só para os testes rodarem sem navegador.
+ * Aplica o tema na hora (`data-tema` e `temaEmTroca`), grava com `PUT /perfil/tema` e, se falhar, volta ao tema
+ * anterior. Nunca recarrega a página: as fontes do tema novo entram no `<head>` por `fontes(id)` (em paralelo com a
+ * gravação) e, se não carregarem, o tema vale com as fontes de reserva.
+ *
+ * Resolve `{ ok: true, fontes: 'ok' | 'reserva' }` ou `{ ok: false, substituida }` (`substituida`: uma escolha mais nova
+ * tomou o lugar desta, então não há erro a mostrar); nunca rejeita. `anterior` é o tema gravado hoje (item de `lista`).
+ * `documento`, `roteador`, `fontes` e `emTroca` existem só para os testes rodarem sem navegador.
  */
 export async function trocarTema(id, {
     lista,
     anterior,
     documento = document,
     roteador = roteadorDoInertia,
-    recarregar = () => window.location.reload(),
+    fontes = carregarFontesDoTema,
+    emTroca = temaEmTroca,
 }) {
     const novoId = temaValido(id, lista);
     const raiz = documento.documentElement;
     raiz.dataset.tema = novoId;
+    emTroca.value = novoId;
+    const fontesDoTema = fontes(novoId); // não rejeita; só se espera depois que a gravação der certo
 
     const { ok } = await new Promise((resolver) => {
         let gravou = false;
@@ -43,31 +46,33 @@ export async function trocarTema(id, {
         });
     });
 
+    if (emTroca.value === novoId) {
+        emTroca.value = null;
+    }
+
     if (!ok) {
         // Só desfaz se ninguém trocou de novo no meio: senão apagaria a escolha mais nova.
-        if (raiz.dataset.tema === novoId) {
+        const substituida = raiz.dataset.tema !== novoId;
+        if (!substituida) {
             raiz.dataset.tema = anterior.id;
         }
 
-        return { ok: false };
+        return { ok: false, substituida };
     }
 
-    if (precisaRecarregar(anterior, lista.find((tema) => tema.id === novoId))) {
-        recarregar();
-    }
-
-    return { ok: true };
+    return { ok: true, fontes: await fontesDoTema };
 }
 
-/** `atual` (tema gravado do usuário) e `lista` são reativos: o Inertia troca `page.props` a cada visita. */
+/**
+ * `lista` e `gravado` (o tema que está no banco) são reativos: o Inertia troca `page.props` a cada visita. `atual` é o
+ * que a tela mostra: o tema em troca, se houver, senão o gravado.
+ */
 export function usarTema() {
     const pagina = usePage();
     const lista = computed(() => pagina.props.temas);
-    const atual = computed(() => {
-        const id = temaValido(pagina.props.auth.user?.tema, lista.value);
+    const buscar = (id) => lista.value.find((tema) => tema.id === temaValido(id, lista.value));
+    const gravado = computed(() => buscar(pagina.props.auth.user?.tema));
+    const atual = computed(() => buscar(temaEmTroca.value ?? pagina.props.auth.user?.tema));
 
-        return lista.value.find((tema) => tema.id === id);
-    });
-
-    return { atual, lista, trocar: (id) => trocarTema(id, { lista: lista.value, anterior: atual.value }) };
+    return { atual, lista, trocar: (id) => trocarTema(id, { lista: lista.value, anterior: gravado.value }) };
 }

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { lerTokens, razaoDeContraste, tokensDoTema } from '../../resources/js/contraste.js';
+import { corLegivelSobre, lerTokens, razaoDeContraste, tokensDoTema } from '../../resources/js/contraste.js';
 
 const MINIMO = 4.5;
 
@@ -118,4 +118,10 @@ test('cada_tema_define_os_proprios_tokens_de_cor', () => {
         const faltando = [...tokensDosPares].filter((token) => !proprios[token]);
         assert.deepEqual(faltando, [], `${arquivo}: tokens de cor herdados do Talão por esquecimento`);
     }
+});
+
+test('cor_legivel_sobre_escolhe_a_clara_no_escuro_e_a_escura_no_claro', () => {
+    assert.equal(corLegivelSobre('#18214A', '#FFFFFF', '#161B33'), '#FFFFFF'); // menu do Almanaque
+    assert.equal(corLegivelSobre('#FFFFFF', '#FFFFFF', '#1F2933'), '#1F2933'); // menu do Talão
+    assert.equal(corLegivelSobre('#808080', '#FFFFFF', '#FFFFFF'), '#FFFFFF');
 });

@@ -2,8 +2,10 @@
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { proximoDaArmadilha, saindoDaArmadilha } from '../armadilhaDeFoco.js';
+import { botaoDoUsuarioVisivel } from '../botaoDoUsuario.js';
 import { iniciaisDoNome } from '../iniciais.js';
 import FormularioDeSenha from './FormularioDeSenha.vue';
+import SeletorDeTema from './SeletorDeTema.vue';
 
 /**
  * Painel lateral do usuário (abre pelo botão do nome no menu). Mesmo contrato do `Modal.vue`: foco preso dentro,
@@ -53,7 +55,8 @@ watch(() => props.aberto, async (aberto) => {
     } else {
         document.body.style.overflow = '';
         document.removeEventListener('keydown', teclado);
-        focoAnterior?.focus?.();
+        // Trocar de tema pode trocar o menu (lateral para superior): o botão que abriu o painel deixa de existir.
+        (focoAnterior?.isConnected ? focoAnterior : botaoDoUsuarioVisivel())?.focus?.();
     }
 });
 
@@ -89,7 +92,8 @@ const sair = () => router.post('/sair');
                     </header>
 
                     <div class="flex-1 divide-y divide-linha overflow-y-auto">
-                        <!-- Seções (cada uma um <section class="px-6 py-5"> com <h3>), nesta ordem: Aparência (2.4), Alterar senha. -->
+                        <!-- Seções (cada uma um <section class="px-6 py-5"> com <h3>), nesta ordem: Aparência, Alterar senha. -->
+                        <SeletorDeTema />
                         <FormularioDeSenha />
                     </div>
 

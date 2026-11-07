@@ -116,7 +116,7 @@ class TemaDoUsuarioTest extends TestCase
             $this->assertNotSame('', $tema->descricao());
             $this->assertContains($tema->casca(), ['lateral', 'superior']);
             $this->assertContains($tema->painel(), ['empilhado', 'colunas', 'mosaico', 'regua']);
-            $this->assertCount(4, $tema->amostra());
+            $this->assertCount(5, $tema->amostra()); // fundo, texto, destaque, linha e menu
             foreach ($tema->amostra() as $cor) {
                 $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/', $cor, "{$tema->value}: cor de amostra inválida");
             }
@@ -131,5 +131,17 @@ class TemaDoUsuarioTest extends TestCase
             ['id', 'nome', 'descricao', 'casca', 'painel', 'linha_do_tempo', 'amostra'],
             array_keys(TemaVisual::paraOFront()[0]),
         );
+    }
+
+    /** A miniatura do seletor pinta o menu com a cor que o tema de fato usa: a amostra e o CSS não podem se separar. */
+    public function test_amostra_traz_a_cor_do_menu_igual_ao_token_do_tema(): void
+    {
+        foreach (TemaVisual::cases() as $tema) {
+            $arquivo = $tema === TemaVisual::Talao ? 'css/app.css' : "css/temas/{$tema->value}.css";
+            $achou = preg_match('/--color-menu-fundo:\s*(#[0-9A-Fa-f]{6})\s*;/', file_get_contents(resource_path($arquivo)), $trecho);
+
+            $this->assertSame(1, $achou, "{$tema->value}: sem --color-menu-fundo em {$arquivo}");
+            $this->assertSame(strtoupper($trecho[1]), $tema->amostra()[4], "{$tema->value}: a cor do menu na amostra difere do CSS");
+        }
     }
 }

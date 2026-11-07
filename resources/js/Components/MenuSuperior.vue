@@ -225,6 +225,7 @@ onBeforeUnmount(() => {
             type="button"
             class="flex min-h-11 items-center gap-2 rounded-(--raio-controle) px-2 text-sm font-semibold hover:bg-menu-ativo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono"
             :aria-label="usuario.name"
+            data-botao-do-usuario
             aria-haspopup="dialog"
             :aria-expanded="painelAberto"
             @click="emit('abrir-painel', $event)"
