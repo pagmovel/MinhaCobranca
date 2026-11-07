@@ -10,13 +10,20 @@ import { temaValido } from './temas.js';
 export const temaEmTroca = ref(null);
 
 /**
+ * Último tema que o servidor confirmou para quem está logado (resposta ok do `PUT /perfil/tema` ou as props de uma visita
+ * nova); `null` sem usuário. Nasce com o `data-tema` que o Blade pôs na carga. Existe porque o Inertia, ao voltar pelo
+ * botão do navegador, restaura as props de quando a página foi vista (`type: 'history'`), com o tema de antes da troca.
+ */
+export const temaConfirmado = ref(globalThis.document?.documentElement?.dataset?.tema ?? null);
+
+/**
  * Aplica o tema na hora (`data-tema` e `temaEmTroca`), grava com `PUT /perfil/tema` e, se falhar, volta ao tema
  * anterior. Nunca recarrega a página: as fontes do tema novo entram no `<head>` por `fontes(id)` (em paralelo com a
  * gravação) e, se não carregarem, o tema vale com as fontes de reserva.
  *
  * Resolve `{ ok: true, fontes: 'ok' | 'reserva' }` ou `{ ok: false, substituida }` (`substituida`: uma escolha mais nova
  * tomou o lugar desta, então não há erro a mostrar); nunca rejeita. `anterior` é o tema gravado hoje (item de `lista`).
- * `documento`, `roteador`, `fontes` e `emTroca` existem só para os testes rodarem sem navegador.
+ * `documento`, `roteador`, `fontes`, `emTroca` e `confirmado` existem só para os testes rodarem sem navegador.
  */
 export async function trocarTema(id, {
     lista,
@@ -25,6 +32,7 @@ export async function trocarTema(id, {
     roteador = roteadorDoInertia,
     fontes = carregarFontesDoTema,
     emTroca = temaEmTroca,
+    confirmado = temaConfirmado,
 }) {
     const novoId = temaValido(id, lista);
     const raiz = documento.documentElement;
@@ -37,7 +45,7 @@ export async function trocarTema(id, {
         roteador.put('/perfil/tema', { tema: novoId }, {
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => { gravou = true; },
+            onSuccess: () => { gravou = true; confirmado.value = novoId; },
             // false: sem o modal de erro do Inertia; quem chamou mostra a própria mensagem com "Tentar de novo".
             onHttpException: () => false,
             onNetworkError: () => false,
@@ -67,15 +75,36 @@ export async function trocarTema(id, {
  * Uma visita do Inertia que troca o usuário (entrar, sair) tem de trocar também o tema da tela: o `data-tema` do `<html>`
  * só vem do Blade (carga completa) e de `trocarTema`, então sem isto o Almanaque abria, depois do login, com a composição
  * dele e as cores e as fontes do Talão. Telas sem usuário (entrar, cadastro) ficam sempre no Talão. Não mexe durante uma
- * troca em andamento (quem escolheu o tema mandou nela). shortcut: sem usuário as fontes do Talão não são buscadas
- * (a rota de fontes pede login); quem sai do sistema vê a tela de entrada com as fontes de reserva até recarregar.
+ * troca em andamento (quem escolheu o tema mandou nela).
+ *
+ * `tipo` é o `type` do evento `navigate`. Em `'history'` (botão Voltar) o Inertia devolve as props guardadas quando a
+ * página foi vista, com o tema de antes de uma troca: vale o `temaConfirmado`, e a prop da página é corrigida com
+ * `replaceProp` (assim o seletor e o menu, que leem `auth.user.tema`, acompanham). Visita nova vem do servidor e confirma.
+ * shortcut: sem usuário as fontes do Talão não são buscadas (a rota de fontes pede login); quem sai do sistema vê a
+ * tela de entrada com as fontes de reserva até recarregar.
  */
-export function sincronizarTemaDaPagina(pagina, { documento = document, fontes = carregarFontesDoTema, emTroca = temaEmTroca } = {}) {
+export function sincronizarTemaDaPagina(pagina, {
+    tipo,
+    documento = document,
+    fontes = carregarFontesDoTema,
+    emTroca = temaEmTroca,
+    confirmado = temaConfirmado,
+    roteador = roteadorDoInertia,
+} = {}) {
+    const usuario = pagina.props.auth?.user;
+    let id = usuario ? temaValido(usuario.tema, pagina.props.temas ?? []) : 'talao';
+    if (!usuario) {
+        confirmado.value = null;
+    } else if (tipo === 'history' && confirmado.value && confirmado.value !== id) {
+        id = confirmado.value;
+        roteador.replaceProp('auth.user.tema', id);
+    } else {
+        confirmado.value = id;
+    }
+
     if (emTroca.value) {
         return;
     }
-    const usuario = pagina.props.auth?.user;
-    const id = usuario ? temaValido(usuario.tema, pagina.props.temas ?? []) : 'talao';
     const raiz = documento.documentElement;
     if (raiz.dataset.tema !== id) {
         raiz.dataset.tema = id;

@@ -15,6 +15,7 @@ const lista = [talao, regua, almanaque];
 function cenario(desfecho = 'sucesso', temaNaPagina = 'talao', aoEnviar = () => {}, fontes = () => 'ok') {
     const dataset = { tema: temaNaPagina };
     const emTroca = ref(null);
+    const confirmado = ref(temaNaPagina);
     const requisicoes = [];
     const retornos = {};
     const ordem = [];
@@ -37,6 +38,7 @@ function cenario(desfecho = 'sucesso', temaNaPagina = 'talao', aoEnviar = () => 
     return {
         dataset,
         emTroca,
+        confirmado,
         requisicoes,
         retornos,
         ordem,
@@ -47,6 +49,7 @@ function cenario(desfecho = 'sucesso', temaNaPagina = 'talao', aoEnviar = () => 
             roteador,
             fontes: (idDasFontes) => { ordem.push(`fontes:${idDasFontes}`); return fontes(idDasFontes); },
             emTroca,
+            confirmado,
         }),
     };
 }
@@ -112,6 +115,18 @@ test('falha_de_http_e_de_rede_nao_abre_o_modal_de_erro_do_inertia', async () => 
     assert.equal(rede.retornos.rede, false);
 });
 
+test('gravacao_ok_confirma_o_tema_e_falha_deixa_o_confirmado_como_estava', async () => {
+    const ok = cenario('sucesso');
+    await ok.trocar('regua');
+    assert.equal(ok.confirmado.value, 'regua');
+
+    for (const desfecho of ['erro', 'http', 'rede']) {
+        const c = cenario(desfecho);
+        await c.trocar('regua');
+        assert.equal(c.confirmado.value, 'talao', desfecho);
+    }
+});
+
 test('falha_nao_desfaz_a_escolha_mais_nova_e_nao_conta_como_erro', async () => {
     const c = cenario('erro', 'talao', () => { c.dataset.tema = 'almanaque'; c.emTroca.value = 'almanaque'; });
 
@@ -171,16 +186,28 @@ test('mesmo_tema_grava_e_nao_pede_nada_de_diferente', async () => {
     assert.equal(c.dataset.tema, 'talao');
 });
 
-/** Cenário da visita do Inertia que muda o usuário (login e saída), sem navegador. */
-function visita(temaNaPagina, usuario, emTrocaNaVisita = null) {
+/**
+ * Cenário da visita do Inertia que muda o usuário (login e saída), ou do Voltar do navegador (`tipo: 'history'`),
+ * sem navegador. `confirmadoAntes` é o último tema que o servidor confirmou.
+ */
+function visita(temaNaPagina, usuario, emTrocaNaVisita = null, { tipo = 'visit', confirmadoAntes = null } = {}) {
     const dataset = { tema: temaNaPagina };
     const fontesPedidas = [];
+    const props = [];
+    const confirmado = ref(confirmadoAntes);
     sincronizarTemaDaPagina(
         { props: { auth: { user: usuario }, temas: lista } },
-        { documento: { documentElement: { dataset } }, fontes: (id) => fontesPedidas.push(id), emTroca: ref(emTrocaNaVisita) },
+        {
+            tipo,
+            documento: { documentElement: { dataset } },
+            fontes: (id) => fontesPedidas.push(id),
+            emTroca: ref(emTrocaNaVisita),
+            confirmado,
+            roteador: { replaceProp: (nome, valor) => props.push([nome, valor]) },
+        },
     );
 
-    return { dataset, fontesPedidas };
+    return { dataset, fontesPedidas, props, confirmado };
 }
 
 test('login_aplica_o_tema_do_usuario_e_busca_as_fontes_dele', () => {
@@ -213,4 +240,42 @@ test('nao_mexe_durante_uma_troca_em_andamento', () => {
 
     assert.equal(dataset.tema, 'almanaque');
     assert.deepEqual(fontesPedidas, []);
+});
+
+test('voltar_no_historico_mantem_o_tema_confirmado_e_corrige_a_prop_antiga', () => {
+    // A tela já está em Régua (o banco também); a entrada do histórico guardou o Talão.
+    const { dataset, fontesPedidas, props, confirmado } = visita('regua', { tema: 'talao' }, null, { tipo: 'history', confirmadoAntes: 'regua' });
+
+    assert.equal(dataset.tema, 'regua');
+    assert.deepEqual(props, [['auth.user.tema', 'regua']]);
+    assert.deepEqual(fontesPedidas, []);
+    assert.equal(confirmado.value, 'regua');
+});
+
+test('voltar_no_historico_com_a_prop_igual_ao_confirmado_nao_mexe_em_nada', () => {
+    const { dataset, props } = visita('regua', { tema: 'regua' }, null, { tipo: 'history', confirmadoAntes: 'regua' });
+
+    assert.equal(dataset.tema, 'regua');
+    assert.deepEqual(props, []);
+});
+
+test('visita_nova_vale_mais_que_o_confirmado_porque_vem_do_servidor', () => {
+    const { dataset, props, confirmado } = visita('regua', { tema: 'almanaque' }, null, { tipo: 'visit', confirmadoAntes: 'regua' });
+
+    assert.equal(dataset.tema, 'almanaque');
+    assert.deepEqual(props, []);
+    assert.equal(confirmado.value, 'almanaque');
+});
+
+test('saida_esquece_o_tema_confirmado', () => {
+    const { confirmado } = visita('regua', null, null, { tipo: 'visit', confirmadoAntes: 'regua' });
+
+    assert.equal(confirmado.value, null);
+});
+
+test('voltar_a_uma_tela_sem_usuario_nao_aplica_o_confirmado', () => {
+    const { dataset, props } = visita('regua', null, null, { tipo: 'history', confirmadoAntes: 'regua' });
+
+    assert.equal(dataset.tema, 'talao');
+    assert.deepEqual(props, []);
 });

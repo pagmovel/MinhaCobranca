@@ -10,7 +10,7 @@ vigiarFetch();
 router.on('start', () => { pendentes.value++; });
 router.on('finish', () => { pendentes.value = Math.max(0, pendentes.value - 1); });
 // Entrar e sair são visitas do Inertia: o tema da tela acompanha o usuário da página nova.
-router.on('navigate', (evento) => sincronizarTemaDaPagina(evento.detail.page));
+router.on('navigate', (evento) => sincronizarTemaDaPagina(evento.detail.page, { tipo: evento.detail.type }));
 
 createInertiaApp({
     resolve: (name) => {
