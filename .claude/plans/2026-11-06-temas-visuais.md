@@ -13,6 +13,16 @@
 
 ---
 
+## 0. Escopo desta execução (comando do Marcos em 2026-11-07)
+
+> "implemente painel-bento-timeline e painel-linha-do-tempo. Vai ficar como pendente pro futuro os outros."
+
+- **Entram:** os temas **Almanaque** e **Régua** (mais o Talão, que já existe). Tarefas: 1.1 a 1.3, 2.1 a 2.4, 3.1 a 3.5, 4.1, 4.5, 5.1, 5.2, 6.1 (só a variante com linha do tempo), 7.1 a 7.3, 8.1, 9.1 (com 3 temas) e 9.2.
+- **Pendentes para o futuro, fora desta execução:** os temas **Fluxo**, **Livro-caixa** e **Mosaico**. Ou seja, as tarefas 4.2, 4.3, 4.4 e 6.2 e, dentro da 6.1, os blocos "Semana à frente" e "Recebido por dia". O enum começa com `Talao`, `Regua` e `Almanaque` e ganha os outros casos quando cada tema for feito.
+- **Ajustes de escopo:** a emissão de `resumo` pelo `ListaDoPainel` e o `fatiasDoMes` (que o bloco Dinheiro precisa) passam da 4.2 para a 6.1. `almanaque.css` traz os próprios tokens; o Mosaico os reaproveita quando vier. Com 3 temas, o seletor (2.4) e o popup (4.5) já valem.
+- **Decisões da seção 7 assumidas pela recomendação** (nomes, "Sair" só no painel, senha mantém as outras sessões e é auditada, popup só para usuários antigos, pastas novas aprovadas ao mandar implementar, linha do tempo só do mês corrente). A do rosa do Livro-caixa fica para quando esse tema vier.
+- **Execução:** por subagentes (modelo `sonnet`), no branch `feature/temas-visuais`; merge `--no-ff` no `main` e push ao fim; migração só no Postgres local, rodada por quem coordena depois da conferência do alvo. Deploy é do Marcos.
+
 ## 1. Pedido do Marcos (2026-11-06)
 
 1. Implementar como temas: `modelo-b-painel.html`, `painel-bento.html`, `painel-bento-timeline.html`, `painel-linha-do-tempo.html` e `painel-escuro.html` (citado duas vezes, contado uma). `painel-lista.html` **não** entra.
@@ -174,16 +184,16 @@ Os protótipos usam dados fictícios em memória. No app:
 - Mover o corpo de `Pages/Painel.vue` para `Components/Painel/PainelEmpilhado.vue` sem mudar nada visível; `Painel.vue` escolhe o componente por `temaAtual.painel`. `temas.js`: `componenteDoPainel(painel: string): string` (desconhecido = `empilhado`).
 - **Testes:** `tests/js/temas.test.js` (`painel_desconhecido_usa_empilhado`); `PainelTest` inteiro continua verde.
 
-### Tarefa 4.2: `PainelColunas` e barra do mês. Estado: pendente
+### Tarefa 4.2: `PainelColunas` e barra do mês. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - `ListaDoPainel.vue` passa a emitir `resumo` (`{ lista, quantidade, soma_centavos }`); `PainelColunas.vue` junta as três listas e o `BlocoVencendo` e alimenta `BarraDoMes.vue`.
 - `fatiasDoMes({ previsto, recebido, aguardando, paraEnviar }): Array<{ chave, centavos, porcento }>` (maior resto: soma 100; `previsto` 0 devolve lista vazia).
 - **Testes** (`tests/js/fatiasDoMes.test.js`): `porcentos_somam_100`, `previsto_zero_nao_divide_por_zero`, `fatia_zerada_continua_na_lista`.
 
-### Tarefa 4.3: tema Fluxo. Estado: pendente
+### Tarefa 4.3: tema Fluxo. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - Caso `Fluxo` no enum; `resources/css/temas/fluxo.css` (paleta e fontes do protótipo); casca lateral azul-marinho; painel `colunas`. Efeitos: barra enche na abertura e números contam, número que muda pisca (`.destacar`), carimbo PAGO na baixa, vencida pulsa no máximo 3 vezes, aviso na tela com linha do tempo. Tudo desligado em `prefers-reduced-motion`.
 - **Testes:** `contraste.test.js` passa com o tema novo; `test_tema_fluxo_e_aceito_na_troca` e `test_html_traz_data_tema_fluxo` (PHP). Smoke test em 1440 e 390.
 
-### Tarefa 4.4: tema Livro-caixa. Estado: pendente
+### Tarefa 4.4: tema Livro-caixa. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - Caso `LivroCaixa`; `livro-caixa.css` (verde-tinta, tintas de caneta/ocre/cédula/carimbo, `color-scheme: dark`); barra do mês como **régua de tinta**; carimbo PAGO com mancha; traço de caneta ao mudar de etapa (CSS).
 - Pendente da seção 7, item 3 (cor do botão principal).
 - **Testes:** contraste passa; `test_tema_livro_caixa_e_aceito_na_troca`. Smoke test: campos de data e select legíveis no escuro.
@@ -208,7 +218,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - Blocos: Dinheiro (anel SVG com `fatiasDoMes`), Vencidas, Hoje, Semana à frente, Recebido por dia, e a lista com abas deslizantes (Enviar, Aguardando, Recebidas, com contagem). As três listas ficam montadas; só a aba ativa aparece.
 - **Testes:** `fatiasDoMes` reutilizado; `tests/js/recebidoPorDia.test.js` (`agrupa_pagamentos_por_dia`, `mes_sem_pagamento_devolve_zeros`). Smoke test em 1440, 1100 e 390 (ordem dos blocos no celular: dinheiro, hoje, vencidas, lista, semana, recebido).
 
-### Tarefa 6.2: tema Mosaico. Estado: pendente
+### Tarefa 6.2: tema Mosaico. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - Caso `Mosaico`; `mosaico.css`; efeitos: anel preenche, carimbo PAGO com pulso do anel, barra do dia cresce, confete discreto ao esvaziar uma etapa.
 - **Testes:** contraste; `test_tema_mosaico_e_aceito_na_troca`.
 
