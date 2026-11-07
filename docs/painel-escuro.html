@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel, escuro de papel e tinta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap" rel="stylesheet">
+<style>
+    /* Escuro fosco de papel e tinta: livro-caixa e talão à noite.
+       Superfícies por variação de tom (página, folha, folha elevada), divisórias de pauta, tintas dessaturadas
+       com significado fixo e um único rosa de marca-texto reservado para a ação principal. */
+    :root {
+        color-scheme: dark;
+        --serifa: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+        --sans: 'Public Sans', system-ui, sans-serif;
+
+        --fundo: #15221C;          /* página: verde-tinta de cédula */
+        --folha: #1B2B24;          /* painéis do mês e das etapas */
+        --folha-2: #23362D;        /* o que flutua: menu ⋯, janela, linha em viagem */
+        --menu-fundo: #0F1914;     /* menu lateral, o mais fundo */
+        --papel: #ECE6D4;          /* texto: papel levemente quente */
+        --apagado: #AEB29F;
+        --pauta: #2C4036;          /* linhas finas de livro-caixa */
+        --pauta-forte: #41584B;
+        --contorno: #7C9488;       /* borda de controle (3:1 contra a folha) */
+
+        --azul: #7B9EDD;           /* enviar: tinta de caneta */
+        --ocre: #EDCC73;           /* aguardando: envelope */
+        --cedula: #8AD79F;         /* recebido: verde de cédula */
+        --carimbo: #F08783;        /* vencida: vermelho de carimbo */
+        --tijolo: #F6A069;         /* vence hoje: laranja-tijolo */
+
+        --rosa: #F164AF;           /* ação principal: marca-texto rosa */
+        --rosa-claro: #F67FC0;
+        --rosa-base: #A63B77;
+        --sobre-rosa: #1B1016;
+        --sobre-tinta: #14201B;    /* texto escuro sobre as tintas */
+
+        --cor: var(--azul);
+        /* Textura de papel: pontos claros quase invisíveis, sem gradiente. */
+        --grao: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .96  0 0 0 0 .85  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--grao), var(--fundo); }
+    body {
+        margin: 0; color: var(--papel);
+        font: 400 15px/1.5 var(--sans); font-variant-numeric: tabular-nums lining-nums;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--papel); }
+    h1, h2, h3, p { margin: 0; }
+    :focus-visible { outline: 2px solid var(--papel); outline-offset: 3px; }
+
+    .faixa-prototipo { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; padding: 4px 16px; background: #0A110D; border-bottom: 1px solid var(--pauta); color: var(--apagado); font-size: 13px; }
+    .faixa-prototipo button { background: none; border: 1px solid var(--contorno); color: var(--papel); border-radius: 4px; min-height: 44px; padding: 0 14px; cursor: pointer; transition: background-color .15s; }
+    .faixa-prototipo button:hover { background: var(--folha); }
+
+    /* ---------- Menu lateral ---------- */
+    .app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+    .menu { background: var(--grao), var(--menu-fundo); border-right: 1px solid var(--pauta); }
+    .menu-interno { position: sticky; top: 0; min-height: 100vh; display: flex; flex-direction: column; gap: 28px; padding: 26px 12px 20px; color: var(--apagado); }
+    .marca { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+    .marca svg { color: var(--papel); flex: none; }
+    .marca-nome { font: 600 17px/1.2 var(--serifa); color: var(--papel); flex: 1; }
+    .menu-abrir { display: none; background: none; border: 1px solid var(--contorno); color: var(--papel); border-radius: 4px; min-height: 44px; padding: 0 16px; cursor: pointer; }
+    .menu ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .menu a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; text-decoration: none; color: var(--apagado); transition: background-color .15s, color .15s; }
+    .menu a:hover { background: var(--folha); color: var(--papel); }
+    .menu a[aria-current] { background: var(--folha-2); color: var(--papel); font-weight: 600; }
+    .contador { margin-left: auto; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 4px; background: var(--ocre); color: var(--sobre-tinta); font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+    .usuario { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 14px 8px 0; border-top: 1px solid var(--pauta); font-size: 14px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--folha-2); border: 1px solid var(--pauta-forte); color: var(--papel); display: grid; place-items: center; font: 600 13px var(--serifa); flex: none; }
+    .usuario span:not(.avatar) { flex: 1; color: var(--papel); }
+    .usuario button { background: none; border: 0; color: var(--apagado); cursor: pointer; min-height: 44px; min-width: 44px; padding: 0 8px; border-radius: 4px; text-decoration: underline; text-underline-offset: 3px; }
+    .usuario button:hover { color: var(--papel); }
+    @media (max-width: 860px) {
+        .app { grid-template-columns: minmax(0, 1fr); }
+        .menu { border-right: 0; border-bottom: 1px solid var(--pauta); }
+        .menu-interno { position: static; min-height: 0; padding: 10px 14px; gap: 10px; }
+        .menu-abrir { display: inline-flex; align-items: center; }
+        .menu:not(.aberto) ul, .menu:not(.aberto) .usuario { display: none; }
+    }
+
+    main { min-width: 0; padding: 32px clamp(16px, 2.6vw, 40px) 80px; display: flex; flex-direction: column; gap: 26px; }
+
+    /* ---------- Topo ---------- */
+    .topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+    .topo-data { font-size: 15px; color: var(--apagado); }
+    .topo h1 { margin-top: 2px; font: 600 clamp(34px, 4vw, 48px)/1.05 var(--serifa); letter-spacing: -0.015em; }
+    .avisos-topo { display: flex; flex-wrap: wrap; gap: 10px; margin-top: -10px; }
+    .aviso { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 16px; border-radius: 4px; background: var(--folha); border: 1px solid var(--pauta-forte); color: var(--papel); font-size: 14px; text-decoration: none; transition: background-color .15s, border-color .15s; }
+    .aviso:hover { background: var(--folha-2); border-color: var(--contorno); }
+    .aviso::before { content: ''; width: 8px; height: 8px; flex: none; background: var(--ocre); }
+    .aviso b { font-weight: 600; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+    .aviso[hidden] { display: none; }
+
+    /* ---------- Botões: o rosa é só da ação principal ---------- */
+    .botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: var(--rosa); color: var(--sobre-rosa); font: 700 14px var(--sans); text-decoration: none; cursor: pointer; box-shadow: 0 3px 0 var(--rosa-base); transition: background-color .15s, transform .08s, box-shadow .08s; }
+    .botao:hover { background: var(--rosa-claro); }
+    .botao:active { transform: translateY(3px); box-shadow: 0 0 0 var(--rosa-base); }
+    .botao[disabled] { opacity: .85; cursor: progress; }
+    .botao-secundario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 6px; border: 1.5px solid var(--contorno); background: transparent; color: var(--papel); font: 600 14px var(--sans); cursor: pointer; transition: background-color .15s, border-color .15s, transform .08s; }
+    .botao-secundario:hover { background: var(--folha-2); border-color: var(--papel); }
+    .botao-secundario:active { transform: translateY(1px); }
+    .girando { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(27,16,22,.3); border-top-color: var(--sobre-rosa); animation: girar .7s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* ---------- Folhas ---------- */
+    .folha { position: relative; background: var(--grao), var(--folha); border: 1px solid var(--pauta-forte); border-radius: 4px; }
+
+    /* Número que muda: passada de marca-texto na cor dele, que seca. */
+    .acende { animation: acende 1.2s ease-out; }
+    @keyframes acende { 0%, 20% { background-color: color-mix(in srgb, var(--c, var(--papel)) 38%, transparent); } 100% { background-color: transparent; } }
+
+    /* ---------- O dinheiro do mês: régua de tinta ---------- */
+    .mes { padding: 28px clamp(18px, 3vw, 40px) 8px; display: flex; flex-direction: column; gap: 26px; }
+    .mes-cabeca { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 48px; }
+    .mes-total h2 { font: 600 clamp(46px, 6.6vw, 88px)/1 var(--serifa); letter-spacing: -0.02em; text-decoration: underline double; text-decoration-thickness: 1.5px; text-decoration-color: var(--contorno); text-underline-offset: .13em; width: max-content; max-width: 100%; border-radius: 4px; }
+    .mes-total p { margin-top: 12px; font-size: 16px; color: var(--apagado); }
+    .mes-recebido { display: flex; align-items: baseline; gap: 12px; }
+    .mes-recebido strong { font: 600 clamp(44px, 5vw, 64px)/1 var(--serifa); letter-spacing: -0.02em; color: var(--cedula); border-radius: 4px; --c: var(--cedula); }
+    .mes-recebido span { font-size: 16px; color: var(--apagado); }
+
+    .regua { display: flex; flex-direction: column; gap: 4px; }
+    .regua-faixa { position: relative; height: 68px; }
+    /* A tinta (com borda de sangramento) fica numa camada; os números, em outra, para a borda irregular não deformar o texto. */
+    .regua-tinta { position: absolute; inset: 0; filter: url(#tinta); }
+    .regua-corpo { position: absolute; inset: 0; display: flex; gap: 3px; }
+    .regua-rotulos { position: absolute; inset: 0; display: flex; gap: 3px; }
+    .trecho { --c: var(--azul); --seca: color-mix(in srgb, var(--c) 84%, var(--fundo)); flex: 0 1 0; min-width: 0; background: var(--seca); transition: flex-grow .9s cubic-bezier(.3,.7,.2,1), opacity .25s; }
+    .rotulo { flex: 0 1 0; min-width: 0; display: flex; align-items: center; padding-left: 14px; overflow: hidden; transition: flex-grow .9s cubic-bezier(.3,.7,.2,1), opacity .25s; }
+    .rotulo b { font: 700 24px/1 var(--serifa); color: #0C1410; animation: aparecer .5s ease-out 1.6s backwards; }
+    .regua-faixa.sem-transicao .trecho, .regua-faixa.sem-transicao .rotulo { transition: none; }
+    .regua-faixa:has(.foco) :is(.trecho, .rotulo):not(.foco) { opacity: .35; }
+    .trecho.tingir { animation: tingir 1.3s ease-out; }
+    @keyframes tingir { 0% { background-color: color-mix(in srgb, var(--c) 45%, var(--papel)); } 100% { background-color: var(--seca); } }
+    /* A tinta escorre da esquerda para a direita, com a borda inclinada de quem arrasta o traço. */
+    .regua-corpo.escorrendo { animation: escorre 2s cubic-bezier(.4,.05,.25,1) .15s both; }
+    @keyframes escorre {
+        from { clip-path: polygon(-60px -10px, -30px -10px, -60px calc(100% + 10px), -60px calc(100% + 10px)); }
+        to { clip-path: polygon(-60px -10px, calc(100% + 40px) -10px, calc(100% + 10px) calc(100% + 10px), -60px calc(100% + 10px)); }
+    }
+    .regua-escala { position: relative; height: 30px; margin-right: 1px; }
+    .regua-escala i { position: absolute; top: 0; width: 1px; height: 5px; background: var(--contorno); }
+    .regua-escala i.g { height: 10px; background: var(--apagado); }
+    .regua-escala span { position: absolute; top: 12px; transform: translateX(var(--t)); font-size: 12.5px; color: var(--apagado); }
+
+    .mes-texto { container-type: inline-size; }
+    .legendas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--pauta-forte); }
+    .legenda { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 16px 20px 18px; background: none; border: 0; cursor: pointer; transition: background-color .15s; }
+    .legenda + .legenda { border-left: 1px solid var(--pauta); }
+    .legenda:first-child { padding-left: 0; }
+    .legenda:hover { background: color-mix(in srgb, var(--papel) 5%, transparent); }
+    .legenda-nome { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .legenda-nome::before { content: ''; width: 18px; height: 6px; background: var(--c); }
+    .legenda-valor { font: 600 clamp(26px, 2.6vw, 34px)/1.15 var(--serifa); letter-spacing: -0.01em; color: var(--c); border-radius: 4px; }
+    .legenda-info { font-size: 13.5px; color: var(--apagado); }
+    @container (max-width: 639px) {
+        .legendas { grid-template-columns: minmax(0, 1fr); }
+        .legenda { padding: 14px 0; }
+        .legenda + .legenda { border-left: 0; border-top: 1px solid var(--pauta); }
+    }
+
+    /* ---------- Etapas ---------- */
+    .etapas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+    @media (min-width: 1360px) { .etapas { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px; } }
+    .etapa { scroll-margin-top: 16px; outline: 2px solid transparent; outline-offset: 3px; }
+    .etapa:has(.menu-acoes) { z-index: 6; }
+    @media (min-width: 1360px) { .etapa:not(:nth-child(2)) { position: sticky; top: 16px; } }
+    .etapa.realce { animation: realce 1.4s ease-out; }
+    @keyframes realce { 0%, 35% { outline-color: var(--cor); } 100% { outline-color: transparent; } }
+    .etapa-topo { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "n t" "n r" "s s"; column-gap: 14px; align-items: center; padding: 20px 18px 18px; border-bottom: 1px solid var(--pauta-forte); }
+    .etapa-numero { grid-area: n; width: 30px; text-align: center; font: 600 46px/1 var(--serifa); color: var(--cor); }
+    .etapa-topo h2 { grid-area: t; font: 600 22px/1.2 var(--serifa); letter-spacing: -0.005em; }
+    .etapa-resumo { grid-area: r; font-size: 14px; color: var(--apagado); }
+    .etapa-soma { grid-area: s; justify-self: start; margin-top: 16px; font: 600 clamp(30px, 2.5vw, 38px)/1.1 var(--serifa); letter-spacing: -0.01em; color: var(--cor); text-decoration: underline double; text-decoration-thickness: 1.5px; text-decoration-color: var(--contorno); text-underline-offset: .14em; border-radius: 4px; --c: var(--cor); }
+    .grupo { margin: 0; padding: 14px 18px 4px; font-size: 13.5px; font-weight: 600; color: var(--apagado); display: flex; align-items: center; gap: 10px; }
+    .grupo::after { content: ''; flex: 1; height: 1px; background: var(--pauta); }
+    .grupo-vencida { color: var(--carimbo); }
+    .grupo-hoje { color: var(--tijolo); }
+    .vazio { margin: 18px; padding: 20px 16px; border: 1.5px dashed var(--pauta-forte); border-radius: 4px; font-size: 14px; color: var(--apagado); text-align: center; animation: aparecer .3s ease-out; }
+    .lista { display: flex; flex-direction: column; }
+
+    /* ---------- Cobrança: linha de pauta, sem caixa própria ---------- */
+    .item { position: relative; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--pauta); transition: background-color .15s; }
+    .item:last-child { border-bottom: 0; }
+    .item:hover { background: color-mix(in srgb, var(--papel) 3.5%, transparent); }
+    .item.chegou { animation: chegou 2s ease-out .4s; }
+    @keyframes chegou { 0% { background-color: transparent; } 14% { background-color: color-mix(in srgb, var(--cor-chegada) 20%, transparent); } 100% { background-color: transparent; } }
+    /* O sublinhado a caneta, na cor da etapa de destino. */
+    .item.chegou h3::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--cor-chegada); transform-origin: left; animation: sublinhar 2.2s ease-out .55s both; }
+    @keyframes sublinhar { 0% { transform: scaleX(0); opacity: 1; } 22% { transform: scaleX(1); opacity: 1; } 75% { opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+    .item.batida { animation: chegou 2s ease-out .4s, batida .3s ease-out .85s; }
+    @keyframes batida { 30% { transform: translateY(2px); } }
+    .item.vencida { background-color: color-mix(in srgb, var(--carimbo) 7%, var(--folha)); animation: avermelha 2s ease-in-out 3; }
+    @keyframes avermelha { 50% { background-color: color-mix(in srgb, var(--carimbo) 11%, var(--folha)); } }
+    .item-topo { display: flex; align-items: baseline; gap: 8px; }
+    .item h3 { position: relative; font-size: 15.5px; font-weight: 600; line-height: 1.35; }
+    .fio { flex: 1 1 14px; min-width: 14px; align-self: flex-end; margin-bottom: 5px; border-bottom: 2px dotted var(--pauta-forte); }
+    .item-valor { font: 600 18px/1.2 var(--serifa); white-space: nowrap; }
+    .item-detalhe { font-size: 13.5px; color: var(--apagado); }
+    .selos { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+    .selo { --s: var(--papel); display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 3px; font-size: 13px; font-weight: 600; color: var(--s); border: 1px solid color-mix(in srgb, var(--s) 55%, transparent); }
+    .selo-tijolo { --s: var(--tijolo); }
+    .selo-discreto { border-color: transparent; padding-inline: 0; font-weight: 500; color: var(--apagado); }
+    .selo.novo { animation: estalo .4s cubic-bezier(.3,1.6,.5,1); }
+    @keyframes estalo { from { transform: scale(.5); opacity: 0; } }
+    /* Vencida: carimbo vermelho que pulsa três vezes e para. */
+    .selo-vencida { --s: var(--carimbo); padding: 2px 10px; font-weight: 700; border: 1.5px solid var(--carimbo); outline: 1px solid color-mix(in srgb, var(--carimbo) 70%, transparent); outline-offset: 2px; margin: 3px 3px 3px 2px; transform: rotate(-2deg); animation: pulsa 1.5s ease-in-out 3; }
+    @keyframes pulsa { 40% { transform: rotate(-2deg) scale(1.09); } }
+    .item-acoes { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .item-acoes > .botao, .item-acoes > .botao-secundario { flex: 0 1 auto; min-width: 190px; }
+    @media (min-width: 1360px) { .item-acoes > .botao, .item-acoes > .botao-secundario { flex: 1; min-width: 0; } }
+    .mais { width: 44px; height: 44px; flex: none; margin-left: auto; border-radius: 6px; border: 1.5px solid var(--contorno); background: transparent; cursor: pointer; display: grid; place-items: center; transition: background-color .15s, border-color .15s, transform .08s; }
+    .mais:hover, .mais[aria-expanded="true"] { background: var(--folha-2); border-color: var(--papel); }
+    .mais:active { transform: translateY(1px); }
+    .menu-acoes { position: absolute; right: 18px; top: calc(100% - 10px); z-index: 5; min-width: 224px; background: var(--folha-2); border: 1px solid var(--contorno); border-radius: 4px; box-shadow: 0 18px 32px -10px rgba(0,0,0,.7); padding: 4px; display: flex; flex-direction: column; transform-origin: top right; animation: surgir .14s ease-out; }
+    .menu-acoes button { text-align: left; background: none; border: 0; min-height: 44px; padding: 0 14px; border-radius: 3px; font-size: 14px; cursor: pointer; transition: background-color .1s; }
+    .menu-acoes button:hover, .menu-acoes button:focus-visible { background: color-mix(in srgb, var(--papel) 10%, transparent); }
+    .menu-acoes .perigo { color: var(--carimbo); }
+    .menu-acoes .perigo:hover { background: color-mix(in srgb, var(--carimbo) 10%, transparent); }
+    @keyframes surgir { from { opacity: 0; transform: scale(.95) translateY(-5px); } }
+
+    /* Pago: o carimbo bate no recibo, a tinta se espalha em mancha e assenta. */
+    .carimbo { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 42px; margin: 6px 12px 6px 8px; padding: 0 16px 0 19px; color: var(--cedula); font: 700 22px/1 var(--serifa); letter-spacing: .16em; text-transform: uppercase; border: 3px solid currentColor; border-radius: 6px; transform: rotate(-6deg); filter: url(#carimbo); }
+    .carimbo::after { content: ''; position: absolute; inset: 3px; border: 1px solid currentColor; border-radius: 3px; opacity: .85; }
+    .carimbo::before { content: ''; position: absolute; inset: -12px -20px; z-index: -1; border-radius: 42% 58% 61% 39% / 47% 40% 60% 53%; background: color-mix(in srgb, var(--cedula) 14%, transparent); }
+    .carimbo.batendo { animation: carimbar .6s cubic-bezier(.2,.9,.3,1.1) .45s both; }
+    .carimbo.batendo::before { animation: mancha 1.2s ease-out .85s both; }
+    @keyframes carimbar {
+        0% { transform: scale(2.4) rotate(-15deg); opacity: 0; }
+        55% { transform: scale(.9) rotate(-6deg); opacity: 1; }
+        78% { transform: scale(1.04) rotate(-6deg); }
+        100% { transform: scale(1) rotate(-6deg); opacity: 1; }
+    }
+    @keyframes mancha { 0% { transform: scale(.25); opacity: 0; } 22% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+    /* ---------- Baixa no próprio item: canhoto destacável ---------- */
+    .baixa { display: flex; flex-direction: column; gap: 14px; padding: 16px; margin-top: 4px; border-radius: 4px; background: var(--fundo); border: 1.5px dashed var(--contorno); animation: desenrolar .3s ease-out; }
+    @keyframes desenrolar { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+    .baixa-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+    .campo { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--apagado); }
+    .campo input, .campo select, .campo textarea { min-height: 44px; border: 0; border-bottom: 1.5px solid var(--contorno); border-radius: 0; padding: 8px 4px; background: transparent; font: 500 15px var(--sans); color: var(--papel); transition: background-color .15s, border-color .15s; }
+    .campo input[name="valor"] { font: 600 22px var(--serifa); }
+    .campo select { color-scheme: dark; }
+    .campo option { background: var(--folha-2); color: var(--papel); }
+    .campo input:focus, .campo select:focus, .campo textarea:focus { background: color-mix(in srgb, var(--papel) 7%, transparent); border-bottom-color: var(--papel); }
+    .baixa-botoes { display: flex; gap: 8px; }
+    .baixa-botoes .botao { flex: 1; }
+    .aparecer { animation: aparecer .3s ease-out; }
+    @keyframes aparecer { from { opacity: 0; } }
+
+    /* ---------- Janela do WhatsApp ---------- */
+    .fundo-modal { position: fixed; inset: 0; background: rgba(9,15,12,.8); display: grid; place-items: center; padding: 16px; z-index: 20; animation: aparecer .18s ease-out; }
+    .modal { width: min(540px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 26px; display: flex; flex-direction: column; gap: 14px; background: var(--grao), var(--folha-2); border: 1px solid var(--contorno); border-radius: 6px; box-shadow: 0 34px 60px -24px rgba(0,0,0,.8); animation: subir .26s cubic-bezier(.2,.8,.2,1); }
+    @keyframes subir { from { opacity: 0; transform: translateY(16px) rotate(.6deg); } }
+    .modal h2 { font: 600 24px/1.2 var(--serifa); }
+    .modal p { font-size: 14.5px; color: var(--apagado); }
+    .modal .campo textarea { min-height: 150px; resize: vertical; line-height: 1.55; border: 1.5px solid var(--contorno); border-radius: 4px; padding: 12px; background: var(--fundo); }
+    .modal-botoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+    /* ---------- Avisos na tela: canhoto de papel com a linha do tempo ---------- */
+    .avisos-tela { position: fixed; right: 16px; bottom: 16px; z-index: 30; display: flex; flex-direction: column; gap: 10px; max-width: min(400px, calc(100% - 32px)); }
+    .toast { position: relative; display: flex; align-items: center; gap: 12px; padding: 15px 20px 26px; background: var(--grao), var(--papel); color: #1B261F; font-size: 14.5px; font-weight: 600; line-height: 1.4; border-radius: 3px 3px 0 0; filter: drop-shadow(0 12px 14px rgba(0,0,0,.45)); animation: subir .26s ease-out;
+        -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; }
+    .toast svg { color: #2A6844; flex: none; }
+    .toast::after { content: ''; position: absolute; left: 20px; right: 20px; bottom: 15px; height: 2px; background: #1B261F; transform-origin: left; animation: tempo 3.8s linear forwards; }
+    @keyframes tempo { to { transform: scaleX(0); } }
+    .toast.saindo { animation: sair .25s ease-in forwards; }
+    @keyframes sair { to { opacity: 0; transform: translateX(16px); } }
+
+    /* ---------- Camada do traço de caneta ---------- */
+    .camada-efeitos { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+    .camada-efeitos svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; scroll-behavior: auto !important; }
+    }
+</style>
+</head>
+<body>
+<!-- Filtros de tinta: borda irregular da régua, carimbo gasto e traço de caneta. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="tinta" x="-2%" y="-12%" width="104%" height="124%">
+        <feTurbulence type="fractalNoise" baseFrequency=".045 .16" numOctaves="2" seed="7" result="ruido"/>
+        <feDisplacementMap in="SourceGraphic" in2="ruido" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="carimbo" x="-12%" y="-20%" width="124%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4" result="grao"/>
+        <feColorMatrix in="grao" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -5 3.3" result="falhas"/>
+        <feComposite in="SourceGraphic" in2="falhas" operator="in" result="gasto"/>
+        <feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="9" result="onda"/>
+        <feDisplacementMap in="gasto" in2="onda" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="caneta" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="2" result="ruido"/>
+        <feDisplacementMap in="SourceGraphic" in2="ruido" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+</svg>
+
+<div class="faixa-prototipo">
+    <span>Protótipo com dados fictícios. Os botões funcionam, mas nada é gravado.</span>
+    <button type="button" id="recomecar">Recomeçar</button>
+</div>
+
+<div class="app">
+    <nav class="menu" aria-label="Principal">
+        <div class="menu-interno">
+            <div class="marca">
+                <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M5 2.5h14v19l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 21.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg>
+                <span class="marca-nome">Gerenciador de Cobranças</span>
+                <button type="button" class="menu-abrir" aria-expanded="false" aria-controls="itens-menu">Menu</button>
+            </div>
+            <ul id="itens-menu"></ul>
+            <div class="usuario">
+                <span class="avatar" aria-hidden="true">MR</span>
+                <span>Marcos Ronaldo</span>
+                <button type="button">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <header class="topo">
+            <div>
+                <p class="topo-data">Sexta, 6 de novembro</p>
+                <h1>Novembro de 2026</h1>
+            </div>
+            <a href="#" class="botao"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>Nova cobrança</a>
+        </header>
+
+        <div class="avisos-topo">
+            <a href="#" class="aviso" id="aviso-nao-uteis" hidden></a>
+            <a href="#" class="aviso">1 contrato termina nos próximos dias. <b>Ver contratos</b></a>
+        </div>
+
+        <section class="mes folha" aria-labelledby="previsto">
+            <div class="mes-cabeca">
+                <div class="mes-total">
+                    <h2 id="previsto">R$ 0,00</h2>
+                    <p>previstos para novembro</p>
+                </div>
+                <p class="mes-recebido"><strong id="pct-centro">0%</strong><span>já recebido</span></p>
+            </div>
+            <div class="regua">
+                <div class="regua-faixa" id="regua-faixa" role="img">
+                    <div class="regua-tinta"><div class="regua-corpo escorrendo" id="regua-corpo"></div></div>
+                    <div class="regua-rotulos" id="regua-rotulos"></div>
+                </div>
+                <div class="regua-escala" id="regua-escala" aria-hidden="true"></div>
+            </div>
+            <div class="mes-texto"><div class="legendas" id="legendas"></div></div>
+        </section>
+
+        <div class="etapas" id="etapas"></div>
+    </main>
+</div>
+
+<div class="avisos-tela" id="avisos-tela" aria-live="polite"></div>
+<div id="camada-modal"></div>
+<div class="camada-efeitos" id="camada-efeitos" aria-hidden="true"><svg id="camada-rastro"></svg></div>
+
+<script>
+// ---------- Dados fictícios (novembro de 2026 começa num domingo; hoje é dia 6) ----------
+const HOJE = 6;
+const ULTIMO_DIA_DO_AVISO = 11; // "dias de aviso" = 5
+const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const FERIADOS = { 2: 'Finados', 15: 'Proclamação da República', 20: 'Consciência Negra' };
+const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Dinheiro', 'Cartão'];
+
+const inicial = () => [
+    { id: 'c1', cliente: 'Padaria Grão Dourado', descricao: 'Manutenção do sistema', valor: 65000, venc: 15, etapa: 'enviar' },
+    { id: 'c2', cliente: 'Construtora Alicerce', descricao: 'Consultoria mensal', valor: 350000, venc: 18, etapa: 'enviar' },
+    { id: 'c3', cliente: 'Studio Lume', descricao: 'Hospedagem do site', valor: 18000, venc: 20, etapa: 'enviar' },
+    { id: 'c4', cliente: 'Moura & Lima Advogados', descricao: 'Suporte técnico', valor: 240000, venc: 5, etapa: 'aguardando' },
+    { id: 'c5', cliente: 'Pet Shop Amigo Fiel', descricao: 'Licença do sistema', valor: 32000, venc: 6, etapa: 'aguardando' },
+    { id: 'c6', cliente: 'Clínica Vida Plena', descricao: 'Manutenção do sistema', valor: 120000, venc: 9, etapa: 'aguardando' },
+    { id: 'c7', cliente: 'Academia Ritmo', descricao: 'Aplicativo de agendamento', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c8', cliente: 'Academia Ritmo', descricao: 'Suporte técnico', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c9', cliente: 'Mercado São Jorge', descricao: 'Manutenção mensal', valor: 110000, venc: 12, etapa: 'aguardando' },
+    { id: 'r1', cliente: 'Academia Ritmo', descricao: 'Mensalidade de outubro', valor: 140000, venc: 5, etapa: 'recebida', pagoEm: 5, forma: 'PIX' },
+    { id: 'r2', cliente: 'Mercado São Jorge', descricao: 'Implantação', valor: 210000, venc: 4, etapa: 'recebida', pagoEm: 4, forma: 'Transferência' },
+    { id: 'r3', cliente: 'Construtora Alicerce', descricao: 'Projeto de integração', valor: 350000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+    { id: 'r4', cliente: 'Studio Lume', descricao: 'Desenvolvimento do site', valor: 280000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+];
+let cobrancas = inicial();
+const ui = { menu: null, baixa: null, enviando: null, foco: null };
+const semMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Utilidades ----------
+const brl = (centavos) => (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dia = (d) => `${SEMANA[(d - 1) % 7]}, ${d}/11`;
+const fimDeSemana = (d) => [0, 6].includes((d - 1) % 7);
+const valorFinal = (c) => c.pago ?? c.valor;
+const soma = (lista) => lista.reduce((t, c) => t + valorFinal(c), 0);
+const da = (etapa) => cobrancas.filter((c) => c.etapa === etapa);
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const svg = (d, tam = 16) => `<svg aria-hidden="true" width="${tam}" height="${tam}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+const ICONE = {
+    enviar: 'M14.5 1.5l-6 13-2.5-5.5-5.5-2.5z',
+    whats: 'M2.5 13.5l1-3a6 6 0 1 1 2.2 2.1zM6 6.5c.3 1.5 1.8 3 3.5 3.5',
+    certo: 'M2.5 8.5l3.5 3.5 7.5-8',
+    mais: 'M3 8h.01M8 8h.01M13 8h.01',
+};
+const reiniciarAnimacao = (el, classe) => { el.classList.remove(classe); void el.offsetWidth; el.classList.add(classe); };
+
+function situacao(c) {
+    if (c.venc < HOJE) return 'vencida';
+    if (c.venc === HOJE) return 'hoje';
+    return c.venc <= ULTIMO_DIA_DO_AVISO ? 'breve' : 'depois';
+}
+const caiEmDiaNaoUtil = (c) => c.etapa !== 'recebida' && (FERIADOS[c.venc] || fimDeSemana(c.venc));
+
+// ---------- Menu lateral ----------
+const ITENS_MENU = [
+    ['Painel', 'M2 2h5v6H2zM9 2h5v3H9zM9 7h5v7H9zM2 10h5v4H2z'],
+    ['Cobranças', 'M3.5 1.5h9v13l-2.2-1.3-2.3 1.3-2.3-1.3-2.2 1.3zM6 5.5h4M6 8.5h4'],
+    ['Contratos', 'M4 1.5h5.5l2.5 2.5v10.5H4zM9.5 1.5V4H12M6 8.5h4M6 11h4'],
+    ['Clientes', 'M6 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1.5 14c0-2.6 2-4.5 4.5-4.5s4.5 1.9 4.5 4.5M10.5 2.3a2.5 2.5 0 0 1 0 4.6M12.5 9.8c1.3.6 2 2.1 2 4.2'],
+    ['Produtos e serviços', 'M8 1.5l6 3v7l-6 3-6-3v-7zM2 4.5l6 3 6-3M8 7.5v7'],
+    ['Relatórios', 'M2 14h12M4 11.5v-4M8 11.5V3M12 11.5V6'],
+    ['Auditoria', 'M8 1.5l5.5 2v4c0 3.4-2.3 5.8-5.5 7-3.2-1.2-5.5-3.6-5.5-7v-4zM5.5 8l1.8 1.8L10.5 6.5'],
+    ['Meu perfil', 'M8 7.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2.5 14.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5'],
+    ['Usuários', 'M5.5 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1 14c0-2.6 2-4.5 4.5-4.5S10 11.4 10 14M11 5.5h4M13 3.5v4', 2],
+];
+document.getElementById('itens-menu').innerHTML = ITENS_MENU.map(([rotulo, icone, contador], i) =>
+    `<li><a href="#" ${i ? '' : 'aria-current="page"'}>${svg(icone, 18)}${rotulo}${contador ? `<span class="contador" aria-label="${contador} aguardando aprovação">${contador}</span>` : ''}</a></li>`).join('');
+const botaoMenu = document.querySelector('.menu-abrir');
+botaoMenu.addEventListener('click', () => {
+    const aberto = document.querySelector('.menu').classList.toggle('aberto');
+    botaoMenu.setAttribute('aria-expanded', String(aberto));
+});
+
+// ---------- Etapas e régua do mês (as cores vêm das variáveis do CSS) ----------
+const ETAPAS = [
+    { chave: 'enviar', numero: 1, titulo: 'Enviar recibo', cor: 'var(--azul)', legenda: 'Para enviar' },
+    { chave: 'aguardando', numero: 2, titulo: 'Aguardando pagamento', cor: 'var(--ocre)', legenda: 'Aguardando' },
+    { chave: 'recebida', numero: 3, titulo: 'Recebidas no mês', cor: 'var(--cedula)', legenda: 'Recebido' },
+];
+const etapa = (chave) => ETAPAS.find((e) => e.chave === chave);
+
+document.getElementById('regua-corpo').innerHTML = ETAPAS.map((e) => `<span class="trecho" data-trecho-barra="${e.chave}" style="--c:${e.cor}"></span>`).join('');
+document.getElementById('regua-rotulos').innerHTML = ETAPAS.map((e) => `<span class="rotulo" data-trecho-barra="${e.chave}"><b>0%</b></span>`).join('');
+document.getElementById('regua-escala').innerHTML =
+    Array.from({ length: 51 }, (_, i) => `<i class="${i % 5 ? '' : 'g'}" style="left:${i * 2}%"></i>`).join('') +
+    [0, 50, 100].map((p) => `<span style="left:${p}%;--t:-${p}%">${p}%</span>`).join('');
+document.getElementById('legendas').innerHTML = ETAPAS.map((e) => `
+    <button type="button" class="legenda" data-ir="${e.chave}" data-trecho="${e.chave}" style="--c:${e.cor}">
+        <span class="legenda-nome">${e.legenda}</span>
+        <span class="legenda-valor" data-valor="${e.chave}">R$ 0,00</span>
+        <span class="legenda-info" data-info="${e.chave}"></span>
+    </button>`).join('');
+
+// Número que muda conta até o valor novo e recebe a passada de marca-texto, para o olho achar o que mudou.
+const valores = {}, ciclos = {};
+function contar(el, chave, para, formato = brl) {
+    const de = valores[chave] ?? 0;
+    valores[chave] = para;
+    const ciclo = ciclos[chave] = (ciclos[chave] ?? 0) + 1; // um contador novo cancela o anterior da mesma chave
+    if (de === para || semMovimento) { el.textContent = formato(para); return; }
+    if (chave in contar.vistos) reiniciarAnimacao(el, 'acende');
+    contar.vistos[chave] = true;
+    const inicio = performance.now(), duracao = primeiraVez ? 1600 : 800;
+    const passo = (agora) => {
+        if (ciclo !== ciclos[chave]) return;
+        const t = Math.min(1, (agora - inicio) / duracao);
+        el.textContent = formato(Math.round(de + (para - de) * (1 - Math.pow(1 - t, 3))));
+        if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+}
+contar.vistos = {};
+
+function desenharMes(mudou) {
+    const total = soma(cobrancas);
+    const regua = document.getElementById('regua-faixa');
+    if (primeiraVez) regua.classList.add('sem-transicao');
+    contar(document.getElementById('previsto'), 'previsto', total);
+    const partes = [];
+    ETAPAS.forEach((e) => {
+        const valor = soma(da(e.chave)), fracao = total ? valor / total : 0, pct = Math.round(fracao * 100);
+        const partesDaBarra = document.querySelectorAll(`[data-trecho-barra="${e.chave}"]`);
+        const trecho = partesDaBarra[0];
+        partesDaBarra.forEach((p) => { p.style.flexGrow = valor; });
+        document.querySelector(`.rotulo[data-trecho-barra="${e.chave}"] b`).textContent = pct + '%';
+        partes.push(`${e.legenda.toLowerCase()} ${pct}%`);
+        const legenda = document.querySelector(`[data-trecho="${e.chave}"]`);
+        legenda.setAttribute('aria-label', `${e.legenda}: ${brl(valor)}, ${pct}% do previsto, ${plural(da(e.chave).length, 'cobrança', 'cobranças')}. Ir para a etapa`);
+        legenda.onpointerenter = legenda.onfocus = () => partesDaBarra.forEach((p) => p.classList.add('foco'));
+        legenda.onpointerleave = legenda.onblur = () => partesDaBarra.forEach((p) => p.classList.remove('foco'));
+        document.querySelector(`[data-info="${e.chave}"]`).textContent = `${pct}% do previsto, ${plural(da(e.chave).length, 'cobrança', 'cobranças')}`;
+        contar(document.querySelector(`[data-valor="${e.chave}"]`), 'mes-' + e.chave, valor);
+        if (mudou?.includes(e.chave) && !semMovimento && !primeiraVez) reiniciarAnimacao(trecho, 'tingir');
+    });
+    regua.setAttribute('aria-label', `Divisão do previsto: ${partes.join(', ')}`);
+    contar(document.getElementById('pct-centro'), 'centro', total ? Math.round((soma(da('recebida')) / total) * 100) : 0, (v) => v + '%');
+    if (primeiraVez) requestAnimationFrame(() => requestAnimationFrame(() => regua.classList.remove('sem-transicao')));
+}
+
+function desenharAvisos() {
+    const n = cobrancas.filter(caiEmDiaNaoUtil).length;
+    const aviso = document.getElementById('aviso-nao-uteis');
+    aviso.hidden = !n;
+    aviso.innerHTML = `${n === 1 ? '1 cobrança vence' : `${n} cobranças vencem`} em domingo ou feriado. <b>Ver e ajustar</b>`;
+}
+
+// ---------- Cobranças ----------
+function selos(c) {
+    const s = [];
+    if (c.etapa === 'aguardando') {
+        const sit = situacao(c);
+        if (sit === 'vencida') s.push(['vencida', `Vencida há ${plural(HOJE - c.venc, 'dia', 'dias')}`]);
+        if (sit === 'hoje') s.push(['tijolo', 'Vence hoje']);
+        if (sit === 'breve') s.push(['discreto', `Vence em ${plural(c.venc - HOJE, 'dia', 'dias')}`]);
+        if (c.avisado) s.push(['neutro', `${svg(ICONE.certo, 12)}Avisado hoje`, c.avisadoAgora]);
+    }
+    if (caiEmDiaNaoUtil(c)) s.push(['neutro', FERIADOS[c.venc] ? `Vence em feriado (${FERIADOS[c.venc]})` : 'Vence no fim de semana']);
+    return s.length ? `<div class="selos">${s.map(([tom, txt, novo]) => `<span class="selo selo-${tom}${novo ? ' novo' : ''}">${txt}</span>`).join('')}</div>` : '';
+}
+
+function acaoPrincipal(c) {
+    if (c.etapa === 'enviar') return 'enviar';
+    if (c.etapa === 'aguardando') return situacao(c) !== 'depois' && !c.avisado ? 'avisar' : 'baixa';
+    return null;
+}
+
+function botaoPrincipal(c) {
+    const acao = acaoPrincipal(c);
+    if (acao === 'enviar') {
+        return ui.enviando === c.id
+            ? `<button type="button" class="botao" disabled><span class="girando" aria-hidden="true"></span>Enviando…</button>`
+            : `<button type="button" class="botao" data-acao="enviar" data-id-alvo="${c.id}">${svg(ICONE.enviar)}Enviar recibo</button>`;
+    }
+    if (acao === 'avisar') return `<button type="button" class="botao-secundario" data-acao="avisar" data-id-alvo="${c.id}">${svg(ICONE.whats)}Avisar no WhatsApp</button>`;
+    if (acao === 'baixa') return `<button type="button" class="${situacao(c) === 'depois' ? 'botao-secundario' : 'botao'}" data-acao="baixa" data-id-alvo="${c.id}" aria-expanded="false">${svg(ICONE.certo)}Dar baixa</button>`;
+    return `<span class="carimbo${c.pagoAgora ? ' batendo' : ''}">Pago</span>`;
+}
+
+function itensDoMenu(c) {
+    const principal = acaoPrincipal(c);
+    const itens = [];
+    if (c.etapa === 'enviar') itens.push(['Ver recibo', 'fora'], ['Editar cobrança', 'fora']);
+    if (c.etapa === 'aguardando') {
+        if (principal !== 'baixa') itens.push(['Dar baixa', 'baixa']);
+        if (principal !== 'avisar') itens.push(['Avisar no WhatsApp', 'avisar']);
+        itens.push(['Forma de pagamento', 'fora'], ['Prorrogar vencimento', 'fora'], ['Reenviar recibo', 'fora']);
+    }
+    if (c.etapa === 'recebida') itens.push(['Ver recibo', 'fora'], ['Corrigir pagamento', 'fora']);
+    if (c.etapa !== 'recebida') itens.push(['Cancelar cobrança', 'fora', 'perigo']);
+    return itens;
+}
+
+function formularioDeBaixa(c) {
+    return `
+    <form class="baixa" data-form-baixa="${c.id}">
+        <div class="baixa-campos">
+            <label class="campo">Data do pagamento<input type="date" name="data" value="2026-11-06" min="2026-10-01" max="2026-11-06"></label>
+            <label class="campo">Valor recebido<input name="valor" inputmode="numeric" value="${(c.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" data-mascara-valor></label>
+        </div>
+        <label class="campo">Forma de pagamento<select name="forma">${FORMAS.map((f) => `<option>${f}</option>`).join('')}</select></label>
+        <div class="baixa-botoes">
+            <button class="botao" type="submit">Confirmar baixa</button>
+            <button type="button" class="botao-secundario" data-acao="voltar">Voltar</button>
+        </div>
+    </form>`;
+}
+
+function item(c) {
+    const detalhe = c.etapa === 'recebida'
+        ? `${c.descricao}. ${c.forma} em ${c.pagoEm}/11`
+        : `${c.descricao}. ${situacao(c) === 'vencida' ? 'Venceu' : 'Vence'} ${dia(c.venc)}`;
+    const menu = ui.menu === c.id
+        ? `<div class="menu-acoes" role="menu" aria-label="Mais ações">${itensDoMenu(c).map(([rotulo, acao, classe]) =>
+            `<button type="button" role="menuitem" class="${classe || ''}" data-acao="${acao}" data-id-alvo="${c.id}" data-rotulo="${rotulo}">${rotulo}</button>`).join('')}</div>`
+        : '';
+    const classes = ['item', c.etapa === 'aguardando' && situacao(c) === 'vencida' && 'vencida', c.chegou && 'chegou', c.pagoAgora && 'batida'].filter(Boolean).join(' ');
+    return `
+    <article class="${classes}" data-id="${c.id}" style="--cor-chegada:${etapa(c.etapa).cor}">
+        <div class="item-topo">
+            <h3>${c.cliente}</h3>
+            <i class="fio" aria-hidden="true"></i>
+            <span class="item-valor">${brl(valorFinal(c))}</span>
+        </div>
+        <p class="item-detalhe">${detalhe}</p>
+        ${selos(c)}
+        ${ui.baixa === c.id ? formularioDeBaixa(c) : `
+        <div class="item-acoes">
+            ${botaoPrincipal(c)}
+            <button type="button" class="mais" data-acao="menu" data-id-alvo="${c.id}" aria-haspopup="menu" aria-expanded="${ui.menu === c.id}" aria-label="Mais ações para ${c.cliente}">${svg(ICONE.mais, 18)}</button>
+        </div>`}
+        ${menu}
+    </article>`;
+}
+
+const VAZIO = {
+    enviar: 'Tudo enviado. Cobranças novas aparecem aqui 10 dias antes do vencimento.',
+    aguardando: 'Nenhuma cobrança enviada esperando pagamento.',
+    recebida: 'Nenhum pagamento registrado neste mês.',
+};
+const GRUPOS = [
+    ['vencida', 'Vencidas'], ['hoje', 'Vencem hoje'], ['breve', `Vencem até ${dia(ULTIMO_DIA_DO_AVISO)}`], ['depois', 'Vencem depois'],
+];
+
+function coluna(e) {
+    let lista = da(e.chave);
+    lista = e.chave === 'recebida' ? lista.sort((a, b) => b.pagoEm - a.pagoEm) : lista.sort((a, b) => a.venc - b.venc);
+    let corpo;
+    if (!lista.length) corpo = `<p class="vazio">${VAZIO[e.chave]}</p>`;
+    else if (e.chave === 'aguardando') {
+        corpo = GRUPOS.map(([sit, rotulo]) => {
+            const doGrupo = lista.filter((c) => situacao(c) === sit);
+            return doGrupo.length ? `<h3 class="grupo grupo-${sit}">${rotulo}</h3>${doGrupo.map(item).join('')}` : '';
+        }).join('');
+    } else corpo = lista.map(item).join('');
+    return `
+    <section class="etapa folha" id="etapa-${e.chave}" data-etapa="${e.chave}" aria-labelledby="titulo-${e.chave}" style="--cor:${e.cor}">
+        <header class="etapa-topo">
+            <span class="etapa-numero" aria-hidden="true">${e.numero}</span>
+            <h2 id="titulo-${e.chave}">${e.titulo}</h2>
+            <p class="etapa-resumo">${plural(lista.length, 'cobrança', 'cobranças')}</p>
+            <p class="etapa-soma" data-soma="${e.chave}"></p>
+        </header>
+        <div class="lista">${corpo}</div>
+    </section>`;
+}
+
+// ---------- Efeito: o traço de caneta de quem muda de etapa ----------
+const camadaRastro = document.getElementById('camada-rastro');
+const NS = 'http://www.w3.org/2000/svg';
+const centro = (r) => ({ x: r.left + r.width / 2, y: Math.min(Math.max(r.top + Math.min(r.height / 2, 36), 28), innerHeight - 28) });
+
+// A caneta sai do lugar antigo e termina no novo, na cor da etapa de destino, com o tremor leve de uma mão.
+function rastro(a, b, cor) {
+    const horizontal = Math.abs(b.x - a.x) >= Math.abs(b.y - a.y);
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const guia = document.createElementNS(NS, 'path');
+    guia.setAttribute('d', horizontal ? `M${a.x} ${a.y} C${mx} ${a.y} ${mx} ${b.y} ${b.x} ${b.y}` : `M${a.x} ${a.y} C${a.x} ${my} ${b.x} ${my} ${b.x} ${b.y}`);
+    camadaRastro.append(guia);
+    const tam = guia.getTotalLength(), passos = Math.max(6, Math.round(tam / 40));
+    const pontos = Array.from({ length: passos + 1 }, (_, i) => {
+        const p = guia.getPointAtLength((tam * i) / passos), tremor = i === 0 || i === passos ? 0 : (Math.random() - 0.5) * 6;
+        return [p.x + tremor, p.y - tremor * 0.7];
+    });
+    guia.remove();
+    let d = `M${pontos[0][0]} ${pontos[0][1]}`;
+    for (let i = 1; i < pontos.length - 1; i++) d += `Q${pontos[i][0]} ${pontos[i][1]} ${(pontos[i][0] + pontos[i + 1][0]) / 2} ${(pontos[i][1] + pontos[i + 1][1]) / 2}`;
+    d += `L${pontos[pontos.length - 1][0]} ${pontos[pontos.length - 1][1]}`;
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('filter', 'url(#caneta)');
+    g.innerHTML = `<path d="${d}" fill="none" style="stroke:${cor}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+                   <path d="${d}" fill="none" style="stroke:${cor}" stroke-width="9" stroke-linecap="round"/>`;
+    camadaRastro.append(g);
+    const [traco, ponta] = g.querySelectorAll('path'), comprimento = traco.getTotalLength();
+    const opcoes = { duration: 640, easing: 'cubic-bezier(.45,0,.2,1)', fill: 'forwards' };
+    traco.style.strokeDasharray = `${comprimento}`;
+    traco.animate([{ strokeDashoffset: comprimento }, { strokeDashoffset: 0 }], opcoes);
+    ponta.style.strokeDasharray = `0.01 ${comprimento + 1}`;
+    ponta.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: -comprimento }], opcoes);
+    g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, delay: 1100, fill: 'forwards' }).onfinish = () => g.remove();
+}
+
+// ---------- Desenho: quem muda de etapa desliza até o lugar novo, deixando o traço ----------
+let primeiraVez = true;
+function desenhar(mudou) {
+    const antes = new Map();
+    document.querySelectorAll('[data-id]').forEach((el) => antes.set(el.dataset.id, { r: el.getBoundingClientRect(), etapa: el.closest('[data-etapa]').dataset.etapa }));
+    document.getElementById('etapas').innerHTML = ETAPAS.map(coluna).join('');
+    desenharAvisos();
+    ETAPAS.forEach((e) => {
+        const el = document.querySelector(`[data-soma="${e.chave}"]`);
+        el.textContent = brl(valores['soma-' + e.chave] ?? 0);
+        contar(el, 'soma-' + e.chave, soma(da(e.chave)));
+    });
+    desenharMes(mudou);
+    if (!semMovimento && !primeiraVez) {
+        document.querySelectorAll('[data-id]').forEach((el) => {
+            const a = antes.get(el.dataset.id);
+            if (!a) return;
+            const b = el.getBoundingClientRect();
+            const dx = a.r.left - b.left, dy = a.r.top - b.top;
+            if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) return;
+            el.animate([
+                { transform: `translate(${dx}px, ${dy}px)`, zIndex: 3, backgroundColor: '#23362D', boxShadow: '0 16px 28px -10px rgba(0,0,0,.7)' },
+                { transform: 'none', zIndex: 3, backgroundColor: 'rgba(35,54,45,0)', boxShadow: '0 0 0 rgba(0,0,0,0)' },
+            ], { duration: 640, easing: 'cubic-bezier(.2,.8,.2,1)' });
+            const nova = el.closest('[data-etapa]').dataset.etapa;
+            if (nova !== a.etapa) {
+                rastro(centro(a.r), centro(b), etapa(nova).cor);
+                if (b.bottom < 0 || b.top > innerHeight) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+    primeiraVez = false;
+    // As marcas de "acabou de acontecer" valem só para este desenho.
+    cobrancas.forEach((c) => { c.chegou = c.pagoAgora = c.avisadoAgora = false; });
+    if (ui.foco) { document.querySelector(ui.foco)?.focus(); ui.foco = null; }
+}
+
+// ---------- Avisos na tela ----------
+function avisar(texto) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `${svg(ICONE.certo, 18)}<span></span>`;
+    el.querySelector('span').textContent = texto;
+    document.getElementById('avisos-tela').append(el);
+    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 260); }, 3800);
+}
+
+// ---------- Janela do WhatsApp (junta as cobranças do mesmo cliente, como o painel atual) ----------
+const MODELOS = {
+    a_vencer: ['Lembrete antes do vencimento', (g) => `Olá, ${g.cliente}! Passando para lembrar que ${g.itens} ${g.qtd > 1 ? 'vencem' : 'vence'} na ${g.quando}, no total de ${g.total}.\n\nChave PIX: [SUA CHAVE PIX]\n\nObrigado!`],
+    vence_hoje: ['Vence hoje', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'vencem' : 'vence'} hoje.\n\nChave PIX: [SUA CHAVE PIX]`],
+    vencida: ['Cobrança vencida', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'venceram' : 'venceu'} na ${g.quando}. Se já pagou, desconsidere esta mensagem.\n\nChave PIX: [SUA CHAVE PIX]`],
+};
+let grupoAberto = null;
+function abrirAviso(id) {
+    const base = cobrancas.find((c) => c.id === id);
+    const doCliente = da('aguardando').filter((c) => c.cliente === base.cliente && situacao(c) !== 'depois');
+    const lista = doCliente.length ? doCliente : [base];
+    const maisAntiga = lista.reduce((m, c) => (c.venc < m.venc ? c : m));
+    const sit = situacao(maisAntiga);
+    const g = {
+        cliente: base.cliente, qtd: lista.length, ids: lista.map((c) => c.id), origem: id,
+        itens: lista.map((c) => c.descricao.toLowerCase()).join(' e '),
+        total: brl(soma(lista)),
+        quando: dia(maisAntiga.venc),
+        sugerido: sit === 'vencida' ? 'vencida' : sit === 'hoje' ? 'vence_hoje' : 'a_vencer',
+    };
+    grupoAberto = g;
+    document.getElementById('camada-modal').innerHTML = `
+    <div class="fundo-modal" data-acao="fechar-modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
+            <h2 id="titulo-modal">Avisar ${g.cliente}</h2>
+            <p>${plural(g.qtd, 'cobrança', 'cobranças')} em aberto, ${g.total}. O modelo já vem escolhido pela situação.</p>
+            <label class="campo">Modelo da mensagem
+                <select id="modelo">${Object.entries(MODELOS).map(([chave, [rotulo]]) => `<option value="${chave}" ${chave === g.sugerido ? 'selected' : ''}>${rotulo}${chave === g.sugerido ? ' (sugerido)' : ''}</option>`).join('')}</select>
+            </label>
+            <label class="campo">Mensagem<textarea id="mensagem">${MODELOS[g.sugerido][1](g)}</textarea></label>
+            <div class="modal-botoes">
+                <button type="button" class="botao-secundario" data-acao="fechar-modal">Voltar</button>
+                <button type="button" class="botao" data-acao="confirmar-aviso">${svg(ICONE.whats)}Abrir no WhatsApp</button>
+            </div>
+        </div>
+    </div>`;
+    document.getElementById('modelo').addEventListener('change', (ev) => {
+        document.getElementById('mensagem').value = MODELOS[ev.target.value][1](grupoAberto);
+    });
+    document.getElementById('modelo').focus();
+}
+function fecharModal() {
+    document.getElementById('camada-modal').innerHTML = '';
+    if (grupoAberto) document.querySelector(`[data-id="${grupoAberto.origem}"] button`)?.focus();
+    grupoAberto = null;
+}
+
+// ---------- Ações ----------
+document.addEventListener('click', (ev) => {
+    const alvo = ev.target.closest('[data-acao], [data-ir]');
+    if (ui.menu && !ev.target.closest('.menu-acoes, [data-acao="menu"]')) { ui.menu = null; if (!alvo) { desenhar(); return; } }
+    if (!alvo) return;
+    if (alvo.dataset.ir) {
+        const col = document.getElementById('etapa-' + alvo.dataset.ir);
+        col.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: 'start' });
+        reiniciarAnimacao(col, 'realce');
+        return;
+    }
+    const acao = alvo.dataset.acao;
+    const id = alvo.dataset.idAlvo;
+    const c = cobrancas.find((x) => x.id === id);
+    if (acao === 'fechar-modal') { if (ev.target === alvo) fecharModal(); return; }
+    if (acao === 'confirmar-aviso') {
+        cobrancas.forEach((x) => { if (grupoAberto.ids.includes(x.id)) { x.avisado = true; x.avisadoAgora = true; } });
+        avisar(`Aviso aberto no WhatsApp para ${grupoAberto.cliente}.`);
+        const origem = grupoAberto.origem; grupoAberto = null;
+        document.getElementById('camada-modal').innerHTML = '';
+        ui.foco = `[data-id="${origem}"] button`;
+        desenhar();
+        return;
+    }
+    if (acao === 'menu') { ui.menu = ui.menu === id ? null : id; ui.foco = ui.menu ? `[data-id="${id}"] [role="menuitem"]` : null; desenhar(); return; }
+    ui.menu = null;
+    if (acao === 'enviar') {
+        ui.enviando = id; desenhar();
+        setTimeout(() => {
+            ui.enviando = null; c.etapa = 'aguardando'; c.chegou = true;
+            avisar(`Recibo enviado para ${c.cliente}.`);
+            ui.foco = `[data-id="${id}"] button`;
+            desenhar(['enviar', 'aguardando']);
+        }, 800);
+        return;
+    }
+    if (acao === 'avisar') { desenhar(); abrirAviso(id); return; }
+    if (acao === 'baixa') { ui.baixa = id; ui.foco = `[data-form-baixa="${id}"] input`; desenhar(); return; }
+    if (acao === 'voltar') { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenhar(); return; }
+    if (acao === 'fora') { desenhar(); avisar(`"${alvo.dataset.rotulo}" abre aqui mesmo, na faixa da cobrança. Fora deste protótipo.`); }
+});
+
+document.addEventListener('submit', (ev) => {
+    const form = ev.target.closest('[data-form-baixa]');
+    if (!form) return;
+    ev.preventDefault();
+    const c = cobrancas.find((x) => x.id === form.dataset.formBaixa);
+    const centavos = parseInt(form.valor.value.replace(/\D/g, ''), 10) || 0;
+    if (!centavos) { form.valor.setCustomValidity('Informe o valor recebido.'); form.valor.reportValidity(); return; }
+    Object.assign(c, { pago: centavos, pagoEm: parseInt(form.data.value.slice(8, 10), 10), forma: form.forma.value, etapa: 'recebida', chegou: true, pagoAgora: true });
+    ui.baixa = null;
+    avisar(`Baixa confirmada: ${c.cliente}, ${brl(centavos)}.`);
+    ui.foco = `[data-id="${c.id}"] .mais`;
+    desenhar(['aguardando', 'recebida']);
+});
+
+// Máscara de valor: os dígitos entram pelos centavos (digitar 260 dá 2,60), como no app.
+document.addEventListener('input', (ev) => {
+    if (!ev.target.matches('[data-mascara-valor]')) return;
+    ev.target.setCustomValidity('');
+    const centavos = parseInt(ev.target.value.replace(/\D/g, '') || '0', 10);
+    ev.target.value = (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+});
+
+document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (grupoAberto) fecharModal();
+    else if (ui.menu) { const era = ui.menu; ui.menu = null; ui.foco = `[data-id="${era}"] .mais`; desenhar(); }
+    else if (ui.baixa) { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenhar(); }
+});
+
+// Recomeçar repete a abertura: a tinta escorre de novo e os números contam do zero.
+document.getElementById('recomecar').addEventListener('click', () => {
+    cobrancas = inicial(); Object.assign(ui, { menu: null, baixa: null, enviando: null });
+    document.getElementById('camada-modal').innerHTML = ''; grupoAberto = null;
+    Object.keys(valores).forEach((k) => delete valores[k]);
+    primeiraVez = true;
+    reiniciarAnimacao(document.getElementById('regua-corpo'), 'escorrendo');
+    desenhar();
+});
+
+// Abertura: a tinta escorre pela régua do mês e os números sobem do zero até o total.
+desenhar();
+</script>
+</body>
+</html>

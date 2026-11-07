@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel, modelo B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --fundo: #EEF1F5; --cartao: #FFFFFF; --tinta: #172033; --apagado: #4A5573; --linha: #D6DCE7; --linha-forte: #C3CBDB;
+        --menu: #18214A; --menu-ativo: #2C3768; --menu-texto: #C3CCEB; --ouro: #F2B544;
+        --acao: #3B47C4; --acao-escura: #2A3496; --aguardando: #B45309; --recebido: #0F766E;
+        --vermelho: #9F1F17; --vermelho-fundo: #FCE8E6; --laranja: #9A3412; --laranja-fundo: #FDEBD9;
+        --azul-fundo: #E6E8FA; --verde-fundo: #DDF1EE; --ambar-fundo: #FFF3D6; --ambar-texto: #5C3B07;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--fundo); color: var(--tinta); font-family: 'Hanken Grotesk', system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--acao); }
+    :focus-visible { outline: 3px solid var(--ouro); outline-offset: 2px; }
+
+    .faixa-prototipo { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 16px; background: #222; color: #EEE; font: 13px system-ui, sans-serif; }
+    .faixa-prototipo button { background: none; border: 1px solid #666; color: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+
+    /* Menu lateral */
+    .app { display: flex; flex-wrap: wrap; min-height: 100vh; }
+    .menu { flex: 1 1 232px; max-width: 100%; background: var(--menu); color: var(--menu-texto); padding: 28px 14px; display: flex; flex-direction: column; gap: 28px; }
+    .marca { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+    .marca svg { color: var(--ouro); flex: none; }
+    .marca-nome { font-weight: 700; font-size: 15px; line-height: 1.2; color: #fff; flex: 1; }
+    .menu-abrir { display: none; background: var(--menu-ativo); border: 0; color: #fff; border-radius: 8px; min-height: 40px; padding: 0 14px; cursor: pointer; }
+    .menu ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .menu a { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--menu-texto); transition: background-color .15s, color .15s; }
+    .menu a:hover { background: #222C5C; color: #fff; }
+    .menu a[aria-current] { background: var(--menu-ativo); color: #fff; font-weight: 700; }
+    .contador { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ouro); color: var(--menu); font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+    .usuario { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px 0; border-top: 1px solid var(--menu-ativo); font-size: 13px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--menu-ativo); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+    .usuario button { background: none; border: 0; color: var(--menu-texto); cursor: pointer; padding: 8px 4px; }
+    @media (max-width: 760px) {
+        .menu { padding: 12px 14px; gap: 12px; }
+        .menu-abrir { display: inline-flex; align-items: center; }
+        .menu:not(.aberto) ul, .menu:not(.aberto) .usuario { display: none; }
+    }
+
+    main { flex: 999 1 560px; min-width: 0; padding: 36px clamp(16px, 3.5vw, 44px) 72px; display: flex; flex-direction: column; gap: 36px; }
+
+    /* Topo */
+    .topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+    .topo-data { margin: 0; font-size: 15px; color: var(--apagado); }
+    .topo h1 { margin: 2px 0 0; font-size: clamp(30px, 4.2vw, 42px); line-height: 1.05; font-weight: 800; letter-spacing: -0.025em; }
+    .topo-direita { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+    .lembrete { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tinta); text-decoration: none; }
+    .lembrete::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ouro); box-shadow: 0 0 0 3px #FBE3B0; }
+    .lembrete span { color: var(--acao); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Botões */
+    .botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--acao); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; cursor: pointer; transition: background-color .15s, transform .1s; }
+    .botao:hover { background: var(--acao-escura); }
+    .botao:active { transform: scale(.97); }
+    .botao[disabled] { opacity: .8; cursor: progress; }
+    .botao-secundario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--linha-forte); background: #fff; color: var(--tinta); font-weight: 700; font-size: 14px; cursor: pointer; transition: background-color .15s, transform .1s; }
+    .botao-secundario:hover { background: #F3F5FA; }
+    .botao-secundario:active { transform: scale(.97); }
+    .girando { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: girar .7s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* O mês em dinheiro: a barra é o próprio fluxo, cada trecho com o rótulo embaixo */
+    .dinheiro { display: flex; flex-direction: column; gap: 14px; }
+    .dinheiro-topo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+    .dinheiro h2 { margin: 0; font-size: clamp(34px, 5vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .dinheiro-topo p { margin: 0; font-size: 16px; color: var(--apagado); }
+    .barra { display: flex; gap: 3px; }
+    .trecho { flex: 0 1 0; min-width: min(128px, 30%); display: flex; flex-direction: column; gap: 10px; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; transition: flex-grow .9s cubic-bezier(.2,.8,.2,1); }
+    .trecho-barra { height: 52px; border-radius: 3px; transition: filter .15s; position: relative; overflow: hidden; }
+    .trecho:first-child .trecho-barra { border-radius: 10px 3px 3px 10px; }
+    .trecho:last-child .trecho-barra { border-radius: 3px 10px 10px 3px; }
+    .trecho:hover .trecho-barra { filter: brightness(1.12); }
+    .trecho-barra::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); transform: translateX(-100%); }
+    .trecho.brilho .trecho-barra::after { animation: brilho .9s ease-out; }
+    @keyframes brilho { to { transform: translateX(100%); } }
+    .trecho-rotulo { font-size: 14px; color: var(--apagado); display: flex; gap: 6px; align-items: baseline; }
+    .trecho-rotulo b { font-weight: 700; color: var(--tinta); }
+    .trecho-valor { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; border-radius: 4px; align-self: flex-start; padding: 0 2px; margin: -4px -2px 0; }
+    @media (max-width: 560px) {
+        .trecho-barra { height: 40px; }
+        .trecho-rotulo { font-size: 12px; flex-wrap: wrap; }
+        .trecho-valor { font-size: 15px; }
+    }
+
+    /* Etapas: trilhos com a cor da etapa no topo, sem caixa em volta */
+    .etapas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 24px; align-items: start; }
+    .etapa { border-top: 4px solid var(--cor); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 16px; }
+    .etapa.realce { animation: realce 1.2s ease-out; }
+    @keyframes realce { 0%, 30% { box-shadow: 0 -10px 0 -2px color-mix(in srgb, var(--cor) 30%, transparent); } 100% { box-shadow: 0 -10px 0 -2px transparent; } }
+    .etapa-topo { display: flex; align-items: center; gap: 12px; padding-bottom: 4px; }
+    .etapa-numero { width: 30px; height: 30px; flex: none; border-radius: 50%; background: var(--cor); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+    .etapa-topo h2 { margin: 0; font-size: 17px; font-weight: 700; }
+    .etapa-resumo { margin: 1px 0 0; font-size: 13px; color: var(--apagado); border-radius: 4px; }
+    .etapa-soma { margin-left: auto; font-weight: 800; font-size: 18px; white-space: nowrap; border-radius: 4px; padding: 0 2px; }
+    .nota-etapa { margin: 0; font-size: 13px; color: var(--ambar-texto); background: var(--ambar-fundo); padding: 8px 12px; border-radius: 6px; }
+    .nota-etapa a { color: #7A4A06; font-weight: 700; }
+    .grupo { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--apagado); display: flex; align-items: center; gap: 8px; }
+    .grupo::after { content: ''; flex: 1; height: 1px; background: var(--linha); }
+    .vazio { margin: 0; padding: 18px 16px; border: 1.5px dashed var(--linha-forte); border-radius: 8px; font-size: 14px; color: var(--apagado); text-align: center; animation: aparecer .3s ease-out; }
+
+    /* Cartão de cobrança */
+    .cartao { position: relative; background: var(--cartao); border: 1px solid var(--linha); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .cartao.chegou { animation: chegou 1.4s ease-out; }
+    @keyframes chegou { 0%, 40% { box-shadow: 0 0 0 3px var(--cor-chegada); } 100% { box-shadow: 0 0 0 3px transparent; } }
+    .cartao-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .cartao h3 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.3; }
+    .cartao-valor { font-weight: 800; font-size: 16px; white-space: nowrap; }
+    .cartao-detalhe { margin: 0; font-size: 13px; color: var(--apagado); }
+    .selos { display: flex; flex-wrap: wrap; gap: 6px; }
+    .selo { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .selo-vermelho { background: var(--vermelho-fundo); color: var(--vermelho); }
+    .selo-laranja { background: var(--laranja-fundo); color: var(--laranja); }
+    .selo-azul { background: var(--azul-fundo); color: #2A3496; }
+    .selo-verde { background: var(--verde-fundo); color: #0B5751; }
+    .selo-ambar { background: var(--ambar-fundo); color: var(--ambar-texto); }
+    .selo.novo { animation: estalo .45s cubic-bezier(.3,1.6,.5,1); }
+    @keyframes estalo { from { transform: scale(.4); opacity: 0; } }
+    .pulso { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulsar 1.8s ease-out 4; }
+    @keyframes pulsar { 0% { box-shadow: 0 0 0 0 rgba(159,31,23,.55); } 70%, 100% { box-shadow: 0 0 0 7px rgba(159,31,23,0); } }
+    .cartao-acoes { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+    .cartao-acoes > .botao, .cartao-acoes > .botao-secundario { flex: 1; }
+    .mais { width: 44px; height: 44px; flex: none; margin-left: auto; border-radius: 8px; border: 1px solid var(--linha-forte); background: #fff; cursor: pointer; display: grid; place-items: center; transition: background-color .15s; }
+    .mais:hover { background: #F3F5FA; }
+    .menu-acoes { position: absolute; right: 16px; top: calc(100% - 8px); z-index: 5; min-width: 220px; background: #fff; border: 1px solid var(--linha); border-radius: 10px; box-shadow: 0 14px 34px rgba(23,32,51,.16); padding: 6px; display: flex; flex-direction: column; transform-origin: top right; animation: surgir .14s ease-out; }
+    .menu-acoes button { text-align: left; background: none; border: 0; padding: 10px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .menu-acoes button:hover, .menu-acoes button:focus-visible { background: #F3F5FA; }
+    .menu-acoes .perigo { color: var(--vermelho); }
+    @keyframes surgir { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
+
+    /* Carimbo de pago: a marca do recibo quitado */
+    .carimbo { display: inline-block; padding: 3px 12px; border: 2px solid var(--recebido); border-radius: 4px; color: var(--recebido); font-weight: 800; font-size: 13px; letter-spacing: .04em; transform: rotate(-6deg); }
+    .carimbo.batendo { animation: carimbar .55s cubic-bezier(.2,.9,.3,1.2); }
+    @keyframes carimbar {
+        0% { transform: scale(2.4) rotate(-18deg); opacity: 0; }
+        55% { transform: scale(.9) rotate(-5deg); opacity: 1; }
+        75% { transform: scale(1.04) rotate(-6deg); }
+        100% { transform: scale(1) rotate(-6deg); }
+    }
+    .cartao.batida { animation: batida .35s ease-out .28s; }
+    @keyframes batida { 30% { transform: translateY(2px); } }
+
+    /* Baixa na própria faixa do cartão */
+    .baixa { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; margin-top: 2px; border-top: 1px solid var(--linha); animation: abrir .22s ease-out; }
+    @keyframes abrir { from { opacity: 0; transform: translateY(-6px); } }
+    .baixa-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--apagado); }
+    .campo input, .campo select, .campo textarea { min-height: 42px; border: 1px solid var(--linha-forte); border-radius: 6px; padding: 8px 10px; background: #fff; font-size: 14px; font-weight: 500; color: var(--tinta); transition: border-color .15s, box-shadow .15s; }
+    .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--acao); box-shadow: 0 0 0 3px rgba(59,71,196,.18); }
+    .baixa-botoes { display: flex; gap: 8px; }
+    .baixa-botoes .botao { flex: 1; }
+
+    .destacar { animation: destacar 1.2s ease-out; }
+    @keyframes destacar { 0%, 35% { background: #FFE9A8; } 100% { background: transparent; } }
+
+    /* Janela do WhatsApp */
+    .fundo-modal { position: fixed; inset: 0; background: rgba(23,32,51,.45); display: grid; place-items: center; padding: 16px; z-index: 20; animation: aparecer .15s ease-out; }
+    @keyframes aparecer { from { opacity: 0; } }
+    .modal { width: min(520px, 100%); background: #fff; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px; animation: subir .22s cubic-bezier(.2,.8,.2,1); }
+    @keyframes subir { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+    .modal h2 { margin: 0; font-size: 20px; }
+    .modal p { margin: 0; font-size: 14px; color: var(--apagado); }
+    .modal textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+    .modal-botoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+    /* Avisos na tela, com a linha do tempo até sumirem */
+    .avisos-tela { position: fixed; right: 16px; bottom: 16px; z-index: 30; display: flex; flex-direction: column; gap: 8px; max-width: min(380px, calc(100% - 32px)); }
+    .toast { position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; background: var(--tinta); color: #fff; padding: 12px 16px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 10px 28px rgba(23,32,51,.25); animation: subir .22s ease-out; }
+    .toast svg { color: #7DD3C8; flex: none; }
+    .toast::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #7DD3C8; transform-origin: left; animation: tempo 3.8s linear forwards; }
+    @keyframes tempo { to { transform: scaleX(0); } }
+    .toast.saindo { animation: sair .25s ease-in forwards; }
+    @keyframes sair { to { opacity: 0; transform: translateX(16px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+</style>
+</head>
+<body>
+<div class="faixa-prototipo">
+    <span>Protótipo do modelo B com dados fictícios. Os botões funcionam, mas nada é gravado.</span>
+    <button type="button" id="recomecar">Recomeçar</button>
+</div>
+
+<div class="app">
+    <nav class="menu" aria-label="Principal">
+        <div class="marca">
+            <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M5 2.5h14v19l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 21.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg>
+            <span class="marca-nome">Gerenciador de Cobranças</span>
+            <button type="button" class="menu-abrir" aria-expanded="false" aria-controls="itens-menu">Menu</button>
+        </div>
+        <ul id="itens-menu"></ul>
+        <div class="usuario">
+            <span class="avatar" aria-hidden="true">MR</span>
+            <span style="flex:1;color:#fff">Marcos Ronaldo</span>
+            <button type="button">Sair</button>
+        </div>
+    </nav>
+
+    <main>
+        <header class="topo">
+            <div>
+                <p class="topo-data">Sexta, 6 de novembro</p>
+                <h1>Novembro de 2026</h1>
+            </div>
+            <div class="topo-direita">
+                <a href="#" class="lembrete">1 contrato termina nos próximos dias. <span>Ver contratos</span></a>
+                <a href="#" class="botao"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>Nova cobrança</a>
+            </div>
+        </header>
+
+        <section class="dinheiro" aria-labelledby="previsto">
+            <div class="dinheiro-topo">
+                <h2 id="previsto">R$ 0,00</h2>
+                <p>previstos para novembro</p>
+            </div>
+            <div class="barra" id="barra"></div>
+        </section>
+
+        <div class="etapas" id="etapas"></div>
+    </main>
+</div>
+
+<div class="avisos-tela" id="avisos-tela" aria-live="polite"></div>
+<div id="camada-modal"></div>
+
+<script>
+// ---------- Dados fictícios (novembro de 2026 começa num domingo; hoje é dia 6) ----------
+const HOJE = 6;
+const ULTIMO_DIA_DO_AVISO = 11; // "dias de aviso" = 5
+const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const FERIADOS = { 2: 'Finados', 15: 'Proclamação da República', 20: 'Consciência Negra' };
+const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Dinheiro', 'Cartão'];
+
+const inicial = () => [
+    { id: 'c1', cliente: 'Padaria Grão Dourado', descricao: 'Manutenção do sistema', valor: 65000, venc: 15, etapa: 'enviar' },
+    { id: 'c2', cliente: 'Construtora Alicerce', descricao: 'Consultoria mensal', valor: 350000, venc: 18, etapa: 'enviar' },
+    { id: 'c3', cliente: 'Studio Lume', descricao: 'Hospedagem do site', valor: 18000, venc: 20, etapa: 'enviar' },
+    { id: 'c4', cliente: 'Moura & Lima Advogados', descricao: 'Suporte técnico', valor: 240000, venc: 5, etapa: 'aguardando' },
+    { id: 'c5', cliente: 'Pet Shop Amigo Fiel', descricao: 'Licença do sistema', valor: 32000, venc: 6, etapa: 'aguardando' },
+    { id: 'c6', cliente: 'Clínica Vida Plena', descricao: 'Manutenção do sistema', valor: 120000, venc: 9, etapa: 'aguardando' },
+    { id: 'c7', cliente: 'Academia Ritmo', descricao: 'Aplicativo de agendamento', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c8', cliente: 'Academia Ritmo', descricao: 'Suporte técnico', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c9', cliente: 'Mercado São Jorge', descricao: 'Manutenção mensal', valor: 110000, venc: 12, etapa: 'aguardando' },
+    { id: 'r1', cliente: 'Academia Ritmo', descricao: 'Mensalidade de outubro', valor: 140000, venc: 5, etapa: 'recebida', pagoEm: 5, forma: 'PIX' },
+    { id: 'r2', cliente: 'Mercado São Jorge', descricao: 'Implantação', valor: 210000, venc: 4, etapa: 'recebida', pagoEm: 4, forma: 'Transferência' },
+    { id: 'r3', cliente: 'Construtora Alicerce', descricao: 'Projeto de integração', valor: 350000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+    { id: 'r4', cliente: 'Studio Lume', descricao: 'Desenvolvimento do site', valor: 280000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+];
+let cobrancas = inicial();
+const ui = { menu: null, baixa: null, enviando: null, foco: null };
+const semMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Utilidades ----------
+const brl = (centavos) => (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dia = (d) => `${SEMANA[(d - 1) % 7]}, ${d}/11`;
+const fimDeSemana = (d) => [0, 6].includes((d - 1) % 7);
+const valorFinal = (c) => c.pago ?? c.valor;
+const soma = (lista) => lista.reduce((t, c) => t + valorFinal(c), 0);
+const da = (etapa) => cobrancas.filter((c) => c.etapa === etapa);
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const svg = (d, tam = 16) => `<svg aria-hidden="true" width="${tam}" height="${tam}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+const ICONE = {
+    enviar: 'M14.5 1.5l-6 13-2.5-5.5-5.5-2.5z',
+    whats: 'M2.5 13.5l1-3a6 6 0 1 1 2.2 2.1zM6 6.5c.3 1.5 1.8 3 3.5 3.5',
+    certo: 'M2.5 8.5l3.5 3.5 7.5-8',
+    mais: 'M3 8h.01M8 8h.01M13 8h.01',
+};
+const reiniciarAnimacao = (el, classe) => { el.classList.remove(classe); void el.offsetWidth; el.classList.add(classe); };
+
+function situacao(c) {
+    if (c.venc < HOJE) return 'vencida';
+    if (c.venc === HOJE) return 'hoje';
+    return c.venc <= ULTIMO_DIA_DO_AVISO ? 'breve' : 'depois';
+}
+const caiEmDiaNaoUtil = (c) => c.etapa !== 'recebida' && (FERIADOS[c.venc] || fimDeSemana(c.venc));
+
+// ---------- Menu lateral ----------
+const ITENS_MENU = [
+    ['Painel', 'M2 2h5v6H2zM9 2h5v3H9zM9 7h5v7H9zM2 10h5v4H2z'],
+    ['Cobranças', 'M3.5 1.5h9v13l-2.2-1.3-2.3 1.3-2.3-1.3-2.2 1.3zM6 5.5h4M6 8.5h4'],
+    ['Contratos', 'M4 1.5h5.5l2.5 2.5v10.5H4zM9.5 1.5V4H12M6 8.5h4M6 11h4'],
+    ['Clientes', 'M6 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1.5 14c0-2.6 2-4.5 4.5-4.5s4.5 1.9 4.5 4.5M10.5 2.3a2.5 2.5 0 0 1 0 4.6M12.5 9.8c1.3.6 2 2.1 2 4.2'],
+    ['Produtos e serviços', 'M8 1.5l6 3v7l-6 3-6-3v-7zM2 4.5l6 3 6-3M8 7.5v7'],
+    ['Relatórios', 'M2 14h12M4 11.5v-4M8 11.5V3M12 11.5V6'],
+    ['Auditoria', 'M8 1.5l5.5 2v4c0 3.4-2.3 5.8-5.5 7-3.2-1.2-5.5-3.6-5.5-7v-4zM5.5 8l1.8 1.8L10.5 6.5'],
+    ['Meu perfil', 'M8 7.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2.5 14.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5'],
+    ['Usuários', 'M5.5 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1 14c0-2.6 2-4.5 4.5-4.5S10 11.4 10 14M11 5.5h4M13 3.5v4', 2],
+];
+document.getElementById('itens-menu').innerHTML = ITENS_MENU.map(([rotulo, icone, contador], i) =>
+    `<li><a href="#" ${i ? '' : 'aria-current="page"'}>${svg(icone, 18)}${rotulo}${contador ? `<span class="contador" aria-label="${contador} aguardando aprovação">${contador}</span>` : ''}</a></li>`).join('');
+const botaoMenu = document.querySelector('.menu-abrir');
+botaoMenu.addEventListener('click', () => {
+    const aberto = document.querySelector('.menu').classList.toggle('aberto');
+    botaoMenu.setAttribute('aria-expanded', String(aberto));
+});
+
+// ---------- Barra do mês ----------
+const ETAPAS = [
+    { chave: 'enviar', numero: 1, titulo: 'Enviar recibo', cor: '#3B47C4', legenda: 'Para enviar' },
+    { chave: 'aguardando', numero: 2, titulo: 'Aguardando pagamento', cor: '#B45309', legenda: 'Aguardando' },
+    { chave: 'recebida', numero: 3, titulo: 'Recebidas no mês', cor: '#0F766E', legenda: 'Recebido' },
+];
+const etapa = (chave) => ETAPAS.find((e) => e.chave === chave);
+const ORDEM_BARRA = ['recebida', 'aguardando', 'enviar'];
+document.getElementById('barra').innerHTML = ORDEM_BARRA.map((chave) => `
+    <button type="button" class="trecho" data-ir="${chave}" data-trecho="${chave}">
+        <span class="trecho-barra" style="background:${etapa(chave).cor}"></span>
+        <span class="trecho-rotulo"><b>${etapa(chave).legenda}</b><span data-pct="${chave}"></span></span>
+        <span class="trecho-valor" data-valor="${chave}">R$ 0,00</span>
+    </button>`).join('');
+
+// Número que muda conta até o valor novo e pisca, para o olho achar o que mudou.
+const valores = {};
+function contar(el, chave, para) {
+    const de = valores[chave] ?? 0;
+    valores[chave] = para;
+    if (de === para) { el.textContent = brl(para); return; }
+    if (semMovimento) { el.textContent = brl(para); return; }
+    if (chave in contar.vistos) reiniciarAnimacao(el, 'destacar');
+    contar.vistos[chave] = true;
+    const inicio = performance.now(), duracao = 800;
+    const passo = (agora) => {
+        const t = Math.min(1, (agora - inicio) / duracao);
+        const suave = 1 - Math.pow(1 - t, 3);
+        el.textContent = brl(Math.round(de + (para - de) * suave));
+        if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+}
+contar.vistos = {};
+
+function desenharBarra(mudou) {
+    const total = soma(cobrancas);
+    contar(document.getElementById('previsto'), 'previsto', total);
+    ORDEM_BARRA.forEach((chave) => {
+        const valor = soma(da(chave));
+        const trecho = document.querySelector(`[data-trecho="${chave}"]`);
+        trecho.style.flexGrow = valor;
+        trecho.setAttribute('aria-label', `${etapa(chave).legenda}: ${brl(valor)}, ${Math.round((valor / total) * 100)}% do previsto. Ir para a etapa`);
+        document.querySelector(`[data-pct="${chave}"]`).textContent = `${Math.round((valor / total) * 100)}%`;
+        contar(document.querySelector(`[data-valor="${chave}"]`), 'barra-' + chave, valor);
+        if (mudou?.includes(chave) && !semMovimento) reiniciarAnimacao(trecho, 'brilho');
+    });
+}
+
+// ---------- Cartões ----------
+function selos(c) {
+    const s = [];
+    if (c.etapa === 'aguardando') {
+        const sit = situacao(c);
+        if (sit === 'vencida') s.push(['vermelho', `<span class="pulso"></span>Vencida há ${plural(HOJE - c.venc, 'dia', 'dias')}`]);
+        if (sit === 'hoje') s.push(['laranja', 'Vence hoje']);
+        if (sit === 'breve') s.push(['azul', `Vence em ${plural(c.venc - HOJE, 'dia', 'dias')}`]);
+        if (c.avisado) s.push(['verde', `${svg(ICONE.certo, 12)}Avisado hoje`, c.avisadoAgora]);
+    }
+    if (caiEmDiaNaoUtil(c)) s.push(['ambar', FERIADOS[c.venc] ? `Vence em feriado (${FERIADOS[c.venc]})` : 'Vence no fim de semana']);
+    return s.length ? `<div class="selos">${s.map(([tom, txt, novo]) => `<span class="selo selo-${tom}${novo ? ' novo' : ''}">${txt}</span>`).join('')}</div>` : '';
+}
+
+function acaoPrincipal(c) {
+    if (c.etapa === 'enviar') return 'enviar';
+    if (c.etapa === 'aguardando') return situacao(c) !== 'depois' && !c.avisado ? 'avisar' : 'baixa';
+    return null;
+}
+
+function botaoPrincipal(c) {
+    const acao = acaoPrincipal(c);
+    if (acao === 'enviar') {
+        return ui.enviando === c.id
+            ? `<button type="button" class="botao" disabled><span class="girando" aria-hidden="true"></span>Enviando…</button>`
+            : `<button type="button" class="botao" data-acao="enviar" data-id-alvo="${c.id}">${svg(ICONE.enviar)}Enviar recibo</button>`;
+    }
+    if (acao === 'avisar') return `<button type="button" class="botao-secundario" data-acao="avisar" data-id-alvo="${c.id}">${svg(ICONE.whats)}Avisar no WhatsApp</button>`;
+    if (acao === 'baixa') return `<button type="button" class="${situacao(c) === 'depois' ? 'botao-secundario' : 'botao'}" data-acao="baixa" data-id-alvo="${c.id}" aria-expanded="false">${svg(ICONE.certo)}Dar baixa</button>`;
+    return `<span class="carimbo${c.pagoAgora ? ' batendo' : ''}" aria-hidden="true">PAGO</span>`;
+}
+
+function itensDoMenu(c) {
+    const principal = acaoPrincipal(c);
+    const itens = [];
+    if (c.etapa === 'enviar') itens.push(['Ver recibo', 'fora'], ['Editar cobrança', 'fora']);
+    if (c.etapa === 'aguardando') {
+        if (principal !== 'baixa') itens.push(['Dar baixa', 'baixa']);
+        if (principal !== 'avisar') itens.push(['Avisar no WhatsApp', 'avisar']);
+        itens.push(['Forma de pagamento', 'fora'], ['Prorrogar vencimento', 'fora'], ['Reenviar recibo', 'fora']);
+    }
+    if (c.etapa === 'recebida') itens.push(['Ver recibo', 'fora'], ['Corrigir pagamento', 'fora']);
+    if (c.etapa !== 'recebida') itens.push(['Cancelar cobrança', 'fora', 'perigo']);
+    return itens;
+}
+
+function formularioDeBaixa(c) {
+    return `
+    <form class="baixa" data-form-baixa="${c.id}">
+        <div class="baixa-campos">
+            <label class="campo">Data do pagamento<input type="date" name="data" value="2026-11-06" min="2026-10-01" max="2026-11-06"></label>
+            <label class="campo">Valor recebido<input name="valor" inputmode="numeric" value="${(c.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" data-mascara-valor></label>
+        </div>
+        <label class="campo">Forma de pagamento<select name="forma">${FORMAS.map((f) => `<option>${f}</option>`).join('')}</select></label>
+        <div class="baixa-botoes">
+            <button class="botao" type="submit">Confirmar baixa</button>
+            <button type="button" class="botao-secundario" data-acao="voltar">Voltar</button>
+        </div>
+    </form>`;
+}
+
+function cartao(c) {
+    const detalhe = c.etapa === 'recebida'
+        ? `${c.descricao}. ${c.forma} em ${c.pagoEm}/11`
+        : `${c.descricao}. ${situacao(c) === 'vencida' ? 'Venceu' : 'Vence'} ${dia(c.venc)}`;
+    const menu = ui.menu === c.id
+        ? `<div class="menu-acoes" role="menu" aria-label="Mais ações">${itensDoMenu(c).map(([rotulo, acao, classe]) =>
+            `<button type="button" role="menuitem" class="${classe || ''}" data-acao="${acao}" data-id-alvo="${c.id}" data-rotulo="${rotulo}">${rotulo}</button>`).join('')}</div>`
+        : '';
+    const classes = ['cartao', c.chegou && 'chegou', c.pagoAgora && 'batida'].filter(Boolean).join(' ');
+    return `
+    <article class="${classes}" data-id="${c.id}" style="--cor-chegada:${etapa(c.etapa).cor}">
+        <div class="cartao-topo">
+            <h3>${c.cliente}</h3>
+            <span class="cartao-valor">${brl(valorFinal(c))}</span>
+        </div>
+        <p class="cartao-detalhe">${detalhe}</p>
+        ${selos(c)}
+        ${ui.baixa === c.id ? formularioDeBaixa(c) : `
+        <div class="cartao-acoes">
+            ${botaoPrincipal(c)}
+            <button type="button" class="mais" data-acao="menu" data-id-alvo="${c.id}" aria-haspopup="menu" aria-expanded="${ui.menu === c.id}" aria-label="Mais ações para ${c.cliente}">${svg(ICONE.mais, 18)}</button>
+        </div>`}
+        ${menu}
+    </article>`;
+}
+
+const VAZIO = {
+    enviar: 'Tudo enviado. Cobranças novas aparecem aqui 10 dias antes do vencimento.',
+    aguardando: 'Nenhuma cobrança enviada esperando pagamento.',
+    recebida: 'Nenhum pagamento registrado neste mês.',
+};
+const GRUPOS = [
+    ['vencida', 'Vencidas'], ['hoje', 'Vencem hoje'], ['breve', `Vencem até ${dia(ULTIMO_DIA_DO_AVISO)}`], ['depois', 'Vencem depois'],
+];
+
+function coluna(e) {
+    let lista = da(e.chave);
+    lista = e.chave === 'recebida' ? lista.sort((a, b) => b.pagoEm - a.pagoEm) : lista.sort((a, b) => a.venc - b.venc);
+    const naoUteis = lista.filter(caiEmDiaNaoUtil).length;
+    const nota = naoUteis
+        ? `<p class="nota-etapa">${naoUteis === 1 ? '1 cobrança vence' : `${naoUteis} cobranças vencem`} em domingo ou feriado. <a href="#">Ver e ajustar</a></p>`
+        : '';
+    let corpo;
+    if (!lista.length) corpo = `<p class="vazio">${VAZIO[e.chave]}</p>`;
+    else if (e.chave === 'aguardando') {
+        corpo = GRUPOS.map(([sit, rotulo]) => {
+            const doGrupo = lista.filter((c) => situacao(c) === sit);
+            return doGrupo.length ? `<h3 class="grupo">${rotulo}</h3>${doGrupo.map(cartao).join('')}` : '';
+        }).join('');
+    } else corpo = lista.map(cartao).join('');
+    return `
+    <section class="etapa" id="etapa-${e.chave}" aria-labelledby="titulo-${e.chave}" style="--cor:${e.cor}">
+        <header class="etapa-topo">
+            <span class="etapa-numero" aria-hidden="true">${e.numero}</span>
+            <div><h2 id="titulo-${e.chave}">${e.titulo}</h2><p class="etapa-resumo">${plural(lista.length, 'cobrança', 'cobranças')}</p></div>
+            <span class="etapa-soma" data-soma="${e.chave}"></span>
+        </header>
+        ${nota}
+        ${corpo}
+    </section>`;
+}
+
+// ---------- Desenho: quem muda de etapa desliza até o lugar novo ----------
+let primeiraVez = true;
+function desenhar(mudou) {
+    const antes = new Map();
+    document.querySelectorAll('[data-id]').forEach((el) => antes.set(el.dataset.id, el.getBoundingClientRect()));
+    document.getElementById('etapas').innerHTML = ETAPAS.map(coluna).join('');
+    ETAPAS.forEach((e) => {
+        const el = document.querySelector(`[data-soma="${e.chave}"]`);
+        el.textContent = brl(valores['soma-' + e.chave] ?? 0);
+        contar(el, 'soma-' + e.chave, soma(da(e.chave)));
+    });
+    desenharBarra(mudou);
+    if (!semMovimento && !primeiraVez) {
+        document.querySelectorAll('[data-id]').forEach((el) => {
+            const a = antes.get(el.dataset.id);
+            if (!a) return;
+            const b = el.getBoundingClientRect();
+            const dx = a.left - b.left, dy = a.top - b.top;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                el.animate([{ transform: `translate(${dx}px, ${dy}px)`, zIndex: 3 }, { transform: 'none', zIndex: 3 }], { duration: 560, easing: 'cubic-bezier(.2,.8,.2,1)' });
+            }
+        });
+    }
+    primeiraVez = false;
+    // As marcas de "acabou de acontecer" valem só para este desenho.
+    cobrancas.forEach((c) => { c.chegou = c.pagoAgora = c.avisadoAgora = false; });
+    if (ui.foco) { document.querySelector(ui.foco)?.focus(); ui.foco = null; }
+}
+
+// ---------- Avisos na tela ----------
+function avisar(texto) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `${svg(ICONE.certo, 18)}<span></span>`;
+    el.querySelector('span').textContent = texto;
+    document.getElementById('avisos-tela').append(el);
+    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 260); }, 3800);
+}
+
+// ---------- Janela do WhatsApp (junta as cobranças do mesmo cliente, como o painel atual) ----------
+const MODELOS = {
+    a_vencer: ['Lembrete antes do vencimento', (g) => `Olá, ${g.cliente}! Passando para lembrar que ${g.itens} ${g.qtd > 1 ? 'vencem' : 'vence'} na ${g.quando}, no total de ${g.total}.\n\nChave PIX: [SUA CHAVE PIX]\n\nObrigado!`],
+    vence_hoje: ['Vence hoje', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'vencem' : 'vence'} hoje.\n\nChave PIX: [SUA CHAVE PIX]`],
+    vencida: ['Cobrança vencida', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'venceram' : 'venceu'} na ${g.quando}. Se já pagou, desconsidere esta mensagem.\n\nChave PIX: [SUA CHAVE PIX]`],
+};
+let grupoAberto = null;
+function abrirAviso(id) {
+    const base = cobrancas.find((c) => c.id === id);
+    const doCliente = da('aguardando').filter((c) => c.cliente === base.cliente && situacao(c) !== 'depois');
+    const lista = doCliente.length ? doCliente : [base];
+    const maisAntiga = lista.reduce((m, c) => (c.venc < m.venc ? c : m));
+    const sit = situacao(maisAntiga);
+    const g = {
+        cliente: base.cliente, qtd: lista.length, ids: lista.map((c) => c.id), origem: id,
+        itens: lista.map((c) => c.descricao.toLowerCase()).join(' e '),
+        total: brl(soma(lista)),
+        quando: dia(maisAntiga.venc),
+        sugerido: sit === 'vencida' ? 'vencida' : sit === 'hoje' ? 'vence_hoje' : 'a_vencer',
+    };
+    grupoAberto = g;
+    document.getElementById('camada-modal').innerHTML = `
+    <div class="fundo-modal" data-acao="fechar-modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
+            <h2 id="titulo-modal">Avisar ${g.cliente}</h2>
+            <p>${plural(g.qtd, 'cobrança', 'cobranças')} em aberto, ${g.total}. O modelo já vem escolhido pela situação.</p>
+            <label class="campo">Modelo da mensagem
+                <select id="modelo">${Object.entries(MODELOS).map(([chave, [rotulo]]) => `<option value="${chave}" ${chave === g.sugerido ? 'selected' : ''}>${rotulo}${chave === g.sugerido ? ' (sugerido)' : ''}</option>`).join('')}</select>
+            </label>
+            <label class="campo">Mensagem<textarea id="mensagem">${MODELOS[g.sugerido][1](g)}</textarea></label>
+            <div class="modal-botoes">
+                <button type="button" class="botao-secundario" data-acao="fechar-modal">Voltar</button>
+                <button type="button" class="botao" data-acao="confirmar-aviso">${svg(ICONE.whats)}Abrir no WhatsApp</button>
+            </div>
+        </div>
+    </div>`;
+    document.getElementById('modelo').addEventListener('change', (ev) => {
+        document.getElementById('mensagem').value = MODELOS[ev.target.value][1](grupoAberto);
+    });
+    document.getElementById('modelo').focus();
+}
+function fecharModal() {
+    document.getElementById('camada-modal').innerHTML = '';
+    if (grupoAberto) document.querySelector(`[data-id="${grupoAberto.origem}"] button`)?.focus();
+    grupoAberto = null;
+}
+
+// ---------- Ações ----------
+document.addEventListener('click', (ev) => {
+    const alvo = ev.target.closest('[data-acao], [data-ir]');
+    if (ui.menu && !ev.target.closest('.menu-acoes, [data-acao="menu"]')) { ui.menu = null; if (!alvo) { desenhar(); return; } }
+    if (!alvo) return;
+    if (alvo.dataset.ir) {
+        const col = document.getElementById('etapa-' + alvo.dataset.ir);
+        col.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: 'start' });
+        reiniciarAnimacao(col, 'realce');
+        return;
+    }
+    const acao = alvo.dataset.acao;
+    const id = alvo.dataset.idAlvo;
+    const c = cobrancas.find((x) => x.id === id);
+    if (acao === 'fechar-modal') { if (ev.target === alvo) fecharModal(); return; }
+    if (acao === 'confirmar-aviso') {
+        cobrancas.forEach((x) => { if (grupoAberto.ids.includes(x.id)) { x.avisado = true; x.avisadoAgora = true; } });
+        avisar(`Aviso aberto no WhatsApp para ${grupoAberto.cliente}.`);
+        const origem = grupoAberto.origem; grupoAberto = null;
+        document.getElementById('camada-modal').innerHTML = '';
+        ui.foco = `[data-id="${origem}"] button`;
+        desenhar();
+        return;
+    }
+    if (acao === 'menu') { ui.menu = ui.menu === id ? null : id; ui.foco = ui.menu ? `[data-id="${id}"] [role="menuitem"]` : null; desenhar(); return; }
+    ui.menu = null;
+    if (acao === 'enviar') {
+        ui.enviando = id; desenhar();
+        setTimeout(() => {
+            ui.enviando = null; c.etapa = 'aguardando'; c.chegou = true;
+            avisar(`Recibo enviado para ${c.cliente}.`);
+            ui.foco = `[data-id="${id}"] button`;
+            desenhar(['enviar', 'aguardando']);
+        }, 800);
+        return;
+    }
+    if (acao === 'avisar') { desenhar(); abrirAviso(id); return; }
+    if (acao === 'baixa') { ui.baixa = id; ui.foco = `[data-form-baixa="${id}"] input`; desenhar(); return; }
+    if (acao === 'voltar') { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenhar(); return; }
+    if (acao === 'fora') { desenhar(); avisar(`"${alvo.dataset.rotulo}" abre aqui mesmo, na faixa do cartão. Fora deste protótipo.`); }
+});
+
+document.addEventListener('submit', (ev) => {
+    const form = ev.target.closest('[data-form-baixa]');
+    if (!form) return;
+    ev.preventDefault();
+    const c = cobrancas.find((x) => x.id === form.dataset.formBaixa);
+    const centavos = parseInt(form.valor.value.replace(/\D/g, ''), 10) || 0;
+    if (!centavos) { form.valor.setCustomValidity('Informe o valor recebido.'); form.valor.reportValidity(); return; }
+    Object.assign(c, { pago: centavos, pagoEm: parseInt(form.data.value.slice(8, 10), 10), forma: form.forma.value, etapa: 'recebida', chegou: true, pagoAgora: true });
+    ui.baixa = null;
+    avisar(`Baixa confirmada: ${c.cliente}, ${brl(centavos)}.`);
+    ui.foco = `[data-id="${c.id}"] .mais`;
+    desenhar(['aguardando', 'recebida']);
+});
+
+// Máscara de valor: os dígitos entram pelos centavos (digitar 260 dá 2,60), como no app.
+document.addEventListener('input', (ev) => {
+    if (!ev.target.matches('[data-mascara-valor]')) return;
+    ev.target.setCustomValidity('');
+    const centavos = parseInt(ev.target.value.replace(/\D/g, '') || '0', 10);
+    ev.target.value = (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+});
+
+document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (grupoAberto) fecharModal();
+    else if (ui.menu) { const era = ui.menu; ui.menu = null; ui.foco = `[data-id="${era}"] .mais`; desenhar(); }
+    else if (ui.baixa) { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenhar(); }
+});
+
+document.getElementById('recomecar').addEventListener('click', () => {
+    cobrancas = inicial(); Object.assign(ui, { menu: null, baixa: null, enviando: null });
+    desenhar(['enviar', 'aguardando', 'recebida']);
+});
+
+// Abertura: a barra cresce do zero e os valores sobem até o total do mês (o único efeito que não depende de clique).
+document.querySelectorAll('.trecho').forEach((t) => { t.style.flexGrow = 0; });
+desenhar();
+if (!semMovimento) {
+    document.querySelectorAll('.trecho').forEach((t) => { t.style.flexGrow = 0; });
+    requestAnimationFrame(() => requestAnimationFrame(() => desenharBarra(ORDEM_BARRA)));
+}
+</script>
+</body>
+</html>

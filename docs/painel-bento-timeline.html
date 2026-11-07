@@ -1,0 +1,1452 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel, Bento com linha do tempo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --fundo: #F2F3F8; --tinta: #161B33; --apagado: #4B5470; --linha: #DCE0EC; --linha-forte: #C7CDDF; --linha-suave: #E9ECF5;
+        --menu: #18214A; --menu-ativo: #2C3768; --menu-texto: #C3CCEB; --ouro: #F2B544;
+        --acao: #3B47C4; --acao-escura: #2A3496; --aguardando: #B45309; --recebido: #0F766E;
+        --vermelho: #9F1F17; --vermelho-fundo: #FCE8E6; --laranja: #9A3412; --laranja-fundo: #FDEBD9;
+        --azul-fundo: #E6E8FA; --verde-fundo: #DDF1EE; --ambar-fundo: #FFF3D6; --ambar-texto: #5C3B07;
+        --num: 'Bricolage Grotesque', 'Onest', system-ui, sans-serif;
+        --texto: 'Onest', system-ui, sans-serif;
+        --enviar: #3B47C4; --sombra-fds: #EDEFF8; --sombra-fer: #FFF0CC;
+        --pt-alt: 34px; --pt-folga: 5px; --t-topo: 40px; --alt-regua: 100px;
+    }
+    * { box-sizing: border-box; }
+    h1, h2, h3, h4, p, ul, ol { margin: 0; padding: 0; }
+    ul, ol { list-style: none; }
+    body { margin: 0; background: var(--fundo); color: var(--tinta); font-family: var(--texto); font-size: 15px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--acao-escura); }
+    :focus-visible { outline: 3px solid var(--acao-escura); outline-offset: 2px; }
+    .dinheiro :focus-visible, .menu :focus-visible, .toast :focus-visible { outline-color: var(--ouro); }
+    .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+    .faixa-prototipo { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 16px; background: #222; color: #EEE; font: 13px system-ui, sans-serif; }
+    .faixa-prototipo button { background: none; border: 1px solid #666; color: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+
+    /* Menu lateral */
+    .app { display: flex; flex-wrap: wrap; min-height: 100vh; }
+    .menu { flex: 1 1 232px; max-width: 100%; background: var(--menu); color: var(--menu-texto); padding: 28px 14px; display: flex; flex-direction: column; gap: 28px; }
+    .marca { display: flex; align-items: center; gap: 12px; padding: 0 10px; }
+    .marca svg { color: var(--ouro); flex: none; }
+    .marca-nome { font-family: var(--num); font-weight: 700; font-size: 16px; line-height: 1.15; color: #fff; flex: 1; }
+    .menu-abrir { display: none; background: var(--menu-ativo); border: 0; color: #fff; border-radius: 12px; min-height: 44px; padding: 0 16px; cursor: pointer; }
+    .menu ul { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+    .menu a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; text-decoration: none; color: var(--menu-texto); transition: background-color .15s, color .15s; }
+    .menu a:hover { background: #222C5C; color: #fff; }
+    .menu a[aria-current] { background: var(--menu-ativo); color: #fff; font-weight: 700; }
+    .contador { margin-left: auto; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ouro); color: var(--menu); font-size: 12px; font-weight: 800; display: grid; place-items: center; }
+    .usuario { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 10px 0; border-top: 1px solid var(--menu-ativo); font-size: 13px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--menu-ativo); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+    .usuario button { background: none; border: 0; color: var(--menu-texto); cursor: pointer; min-height: 44px; padding: 0 8px; }
+    @media (max-width: 760px) {
+        .menu { padding: 12px 14px; gap: 12px; }
+        .menu-abrir { display: inline-flex; align-items: center; }
+        .menu:not(.aberto) ul, .menu:not(.aberto) .usuario { display: none; }
+    }
+
+    main { flex: 999 1 560px; min-width: 0; padding: 32px clamp(16px, 3vw, 40px) 80px; display: flex; flex-direction: column; gap: 26px; }
+
+    /* Topo */
+    .topo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 24px; }
+    .topo-data { font-size: 15px; color: var(--apagado); }
+    .topo h1 { margin-top: 4px; font-family: var(--num); font-weight: 800; font-stretch: 86%; font-size: clamp(36px, 5.2vw, 60px); line-height: 1; letter-spacing: -0.03em; }
+    .avisos-topo { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+    .aviso { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 18px 6px 14px; background: #fff; border: 1px solid var(--linha); border-radius: 999px; font-size: 14px; color: var(--tinta); text-decoration: none; transition: border-color .15s, background-color .15s; }
+    .aviso:hover { border-color: var(--linha-forte); background: #FAFBFE; }
+    .aviso::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ouro); box-shadow: 0 0 0 3px #FBE3B0; }
+    .aviso b { color: var(--acao-escura); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+    .aviso[hidden] { display: none; }
+    @media (max-width: 620px) { .topo { grid-template-columns: 1fr; } .topo .botao { width: 100%; } }
+
+    /* Botões */
+    .botao { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 14px; border: 0; background: var(--acao); color: #fff; font-weight: 600; font-size: 14px; text-decoration: none; cursor: pointer; transition: background-color .15s, transform .1s; }
+    .botao:hover { background: var(--acao-escura); }
+    .botao:active { transform: scale(.96); }
+    .botao[disabled] { opacity: .85; cursor: progress; }
+    .botao-secundario { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--linha-forte); background: #fff; color: var(--tinta); font-weight: 600; font-size: 14px; cursor: pointer; transition: background-color .15s, border-color .15s, transform .1s; }
+    .botao-secundario:hover { background: #F3F5FA; border-color: #AEB6CF; }
+    .botao-secundario:active { transform: scale(.96); }
+    .girando { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: girar .7s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /* Grade bento: a grade responde à largura da área de conteúdo, não da janela */
+    .bento-caixa { container-type: inline-size; }
+    .bento { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "din" "hoje" "venc" "mes" "lista"; }
+    @container (min-width: 600px) {
+        .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "din din" "hoje venc" "mes mes" "lista lista"; }
+    }
+    @container (min-width: 940px) {
+        .bento { gap: 20px; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-areas:
+            "din din din din din din venc venc venc hoje hoje hoje"
+            "mes mes mes mes mes mes mes mes mes mes mes mes"
+            "lista lista lista lista lista lista lista lista lista lista lista lista"; }
+    }
+    .bloco { position: relative; min-width: 0; padding: 24px; }
+    .bloco-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .bloco h2 { font-family: var(--num); font-stretch: 92%; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+    .bloco-nota { font-size: 14px; color: var(--apagado); }
+    .grande { font-family: var(--num); font-stretch: 84%; font-weight: 800; font-size: clamp(80px, 8vw, 108px); line-height: .82; letter-spacing: -0.04em; }
+    .num { border-radius: 6px; }
+
+    /* Dinheiro do mês: o bloco cheio */
+    .dinheiro { grid-area: din; background: var(--acao); color: #fff; border-radius: 28px; padding: 24px 28px; box-shadow: 0 34px 50px -30px rgba(59,71,196,.8); --flash: rgba(255,255,255,.32); display: flex; flex-direction: column; gap: 14px; }
+    .dinheiro .bloco-cab { margin: 0; }
+    .din-corpo { flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 22px 32px; }
+    .anel-caixa { position: relative; flex: none; width: 232px; aspect-ratio: 1; }
+    .anel { display: block; width: 100%; height: auto; aspect-ratio: 1; transform: rotate(-90deg); overflow: visible; }
+    .anel circle { fill: none; stroke-width: 22; }
+    .anel .trilho-anel { stroke: rgba(255,255,255,.14); }
+    .arco { stroke-dasharray: 0 100; stroke-dashoffset: 0; transition: stroke-dasharray 1.4s cubic-bezier(.2,.8,.2,1), stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1); }
+    .anel-centro { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+    .anel-centro b { font-family: var(--num); font-stretch: 88%; font-size: 54px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; padding: 0 4px; }
+    .anel-centro span { margin-top: 4px; font-size: 14px; color: rgba(255,255,255,.86); }
+    .onda { position: absolute; inset: 0; border-radius: 50%; border: 3px solid rgba(255,255,255,.75); opacity: 0; pointer-events: none; }
+    .anel-caixa.pulso { animation: pulso-anel .8s cubic-bezier(.3,1.5,.5,1); }
+    .anel-caixa.pulso .onda { animation: onda .95s ease-out; }
+    @keyframes pulso-anel { 40% { transform: scale(1.07); } }
+    @keyframes onda { 0% { opacity: .9; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.4); } }
+    .din-texto { flex: 1 1 190px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .din-rotulo { font-size: 14px; color: rgba(255,255,255,.86); }
+    .din-valor { font-family: var(--num); font-stretch: 90%; font-weight: 800; font-size: clamp(34px, 3.6vw, 44px); line-height: 1.05; letter-spacing: -0.03em; align-self: flex-start; padding: 0 4px; margin: 0 -4px; }
+    .din-previsto { font-size: 15px; color: rgba(255,255,255,.9); }
+    @container (min-width: 940px) {
+        .anel-caixa { width: clamp(168px, 19cqi, 232px); }
+        .din-valor { font-size: clamp(30px, 3.4cqi, 44px); }
+    }
+    .legenda { margin-top: 12px; display: flex; flex-direction: column; }
+    .legenda button { width: 100%; min-height: 42px; display: flex; align-items: center; gap: 10px; padding: 0; background: none; border: 0; border-top: 1px solid rgba(255,255,255,.18); color: #fff; font-size: 14px; text-align: left; cursor: pointer; transition: background-color .15s; }
+    .legenda button:hover { background: rgba(255,255,255,.08); }
+    .legenda i { width: 12px; height: 12px; flex: none; border-radius: 50%; background: var(--c); }
+    .legenda span { flex: 1; white-space: nowrap; }
+    .legenda b { font-family: var(--num); font-size: 16px; font-weight: 700; padding: 0 4px; }
+
+    /* Vencidas: borda fina, número em vermelho */
+    .vencidas { grid-area: venc; background: #fff; border: 1.5px solid #F0C8C3; border-radius: 24px; display: flex; flex-direction: column; }
+    .vencidas h2 { color: var(--vermelho); }
+    .pulso-ponto { width: 10px; height: 10px; border-radius: 50%; background: var(--vermelho); align-self: center; }
+    .pulso-ponto.pulsa { animation: pulsar 1.8s ease-out 4; }
+    @keyframes pulsar { 0% { box-shadow: 0 0 0 0 rgba(159,31,23,.55); } 70%, 100% { box-shadow: 0 0 0 9px rgba(159,31,23,0); } }
+    .vencidas .grande { color: var(--vermelho); align-self: flex-start; padding: 0 4px; margin-left: -4px; }
+    .vencidas.zerado .grande { color: var(--recebido); }
+    .vencidas.zerado .pulso-ponto { display: none; }
+    .bloco-texto { margin-top: 12px; font-size: 15px; color: var(--apagado); }
+    .pessoas { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .vencidas .pessoas { margin-top: auto; padding-top: 16px; }
+    .pessoa { width: 100%; min-height: 52px; display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 8px 16px; background: rgba(159,31,23,.08); border: 0; border-radius: 16px; text-align: left; cursor: pointer; transition: background-color .15s, transform .1s; }
+    .pessoa:hover { background: rgba(159,31,23,.14); }
+    .pessoa:active { transform: scale(.98); }
+    .pessoa b { font-weight: 600; font-size: 14px; }
+    .pessoa span { font-size: 13px; color: var(--apagado); }
+    .hoje .pessoa { background: rgba(255,255,255,.7); }
+    .hoje .pessoa:hover { background: #fff; }
+
+    /* Hoje: tom suave */
+    .hoje { grid-area: hoje; background: #FFEEDD; border-radius: 28px; display: flex; flex-direction: column; }
+    .hoje h2 { color: var(--laranja); }
+    .hoje .bloco-nota { color: #7A3B1C; }
+    .hoje .grande { color: var(--laranja); align-self: flex-start; padding: 0 4px; margin-left: -4px; }
+    .hoje .bloco-texto { color: #6B3A20; }
+    .afazeres { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .afazer { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 8px 0 16px; border: 0; border-radius: 16px; background: rgba(255,255,255,.7); color: var(--tinta); font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; transition: background-color .15s, transform .1s; }
+    .afazer:hover { background: #fff; }
+    .afazer:active { transform: scale(.98); }
+    .afazer span { flex: 1; }
+    .afazer b { min-width: 32px; height: 32px; padding: 0 8px; border-radius: 12px; background: var(--laranja); color: #fff; display: grid; place-items: center; font-family: var(--num); font-size: 16px; font-weight: 700; }
+
+    @media (max-width: 440px) { .anel-caixa { width: 208px; } }
+
+    /* Linha do tempo do mês: bloco de largura total entre a fileira de cima e a lista */
+    .mes { grid-area: mes; --dia: 35px; background: #fff; border: 1px solid var(--linha); border-radius: 28px; padding: 24px clamp(14px, 1.8vw, 22px) 20px; box-shadow: 0 1px 2px rgba(22,27,51,.04), 0 24px 44px -34px rgba(22,27,51,.3); }
+    @container (max-width: 1090px) { .mes { --dia: 40px; } }
+    @container (max-width: 700px) { .mes { --dia: 44px; } }
+    .t-rolagem { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; border-radius: 18px; background: #FBFCFE; border: 1px solid var(--linha-suave); }
+    .t-corpo { --n-venc: 2; --n-pag: 2; --alt-venc: calc(var(--n-venc) * (var(--pt-alt) + var(--pt-folga)) + 16px); position: relative; min-width: calc(30 * var(--dia)); }
+    .t-sombras { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); }
+    .t-sombra { border-left: 1px solid var(--linha-suave); }
+    .t-sombra:first-child { border-left: 0; }
+    .t-sombra.fds { background: var(--sombra-fds); }
+    .t-sombra.fer { background-color: var(--sombra-fer); background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(92,59,7,.22) 6px 7.5px); }
+
+    /* Régua de dinheiro: o recebido enche até "hoje"; o pontilhado é o que ainda se espera */
+    .t-regua { position: absolute; left: 0; right: 0; top: var(--t-topo); height: var(--alt-regua); z-index: 1; }
+    .t-regua::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; border-bottom: 1.5px solid rgba(22,27,51,.5); background: repeating-linear-gradient(90deg, rgba(22,27,51,.5) 0 1px, transparent 1px calc(100% / 30)); }
+    #t-grade { position: absolute; inset: 0; z-index: 1; }
+    .t-grade-linha { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed rgba(22,27,51,.26); }
+    .t-grade-linha span { position: sticky; left: 6px; display: inline-block; transform: translateY(-125%); padding: 2px 6px; border-radius: 6px; background: rgba(251,252,254,.88); font-size: 12px; font-weight: 600; line-height: 1.2; color: var(--tinta); }
+    .t-regua-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .t-regua-enche { position: absolute; left: 0; top: 0; height: 100%; width: calc(100% * 5.5 / 30); }
+    #t-rec-area { fill: color-mix(in srgb, var(--recebido) 32%, transparent); }
+    #t-rec-linha { fill: none; stroke: var(--recebido); stroke-width: 3.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    #t-proj-linha { fill: none; stroke: var(--apagado); stroke-width: 3; stroke-dasharray: 1 7; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .t-meta-caixa { position: absolute; left: 0; right: 0; top: -7px; transform: translateY(-100%); display: flex; justify-content: flex-end; pointer-events: none; }
+    .t-meta { position: sticky; right: 8px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--linha-forte); font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--apagado); white-space: nowrap; }
+    .t-meta b { font-family: var(--num); font-weight: 800; font-size: 15px; color: var(--tinta); letter-spacing: -.01em; }
+    .t-ponta { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--recebido); border: 3px solid #fff; transform: translate(-50%, -50%); z-index: 2; }
+    @keyframes ponta { 0% { box-shadow: 0 0 0 0 rgba(15,118,110,.7); } 100% { box-shadow: 0 0 0 22px rgba(15,118,110,0); } }
+
+    .t-espinha { position: absolute; left: 0; right: 0; top: calc(var(--t-topo) + var(--alt-regua) + 14px + var(--alt-venc)); height: 3px; margin-top: -1px; border-radius: 3px; background: var(--tinta); transform-origin: left; z-index: 2; }
+    .t-hoje { position: absolute; top: 0; height: calc(var(--t-topo) + var(--alt-regua) + 14px + var(--alt-venc)); left: calc(100% * 5.5 / 30); width: 2px; margin-left: -1px; background: var(--tinta); transform-origin: top; z-index: 2; pointer-events: none; }
+    .t-hoje span { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); padding: 4px 11px; border-radius: 999px; background: var(--tinta); color: #fff; font: 700 14px/1 var(--num); }
+
+    @container (max-width: 700px) { .t-hoje span { left: auto; right: 5px; transform: none; } }
+    .t-dias { position: relative; z-index: 3; display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); }
+    .t-dia { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+    .t-dia-regua { height: calc(var(--t-topo) + var(--alt-regua) + 14px); }
+    .t-dia-venc { display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start; gap: var(--pt-folga); height: var(--alt-venc); padding-bottom: 10px; }
+    .t-dia-eixo { position: relative; height: 72px; display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
+    .t-dia-eixo::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 9px; margin-left: -1px; background: var(--tinta); opacity: .6; }
+    .t-dia-num { min-width: 26px; height: 26px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; font-family: var(--num); font-stretch: 90%; font-weight: 700; font-size: 17px; line-height: 1; }
+    .t-dia.e-hoje .t-dia-num { background: var(--tinta); color: #fff; }
+    .t-dia-sem { margin-top: 2px; font-size: 12px; line-height: 14px; color: var(--apagado); }
+    .t-dia-fer { font-size: 11px; font-weight: 700; line-height: 13px; color: var(--ambar-texto); }
+    .t-dia-pag { display: flex; flex-direction: column; align-items: center; gap: var(--pt-folga); padding-top: 10px; min-height: calc(var(--n-pag) * (var(--pt-alt) + var(--pt-folga)) + 14px); }
+    .t-faixa-rotulo { position: absolute; left: 4px; z-index: 0; writing-mode: vertical-rl; transform: rotate(180deg); padding: 6px 0; font-size: 12px; font-weight: 600; line-height: 1; color: var(--apagado); white-space: nowrap; pointer-events: none; }
+    .t-faixa-rotulo.pag { text-align: end; }
+
+    /* Os pontos: um por cobrança, na cor da etapa */
+    .pt { position: relative; z-index: 1; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: calc(100% - 4px); max-width: 60px; height: var(--pt-alt); padding: 0; border-radius: 15px; border: 2px solid transparent; background: var(--tinta); color: #fff; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: 0 0 0 1.5px rgba(255,255,255,.92); transition: transform .15s, box-shadow .15s; }
+    .pt-enviar { background: var(--azul-fundo); border-color: var(--enviar); color: #232C8A; }
+    .pt-aguardando { background: var(--aguardando); }
+    .pt-hoje { background: var(--laranja); }
+    .pt-vencida { background: var(--vermelho); }
+    .pt-recebida { background: var(--recebido); width: var(--pt-alt); border-radius: 50%; }
+    .pt-num { font-family: var(--num); font-stretch: 84%; font-weight: 800; font-size: 15px; letter-spacing: -.01em; }
+    .pt-un { margin-top: 1px; font-size: 12px; font-weight: 700; }
+    .pt:hover, .pt.aceso { transform: scale(1.12); z-index: 5; }
+    .pt.aceso { box-shadow: 0 0 0 2px #fff, 0 0 0 4.5px var(--acao); }
+    .pt.sel { box-shadow: 0 0 0 2px #fff, 0 0 0 4.5px var(--tinta); z-index: 5; }
+    .pt svg { width: 17px; height: 17px; }
+    .pt-aviso { position: absolute; top: -8px; right: -7px; width: 17px; height: 17px; border-radius: 50%; background: var(--recebido); border: 2px solid #fff; display: grid; place-items: center; }
+    .pt-aviso svg { width: 9px; height: 9px; }
+    .pt-alerta { position: absolute; top: -9px; left: -9px; width: 17px; height: 17px; border-radius: 50%; background: #fff; border: 2px solid var(--vermelho); color: var(--vermelho); display: grid; place-items: center; }
+    .pt-alerta svg { width: 9px; height: 9px; }
+    .pulso-pt { position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--vermelho); opacity: 0; pointer-events: none; }
+    @media (pointer: coarse) { .pt::before { content: ''; position: absolute; inset: -7px -3px; } }
+
+    /* Reação a uma ação: onda de cor, salto com arco e rompante de pago */
+    .pt-onda { position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--cor-onda); pointer-events: none; animation: onda-pt 1s ease-out backwards; }
+    .pt-onda.segunda { animation-delay: .18s; }
+    @keyframes onda-pt { 0% { transform: scale(1); opacity: .95; } 100% { transform: scale(2.6, 2.9); opacity: 0; } }
+    .rompe { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+    .rompe i { position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--ouro); animation: particula .85s cubic-bezier(.2,.7,.3,1) .68s both; }
+    .rompe i:nth-child(even) { background: var(--recebido); }
+    .rompe b { position: absolute; width: 26px; height: 26px; margin: -13px; border-radius: 50%; border: 3px solid var(--recebido); animation: anel-rompe .85s ease-out .68s both; }
+    @keyframes particula { 0% { opacity: 0; transform: rotate(var(--a)) translateX(6px); } 12% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateX(42px) scale(.4); } }
+    @keyframes anel-rompe { 0% { opacity: 0; transform: scale(.6); } 12% { opacity: .9; } 100% { opacity: 0; transform: scale(3.2); } }
+    .pt-novo path { stroke-dasharray: 20; animation: tracar-certo .4s ease-out .62s backwards; }
+    @keyframes tracar-certo { from { stroke-dashoffset: 20; } }
+    .t-arcos { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 7; }
+    .t-arco { fill: none; stroke: var(--recebido); stroke-width: 3; stroke-linecap: round; opacity: .6; stroke-dasharray: 1; }
+    .t-ponta.pisca { animation: ponta 1.1s ease-out; }
+
+    /* Abertura: a régua enche e os pontos caem (CSS aqui, pontos em JS). Esperam a linha do tempo aparecer na tela */
+    .mes.entrando { --estado: paused; }
+    .mes.entrando.vendo { --estado: running; }
+    .entrando .t-espinha { animation: tracar-linha 1s cubic-bezier(.65,0,.25,1) .15s backwards var(--estado); }
+    @keyframes tracar-linha { from { transform: scaleX(0); } }
+    .entrando .t-regua-enche { animation: encher 1.1s cubic-bezier(.5,0,.2,1) .5s backwards var(--estado); }
+    @keyframes encher { from { clip-path: inset(-12px 100% -12px 0); } to { clip-path: inset(-12px 0 -12px 0); } }
+    .entrando .t-regua-proj, .entrando .t-grade-linha, .entrando .t-meta { animation: surgir-t .7s ease-out 1.5s backwards var(--estado); }
+    @keyframes surgir-t { from { opacity: 0; } }
+    .entrando .t-ponta { animation: brotar .5s cubic-bezier(.3,1.6,.5,1) 1.55s backwards var(--estado); }
+    @keyframes brotar { from { opacity: 0; transform: translate(-50%, -50%) scale(.2); } }
+    .entrando .t-hoje { animation: descer .7s cubic-bezier(.3,.8,.3,1) 1s backwards var(--estado); }
+    @keyframes descer { from { transform: scaleY(0); } }
+
+    /* Legenda do gráfico */
+    .t-legenda { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--apagado); }
+    .t-legenda > span { display: inline-flex; align-items: center; gap: 8px; }
+    .amostra-pt { position: relative; flex: none; width: 26px; height: 16px; border-radius: 999px; border: 2px solid transparent; display: grid; place-items: center; color: #fff; }
+    .amostra-pt.enviar { background: var(--azul-fundo); border-color: var(--enviar); }
+    .amostra-pt.aguardando { background: var(--aguardando); }
+    .amostra-pt.hoje { background: var(--laranja); }
+    .amostra-pt.vencida { background: var(--vermelho); }
+    .amostra-pt.vencida::after { content: ''; position: absolute; top: -5px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 2px solid var(--vermelho); }
+    .amostra-pt.recebida { width: 16px; background: var(--recebido); }
+    .amostra-linha { flex: none; width: 26px; height: 0; border-top: 3.5px solid var(--recebido); border-radius: 2px; }
+    .amostra-linha.previsto { border-top: 3px dotted var(--apagado); }
+    .amostra { width: 18px; height: 16px; border-radius: 5px; flex: none; }
+    .amostra.fds { background: var(--sombra-fds); box-shadow: inset 0 0 0 1px var(--linha); }
+    .amostra.feriado { background-color: var(--sombra-fer); background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(92,59,7,.3) 4px 5.5px); box-shadow: inset 0 0 0 1px #E3BB6A; }
+
+    /* Dica ao passar o mouse num ponto ou num dia */
+    .dica { position: fixed; z-index: 40; max-width: 300px; text-wrap: balance; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; background: var(--tinta); color: #fff; font-size: 13px; line-height: 1.4; box-shadow: 0 14px 30px rgba(22,27,51,.32); pointer-events: none; animation: dica-surge .12s ease-out; }
+    .dica[hidden] { display: none; }
+    .dica b { font: 700 15px/1.2 var(--num); }
+    .dica .dica-valor { font: 800 20px/1.1 var(--num); font-stretch: 86%; }
+    .dica .dica-sit { display: flex; align-items: center; gap: 8px; margin-top: 2px; color: #D5DDF2; }
+    .dica .dica-sit i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--cor-dica); border: 2px solid var(--cor-dica); }
+    .dica .dica-sit i.oco { background: #fff; }
+    @keyframes dica-surge { from { opacity: 0; transform: translateY(4px); } }
+
+    /* Lista de ação: o bloco largo */
+    .lista { grid-area: lista; isolation: isolate; background: #fff; border-radius: 28px; padding: 24px clamp(16px, 2.4vw, 28px) 14px; box-shadow: 0 1px 2px rgba(22,27,51,.06), 0 28px 48px -34px rgba(22,27,51,.38); }
+    .lista-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+    .lista-cab h2 { font-size: 24px; }
+    .abas { position: relative; display: flex; gap: 2px; padding: 4px; background: #EEF0F7; border-radius: 18px; max-width: 100%; }
+    .aba-indicador { position: absolute; top: 4px; bottom: 4px; left: 0; width: var(--l, 0px); transform: translateX(var(--x, 0px)); background: var(--cor-aba, var(--acao)); border-radius: 14px; box-shadow: 0 10px 18px -10px var(--cor-aba, var(--acao)); transition: transform .5s cubic-bezier(.3,1.3,.4,1), width .5s cubic-bezier(.3,1.3,.4,1), background-color .3s; }
+    .aba { position: relative; z-index: 1; flex: 1 1 auto; min-height: 44px; padding: 0 14px; border: 0; background: none; border-radius: 14px; font-weight: 600; font-size: 14px; color: var(--apagado); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: color .25s; white-space: nowrap; }
+    .aba:not([aria-selected="true"]):hover { color: var(--tinta); }
+    .aba[aria-selected="true"] { color: #fff; }
+    .aba-cont { min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: rgba(22,27,51,.09); display: grid; place-items: center; font-family: var(--num); font-size: 14px; font-weight: 700; transition: background-color .25s; }
+    .aba[aria-selected="true"] .aba-cont { background: rgba(255,255,255,.26); }
+    .aba.nova::after { content: ''; position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--ouro); box-shadow: 0 0 0 2px #EEF0F7; animation: pulsar-ouro 1.6s ease-out 3; }
+    @keyframes pulsar-ouro { 0% { box-shadow: 0 0 0 2px #EEF0F7, 0 0 0 2px rgba(242,181,68,.7); } 100% { box-shadow: 0 0 0 2px #EEF0F7, 0 0 0 10px rgba(242,181,68,0); } }
+    .aba.recebeu { animation: recebeu .6s cubic-bezier(.3,1.6,.5,1); }
+    @keyframes recebeu { 40% { transform: scale(1.14); } }
+    @media (max-width: 480px) { .aba { padding: 0 8px; gap: 6px; font-size: 13px; } .aba-cont { min-width: 24px; height: 24px; padding: 0 6px; } .abas { width: 100%; } }
+    #painel { outline: none; }
+    .painel-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin: 20px 0 4px; }
+    .painel-cab h3 { font-family: var(--num); font-stretch: 92%; font-size: 20px; font-weight: 700; color: var(--cor); }
+    .painel-cab p { font-size: 14px; color: var(--apagado); }
+    .grupo { margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--apagado); display: flex; align-items: center; gap: 10px; }
+    .grupo::after { content: ''; flex: 1; height: 1px; background: var(--linha-suave); }
+    .vazio { margin: 12px 0 10px; padding: 26px 16px; border: 1.5px dashed var(--linha-forte); border-radius: 20px; font-size: 14px; color: var(--apagado); text-align: center; }
+
+    /* Linha de cobrança */
+    .linha { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-areas: "chip corpo valor" "acoes acoes acoes" "baixa baixa baixa"; gap: 8px 14px; align-items: start; padding: 16px 0; border-top: 1px solid var(--linha-suave); }
+    .grupo + .linha, .painel-cab + .linha { border-top: 0; }
+    .linha::before { content: ''; position: absolute; inset: 4px -10px; z-index: -1; border-radius: 20px; background: transparent; transition: background-color .15s; }
+    .linha:hover::before { background: #F6F7FC; }
+    /* Ligação com a linha do tempo: o ponto aceso e o selecionado acendem a cobrança na lista, na cor da etapa */
+    .linha::before { transition: background-color .15s, box-shadow .15s; }
+    .linha.aceso-linha::before { background: color-mix(in srgb, var(--cor-chegada, var(--acao)) 9%, #fff); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cor-chegada, var(--acao)) 45%, transparent); }
+    .linha.sel::before { background: color-mix(in srgb, var(--cor-chegada, var(--acao)) 14%, #fff); box-shadow: inset 0 0 0 2px var(--cor-chegada, var(--acao)); }
+    .linha.chegou::before, .linha.realce::before { animation: chegou 1.8s ease-out; }
+    @keyframes chegou { 0%, 40% { background: color-mix(in srgb, var(--cor-chegada, var(--acao)) 20%, #fff); } 100% { background: transparent; } }
+    .chip-data { grid-area: chip; width: 52px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 8px 0; border-radius: 16px; background: var(--chip-fundo, #EEF0F7); color: var(--chip-texto, var(--tinta)); line-height: 1; }
+    .chip-data span { font-size: 12px; font-weight: 600; }
+    .chip-data b { font-family: var(--num); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .chip-vermelho { --chip-fundo: var(--vermelho-fundo); --chip-texto: var(--vermelho); }
+    .chip-laranja { --chip-fundo: var(--laranja-fundo); --chip-texto: var(--laranja); }
+    .chip-verde { --chip-fundo: var(--verde-fundo); --chip-texto: #0B5751; }
+    .linha-corpo { grid-area: corpo; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .nome { font-size: 16px; font-weight: 600; line-height: 1.3; }
+    .detalhe { font-size: 14px; color: var(--apagado); }
+    .selos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .valor { grid-area: valor; font-family: var(--num); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; text-align: right; }
+    .selo { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .selo-vermelho { background: var(--vermelho-fundo); color: var(--vermelho); }
+    .selo-laranja { background: var(--laranja-fundo); color: var(--laranja); }
+    .selo-azul { background: var(--azul-fundo); color: #2A3496; }
+    .selo-verde { background: var(--verde-fundo); color: #0B5751; }
+    .selo-ambar { background: var(--ambar-fundo); color: var(--ambar-texto); }
+    .selo.novo { animation: estalo .45s cubic-bezier(.3,1.6,.5,1); }
+    @keyframes estalo { from { transform: scale(.4); opacity: 0; } }
+    .pulso-selo { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulsar 1.8s ease-out 4; }
+    .linha-acoes { grid-area: acoes; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .linha-acoes > .botao, .linha-acoes > .botao-secundario, .linha-acoes > .feito { flex: 1; }
+    .mais { width: 44px; height: 44px; flex: none; border-radius: 14px; border: 1.5px solid var(--linha-forte); background: #fff; cursor: pointer; display: grid; place-items: center; transition: background-color .15s, transform .1s; }
+    .mais:hover { background: #F3F5FA; }
+    .mais:active { transform: scale(.94); }
+    .menu-acoes { position: absolute; right: 0; top: calc(100% - 10px); z-index: 10; min-width: 232px; background: #fff; border: 1px solid var(--linha); border-radius: 18px; box-shadow: 0 18px 40px rgba(22,27,51,.2); padding: 6px; display: flex; flex-direction: column; transform-origin: top right; animation: surgir .16s cubic-bezier(.2,.9,.3,1.2); }
+    .menu-acoes button { min-height: 44px; text-align: left; background: none; border: 0; padding: 0 14px; border-radius: 12px; font-size: 14px; cursor: pointer; }
+    .menu-acoes button:hover, .menu-acoes button:focus-visible { background: #F3F5FA; }
+    .menu-acoes .perigo { color: var(--vermelho); }
+    .menu-acoes .perigo:hover { background: var(--vermelho-fundo); }
+    @keyframes surgir { from { opacity: 0; transform: scale(.94) translateY(-6px); } }
+    @container (min-width: 720px) {
+        .linha { grid-template-columns: 56px minmax(0, 1fr) 132px 284px; grid-template-areas: "chip corpo valor acoes" "baixa baixa baixa baixa"; align-items: center; gap: 8px 22px; }
+        .chip-data { width: 56px; }
+        .linha-acoes { justify-self: stretch; }
+        .valor { font-size: 22px; }
+    }
+
+    /* Carimbo de pago (pequeno, na linha já recebida) */
+    .carimbo { display: inline-block; padding: 3px 14px; border: 2px solid var(--recebido); border-radius: 6px; color: var(--recebido); font-family: var(--num); font-weight: 800; font-size: 14px; letter-spacing: .06em; transform: rotate(-6deg); margin-right: 8px; }
+    /* A linha que acabou de ser paga: o carimbo grande bate, a linha sente o golpe */
+    .linha.fantasma { pointer-events: none; }
+    .linha.fantasma > :not(.carimbo-grande) { opacity: .5; transition: opacity .3s; }
+    .linha.fantasma.pago { animation: batida .4s ease-out .3s; }
+    @keyframes batida { 30% { transform: translateY(3px) scale(.995); } 60% { transform: translateY(-1px); } }
+    .carimbo-grande { position: absolute; right: 90px; top: 50%; margin-top: -30px; padding: 4px 18px; border-radius: 12px; border: 3px solid var(--recebido); color: var(--recebido); background: rgba(255,255,255,.7); box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px var(--recebido); font-family: var(--num); font-weight: 800; font-size: 34px; line-height: 1.25; letter-spacing: .08em; transform: rotate(-8deg); animation: carimbar .6s cubic-bezier(.2,.9,.3,1.2) backwards; }
+    .carimbo-grande::after { content: ''; position: absolute; inset: -8px; border: 2px solid var(--recebido); border-radius: 18px; opacity: 0; animation: choque .6s ease-out .3s; }
+    @keyframes carimbar { 0% { transform: scale(2.8) rotate(-22deg); opacity: 0; } 50% { transform: scale(.88) rotate(-6deg); opacity: 1; } 72% { transform: scale(1.05) rotate(-8deg); } 100% { transform: scale(1) rotate(-8deg); } }
+    @keyframes choque { 0% { opacity: .7; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.5); } }
+    @media (max-width: 719px) { .carimbo-grande { right: 14px; top: auto; bottom: 14px; margin-top: 0; font-size: 26px; } }
+    .feito { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 14px; background: var(--azul-fundo); color: var(--acao-escura); font-weight: 700; font-size: 14px; animation: estalo .4s cubic-bezier(.3,1.6,.5,1); }
+    .feito path { stroke-dasharray: 20; stroke-dashoffset: 20; animation: tracar .4s ease-out .15s forwards; }
+    @keyframes tracar { to { stroke-dashoffset: 0; } }
+
+    /* Baixa na própria linha */
+    .baixa { grid-area: baixa; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; padding: 16px; margin-top: 4px; border-radius: 20px; background: #F4F5FB; animation: abrir .24s cubic-bezier(.2,.8,.2,1); }
+    @keyframes abrir { from { opacity: 0; transform: translateY(-8px) scale(.985); } }
+    .campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--apagado); }
+    .campo input, .campo select, .campo textarea { min-height: 44px; border: 1.5px solid var(--linha-forte); border-radius: 12px; padding: 8px 12px; background: #fff; font-size: 15px; font-weight: 500; color: var(--tinta); transition: border-color .15s, box-shadow .15s; }
+    .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--acao); box-shadow: 0 0 0 4px rgba(59,71,196,.18); }
+    .baixa-botoes { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+    .baixa-botoes .botao { flex: 1 1 180px; }
+    @container (min-width: 720px) {
+        .baixa { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+        .baixa-botoes { grid-column: auto; flex-wrap: nowrap; }
+        .baixa-botoes .botao { flex: none; }
+    }
+
+    .destacar { animation: destacar 1.2s ease-out; }
+    @keyframes destacar { 0%, 35% { background: var(--flash, #FFE9A8); } 100% { background: transparent; } }
+
+    /* Voo da cobrança até a aba nova, e confete de etapa esvaziada */
+    .voo { position: fixed; z-index: 40; height: 32px; padding: 0 14px; display: flex; align-items: center; border-radius: 16px; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; pointer-events: none; box-shadow: 0 10px 20px -8px rgba(22,27,51,.5); }
+    .confete { position: fixed; z-index: 40; border-radius: 2px; pointer-events: none; }
+
+    /* Janela do WhatsApp */
+    .fundo-modal { position: fixed; inset: 0; background: rgba(22,27,51,.5); display: grid; place-items: center; padding: 16px; z-index: 20; animation: aparecer .15s ease-out; }
+    @keyframes aparecer { from { opacity: 0; } }
+    .modal { width: min(540px, 100%); max-height: 100%; overflow: auto; background: #fff; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 14px; animation: subir .26s cubic-bezier(.2,.9,.3,1.1); }
+    @keyframes subir { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+    .modal h2 { font-family: var(--num); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .modal p { font-size: 14px; color: var(--apagado); }
+    .modal textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+    .modal-botoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+    /* Avisos na tela, com a linha do tempo até sumirem */
+    .avisos-tela { position: fixed; right: 16px; bottom: 16px; z-index: 30; display: flex; flex-direction: column; gap: 8px; max-width: min(380px, calc(100% - 32px)); }
+    .toast { position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; background: var(--tinta); color: #fff; padding: 14px 18px 16px; border-radius: 18px; font-size: 14px; box-shadow: 0 14px 32px rgba(22,27,51,.3); animation: subir .26s cubic-bezier(.2,.9,.3,1.1); }
+    .toast svg { color: #7DE3D1; flex: none; }
+    .toast::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #7DE3D1; transform-origin: left; animation: tempo 3.8s linear forwards; }
+    @keyframes tempo { to { transform: scaleX(0); } }
+    .toast.saindo { animation: sair .25s ease-in forwards; }
+    @keyframes sair { to { opacity: 0; transform: translateX(16px); } }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
+    }
+</style>
+</head>
+<body>
+<div class="faixa-prototipo">
+    <span>Protótipo com dados fictícios. Os botões funcionam, mas nada é gravado.</span>
+    <button type="button" id="recomecar">Recomeçar</button>
+</div>
+
+<div class="app">
+    <nav class="menu" aria-label="Principal">
+        <div class="marca">
+            <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M5 2.5h14v19l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 21.5z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4"/></svg>
+            <span class="marca-nome">Gerenciador de Cobranças</span>
+            <button type="button" class="menu-abrir" aria-expanded="false" aria-controls="itens-menu">Menu</button>
+        </div>
+        <ul id="itens-menu"></ul>
+        <div class="usuario">
+            <span class="avatar" aria-hidden="true">MR</span>
+            <span style="flex:1;color:#fff">Marcos Ronaldo</span>
+            <button type="button">Sair</button>
+        </div>
+    </nav>
+
+    <main>
+        <header class="topo">
+            <div>
+                <p class="topo-data">Sexta, 6 de novembro</p>
+                <h1>Novembro de 2026</h1>
+            </div>
+            <a href="#" class="botao"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>Nova cobrança</a>
+            <div class="avisos-topo">
+                <a href="#" class="aviso" id="aviso-datas"><span id="aviso-datas-texto"></span><b>Ver e ajustar</b></a>
+                <a href="#" class="aviso">1 contrato termina nos próximos dias.<b>Ver contratos</b></a>
+            </div>
+        </header>
+
+        <div class="bento-caixa">
+            <div class="bento" id="bento">
+
+                <section class="bloco dinheiro" aria-labelledby="t-dinheiro">
+                    <div class="bloco-cab"><h2 id="t-dinheiro">Dinheiro de novembro</h2></div>
+                    <div class="din-corpo">
+                        <div class="anel-caixa" id="anel-caixa">
+                            <svg class="anel" id="anel" viewBox="0 0 220 220" role="img" aria-label="">
+                                <circle class="trilho-anel" cx="110" cy="110" r="90"/>
+                                <circle class="arco" data-arco="enviar" cx="110" cy="110" r="90" pathLength="100" stroke="#AEB4F0"/>
+                                <circle class="arco" data-arco="aguardando" cx="110" cy="110" r="90" pathLength="100" stroke="#F6BE5A"/>
+                                <circle class="arco" data-arco="recebida" cx="110" cy="110" r="90" pathLength="100" stroke="#7DE3D1"/>
+                            </svg>
+                            <div class="anel-centro" aria-hidden="true"><b class="num" id="anel-pct">0%</b><span>recebido</span></div>
+                            <span class="onda" aria-hidden="true"></span>
+                        </div>
+                        <div class="din-texto">
+                            <p class="din-rotulo">Já entrou no caixa</p>
+                            <p class="din-valor num" id="din-recebido">R$ 0,00</p>
+                            <p class="din-previsto">de <b class="num" id="din-previsto">R$ 0,00</b> previstos</p>
+                            <div class="legenda">
+                                <button type="button" data-ir="recebida" style="--c:#7DE3D1"><i></i><span>Recebido</span><b class="num" data-val="recebida">R$ 0,00</b></button>
+                                <button type="button" data-ir="aguardando" style="--c:#F6BE5A"><i></i><span>Aguardando</span><b class="num" data-val="aguardando">R$ 0,00</b></button>
+                                <button type="button" data-ir="enviar" style="--c:#AEB4F0"><i></i><span>Para enviar</span><b class="num" data-val="enviar">R$ 0,00</b></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bloco hoje" aria-labelledby="t-hoje">
+                    <div class="bloco-cab"><h2 id="t-hoje">Hoje</h2><span class="bloco-nota">sexta, 6/11</span></div>
+                    <p class="grande num" id="hoje-n">0</p>
+                    <p class="bloco-texto" id="hoje-texto"></p>
+                    <div class="pessoas" id="hoje-nomes"></div>
+                    <div class="afazeres">
+                        <button type="button" class="afazer" data-ir="aguardando"><span>Para avisar</span><b class="num" id="af-avisos">0</b></button>
+                        <button type="button" class="afazer" data-ir="enviar"><span>Para enviar</span><b class="num" id="af-recibos">0</b></button>
+                    </div>
+                </section>
+
+                <section class="bloco vencidas" id="bloco-vencidas" aria-labelledby="t-vencidas">
+                    <div class="bloco-cab"><h2 id="t-vencidas">Vencidas</h2><span class="pulso-ponto pulsa" aria-hidden="true"></span></div>
+                    <p class="grande num" id="venc-n">0</p>
+                    <p class="bloco-texto" id="venc-texto"></p>
+                    <div class="pessoas" id="venc-nomes"></div>
+                </section>
+
+                <section class="bloco mes" id="mes" aria-labelledby="t-mes">
+                    <div class="bloco-cab"><h2 id="t-mes">Novembro, dia a dia</h2><span class="bloco-nota" id="t-nota">Vencimentos acima do eixo, pagamentos abaixo</span></div>
+                    <div class="t-rolagem" id="t-rolagem" role="region" aria-label="Linha do tempo de novembro. Role para os lados para ver todos os dias">
+                        <div class="t-corpo" id="t-corpo">
+                            <div class="t-sombras" id="t-sombras" aria-hidden="true"></div>
+                            <div class="t-regua" aria-hidden="true">
+                                <div id="t-grade"></div>
+                                <svg class="t-regua-svg t-regua-proj" viewBox="0 0 3000 100" preserveAspectRatio="none"><path id="t-proj-linha"/></svg>
+                                <div class="t-regua-enche"><svg class="t-regua-svg" viewBox="0 0 550 100" preserveAspectRatio="none"><path id="t-rec-area"/><path id="t-rec-linha"/></svg></div>
+                                <span class="t-ponta" id="t-ponta"></span>
+                                <div class="t-meta-caixa"><span class="t-meta"><b id="t-meta-valor">R$ 0,00</b> previstos</span></div>
+                            </div>
+                            <div class="t-espinha"></div>
+                            <div class="t-dias" id="t-dias"></div>
+                            <span class="t-faixa-rotulo" id="t-rotulo-venc">Vencimentos</span>
+                            <span class="t-faixa-rotulo pag" id="t-rotulo-pag">Pagamentos</span>
+                            <div class="t-hoje" aria-hidden="true"><span>Hoje</span></div>
+                            <svg class="t-arcos" id="t-arcos" aria-hidden="true"></svg>
+                        </div>
+                    </div>
+                    <div class="t-legenda" aria-hidden="true">
+                        <span><i class="amostra-pt enviar"></i>Para enviar</span>
+                        <span><i class="amostra-pt aguardando"></i>Aguardando</span>
+                        <span><i class="amostra-pt hoje"></i>Vence hoje</span>
+                        <span><i class="amostra-pt vencida"></i>Vencida</span>
+                        <span><i class="amostra-pt recebida"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></i>Pago</span>
+                        <span><i class="amostra-linha"></i>Recebido</span>
+                        <span><i class="amostra-linha previsto"></i>Previsto</span>
+                        <span><i class="amostra fds"></i>Fim de semana</span>
+                        <span><i class="amostra feriado"></i>Feriado</span>
+                    </div>
+                </section>
+
+                <section class="bloco lista" id="bloco-lista" aria-labelledby="t-lista">
+                    <header class="lista-cab">
+                        <h2 id="t-lista">Cobranças do mês</h2>
+                        <div class="abas" role="tablist" aria-label="Etapas da cobrança" id="abas">
+                            <span class="aba-indicador" aria-hidden="true"></span>
+                        </div>
+                    </header>
+                    <div id="painel" role="tabpanel" tabindex="-1"></div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="dica" id="dica" role="tooltip" hidden></div>
+<div class="avisos-tela" id="avisos-tela" aria-live="polite"></div>
+<div id="camada-modal"></div>
+
+<script>
+// ---------- Dados fictícios (novembro de 2026 começa num domingo; hoje é dia 6) ----------
+const HOJE = 6;
+const ULTIMO_DIA_DO_AVISO = 11; // "dias de aviso" = 5
+const DIAS_NO_MES = 30;
+const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const FERIADOS = { 2: 'Finados', 15: 'Proclamação da República', 20: 'Consciência Negra' };
+const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Dinheiro', 'Cartão'];
+
+const inicial = () => [
+    { id: 'c1', cliente: 'Padaria Grão Dourado', descricao: 'Manutenção do sistema', valor: 65000, venc: 15, etapa: 'enviar' },
+    { id: 'c2', cliente: 'Construtora Alicerce', descricao: 'Consultoria mensal', valor: 350000, venc: 18, etapa: 'enviar' },
+    { id: 'c3', cliente: 'Studio Lume', descricao: 'Hospedagem do site', valor: 18000, venc: 20, etapa: 'enviar' },
+    { id: 'c4', cliente: 'Moura & Lima Advogados', descricao: 'Suporte técnico', valor: 240000, venc: 5, etapa: 'aguardando' },
+    { id: 'c5', cliente: 'Pet Shop Amigo Fiel', descricao: 'Licença do sistema', valor: 32000, venc: 6, etapa: 'aguardando' },
+    { id: 'c6', cliente: 'Clínica Vida Plena', descricao: 'Manutenção do sistema', valor: 120000, venc: 9, etapa: 'aguardando' },
+    { id: 'c7', cliente: 'Academia Ritmo', descricao: 'Aplicativo de agendamento', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c8', cliente: 'Academia Ritmo', descricao: 'Suporte técnico', valor: 45000, venc: 10, etapa: 'aguardando' },
+    { id: 'c9', cliente: 'Mercado São Jorge', descricao: 'Manutenção mensal', valor: 110000, venc: 12, etapa: 'aguardando' },
+    { id: 'r1', cliente: 'Academia Ritmo', descricao: 'Mensalidade de outubro', valor: 140000, venc: 5, etapa: 'recebida', pagoEm: 5, forma: 'PIX' },
+    { id: 'r2', cliente: 'Mercado São Jorge', descricao: 'Implantação', valor: 210000, venc: 4, etapa: 'recebida', pagoEm: 4, forma: 'Transferência' },
+    { id: 'r3', cliente: 'Construtora Alicerce', descricao: 'Projeto de integração', valor: 350000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+    { id: 'r4', cliente: 'Studio Lume', descricao: 'Desenvolvimento do site', valor: 280000, venc: 3, etapa: 'recebida', pagoEm: 3, forma: 'PIX' },
+];
+let cobrancas = inicial();
+// fantasmas: linhas que já mudaram de etapa mas ainda mostram o carimbo/selo antes de voar; voando: chegadas ainda não contadas na aba
+const ui = { menu: null, baixa: null, enviando: new Set(), foco: null, aba: 'aguardando', fantasmas: {}, voando: {}, novas: new Set(), sel: null, linhasDeVenc: 2, linhasDePag: 2, baixas: 0 };
+const semMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- Utilidades ----------
+const brl = (centavos) => (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dia = (d) => `${SEMANA[(d - 1) % 7]}, ${d}/11`;
+const diaCurto = (d) => SEMANA[(d - 1) % 7].slice(0, 3);
+const fimDeSemana = (d) => [0, 6].includes((d - 1) % 7);
+const valorFinal = (c) => c.pago ?? c.valor;
+const soma = (lista) => lista.reduce((t, c) => t + valorFinal(c), 0);
+const da = (etapa) => cobrancas.filter((c) => c.etapa === etapa);
+const pendentes = () => cobrancas.filter((c) => c.etapa !== 'recebida');
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const svg = (d, tam = 16) => `<svg aria-hidden="true" width="${tam}" height="${tam}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+const ICONE = {
+    enviar: 'M14.5 1.5l-6 13-2.5-5.5-5.5-2.5z',
+    whats: 'M2.5 13.5l1-3a6 6 0 1 1 2.2 2.1zM6 6.5c.3 1.5 1.8 3 3.5 3.5',
+    certo: 'M2.5 8.5l3.5 3.5 7.5-8',
+    mais: 'M3 8h.01M8 8h.01M13 8h.01',
+};
+const reiniciarAnimacao = (el, classe) => { el.classList.remove(classe); void el.offsetWidth; el.classList.add(classe); };
+const $ = (seletor) => document.querySelector(seletor);
+
+function situacao(c) {
+    if (c.venc < HOJE) return 'vencida';
+    if (c.venc === HOJE) return 'hoje';
+    return c.venc <= ULTIMO_DIA_DO_AVISO ? 'breve' : 'depois';
+}
+const caiEmDiaNaoUtil = (c) => c.etapa !== 'recebida' && (FERIADOS[c.venc] || fimDeSemana(c.venc));
+
+const ETAPAS = [
+    { chave: 'enviar', titulo: 'Enviar recibo', aba: 'Enviar', cor: '#3B47C4' },
+    { chave: 'aguardando', titulo: 'Aguardando pagamento', aba: 'Aguardando', cor: '#B45309' },
+    { chave: 'recebida', titulo: 'Recebidas no mês', aba: 'Recebidas', cor: '#0F766E' },
+];
+const etapa = (chave) => ETAPAS.find((e) => e.chave === chave);
+
+// ---------- Menu lateral ----------
+const ITENS_MENU = [
+    ['Painel', 'M2 2h5v6H2zM9 2h5v3H9zM9 7h5v7H9zM2 10h5v4H2z'],
+    ['Cobranças', 'M3.5 1.5h9v13l-2.2-1.3-2.3 1.3-2.3-1.3-2.2 1.3zM6 5.5h4M6 8.5h4'],
+    ['Contratos', 'M4 1.5h5.5l2.5 2.5v10.5H4zM9.5 1.5V4H12M6 8.5h4M6 11h4'],
+    ['Clientes', 'M6 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1.5 14c0-2.6 2-4.5 4.5-4.5s4.5 1.9 4.5 4.5M10.5 2.3a2.5 2.5 0 0 1 0 4.6M12.5 9.8c1.3.6 2 2.1 2 4.2'],
+    ['Produtos e serviços', 'M8 1.5l6 3v7l-6 3-6-3v-7zM2 4.5l6 3 6-3M8 7.5v7'],
+    ['Relatórios', 'M2 14h12M4 11.5v-4M8 11.5V3M12 11.5V6'],
+    ['Auditoria', 'M8 1.5l5.5 2v4c0 3.4-2.3 5.8-5.5 7-3.2-1.2-5.5-3.6-5.5-7v-4zM5.5 8l1.8 1.8L10.5 6.5'],
+    ['Meu perfil', 'M8 7.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2.5 14.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5'],
+    ['Usuários', 'M5.5 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM1 14c0-2.6 2-4.5 4.5-4.5S10 11.4 10 14M11 5.5h4M13 3.5v4', 2],
+];
+$('#itens-menu').innerHTML = ITENS_MENU.map(([rotulo, icone, contador], i) =>
+    `<li><a href="#" ${i ? '' : 'aria-current="page"'}>${svg(icone, 18)}${rotulo}${contador ? `<span class="contador" aria-label="${contador} aguardando aprovação">${contador}</span>` : ''}</a></li>`).join('');
+const botaoMenu = $('.menu-abrir');
+botaoMenu.addEventListener('click', () => {
+    const aberto = $('.menu').classList.toggle('aberto');
+    botaoMenu.setAttribute('aria-expanded', String(aberto));
+});
+
+// ---------- Número que muda conta até o valor novo e pisca, para o olho achar o que mudou ----------
+const valores = {};
+function contar(el, chave, para, formatar = brl) {
+    const de = valores[chave] ?? 0;
+    const jaVisto = chave in contar.vistos;
+    valores[chave] = para;
+    contar.vistos[chave] = true;
+    if (de === para || semMovimento) { el.textContent = formatar(para); return; }
+    if (jaVisto) reiniciarAnimacao(el, 'destacar');
+    const inicio = performance.now(), duracao = jaVisto ? 800 : 1300;
+    const passo = (agora) => {
+        const t = Math.min(1, (agora - inicio) / duracao);
+        const suave = 1 - Math.pow(1 - t, 3);
+        el.textContent = formatar(Math.round(de + (para - de) * suave));
+        if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+}
+contar.vistos = {};
+const inteiro = (n) => String(n);
+
+// ---------- Blocos: dinheiro, hoje, vencidas (e a linha do tempo, que se redesenha junto) ----------
+const ordemDoAnel = ['recebida', 'aguardando', 'enviar'];
+function desenharAnel(previsto, valoresPorEtapa) {
+    let inicio = 0;
+    ordemDoAnel.forEach((chave) => {
+        const parte = previsto ? (valoresPorEtapa[chave] / previsto) * 100 : 0;
+        const visivel = Math.max(0, parte - 0.9); // folga de 0,9% entre os arcos
+        const arco = $(`[data-arco="${chave}"]`);
+        arco.style.strokeDasharray = `${visivel} ${100 - visivel}`;
+        arco.style.strokeDashoffset = -(inicio + 0.45);
+        inicio += parte;
+    });
+}
+
+function nomesEmBotoes(lista, aba, detalhe) {
+    const mostrados = lista.slice(0, 3).map((c) => `<button type="button" class="pessoa" data-ir="${aba}" data-ir-id="${c.id}"><b>${c.cliente}</b><span>${detalhe(c)}</span></button>`).join('');
+    const resto = lista.length > 3 ? `<p class="bloco-texto" style="margin:4px 0 0">e mais ${lista.length - 3}</p>` : '';
+    return mostrados + resto;
+}
+
+function desenharBlocos() {
+    const previsto = soma(cobrancas);
+    const porEtapa = { recebida: soma(da('recebida')), aguardando: soma(da('aguardando')), enviar: soma(da('enviar')) };
+    const pct = previsto ? Math.round((porEtapa.recebida / previsto) * 100) : 0;
+    desenharAnel(previsto, porEtapa);
+    $('#anel').setAttribute('aria-label', `${pct}% recebido: ${brl(porEtapa.recebida)} de ${brl(previsto)} previstos para novembro`);
+    contar($('#anel-pct'), 'pct', pct, (n) => n + '%');
+    contar($('#din-recebido'), 'din-recebido', porEtapa.recebida);
+    contar($('#din-previsto'), 'din-previsto', previsto);
+    ordemDoAnel.forEach((chave) => contar($(`[data-val="${chave}"]`), 'leg-' + chave, porEtapa[chave]));
+
+    const vencidas = pendentes().filter((c) => c.venc < HOJE).sort((a, b) => a.venc - b.venc);
+    $('#bloco-vencidas').classList.toggle('zerado', !vencidas.length);
+    contar($('#venc-n'), 'venc-n', vencidas.length, inteiro);
+    $('#venc-texto').textContent = vencidas.length ? `${vencidas.length === 1 ? 'cobrança vencida' : 'cobranças vencidas'}, ${brl(soma(vencidas))}` : 'Nenhuma vencida. Tudo em dia.';
+    $('#venc-nomes').innerHTML = nomesEmBotoes(vencidas, 'aguardando', (c) => `${brl(valorFinal(c))}, venceu há ${plural(HOJE - c.venc, 'dia', 'dias')}`);
+
+    const venceHoje = pendentes().filter((c) => c.venc === HOJE);
+    contar($('#hoje-n'), 'hoje-n', venceHoje.length, inteiro);
+    $('#hoje-texto').textContent = venceHoje.length ? `${venceHoje.length === 1 ? 'cobrança vence' : 'cobranças vencem'} hoje, ${brl(soma(venceHoje))}` : 'Nada vence hoje.';
+    $('#hoje-nomes').innerHTML = nomesEmBotoes(venceHoje, 'aguardando', (c) => c.descricao);
+    contar($('#af-avisos'), 'af-avisos', da('aguardando').filter((c) => acaoPrincipal(c) === 'avisar').length, inteiro);
+    contar($('#af-recibos'), 'af-recibos', da('enviar').length, inteiro);
+
+    desenharTempo();
+    desenharAbas();
+
+    const naoUteis = pendentes().filter(caiEmDiaNaoUtil).length;
+    $('#aviso-datas').hidden = !naoUteis;
+    $('#aviso-datas-texto').textContent = `${naoUteis === 1 ? '1 cobrança vence' : `${naoUteis} cobranças vencem`} em domingo ou feriado.`;
+}
+
+// ---------- Linha do tempo do mês: vencimentos acima do eixo, pagamentos abaixo, régua de dinheiro por cima ----------
+const COR_DO_TIPO = { enviar: '#3B47C4', aguardando: '#B45309', hoje: '#9A3412', vencida: '#9F1F17', recebida: '#0F766E' };
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const maiuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const compacto = (centavos) => {
+    const reais = centavos / 100;
+    return reais >= 1000 ? { num: (reais / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }), un: 'mil' } : { num: String(Math.round(reais)), un: '' };
+};
+
+// Qual aparência o ponto tem (a mesma cor vale na legenda).
+function tipoDoPonto(c) {
+    if (c.etapa === 'recebida' || c.etapa === 'enviar') return c.etapa;
+    const s = situacao(c);
+    return s === 'vencida' ? 'vencida' : s === 'hoje' ? 'hoje' : 'aguardando';
+}
+function situacaoTexto(c) {
+    if (c.etapa === 'recebida') return `Recebida em ${c.pagoEm}/11, ${c.forma}`;
+    const feriado = FERIADOS[c.venc] ? `. Cai em feriado: ${FERIADOS[c.venc]}` : fimDeSemana(c.venc) ? '. Cai no fim de semana' : '';
+    const fase = c.etapa === 'enviar' ? 'Recibo ainda não enviado' : 'Aguardando pagamento';
+    const s = situacao(c);
+    const prazo = s === 'vencida' ? `vencida há ${plural(HOJE - c.venc, 'dia', 'dias')}` : s === 'hoje' ? 'vence hoje' : `vence em ${plural(c.venc - HOJE, 'dia', 'dias')}, ${dia(c.venc)}`;
+    return `${fase}, ${prazo}${feriado}`;
+}
+function textoDoDia(d) {
+    const partes = [`${maiuscula(SEMANA[(d - 1) % 7])}, ${d}/11`];
+    if (d === HOJE) partes.push('Hoje');
+    if (FERIADOS[d]) partes.push(`Feriado: ${FERIADOS[d]}`);
+    if (fimDeSemana(d)) partes.push('Fim de semana');
+    return partes.join('. ');
+}
+
+$('#t-sombras').innerHTML = Array.from({ length: DIAS_NO_MES }, (_, i) => {
+    const d = i + 1;
+    return `<div class="t-sombra${fimDeSemana(d) ? ' fds' : ''}${FERIADOS[d] ? ' fer' : ''}"></div>`;
+}).join('');
+const LINHAS_DA_GRADE = [500000, 1000000, 1500000]; // em centavos, como todo valor aqui
+$('#t-grade').innerHTML = LINHAS_DA_GRADE.map((v) => `<div class="t-grade-linha"><span>R$ ${v / 100000} mil</span></div>`).join('');
+
+// Régua: o recebido acumulado enche da esquerda até "hoje"; o pontilhado é o previsto (o que falta cai no dia do vencimento).
+const X = (d) => (d - 0.5) * 100; // centro do dia, num espaço de 3000 unidades para 30 dias
+const RAMPA = 36;
+const regua = { rec: new Array(DIAS_NO_MES + 1).fill(0), prev: new Array(DIAS_NO_MES + 1).fill(0), max: 1 };
+let animacaoDaRegua = 0;
+
+function alvoDaRegua() {
+    const rec = new Array(DIAS_NO_MES + 1).fill(0);
+    da('recebida').forEach((c) => { for (let d = c.pagoEm; d <= DIAS_NO_MES; d++) rec[d] += valorFinal(c); });
+    const prev = rec.slice();
+    // Atrasadas e as de hoje entram já em "hoje".
+    pendentes().forEach((c) => { for (let d = Math.max(c.venc, HOJE); d <= DIAS_NO_MES; d++) prev[d] += valorFinal(c); });
+    return { rec, prev, max: prev[DIAS_NO_MES] || 1 };
+}
+function pintarRegua(e) {
+    const y = (v) => (100 - (v / e.max) * 100).toFixed(2);
+    let degraus = '';
+    for (let d = 1; d <= HOJE; d++) degraus += ` L${X(d) - RAMPA} ${y(e.rec[d - 1])} L${X(d)} ${y(e.rec[d])}`;
+    $('#t-rec-linha').setAttribute('d', `M0 100${degraus}`);
+    $('#t-rec-area').setAttribute('d', `M0 100${degraus} L${X(HOJE)} 100 Z`);
+    let projecao = `M${X(HOJE)} ${y(e.rec[HOJE])} L${X(HOJE)} ${y(e.prev[HOJE])}`;
+    for (let d = HOJE + 1; d <= DIAS_NO_MES; d++) projecao += ` L${X(d) - RAMPA} ${y(e.prev[d - 1])} L${X(d)} ${y(e.prev[d])}`;
+    $('#t-proj-linha').setAttribute('d', `${projecao} L${DIAS_NO_MES * 100} ${y(e.prev[DIAS_NO_MES])}`);
+    $('#t-ponta').style.left = `${(X(HOJE) / (DIAS_NO_MES * 100)) * 100}%`;
+    $('#t-ponta').style.top = `${y(e.rec[HOJE])}%`;
+    document.querySelectorAll('.t-grade-linha').forEach((el, i) => { el.style.top = `${y(LINHAS_DA_GRADE[i])}%`; });
+}
+function atualizarRegua(alvo, duracao) {
+    cancelAnimationFrame(animacaoDaRegua);
+    contar($('#t-meta-valor'), 'meta', alvo.max);
+    if (!duracao || semMovimento) { Object.assign(regua, alvo); pintarRegua(regua); return; }
+    const de = { rec: regua.rec.slice(), prev: regua.prev.slice(), max: regua.max };
+    const inicio = performance.now();
+    const passo = (agora) => {
+        const t = Math.min(1, (agora - inicio) / duracao), s = 1 - Math.pow(1 - t, 3);
+        const mistura = (a, b) => a + (b - a) * s;
+        Object.assign(regua, { rec: alvo.rec.map((v, i) => mistura(de.rec[i], v)), prev: alvo.prev.map((v, i) => mistura(de.prev[i], v)), max: mistura(de.max, alvo.max) });
+        pintarRegua(regua);
+        if (t < 1) animacaoDaRegua = requestAnimationFrame(passo);
+    };
+    animacaoDaRegua = requestAnimationFrame(passo);
+}
+
+// Os dias e os pontos
+function ponto(c, j) {
+    const tipo = tipoDoPonto(c);
+    const rotulo = `${c.cliente}, ${brl(valorFinal(c))}. ${situacaoTexto(c)}`;
+    const classes = ['pt', `pt-${tipo}`, ui.sel === c.id && 'sel', c.pagoAgora && 'pt-novo'].filter(Boolean).join(' ');
+    const { num, un } = compacto(valorFinal(c));
+    const miolo = tipo === 'recebida' ? svg(ICONE.certo, 17) : `<span class="pt-num">${num}</span>${un ? `<span class="pt-un">${un}</span>` : ''}`;
+    const aviso = c.avisado && c.etapa === 'aguardando' ? `<span class="pt-aviso" aria-hidden="true">${svg(ICONE.certo, 9)}</span>` : '';
+    const pulso = tipo === 'vencida' ? `<span class="pulso-pt" aria-hidden="true"></span><span class="pt-alerta" aria-hidden="true">${svg('M8 3.5v5.5M8 12.5h.01', 9)}</span>` : '';
+    const ondas = c.onda ? `<span class="pt-onda" style="--cor-onda:${c.onda}"></span><span class="pt-onda segunda" style="--cor-onda:${c.onda}"></span>` : '';
+    const rompe = c.pagoAgora ? `<span class="rompe" aria-hidden="true">${Array.from({ length: 10 }, (_, k) => `<i style="--a:${k * 36}deg"></i>`).join('')}<b></b></span>` : '';
+    return `<button type="button" class="${classes}" data-pt="${c.id}" data-etapa="${c.etapa}" style="--j:${j}" aria-label="${esc(rotulo)}" aria-pressed="${ui.sel === c.id}">${miolo}${pulso}${aviso}${ondas}${rompe}</button>`;
+}
+
+function desenharDias() {
+    let maxVenc = 0, maxPag = 0;
+    const colunas = [];
+    for (let d = 1; d <= DIAS_NO_MES; d++) {
+        const venc = pendentes().filter((c) => c.venc === d).sort((a, b) => valorFinal(b) - valorFinal(a));
+        const pag = da('recebida').filter((c) => c.pagoEm === d).sort((a, b) => (a.baixaN || 0) - (b.baixaN || 0)); // a baixa nova entra por último, sem mexer nas outras
+        maxVenc = Math.max(maxVenc, venc.length); maxPag = Math.max(maxPag, pag.length);
+        colunas.push(`
+        <div class="t-dia${d === HOJE ? ' e-hoje' : ''}" style="--i:${d - 1}">
+            <div class="t-dia-regua"></div>
+            <div class="t-dia-venc">${venc.map(ponto).join('')}</div>
+            <div class="t-dia-eixo" data-dica="${esc(textoDoDia(d))}">
+                <span class="t-dia-num">${d}</span>
+                <span class="t-dia-sem">${diaCurto(d)}</span>
+                <span class="t-dia-fer">${FERIADOS[d] ? 'feriado' : ''}</span>
+            </div>
+            <div class="t-dia-pag">${pag.map(ponto).join('')}</div>
+        </div>`);
+    }
+    // A altura das faixas só cresce, para o eixo não pular de lugar quando alguém paga.
+    ui.linhasDeVenc = Math.max(ui.linhasDeVenc, maxVenc);
+    ui.linhasDePag = Math.max(ui.linhasDePag, maxPag);
+    const corpo = $('#t-corpo');
+    corpo.style.setProperty('--n-venc', ui.linhasDeVenc);
+    corpo.style.setProperty('--n-pag', ui.linhasDePag);
+    $('#t-dias').innerHTML = colunas.join('');
+    const topo = $('.t-dia-regua').offsetHeight, altVenc = $('.t-dia-venc').offsetHeight, altEixo = $('.t-dia-eixo').offsetHeight;
+    $('#t-rotulo-venc').style.cssText = `top:${topo}px;height:${altVenc}px`;
+    $('#t-rotulo-pag').style.cssText = `top:${topo + altVenc + altEixo}px;height:${$('.t-dia-pag').offsetHeight}px`;
+}
+
+// Quem muda de lugar salta em arco até o novo dia, trocando de cor no ar
+function registrarPosicoes() {
+    // Termina o que ainda se mexe, para medir cada ponto no seu lugar de repouso.
+    document.getAnimations().forEach((an) => { if (an.effect?.target?.matches?.('.pt, .t-dia-eixo')) an.finish(); });
+    const pontos = new Map();
+    document.querySelectorAll('[data-pt]').forEach((el) => {
+        const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+        pontos.set(el.dataset.pt, { cx: r.left + r.width / 2, cy: r.top + r.height / 2, fundo: cs.backgroundColor, cor: cs.color, borda: cs.borderTopColor });
+    });
+    return pontos;
+}
+function desenharArco(de, para, bojo) {
+    const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const mx = (de.x + para.x) / 2 + bojo, my = Math.min(de.y, para.y) - 72;
+    caminho.setAttribute('d', `M${de.x} ${de.y} Q${mx} ${my} ${para.x} ${para.y}`);
+    caminho.setAttribute('pathLength', '1');
+    caminho.classList.add('t-arco');
+    $('#t-arcos').append(caminho);
+    caminho.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 650, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'both' });
+    caminho.animate([{ opacity: .6 }, { opacity: 0 }], { delay: 2200, duration: 900, fill: 'both' }).finished.then(() => caminho.remove());
+}
+function saltar(el, dx, dy, de, para) {
+    const bojo = Math.abs(dx) < 8 ? 40 : 0;
+    const meioY = 0.25 * dy + 0.5 * (Math.min(de.y, para.y) - 72 - para.y);
+    const meioX = 0.5 * dx + 0.5 * bojo;
+    el.style.zIndex = 8;
+    el.animate({ translate: [`${dx}px 0px`, `${meioX}px 0px`, '0px 0px'], offset: [0, .5, 1] }, { duration: 700, easing: 'linear' });
+    el.animate({ transform: [`translateY(${dy}px)`, `translateY(${meioY}px)`, 'translateY(0)'], offset: [0, .5, 1], easing: ['cubic-bezier(.2,.6,.4,1)', 'cubic-bezier(.6,0,.8,.4)'] }, { duration: 700 })
+        .finished.then(() => { el.style.zIndex = ''; });
+    desenharArco(de, para, bojo);
+}
+function mudarCor(el, antes) {
+    const agora = getComputedStyle(el);
+    el.animate([{ backgroundColor: antes.fundo, color: antes.cor, borderColor: antes.borda }, { backgroundColor: agora.backgroundColor, color: agora.color, borderColor: agora.borderTopColor }], { duration: 650, easing: 'ease-out' });
+}
+function animarMudancas(antes) {
+    if (semMovimento) return;
+    const base = $('#t-corpo').getBoundingClientRect();
+    document.querySelectorAll('[data-pt]').forEach((el) => {
+        const a = antes.get(el.dataset.pt);
+        if (!a) return;
+        const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = a.cx - cx, dy = a.cy - cy;
+        if (Math.hypot(dx, dy) > 4) {
+            saltar(el, dx, dy, { x: a.cx - base.left, y: a.cy - base.top }, { x: cx - base.left, y: cy - base.top });
+            mudarCor(el, a);
+        } else if (el.querySelector('.pt-onda')) {
+            mudarCor(el, a);
+            el.animate([{ transform: 'scale(.8)' }, { transform: 'scale(1.2)', offset: .45 }, { transform: 'scale(1)' }], { duration: 650 });
+        }
+    });
+}
+// Entrada orquestrada, uma vez só: feita aqui (não em CSS) para um redesenho no meio da abertura não repetir a entrada.
+// Duas etapas, cada uma começa quando a parte dela aparece na tela: 1) régua, linha de hoje e dias; 2) os pontos caem no eixo.
+let entradaPendente = null;
+function entradaDosPontos() {
+    if (semMovimento) return;
+    const mes = $('#mes');
+    const rotulos = [], pontos = [];
+    document.querySelectorAll('.t-dia').forEach((diaEl) => {
+        const i = Number(diaEl.style.getPropertyValue('--i'));
+        rotulos.push(diaEl.querySelector('.t-dia-eixo').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350, delay: 100 + i * 28, fill: 'backwards' }));
+        diaEl.querySelectorAll('.pt').forEach((el) => {
+            const j = Number(el.style.getPropertyValue('--j'));
+            const cai = !!el.closest('.t-dia-venc');
+            pontos.push(el.animate(
+                [{ opacity: 0, transform: cai ? 'translateY(-40px) scale(.5)' : 'scale(.2)' }, { opacity: 1, transform: 'none' }],
+                { duration: 700, delay: 850 + i * 26 + j * 90, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'backwards' }));
+            // A vencida pulsa quatro vezes e para.
+            const pulso = el.querySelector('.pulso-pt');
+            if (pulso) pontos.push(pulso.animate([{ opacity: .8, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.7, 1.9)' }], { duration: 1600, delay: 1900, iterations: 4, easing: 'ease-out' }));
+        });
+    });
+    const todas = [...rotulos, ...pontos];
+    todas.forEach((a) => a.pause());
+    mes.classList.remove('vendo'); mes.classList.add('entrando');
+    const quando = (margem, fazer) => {
+        const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) { o.disconnect(); fazer(); } }, { rootMargin: `0px 0px -${margem}px 0px` });
+        o.observe($('#t-dias'));
+        return o;
+    };
+    let inicioDaRegua = 0;
+    const regua = quando(90, () => { inicioDaRegua = performance.now(); mes.classList.add('vendo'); rotulos.forEach((a) => a.play()); });
+    const ateOEixo = Math.max(0, Math.min($('.t-dia-regua').offsetHeight + $('.t-dia-venc').offsetHeight + 60, innerHeight - 120)); // em tela baixa o limite não passa da tela
+    const eixo = quando(ateOEixo, () => {
+        // Se a régua já começou há tempo, os pontos pulam a espera inicial.
+        const pulo = Math.min(800, performance.now() - inicioDaRegua);
+        pontos.forEach((a) => { a.currentTime = pulo; a.play(); });
+        entradaPendente = null;
+        entradaDosPontos.fim = setTimeout(() => mes.classList.remove('entrando', 'vendo'), 3400);
+    });
+    entradaPendente = { animacoes: todas, observadores: [regua, eixo] };
+}
+// Uma ação do usuário (ou "Recomeçar") antes da entrada terminar: tudo vai direto ao estado final, sem repetir nada.
+function encerrarEntrada() {
+    clearTimeout(entradaDosPontos.fim);
+    entradaPendente?.observadores.forEach((o) => o.disconnect());
+    entradaPendente?.animacoes.forEach((a) => a.finish());
+    entradaPendente = null;
+    $('#mes').classList.remove('entrando', 'vendo');
+}
+
+let primeiraVez = true;
+function desenharTempo() {
+    esconderDica();
+    if (!primeiraVez) encerrarEntrada();
+    const antes = registrarPosicoes();
+    desenharDias();
+    atualizarRegua(alvoDaRegua(), primeiraVez ? 0 : 900);
+    if (primeiraVez) { entradaDosPontos(); mostrarHoje(); } else animarMudancas(antes);
+    primeiraVez = false;
+    // As marcas de "acabou de acontecer" valem só para este desenho.
+    cobrancas.forEach((c) => { c.pagoAgora = false; c.onda = null; });
+    avisarRolagem();
+}
+
+// Em tela estreita a linha rola de lado: abre com "hoje" à vista.
+function mostrarHoje() {
+    const rolagem = $('#t-rolagem');
+    rolagem.scrollLeft = Math.max(0, (X(HOJE) / (DIAS_NO_MES * 100)) * $('#t-corpo').offsetWidth - rolagem.clientWidth * 0.4);
+}
+function avisarRolagem() {
+    const r = $('#t-rolagem');
+    $('#t-nota').textContent = r.scrollWidth > r.clientWidth + 2 ? 'Deslize para os lados para ver o mês todo' : 'Vencimentos acima do eixo, pagamentos abaixo';
+}
+new ResizeObserver(avisarRolagem).observe($('#t-rolagem'));
+
+// Dica ao passar o mouse
+const dica = $('#dica');
+function esconderDica() { dica.hidden = true; }
+function mostrarDica(alvo, html) {
+    dica.innerHTML = html;
+    dica.hidden = false;
+    const r = alvo.getBoundingClientRect(), w = dica.offsetWidth, h = dica.offsetHeight;
+    let topo = r.top - h - 12;
+    if (topo < 8) topo = r.bottom + 12;
+    dica.style.left = `${Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8)}px`;
+    dica.style.top = `${topo}px`;
+}
+function textoDoPonto(id) {
+    const c = cobrancas.find((x) => x.id === id);
+    const tipo = tipoDoPonto(c);
+    return `<b>${esc(c.cliente)}</b><span class="dica-valor">${brl(valorFinal(c))}</span><span>${esc(c.descricao)}</span>
+        <span class="dica-sit"><i class="${tipo === 'enviar' ? 'oco' : ''}" style="--cor-dica:${COR_DO_TIPO[tipo]}"></i>${esc(situacaoTexto(c))}</span>`;
+}
+
+// Ligação entre a linha do tempo e a lista, nos dois sentidos
+function trazerParaVista(pontoEl) {
+    const rolagem = $('#t-rolagem'), r = rolagem.getBoundingClientRect(), b = pontoEl.getBoundingClientRect();
+    if (b.left < r.left + 8) rolagem.scrollBy({ left: b.left - r.left - 28, behavior: semMovimento ? 'auto' : 'smooth' });
+    else if (b.right > r.right - 8) rolagem.scrollBy({ left: b.right - r.right + 28, behavior: semMovimento ? 'auto' : 'smooth' });
+}
+const acender = (id, rolar) => { const p = $(`[data-pt="${id}"]`); if (p) { p.classList.add('aceso'); if (rolar) trazerParaVista(p); } };
+const acenderLinha = (id) => $(`.linha[data-id="${id}"]`)?.classList.add('aceso-linha');
+const apagar = () => document.querySelectorAll('.aceso, .aceso-linha').forEach((e) => e.classList.remove('aceso', 'aceso-linha'));
+function marcarSelecao() {
+    document.querySelectorAll('[data-pt]').forEach((p) => { const sel = p.dataset.pt === ui.sel; p.classList.toggle('sel', sel); p.setAttribute('aria-pressed', String(sel)); });
+}
+// Clicar num ponto abre a aba certa da lista e destaca a cobrança; clicar de novo solta.
+function selecionarPonto(id) {
+    const c = cobrancas.find((x) => x.id === id);
+    ui.sel = ui.sel === id ? null : id;
+    marcarSelecao();
+    esconderDica();
+    if (ui.sel) irPara(c.etapa, id); else desenharLista(false);
+}
+
+document.addEventListener('mouseover', (ev) => {
+    apagar();
+    const linhaEl = ev.target.closest('.linha[data-id]'), pt = ev.target.closest('[data-pt]'), dd = ev.target.closest('[data-dica]');
+    if (linhaEl) acender(linhaEl.dataset.id, false);
+    if (pt) { acenderLinha(pt.dataset.pt); mostrarDica(pt, textoDoPonto(pt.dataset.pt)); }
+    else if (dd) mostrarDica(dd, esc(dd.dataset.dica));
+    else esconderDica();
+});
+document.addEventListener('mouseout', (ev) => { if (!ev.relatedTarget) { apagar(); esconderDica(); } });
+document.addEventListener('focusin', (ev) => {
+    apagar();
+    const linhaEl = ev.target.closest('.linha[data-id]'), pt = ev.target.closest('[data-pt]');
+    if (linhaEl) acender(linhaEl.dataset.id, true);
+    if (pt) { acenderLinha(pt.dataset.pt); mostrarDica(pt, textoDoPonto(pt.dataset.pt)); }
+});
+document.addEventListener('focusout', () => { apagar(); esconderDica(); });
+window.addEventListener('scroll', esconderDica, { passive: true });
+$('#t-rolagem').addEventListener('scroll', esconderDica, { passive: true });
+
+// ---------- Abas da lista, com indicador deslizante ----------
+$('#abas').insertAdjacentHTML('beforeend', ETAPAS.map((e) =>
+    `<button type="button" class="aba" role="tab" id="aba-${e.chave}" aria-controls="painel" data-aba="${e.chave}">${e.aba}<span class="aba-cont num" data-cont="${e.chave}">0</span><span class="so-leitor" data-nova-sr></span></button>`).join(''));
+
+function desenharAbas() {
+    ETAPAS.forEach((e) => {
+        const n = Math.max(0, da(e.chave).length - (ui.voando[e.chave] || 0));
+        contar($(`[data-cont="${e.chave}"]`), 'aba-' + e.chave, n, inteiro);
+        const aba = $(`[data-aba="${e.chave}"]`);
+        aba.classList.toggle('nova', ui.novas.has(e.chave));
+        aba.querySelector('[data-nova-sr]').textContent = ui.novas.has(e.chave) ? ', com novidades' : '';
+    });
+}
+function posicionarIndicador() {
+    const aba = $(`[data-aba="${ui.aba}"]`), abas = $('#abas');
+    abas.style.setProperty('--cor-aba', etapa(ui.aba).cor);
+    abas.style.setProperty('--x', aba.offsetLeft + 'px');
+    abas.style.setProperty('--l', aba.offsetWidth + 'px');
+}
+// As variáveis ficam em #abas e o indicador as herda
+const observador = new ResizeObserver(posicionarIndicador);
+observador.observe($('#abas'));
+document.querySelectorAll('.aba').forEach((a) => observador.observe(a));
+document.fonts?.ready.then(posicionarIndicador);
+
+function trocarAba(chave) {
+    ui.aba = chave; ui.menu = null; ui.novas.delete(chave);
+    desenharLista(false);
+}
+$('#abas').addEventListener('keydown', (ev) => {
+    const i = ETAPAS.findIndex((e) => e.chave === ui.aba);
+    const destino = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: ETAPAS.length - 1 }[ev.key];
+    if (destino === undefined) return;
+    ev.preventDefault();
+    trocarAba(ETAPAS[(destino + ETAPAS.length) % ETAPAS.length].chave);
+    $(`[data-aba="${ui.aba}"]`).focus();
+});
+
+// ---------- Linhas de cobrança ----------
+function selos(c) {
+    const s = [];
+    if (c.etapa === 'aguardando') {
+        const sit = situacao(c);
+        if (sit === 'vencida') s.push(['vermelho', `<span class="pulso-selo"></span>Vencida há ${plural(HOJE - c.venc, 'dia', 'dias')}`]);
+        if (sit === 'hoje') s.push(['laranja', 'Vence hoje']);
+        if (sit === 'breve') s.push(['azul', `Vence em ${plural(c.venc - HOJE, 'dia', 'dias')}`]);
+        if (c.avisado) s.push(['verde', `${svg(ICONE.certo, 12)}Avisado hoje`, c.avisadoAgora]);
+    }
+    if (caiEmDiaNaoUtil(c)) s.push(['ambar', FERIADOS[c.venc] ? `Vence em feriado (${FERIADOS[c.venc]})` : 'Vence no fim de semana']);
+    return s.length ? `<div class="selos">${s.map(([tom, txt, novo]) => `<span class="selo selo-${tom}${novo ? ' novo' : ''}">${txt}</span>`).join('')}</div>` : '';
+}
+
+function acaoPrincipal(c) {
+    if (c.etapa === 'enviar') return 'enviar';
+    if (c.etapa === 'aguardando') return situacao(c) !== 'depois' && !c.avisado ? 'avisar' : 'baixa';
+    return null;
+}
+
+function botaoPrincipal(c) {
+    const acao = acaoPrincipal(c);
+    if (acao === 'enviar') {
+        return ui.enviando.has(c.id)
+            ? `<button type="button" class="botao" disabled><span class="girando" aria-hidden="true"></span>Enviando…</button>`
+            : `<button type="button" class="botao" data-acao="enviar" data-id-alvo="${c.id}">${svg(ICONE.enviar)}Enviar recibo</button>`;
+    }
+    if (acao === 'avisar') return `<button type="button" class="botao-secundario" data-acao="avisar" data-id-alvo="${c.id}">${svg(ICONE.whats)}Avisar no WhatsApp</button>`;
+    if (acao === 'baixa') return `<button type="button" class="${situacao(c) === 'depois' ? 'botao-secundario' : 'botao'}" data-acao="baixa" data-id-alvo="${c.id}" aria-expanded="false">${svg(ICONE.certo)}Dar baixa</button>`;
+    return `<span class="carimbo" aria-hidden="true">PAGO</span>`;
+}
+
+function itensDoMenu(c) {
+    const principal = acaoPrincipal(c);
+    const itens = [];
+    if (c.etapa === 'enviar') itens.push(['Ver recibo', 'fora'], ['Editar cobrança', 'fora']);
+    if (c.etapa === 'aguardando') {
+        if (principal !== 'baixa') itens.push(['Dar baixa', 'baixa']);
+        if (principal !== 'avisar') itens.push(['Avisar no WhatsApp', 'avisar']);
+        itens.push(['Forma de pagamento', 'fora'], ['Prorrogar vencimento', 'fora'], ['Reenviar recibo', 'fora']);
+    }
+    if (c.etapa === 'recebida') itens.push(['Ver recibo', 'fora'], ['Corrigir pagamento', 'fora']);
+    if (c.etapa !== 'recebida') itens.push(['Cancelar cobrança', 'fora', 'perigo']);
+    return itens;
+}
+
+function formularioDeBaixa(c) {
+    return `
+    <form class="baixa" data-form-baixa="${c.id}">
+        <label class="campo">Data do pagamento<input type="date" name="data" value="2026-11-06" min="2026-11-01" max="2026-11-06" required></label>
+        <label class="campo">Valor recebido<input name="valor" inputmode="numeric" value="${(c.valor / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}" data-mascara-valor></label>
+        <label class="campo">Forma de pagamento<select name="forma">${FORMAS.map((f) => `<option>${f}</option>`).join('')}</select></label>
+        <div class="baixa-botoes">
+            <button class="botao" type="submit">Confirmar baixa</button>
+            <button type="button" class="botao-secundario" data-acao="voltar">Voltar</button>
+        </div>
+    </form>`;
+}
+
+function linha(c) {
+    const fantasma = ui.fantasmas[c.id];
+    const recebida = c.etapa === 'recebida';
+    const sit = situacao(c);
+    const tom = recebida ? 'verde' : sit === 'vencida' ? 'vermelho' : sit === 'hoje' ? 'laranja' : '';
+    const dataDoChip = recebida ? c.pagoEm : c.venc;
+    const leitor = recebida ? `Pago em ${dia(c.pagoEm)}` : `${sit === 'vencida' ? 'Venceu' : 'Vence'} ${dia(c.venc)}`;
+    const detalhe = recebida ? `${c.descricao}. ${c.forma}, pago em ${c.pagoEm}/11` : c.descricao;
+    const menu = ui.menu === c.id && !fantasma
+        ? `<div class="menu-acoes" role="menu" aria-label="Mais ações">${itensDoMenu(c).map(([rotulo, acao, classe]) =>
+            `<button type="button" role="menuitem" class="${classe || ''}" data-acao="${acao}" data-id-alvo="${c.id}" data-rotulo="${rotulo}">${rotulo}</button>`).join('')}</div>`
+        : '';
+    const classes = ['linha', c.chegou && !fantasma && 'chegou', fantasma && 'fantasma', fantasma?.tipo === 'pago' && 'pago', ui.sel === c.id && 'sel'].filter(Boolean).join(' ');
+    let acoes;
+    if (fantasma?.tipo === 'enviado') acoes = `<div class="linha-acoes"><span class="feito"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONE.certo}"/></svg>Recibo enviado</span></div>`;
+    else if (fantasma) acoes = '';
+    else if (ui.baixa === c.id) acoes = '';
+    else acoes = `<div class="linha-acoes">${botaoPrincipal(c)}<button type="button" class="mais" data-acao="menu" data-id-alvo="${c.id}" aria-haspopup="menu" aria-expanded="${ui.menu === c.id}" aria-label="Mais ações para ${c.cliente}">${svg(ICONE.mais, 18)}</button></div>`;
+    return `
+    <article class="${classes}" data-id="${c.id}" style="--cor-chegada:${etapa(c.etapa).cor}">
+        <div class="chip-data ${tom ? 'chip-' + tom : ''}"><span aria-hidden="true">${diaCurto(dataDoChip)}</span><b aria-hidden="true">${dataDoChip}</b><span class="so-leitor">${leitor}</span></div>
+        <div class="linha-corpo">
+            <h4 class="nome">${c.cliente}</h4>
+            <p class="detalhe">${detalhe}</p>
+            ${fantasma ? '' : selos(c)}
+        </div>
+        <span class="valor">${brl(valorFinal(c))}</span>
+        ${acoes}
+        ${ui.baixa === c.id && !fantasma ? formularioDeBaixa(c) : ''}
+        ${fantasma?.tipo === 'pago' ? '<span class="carimbo-grande" aria-hidden="true">PAGO</span>' : ''}
+        ${menu}
+    </article>`;
+}
+
+const VAZIO = {
+    enviar: 'Tudo enviado. Cobranças novas aparecem aqui 10 dias antes do vencimento.',
+    aguardando: 'Nenhuma cobrança enviada esperando pagamento.',
+    recebida: 'Nenhum pagamento registrado neste mês.',
+};
+const GRUPOS = [
+    ['vencida', 'Vencidas'], ['hoje', 'Vencem hoje'], ['breve', `Vencem até ${dia(ULTIMO_DIA_DO_AVISO)}`], ['depois', 'Vencem depois'],
+];
+
+function htmlDoPainel() {
+    const e = etapa(ui.aba);
+    const reais = da(e.chave);
+    const fantasmas = Object.entries(ui.fantasmas).filter(([, f]) => f.aba === e.chave).map(([id]) => cobrancas.find((c) => c.id === id));
+    const lista = [...reais, ...fantasmas];
+    lista.sort(e.chave === 'recebida' ? (a, b) => b.pagoEm - a.pagoEm : (a, b) => a.venc - b.venc);
+    let corpo;
+    if (!lista.length) corpo = `<p class="vazio">${VAZIO[e.chave]}</p>`;
+    else if (e.chave === 'aguardando') {
+        corpo = GRUPOS.map(([sit, rotulo]) => {
+            const doGrupo = lista.filter((c) => situacao(c) === sit);
+            return doGrupo.length ? `<p class="grupo">${rotulo}</p>${doGrupo.map(linha).join('')}` : '';
+        }).join('');
+    } else corpo = lista.map(linha).join('');
+    return `<div class="painel-cab" style="--cor:${e.cor}"><h3>${e.titulo}</h3><p>${plural(reais.length, 'cobrança', 'cobranças')}, ${brl(soma(reais))}</p></div>${corpo}`;
+}
+
+// Quem sai da lista deixa os de baixo subirem (FLIP); o que muda de etapa voa até a aba nova
+function desenharLista(flip = true) {
+    const painel = $('#painel');
+    const antes = new Map();
+    if (flip) painel.querySelectorAll('[data-id]').forEach((el) => antes.set(el.dataset.id, el.getBoundingClientRect()));
+    painel.innerHTML = htmlDoPainel();
+    painel.setAttribute('aria-labelledby', 'aba-' + ui.aba);
+    ETAPAS.forEach((e) => {
+        const aba = $(`[data-aba="${e.chave}"]`);
+        aba.setAttribute('aria-selected', String(e.chave === ui.aba));
+        aba.tabIndex = e.chave === ui.aba ? 0 : -1;
+    });
+    ui.novas.delete(ui.aba);
+    desenharAbas();
+    posicionarIndicador();
+    if (flip && !semMovimento) {
+        painel.querySelectorAll('[data-id]').forEach((el) => {
+            const a = antes.get(el.dataset.id);
+            if (!a) return;
+            const b = el.getBoundingClientRect();
+            const dx = a.left - b.left, dy = a.top - b.top;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        });
+    }
+    // As marcas de "acabou de acontecer" valem só para as linhas que acabaram de aparecer.
+    painel.querySelectorAll('[data-id]').forEach((el) => {
+        const c = cobrancas.find((x) => x.id === el.dataset.id);
+        if (!ui.fantasmas[c.id]) c.chegou = c.avisadoAgora = false;
+    });
+    if (ui.foco) { $(ui.foco)?.focus({ preventScroll: true }); ui.foco = null; }
+}
+const desenhar = () => { desenharLista(); desenharBlocos(); };
+
+// ---------- Efeitos: voo até a aba, pulso do anel, confete ----------
+function voar(de, c, destino) {
+    const alvo = $(`[data-aba="${destino}"]`);
+    if (semMovimento || !alvo) { aterrissar(destino); return; }
+    const a = alvo.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'voo';
+    el.textContent = c.cliente;
+    el.style.cssText = `background:${etapa(destino).cor};left:${de.left + 70}px;top:${de.top + de.height / 2 - 16}px`;
+    document.body.append(el);
+    const dx = a.left + a.width / 2 - (de.left + 70) - el.offsetWidth / 2;
+    const dy = a.top + a.height / 2 - (de.top + de.height / 2);
+    el.animate([
+        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * 0.45}px, ${dy * 0.55 - 50}px) scale(.85)`, opacity: 1, offset: .5 },
+        { transform: `translate(${dx}px, ${dy}px) scale(.3)`, opacity: .9 },
+    ], { duration: 680, easing: 'cubic-bezier(.5,0,.3,1)' }).onfinish = () => { el.remove(); aterrissar(destino); };
+}
+function aterrissar(destino) {
+    ui.voando[destino] = Math.max(0, (ui.voando[destino] || 0) - 1);
+    if (ui.aba !== destino) ui.novas.add(destino);
+    desenharAbas();
+    if (!semMovimento) reiniciarAnimacao($(`[data-aba="${destino}"]`), 'recebeu');
+}
+function pulsarAnel() {
+    if (!semMovimento) reiniciarAnimacao($('#anel-caixa'), 'pulso');
+}
+function confete() {
+    if (semMovimento) return;
+    const r = $('#bloco-lista').getBoundingClientRect();
+    const cores = ['#3B47C4', '#B45309', '#0F766E', '#F2B544', '#7DE3D1', '#9A3412'];
+    for (let i = 0; i < 26; i++) {
+        const p = document.createElement('i');
+        const larg = 5 + Math.random() * 5;
+        p.className = 'confete';
+        p.style.cssText = `left:${r.left + 20 + Math.random() * (r.width - 40)}px;top:${Math.max(r.top, 0) + 10}px;width:${larg}px;height:${larg * 1.6}px;background:${cores[i % cores.length]}`;
+        document.body.append(p);
+        const queda = 150 + Math.random() * 190, desvio = (Math.random() - 0.5) * 90, giro = (Math.random() - 0.5) * 720;
+        p.animate([
+            { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+            { transform: `translate(${desvio}px, ${queda * 0.65}px) rotate(${giro / 2}deg)`, opacity: 1, offset: .7 },
+            { transform: `translate(${desvio * 1.3}px, ${queda}px) rotate(${giro}deg)`, opacity: 0 },
+        ], { duration: 1100 + Math.random() * 700, delay: Math.random() * 300, easing: 'cubic-bezier(.3,.6,.5,1)', fill: 'backwards' }).onfinish = () => p.remove();
+    }
+}
+const focoNoPainel = () => { const ativo = document.activeElement; if (!ativo || ativo === document.body || ativo.closest('.linha')) ui.foco = '#painel'; };
+
+// A linha-fantasma mostra o carimbo/selo um instante; depois some, os de baixo sobem e a cobrança voa até a aba nova.
+function encerrarFantasma(id) {
+    const f = ui.fantasmas[id];
+    if (!f) return;
+    const c = cobrancas.find((x) => x.id === id);
+    const el = $(`[data-id="${id}"]`);
+    const de = el?.getBoundingClientRect();
+    delete ui.fantasmas[id];
+    const destino = c.etapa;
+    desenharLista();
+    if (de && f.aba === ui.aba) voar(de, c, destino); else aterrissar(destino);
+    if (f.aba === ui.aba && !da(f.aba).length && !Object.values(ui.fantasmas).some((g) => g.aba === f.aba)) setTimeout(confete, 250);
+}
+
+// ---------- Avisos na tela ----------
+function avisar(texto) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `${svg(ICONE.certo, 18)}<span></span>`;
+    el.querySelector('span').textContent = texto;
+    $('#avisos-tela').append(el);
+    setTimeout(() => { el.classList.add('saindo'); setTimeout(() => el.remove(), 260); }, 3800);
+}
+
+// ---------- Janela do WhatsApp (junta as cobranças do mesmo cliente, como o painel atual) ----------
+const MODELOS = {
+    a_vencer: ['Lembrete antes do vencimento', (g) => `Olá, ${g.cliente}! Passando para lembrar que ${g.itens} ${g.qtd > 1 ? 'vencem' : 'vence'} na ${g.quando}, no total de ${g.total}.\n\nChave PIX: [SUA CHAVE PIX]\n\nObrigado!`],
+    vence_hoje: ['Vence hoje', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'vencem' : 'vence'} hoje.\n\nChave PIX: [SUA CHAVE PIX]`],
+    vencida: ['Cobrança vencida', (g) => `Olá, ${g.cliente}! ${g.qtd > 1 ? 'As cobranças' : 'A cobrança'} de ${g.itens}, no total de ${g.total}, ${g.qtd > 1 ? 'venceram' : 'venceu'} na ${g.quando}. Se já pagou, desconsidere esta mensagem.\n\nChave PIX: [SUA CHAVE PIX]`],
+};
+let grupoAberto = null;
+function abrirAviso(id) {
+    const base = cobrancas.find((c) => c.id === id);
+    const doCliente = da('aguardando').filter((c) => c.cliente === base.cliente && situacao(c) !== 'depois');
+    const lista = doCliente.length ? doCliente : [base];
+    const maisAntiga = lista.reduce((m, c) => (c.venc < m.venc ? c : m));
+    const sit = situacao(maisAntiga);
+    const g = {
+        cliente: base.cliente, qtd: lista.length, ids: lista.map((c) => c.id), origem: id,
+        itens: lista.map((c) => c.descricao.toLowerCase()).join(' e '),
+        total: brl(soma(lista)),
+        quando: dia(maisAntiga.venc),
+        sugerido: sit === 'vencida' ? 'vencida' : sit === 'hoje' ? 'vence_hoje' : 'a_vencer',
+    };
+    grupoAberto = g;
+    $('#camada-modal').innerHTML = `
+    <div class="fundo-modal" data-acao="fechar-modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
+            <h2 id="titulo-modal">Avisar ${g.cliente}</h2>
+            <p>${plural(g.qtd, 'cobrança', 'cobranças')} em aberto, ${g.total}. O modelo já vem escolhido pela situação.</p>
+            <label class="campo">Modelo da mensagem
+                <select id="modelo">${Object.entries(MODELOS).map(([chave, [rotulo]]) => `<option value="${chave}" ${chave === g.sugerido ? 'selected' : ''}>${rotulo}${chave === g.sugerido ? ' (sugerido)' : ''}</option>`).join('')}</select>
+            </label>
+            <label class="campo">Mensagem<textarea id="mensagem">${MODELOS[g.sugerido][1](g)}</textarea></label>
+            <div class="modal-botoes">
+                <button type="button" class="botao-secundario" data-acao="fechar-modal">Voltar</button>
+                <button type="button" class="botao" data-acao="confirmar-aviso">${svg(ICONE.whats)}Abrir no WhatsApp</button>
+            </div>
+        </div>
+    </div>`;
+    $('#modelo').addEventListener('change', (ev) => { $('#mensagem').value = MODELOS[ev.target.value][1](grupoAberto); });
+    $('#modelo').focus();
+}
+function fecharModal() {
+    $('#camada-modal').innerHTML = '';
+    if (grupoAberto) $(`[data-id="${grupoAberto.origem}"] button`)?.focus();
+    grupoAberto = null;
+}
+
+// ---------- Ir até uma etapa (ou até uma cobrança) a partir de um bloco ----------
+function irPara(aba, id) {
+    ui.aba = aba; ui.menu = null; ui.novas.delete(aba);
+    desenharLista(false);
+    const alvo = id ? $(`[data-id="${id}"]`) : $('#bloco-lista');
+    alvo?.scrollIntoView({ behavior: semMovimento ? 'auto' : 'smooth', block: id ? 'center' : 'start' });
+    if (id && alvo) reiniciarAnimacao(alvo, 'realce');
+}
+
+// ---------- Ações ----------
+document.addEventListener('click', (ev) => {
+    const alvo = ev.target.closest('[data-acao], [data-ir], [data-aba], [data-pt]');
+    if (ui.menu && !ev.target.closest('.menu-acoes, [data-acao="menu"]')) { ui.menu = null; if (!alvo) { desenharLista(false); return; } }
+    if (!alvo) return;
+    if (alvo.dataset.pt) { selecionarPonto(alvo.dataset.pt); return; }
+    if (alvo.dataset.aba) { trocarAba(alvo.dataset.aba); return; }
+    if (alvo.dataset.ir) { irPara(alvo.dataset.ir, alvo.dataset.irId); return; }
+    const acao = alvo.dataset.acao;
+    const id = alvo.dataset.idAlvo;
+    const c = cobrancas.find((x) => x.id === id);
+    if (acao === 'fechar-modal') { if (ev.target === alvo) fecharModal(); return; }
+    if (acao === 'confirmar-aviso') {
+        cobrancas.forEach((x) => { if (grupoAberto.ids.includes(x.id)) { x.avisado = true; x.avisadoAgora = true; x.onda = COR_DO_TIPO.recebida; } });
+        avisar(`Aviso aberto no WhatsApp para ${grupoAberto.cliente}.`);
+        const origem = grupoAberto.origem; grupoAberto = null;
+        $('#camada-modal').innerHTML = '';
+        ui.foco = `[data-id="${origem}"] button`;
+        desenhar();
+        return;
+    }
+    if (acao === 'menu') { ui.menu = ui.menu === id ? null : id; ui.foco = ui.menu ? `[data-id="${id}"] [role="menuitem"]` : null; desenharLista(false); return; }
+    ui.menu = null;
+    if (acao === 'enviar') {
+        ui.enviando.add(id); desenharLista(false);
+        setTimeout(() => {
+            if (!ui.enviando.delete(id)) return; // "Recomeçar" limpou o envio
+            c.etapa = 'aguardando'; c.chegou = true; c.onda = COR_DO_TIPO[tipoDoPonto(c)];
+            ui.fantasmas[id] = { aba: 'enviar', tipo: 'enviado' };
+            ui.voando.aguardando = (ui.voando.aguardando || 0) + 1;
+            avisar(`Recibo enviado para ${c.cliente}.`);
+            focoNoPainel();
+            desenharLista(false); desenharBlocos();
+            setTimeout(() => encerrarFantasma(id), 900);
+        }, 800);
+        return;
+    }
+    if (acao === 'avisar') { desenharLista(false); abrirAviso(id); return; }
+    if (acao === 'baixa') { ui.baixa = id; ui.foco = `[data-form-baixa="${id}"] input`; desenharLista(false); return; }
+    if (acao === 'voltar') { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenharLista(false); return; }
+    if (acao === 'fora') { desenharLista(false); avisar(`"${alvo.dataset.rotulo}" abre aqui mesmo, na linha da cobrança. Fora deste protótipo.`); }
+});
+
+document.addEventListener('submit', (ev) => {
+    const form = ev.target.closest('[data-form-baixa]');
+    if (!form || form.dataset.enviado) return;
+    ev.preventDefault();
+    const c = cobrancas.find((x) => x.id === form.dataset.formBaixa);
+    const centavos = parseInt(form.valor.value.replace(/\D/g, ''), 10) || 0;
+    if (!centavos) { form.valor.setCustomValidity('Informe o valor recebido.'); form.valor.reportValidity(); return; }
+    form.dataset.enviado = '1';
+    const dados = { pago: centavos, pagoEm: parseInt(form.data.value.slice(8, 10), 10), forma: form.forma.value, etapa: 'recebida', chegou: true, pagoAgora: true, baixaN: ++ui.baixas };
+    const aplicar = () => {
+        Object.assign(c, dados);
+        ui.baixa = null;
+        ui.fantasmas[c.id] = { aba: 'aguardando', tipo: 'pago' };
+        ui.voando.recebida = (ui.voando.recebida || 0) + 1;
+        avisar(`Baixa confirmada: ${c.cliente}, ${brl(centavos)}.`);
+        focoNoPainel();
+        desenharLista(false);
+        // O carimbo bate aos 300 ms: é nesse instante que o dinheiro entra, o anel pulsa e o ponto salta até o dia do pagamento.
+        setTimeout(() => {
+            desenharBlocos(); pulsarAnel();
+            if (!semMovimento) setTimeout(() => reiniciarAnimacao($('#t-ponta'), 'pisca'), 700);
+        }, semMovimento ? 0 : 320);
+        setTimeout(() => encerrarFantasma(c.id), semMovimento ? 0 : 1300);
+    };
+    // A página não rola sozinha: o usuário continua onde estava; a linha do tempo se atualiza mesmo fora da tela.
+    aplicar();
+});
+
+// Máscara de valor: os dígitos entram pelos centavos (digitar 260 dá 2,60), como no app.
+document.addEventListener('input', (ev) => {
+    if (!ev.target.matches('[data-mascara-valor]')) return;
+    ev.target.setCustomValidity('');
+    const centavos = parseInt(ev.target.value.replace(/\D/g, '') || '0', 10);
+    ev.target.value = (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+});
+
+document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    if (grupoAberto) fecharModal();
+    else if (ui.menu) { const era = ui.menu; ui.menu = null; ui.foco = `[data-id="${era}"] .mais`; desenharLista(false); }
+    else if (ui.baixa) { const era = ui.baixa; ui.baixa = null; ui.foco = `[data-id="${era}"] button`; desenharLista(false); }
+    else if (ui.sel) { ui.sel = null; marcarSelecao(); desenharLista(false); }
+});
+
+// ---------- Abertura, um só momento: o anel se preenche, os números sobem, a régua enche e os pontos caem ----------
+function abertura() {
+    encerrarEntrada();
+    Object.keys(valores).forEach((k) => delete valores[k]);
+    contar.vistos = {};
+    document.querySelectorAll('.arco').forEach((a) => { a.style.strokeDasharray = '0 100'; });
+    $('#t-arcos').innerHTML = '';
+    Object.assign(ui, { sel: null, linhasDeVenc: 2, linhasDePag: 2 });
+    primeiraVez = true;
+    reiniciarAnimacao($('.pulso-ponto'), 'pulsa');
+    desenharLista(false);
+    requestAnimationFrame(() => requestAnimationFrame(desenharBlocos));
+}
+
+$('#recomecar').addEventListener('click', () => {
+    cobrancas = inicial();
+    Object.assign(ui, { menu: null, baixa: null, foco: null, aba: 'aguardando', fantasmas: {}, voando: {} });
+    ui.enviando.clear(); ui.novas.clear();
+    abertura();
+});
+
+abertura();
+</script>
+</body>
+</html>
