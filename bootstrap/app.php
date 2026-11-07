@@ -30,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Erro de validação devolve o formulário ao navegador pela sessão (`_old_input`, no banco): senha digitada não pode ir junto.
+        $exceptions->dontFlash(['senha', 'senha_atual', 'nova_senha', 'nova_senha_confirmation']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

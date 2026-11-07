@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\SenhaController;
 use App\Http\Controllers\AvisoWhatsappController;
 use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
@@ -99,6 +100,7 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);
     // Pedem a senha: limite de tentativas por usuário.
     Route::middleware('throttle:6,1')->group(function () {
+        Route::put('/perfil/senha', [SenhaController::class, 'atualizar']);
         Route::post('/cobrancas/{cobranca}/corrigir-pagamento', [CobrancaController::class, 'corrigirPagamento']);
         Route::post('/cobrancas/{cobranca}/desfazer-baixa', [CobrancaController::class, 'desfazerBaixa']);
     });

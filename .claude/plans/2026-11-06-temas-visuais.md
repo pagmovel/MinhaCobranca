@@ -135,7 +135,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 2: painel do usuário (Marco 1)
 
-### Tarefa 2.1: alterar senha (back-end). Estado: pendente
+### Tarefa 2.1: alterar senha (back-end). Estado: concluída (testes verdes; sem front nesta tarefa; o `[A VERIFICAR]` da auditoria está resolvido na skill, "Acertos (Tarefa 2.1)")
 - `PUT /perfil/senha` → `SenhaController@atualizar(AlterarSenhaRequest)` com `throttle:6,1` (como as rotas que pedem a senha, `routes/web.php:98`). Campos: `senha_atual` (`current_password`, mensagem "Senha incorreta."), `nova_senha` (`confirmed`, `Password::min(8)`, `different:senha_atual`).
 - Registrar `Auditoria::registrar(..., 'usuario.senha_alterada', $usuario, 'Senha alterada')` **sem antes/depois**. `[A VERIFICAR]`: o PHPDoc de `registrar` cita só `Cobranca|Contrato` como alvo, e `alvo_tipo` sai de `class_basename`; conferir se a tela de Auditoria aceita `usuario.*` e dar rótulo.
 - **Testes** (`AlterarSenhaTest.php`): `test_altera_com_a_senha_atual_correta` (`Hash::check`), `test_recusa_senha_atual_errada` (erro `senha_atual`, senha intacta), `test_recusa_confirmacao_diferente`, `test_recusa_menos_de_8`, `test_recusa_igual_a_atual`, `test_limita_tentativas` (7ª chamada = 429), `test_auditoria_nao_guarda_a_senha` (nenhuma coluna de `auditorias` contém a senha nem o hash), `test_visitante_vai_para_o_login`.

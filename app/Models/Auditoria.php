@@ -21,7 +21,7 @@ class Auditoria extends Model
         ];
     }
 
-    /** @param  Cobranca|Contrato  $alvo */
+    /** @param  Cobranca|Contrato|User  $alvo  (`alvo_tipo` sai do nome da classe: `cobranca`, `contrato`, `user`) */
     public static function registrar(Request $request, string $acao, Model $alvo, string $resumo, ?array $antes = null, ?array $depois = null, ?string $motivo = null): self
     {
         return $request->user()->auditorias()->create([
