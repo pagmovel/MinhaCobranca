@@ -13,9 +13,9 @@
 
 ---
 
-## Andamento (atualizado em 2026-11-07, depois do despacho A)
+## Andamento (atualizado em 2026-11-07, depois da tarefa 6.1)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (29 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **19 estão prontas e 4 faltam** (6.1, 8.1, 9.1, 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); faltam o **Marco 4** (Almanaque), a conferência geral e a documentação final. PHP 962 e JS 393 verdes.
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (30 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **20 estão prontas e 3 faltam** (8.1, 9.1, 9.2); nenhum agente em andamento. Os **Marcos 1, 2 e 3** do escopo estão prontos (painel do usuário com senha em popup, seletor de temas, popup da novidade, fundação visual, linha do tempo e tema **Régua**); faltam o **Marco 4** (Almanaque), a conferência geral e a documentação final. PHP 962 e JS 408 verdes.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -35,7 +35,7 @@
 | | 4.5 popup da novidade | pronta | `25502c3` |
 | 5 dados do mês | 5.1 `GET /painel/mes` | pronta | `79fdee0` |
 | | 5.2 `GET /painel/cobrancas/{id}` | pronta | `da91134` |
-| 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | falta | |
+| 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | pronta (testada) | commit da 6.1 (`git log --grep 'Tarefa 6.1'`) |
 | 7 Régua | 7.1 funções da linha do tempo | pronta (entregue junto da 3.1) | `c53199c` |
 | | 7.2 `LinhaDoTempoDoMes.vue` | pronta (testada) | `97071a0` |
 | | 7.3 `PainelRegua` e tema Régua | pronta (testada) | `24873a2`, `cc7d1c2`, `58929b9` |
@@ -46,13 +46,13 @@
 **O que falta, em ordem:**
 1. **Feitas:** a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
 2. **Feitas:** 7.2 e 7.3 (linha do tempo e composição da Régua).
-3. 6.1 e 8.1: o Mosaico em blocos com a linha do tempo, que é o Almanaque (faltam também os ícones e as pílulas do menu do protótipo e o contador dourado).
+3. **Feita:** 6.1 (o Mosaico em blocos com a linha do tempo, composição do Almanaque). Falta a 8.1: ícones e pílulas do menu, contador dourado e o ajuste fino do tema.
 4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
 5. **Deploy é do Marcos:** a migração das duas colunas de `users` e a variável `TEMA_PADRAO` no `.env` de produção.
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 
-**Testes agora:** PHP 962 verdes e JS 375 verdes (conferidos por quem coordena, depois do último commit).
+**Testes agora:** PHP 962 verdes e JS 408 verdes (conferidos pelo agente da 6.1, depois do último commit; quem coordena reconfere).
 
 **Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
 
@@ -280,9 +280,9 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 6: Mosaico (Marco 3)
 
-### Tarefa 6.1: `PainelMosaico` e blocos. Estado: pendente
-- Blocos: Dinheiro (anel SVG com `fatiasDoMes`), Vencidas, Hoje, Semana à frente, Recebido por dia, e a lista com abas deslizantes (Enviar, Aguardando, Recebidas, com contagem). As três listas ficam montadas; só a aba ativa aparece.
-- **Testes:** `fatiasDoMes` reutilizado; `tests/js/recebidoPorDia.test.js` (`agrupa_pagamentos_por_dia`, `mes_sem_pagamento_devolve_zeros`). Smoke test em 1440, 1100 e 390 (ordem dos blocos no celular: dinheiro, hoje, vencidas, lista, semana, recebido).
+### Tarefa 6.1: `PainelMosaico` e blocos. Estado: testada (2026-11-07; só a variante com linha do tempo, a do Almanaque; 408 JS e 962 PHP verdes e `npm run build` ok; conferida no browser-agent a 1440x900 e 390x844, larguras de 1920 a 320 px sem rolagem lateral, `prefers-reduced-motion`, falha dos dados com "Tentar de novo"; detalhes na skill, "Acertos (Tarefa 6.1)")
+- Blocos: Dinheiro (anel SVG com `fatiasDoMes`), Vencidas, Hoje, a `LinhaDoTempoDoMes` em largura total e a lista com abas deslizantes (Enviar, Aguardando, Recebidas, com contagem). As três listas ficam montadas; só a aba ativa aparece (`ListaDoPainel` emite `resumo`). **Fora desta execução:** "Semana à frente" e "Recebido por dia" (do tema Mosaico, tarefa 6.2).
+- **Testes:** `fatiasDoMes` reutilizado; `tests/js/painelMosaico.test.js` (10: arcos do anel, texto do anel, setas das abas, `esvaziou`, nota do dia, "há N dias") e `tests/js/avisosDoPainel.test.js` (4); `tests/js/contraste.test.js` ganhou os pares dos blocos (só nos temas com `mosaico`) e os arcos do anel (3:1). O `tests/js/recebidoPorDia.test.js` do plano original não existe porque o bloco "Recebido por dia" ficou fora.
 
 ### Tarefa 6.2: tema Mosaico. Estado: pendente (futuro, fora da execução de 2026-11-07)
 - Caso `Mosaico`; `mosaico.css`; efeitos: anel preenche, carimbo PAGO com pulso do anel, barra do dia cresce, confete discreto ao esvaziar uma etapa.

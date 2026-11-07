@@ -24,6 +24,12 @@ html[data-tema='almanaque'] {
     --color-menu-logo: var(--color-ouro); /* .marca svg usa --ouro */
     --color-menu-linha: #2C3768; /* borda do rodapé do menu (usa --menu-ativo) */
 
+    /* Blocos do Painel (PainelMosaico). O anel fica sobre o bloco Dinheiro (azul de ação): tons claros dos três estados. */
+    --color-hoje-fundo: #FFEEDD; /* .hoje */
+    --color-anel-recebida: #7DE3D1; /* arco "recebida" do anel */
+    --color-anel-aguardando: #F6BE5A;
+    --color-anel-enviar: #AEB4F0;
+
     --color-etapa-enviar: #3B47C4; /* --enviar */
     --color-etapa-aguardando: #B45309; /* --aguardando */
     --color-etapa-recebida: #0F766E; /* --recebido */

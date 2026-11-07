@@ -1,6 +1,7 @@
 <script setup>
 import { computed, provide, ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { avisosDoPainel } from '../../avisosDoPainel.js';
 import { frasePeloDia, somasPorEtapa } from '../../linhaDoTempo.js';
 import { usarMesDoPainel } from '../../usarMesDoPainel.js';
 import BlocoVencendo from '../BlocoVencendo.vue';
@@ -42,19 +43,7 @@ provide('destaqueDaCobranca', {
     desligar: (id) => { if (destaque.value === id) { destaque.value = null; } },
 });
 
-const avisos = computed(() => [
-    !props.perfilCompleto && { texto: 'Complete seu perfil para emitir recibos.', acao: 'Completar perfil', href: '/perfil' },
-    props.vencimentosEmDiaNaoUtil > 0 && {
-        texto: `${props.vencimentosEmDiaNaoUtil === 1 ? '1 cobrança em aberto vence' : `${props.vencimentosEmDiaNaoUtil} cobranças em aberto vencem`} em sábado, domingo ou feriado.`,
-        acao: 'Ver e ajustar',
-        href: '/perfil#feriados',
-    },
-    props.contratosParaRenovar > 0 && {
-        texto: `${props.contratosParaRenovar === 1 ? '1 contrato encerra' : `${props.contratosParaRenovar} contratos encerram`} nos próximos dias.`,
-        acao: 'Ver contratos',
-        href: '/contratos',
-    },
-].filter(Boolean));
+const avisos = computed(() => avisosDoPainel(props));
 </script>
 
 <template>

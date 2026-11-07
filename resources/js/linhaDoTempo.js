@@ -40,7 +40,7 @@ export function posicaoDoDia(dia, dias) {
     return (dia - 0.5) / dias;
 }
 
-const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+export const SEMANA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const plural = (quantidade, singular, varios) => `${quantidade} ${quantidade === 1 ? singular : varios}`;
 
 /** Dia da semana (0 = domingo) do `dia` do mês `mes` (`AAAA-MM`), sem depender do fuso do aparelho. */

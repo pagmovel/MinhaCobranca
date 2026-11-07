@@ -56,17 +56,36 @@ const PARES = [
     ['#FFFFFF', '--color-tinta-laranja'],
 ];
 
+/**
+ * Pares dos blocos do Painel (PainelMosaico), só dos temas que usam a composição `mosaico`: cada arquivo de tema
+ * listado aqui precisa definir estes tokens e passar nestes pares. Os outros temas não são cobrados por eles.
+ */
+const PARES_DO_MOSAICO = [
+    ['--color-grafite', '--color-hoje-fundo'],
+    ['--color-tinta-laranja', '--color-hoje-fundo'], // título e número do bloco Hoje
+    ['--color-apagado', '--color-hoje-fundo'],
+    ['--color-superficie', '--color-tinta-laranja'], // contagem dos atalhos do bloco Hoje
+];
+/** Arcos do anel sobre o bloco Dinheiro: não são texto, então o mínimo é o de elementos gráficos (WCAG 1.4.11). */
+const PARES_GRAFICOS_DO_MOSAICO = [
+    ['--color-anel-recebida', '--color-carbono'],
+    ['--color-anel-aguardando', '--color-carbono'],
+    ['--color-anel-enviar', '--color-carbono'],
+];
+const MINIMO_GRAFICO = 3;
+const TEMAS_COM_MOSAICO = ['almanaque.css'];
+
 const caminho = (relativo) => new URL(`../../${relativo}`, import.meta.url);
 const cssBase = readFileSync(caminho('resources/css/app.css'), 'utf8');
 
-function verificarPares(tokens, rotulo) {
-    for (const [texto, fundo] of PARES) {
+function verificarPares(tokens, rotulo, pares = PARES, minimo = MINIMO) {
+    for (const [texto, fundo] of pares) {
         const corTexto = texto.startsWith('#') ? texto : tokens[texto];
         const corFundo = fundo.startsWith('#') ? fundo : tokens[fundo];
         assert.ok(corTexto, `${rotulo}: token ${texto} não encontrado`);
         assert.ok(corFundo, `${rotulo}: token ${fundo} não encontrado`);
         const razao = razaoDeContraste(corTexto, corFundo);
-        assert.ok(razao >= MINIMO, `${rotulo}: ${texto} (${corTexto}) sobre ${fundo} (${corFundo}) = ${razao.toFixed(2)}, mínimo ${MINIMO}`);
+        assert.ok(razao >= minimo, `${rotulo}: ${texto} (${corTexto}) sobre ${fundo} (${corFundo}) = ${razao.toFixed(2)}, mínimo ${minimo}`);
     }
 }
 
@@ -122,12 +141,21 @@ test('todos_os_temas_passam_nos_pares_de_texto', () => {
     }
 });
 
+test('temas_com_mosaico_passam_nos_pares_dos_blocos', () => {
+    for (const arquivo of TEMAS_COM_MOSAICO) {
+        const tokens = tokensDoTema(cssBase, readFileSync(new URL(arquivo, pastaDosTemas), 'utf8'));
+        verificarPares(tokens, arquivo, PARES_DO_MOSAICO);
+        verificarPares(tokens, arquivo, PARES_GRAFICOS_DO_MOSAICO, MINIMO_GRAFICO);
+    }
+});
+
 test('cada_tema_define_os_proprios_tokens_de_cor', () => {
     // Token que o tema esquece herda o do Talão em silêncio e destoa da paleta (ex.: menu azul-marinho com texto escuro).
     const tokensDosPares = new Set(PARES.flat().filter((token) => token.startsWith('--')));
     for (const arquivo of arquivosDosTemas) {
         const proprios = lerTokens(readFileSync(new URL(arquivo, pastaDosTemas), 'utf8'));
-        const faltando = [...tokensDosPares].filter((token) => !proprios[token]);
+        const doMosaico = TEMAS_COM_MOSAICO.includes(arquivo) ? [...PARES_DO_MOSAICO, ...PARES_GRAFICOS_DO_MOSAICO].flat().filter((token) => token.startsWith('--')) : [];
+        const faltando = [...tokensDosPares, ...doMosaico].filter((token) => !proprios[token]);
         assert.deepEqual(faltando, [], `${arquivo}: tokens de cor herdados do Talão por esquecimento`);
     }
 });

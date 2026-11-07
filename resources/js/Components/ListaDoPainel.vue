@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
 import EstadoDaLista from './EstadoDaLista.vue';
 import LinhaCobranca from './LinhaCobranca.vue';
 import Paginador from './Paginador.vue';
@@ -10,18 +10,27 @@ import { usarListaPaginada } from '../usarListaPaginada.js';
 /**
  * Uma lista do painel, carregada por conta própria (/painel/dados?lista=…): 10 por página, paginador só embaixo e só
  * quando o total passa da menor opção (seis paginadores numa tela de resumo pesariam demais); contagem e soma no título.
+ * Emite `resumo` (`{ lista, quantidade, soma_centavos }`, o total do resultado inteiro e não só da página) a cada carga,
+ * para quem monta várias listas ao mesmo tempo (abas do Almanaque) mostrar a contagem de cada uma.
  */
 const props = defineProps({
     lista: { type: String, required: true },
     titulo: { type: String, required: true },
     vazio: { type: String, required: true },
 });
+const emit = defineEmits(['resumo']);
 
 const OPCOES = [10, 25, 50];
 const filtro = reactive({ lista: props.lista, pagina: 1, por_pagina: 10 });
 const { linhas, resumo, carregando, falha, estado, irPara, recarregar, escolheuPorPagina } = usarListaPaginada({
     url: '/painel/dados', filtro, componente: 'Painel', idDoFoco: `lista-${props.lista}`,
 });
+
+watch(resumo, (carga) => {
+    if (carga) {
+        emit('resumo', { lista: props.lista, quantidade: carga.total_geral.quantidade, soma_centavos: carga.total_geral.soma_centavos });
+    }
+}, { immediate: true });
 </script>
 
 <template>

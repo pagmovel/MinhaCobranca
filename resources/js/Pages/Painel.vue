@@ -4,6 +4,7 @@ import { usePage } from '@inertiajs/vue3';
 import CamadaApp from '../Layouts/CamadaApp.vue';
 import CoachDeConfiguracao from '../Components/CoachDeConfiguracao.vue';
 import PainelEmpilhado from '../Components/Painel/PainelEmpilhado.vue';
+import PainelMosaico from '../Components/Painel/PainelMosaico.vue';
 import PainelRegua from '../Components/Painel/PainelRegua.vue';
 import { componenteDoPainel } from '../temas.js';
 import { usarTema } from '../usarTema.js';
@@ -26,9 +27,9 @@ defineProps({
 // computed continua reativo a essa troca.
 const progresso = computed(() => usePage().props.progresso);
 
-// Nome da composição (de temas.js) para o componente. shortcut: `mosaico` entra na tarefa 6.1; até lá
-// `componenteDoPainel` devolve esse nome e o `?? PainelEmpilhado` cai no Talão.
-const composicoes = { empilhado: PainelEmpilhado, regua: PainelRegua };
+// Nome da composição (de temas.js) para o componente. shortcut: `colunas` (Fluxo e Livro-caixa) ainda não existe e
+// cai no Talão pelo `?? PainelEmpilhado`; `mosaico` é a variante com linha do tempo (Almanaque).
+const composicoes = { empilhado: PainelEmpilhado, mosaico: PainelMosaico, regua: PainelRegua };
 const { atual } = usarTema();
 const composicao = computed(() => composicoes[componenteDoPainel(atual.value?.painel)] ?? PainelEmpilhado);
 </script>
