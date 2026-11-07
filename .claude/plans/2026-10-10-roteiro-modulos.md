@@ -41,8 +41,13 @@ sem depender do histórico.
      de atualizar software da produção: quem faz é o Marcos. Antes, confirmar o backup externo (`/srv/CONTABOO/backup-vps/`;
      os backups do próprio bunker, 7 × ~18,5 MiB = 130 MB em `/data/lib/backups` do volume `bw-storage`, ficam no mesmo
      volume e não valem como seguro). A 1.6.16 tem quebra só em `METRICS_REDIS_TTL` (o compose não usa); voltar de versão pode
-     exigir restaurar o banco. Se atualizar, pôr `DNS_RESOLVERS: "127.0.0.11 valid=10s"` no mesmo Deploy. O Marcos ainda não
-     respondeu se quer que eu edite o compose local com as 3 tags novas.
+     exigir restaurar o banco. **Backup feito em 2026-11-07 18:50–18:59 (local)** a pedido do Marcos: `backup-bancos.sh` rodado
+     à mão na VPS, `8 ok, 0 falha(s), 0 pulado(s)`, 1,5 GB em `/root/backups/2026-11-07/` e cópia criptografada no Drive
+     conferida com `rclone check` (o Google deu `403 rateLimitExceeded` em 4 envios; o rclone repetiu sozinho). Foi feito depois do
+     ajuste do `DNS_RESOLVERS` no bunker (o das 03:38 era anterior a ele). **Não conferido:** o conteúdo do dump (leitura extra
+     da VPS foi barrada) e cópia local em `/srv/CONTABOO/backups-vps/`. `DNS_RESOLVERS` fica no banco (volume `bw-data`), então
+     não precisa ir ao compose: conferir em Global Settings depois do Deploy. O compose local só é editado depois que o
+     Marcos disser que atualizou (evita divergir do que está no Easypanel).
   2. **`TEMA_PADRAO=almanaque` no `.env` de produção** (painel do Easypanel; só vale para usuário novo e depois de reiniciar o
      container): `[A VERIFICAR]` se já foi posto.
   3. Aviso `AH00558 ServerName` do Apache no log: inofensivo; silenciar = uma linha no `Dockerfile` e novo Deploy (deixado como está).
