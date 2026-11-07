@@ -32,7 +32,10 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 >    **Despacho A FEITO e conferido por quem coordena** (tarefas 7.2 e 7.3, subagente `ad8bf2a466dbcca90`, `sonnet`):
 >    commits `97071a0` (linha do tempo com popover) e `58929b9` (composição Régua). PHP 962 e JS 393 verdes, build ok,
 >    capturas da Régua em 1440 e 390 conferidas. Relatório em `.../scratchpad/relatorio-f29-s7.md`. **Nenhum subagente em
->    andamento.** Próximo: despacho **B** (6.1 e 8.1, Almanaque), depois **C** e **D**.
+>    andamento (até o despacho B começar).** **Despacho B EM ANDAMENTO** (6.1 e 8.1, Almanaque, subagente
+>    `a65e2bcfa40c91e75`, `sonnet`; relatório em `.../scratchpad/relatorio-f29-s8.md`; dois commits). Ao retomar: `git status`
+>    (pode haver trabalho dele sem commit), `ListAgents`, ler o relatório; não redespachar enquanto ele estiver vivo.
+>    Depois: **C** e **D**.
 >    Para o Marcos decidir (do relatório do A): (1) "Previsto em novembro" na Régua = recebido + aguardando + a enviar do
 >    mês (regime de caixa); no Talão é a soma de quem vence no mês, então os dois números diferem; (2) trocar entre Talão
 >    e Régua **na própria tela do Painel** troca a composição inteira: um formulário de baixa aberto numa linha da lista
@@ -117,8 +120,9 @@ como criar um tema novo: enum + `temas/<id>.css` + fontes no `vite.config.js` e 
 README (variável de ambiente e inventário), `.claude/MEMORY.md`, e estas notas do roteiro.
 
 **Fim:** `git switch main && git merge --no-ff feature/temas-visuais && git push origin main` (permissão permanente do
-Marcos: memória `commit-merge-push-sem-perguntar`), só com testes verdes. **Deploy, migração em produção e `TEMA_PADRAO`
-no `.env` de produção são do Marcos**; nenhum acesso à VPS.
+Marcos: memória `commit-merge-push-sem-perguntar`), só com testes verdes. **O deploy e o `TEMA_PADRAO` no `.env` de
+produção são do Marcos**; a migração das colunas de `users` roda sozinha na subida do container (`CMD` do `Dockerfile`:
+`php artisan migrate --force`, com guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`). Nenhum acesso à VPS.
 
 ## 3. Checklist de todo despacho de subagente (regras globais do Marcos; esquecer é falha a corrigir na hora)
 

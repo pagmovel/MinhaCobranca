@@ -48,7 +48,7 @@
 2. **Feitas:** 7.2 e 7.3 (linha do tempo e composição da Régua).
 3. **Feita:** 6.1 (o Mosaico em blocos com a linha do tempo, composição do Almanaque). Falta a 8.1: ícones e pílulas do menu, contador dourado e o ajuste fino do tema.
 4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
-5. **Deploy é do Marcos:** a migração das duas colunas de `users` e a variável `TEMA_PADRAO` no `.env` de produção.
+5. **Deploy é do Marcos**, e a variável `TEMA_PADRAO` no `.env` de produção também. **A migração das duas colunas de `users` não precisa de passo manual:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` em toda subida do container (decisão do Marcos, 2026-10-12, reafirmada em 2026-11-07; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`).
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 

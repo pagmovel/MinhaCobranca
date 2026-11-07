@@ -20,8 +20,9 @@ sem depender do histórico.
   (`painel-linha-do-tempo`), mais o Talão. **Pendentes para o futuro:** Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3,
   4.4 e 6.2).
 - **Feito no ambiente local:** migração `2026_11_07_103510_add_tema_e_novidade_to_users_table` rodada no Postgres local
-  (12 usuários antigos com `tema = talao` e popup pendente). **Produção:** nada; o deploy, a migração lá e
-  `TEMA_PADRAO` no `.env` de produção são do Marcos.
+  (12 usuários antigos com `tema = talao` e popup pendente). **Produção:** nada feito por mim; o deploy e
+  `TEMA_PADRAO` no `.env` de produção são do Marcos. A migração roda sozinha na subida do container (`CMD` do
+  `Dockerfile`: `php artisan migrate --force`; guarda em `tests/Unit/DockerfileMigraNoDeployTest.php`).
 - **Como retomar:** `git switch feature/temas-visuais`; ler a seção "Andamento" do plano; conferir `git status` (há
   trabalho de agente em andamento se houver arquivos modificados); rodar `php artisan test --compact` e
   `node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'`. A skill `recibos` tem a seção "Fase 29: temas
