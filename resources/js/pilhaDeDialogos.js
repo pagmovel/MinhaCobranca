@@ -15,6 +15,16 @@ export function quemFechaComEsc(painelAberto, popupAberto) {
     return painelAberto ? 'painel' : null;
 }
 
+/**
+ * Há outra janela (`aria-modal`) aberta além do `painel`? Todo `Modal` (z-50) fica por cima do painel (z-40), então
+ * qualquer outra é "de cima" e o painel deve ficar quieto: sem isto, um Esc fecharia as duas. A janela que está só
+ * saindo da tela (`display: none` da rede de segurança do `Modal`) não conta.
+ */
+export function haJanelaPorCima(painel, documento = document) {
+    return [...documento.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+        .some((janela) => janela !== painel && janela.getClientRects().length > 0);
+}
+
 const donosDaTrava = new Set();
 
 /**

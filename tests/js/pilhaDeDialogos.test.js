@@ -1,8 +1,29 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { liberarRolagem, quemFechaComEsc, travarRolagem } from '../../resources/js/pilhaDeDialogos.js';
+import { haJanelaPorCima, liberarRolagem, quemFechaComEsc, travarRolagem } from '../../resources/js/pilhaDeDialogos.js';
 
 const corpoFalso = () => ({ style: { overflow: '' } });
+const janelaFalsa = (visivel = true) => ({ getClientRects: () => (visivel ? [{}] : []) });
+const documentoFalso = (...janelas) => ({ querySelectorAll: () => janelas });
+
+test('so_o_painel_aberto_nao_tem_janela_por_cima', () => {
+    const painel = janelaFalsa();
+
+    assert.equal(haJanelaPorCima(painel, documentoFalso(painel)), false);
+});
+
+test('qualquer_outra_janela_aberta_fica_por_cima_do_painel', () => {
+    const painel = janelaFalsa();
+
+    assert.equal(haJanelaPorCima(painel, documentoFalso(painel, janelaFalsa())), true);
+    assert.equal(haJanelaPorCima(painel, documentoFalso(janelaFalsa(), painel)), true);
+});
+
+test('janela_escondida_na_saida_nao_conta_como_por_cima', () => {
+    const painel = janelaFalsa();
+
+    assert.equal(haJanelaPorCima(painel, documentoFalso(painel, janelaFalsa(false))), false);
+});
 
 test('com_popup_aberto_so_o_popup_reage_ao_esc', () => {
     assert.equal(quemFechaComEsc(true, true), 'popup');

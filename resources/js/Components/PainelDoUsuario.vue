@@ -4,7 +4,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { proximoDaArmadilha, saindoDaArmadilha } from '../armadilhaDeFoco.js';
 import { botaoDoUsuarioVisivel } from '../botaoDoUsuario.js';
 import { iniciaisDoNome } from '../iniciais.js';
-import { liberarRolagem, quemFechaComEsc, travarRolagem } from '../pilhaDeDialogos.js';
+import { haJanelaPorCima, liberarRolagem, quemFechaComEsc, travarRolagem } from '../pilhaDeDialogos.js';
 import ModalAlterarSenha from './ModalAlterarSenha.vue';
 import SeletorDeTema from './SeletorDeTema.vue';
 
@@ -50,8 +50,9 @@ const focaveis = () => [...(painel.value?.querySelectorAll(
 ) ?? [])].filter((elemento) => elemento.getClientRects().length > 0); // seção recolhida não entra na volta do Tab
 
 function teclado(evento) {
-    // O popup (listener registrado depois, no mesmo `document`) cuida de Esc e Tab enquanto estiver aberto.
-    if (quemFechaComEsc(true, senhaAberta.value) !== 'painel') {
+    // O popup (listener registrado depois, no mesmo `document`) cuida de Esc e Tab enquanto estiver aberto; o mesmo vale
+    // para qualquer outro `Modal` por cima (Bem-vindo, novidade dos temas, catálogo): sem isto, um Esc fecharia os dois.
+    if (quemFechaComEsc(true, senhaAberta.value || haJanelaPorCima(painel.value)) !== 'painel') {
         return;
     }
     if (evento.key === 'Escape') {
