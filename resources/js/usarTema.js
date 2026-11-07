@@ -80,8 +80,11 @@ export async function trocarTema(id, {
  * `tipo` é o `type` do evento `navigate`. Em `'history'` (botão Voltar) o Inertia devolve as props guardadas quando a
  * página foi vista, com o tema de antes de uma troca: vale o `temaConfirmado`, e a prop da página é corrigida com
  * `replaceProp` (assim o seletor e o menu, que leem `auth.user.tema`, acompanham). Visita nova vem do servidor e confirma.
- * shortcut: sem usuário as fontes do Talão não são buscadas (a rota de fontes pede login); quem sai do sistema vê a
- * tela de entrada com as fontes de reserva até recarregar.
+ * As fontes do tema do usuário são pedidas quando o tema da tela muda **ou quando acabou de entrar alguém** (a tela de
+ * entrada não tem usuário): sair de uma carga em outro tema e entrar como usuário do Talão não muda o `data-tema` e,
+ * sem isto, deixava o Talão nas fontes de reserva. A busca é idempotente (`carregarFontesDoTema` não repete o que já
+ * está no `<head>`). shortcut: sem usuário as fontes do Talão não são buscadas (a rota de fontes pede login); quem sai
+ * do sistema vê a tela de entrada com as fontes de reserva até recarregar.
  */
 export function sincronizarTemaDaPagina(pagina, {
     tipo,
@@ -92,6 +95,7 @@ export function sincronizarTemaDaPagina(pagina, {
     roteador = roteadorDoInertia,
 } = {}) {
     const usuario = pagina.props.auth?.user;
+    const acabouDeEntrar = usuario && confirmado.value === null;
     let id = usuario ? temaValido(usuario.tema, pagina.props.temas ?? []) : 'talao';
     if (!usuario) {
         confirmado.value = null;
@@ -106,11 +110,10 @@ export function sincronizarTemaDaPagina(pagina, {
         return;
     }
     const raiz = documento.documentElement;
-    if (raiz.dataset.tema !== id) {
-        raiz.dataset.tema = id;
-        if (usuario) {
-            fontes(id);
-        }
+    const mudou = raiz.dataset.tema !== id;
+    raiz.dataset.tema = id;
+    if (usuario && (mudou || acabouDeEntrar)) {
+        fontes(id);
     }
 }
 

@@ -47,14 +47,13 @@ test('igual_a_atual_e_recusada', () => {
     assert.deepEqual(erros, { nova_senha: 'A nova senha precisa ser diferente da atual.' });
 });
 
-test('espaco_nas_pontas_da_nova_senha_e_recusado', () => {
-    for (const nova of [' NovaSenha#2026', 'NovaSenha#2026 ']) {
-        const erros = validarCamposDeSenha({ ...valida, nova_senha: nova, nova_senha_confirmation: nova });
-
-        assert.equal(erros.nova_senha, 'A nova senha não pode começar nem terminar com espaço.');
+test('espaco_nas_pontas_da_nova_senha_vale_porque_o_servidor_nao_apara', () => {
+    // O servidor guarda a senha como veio (`trimStrings(except: ...)`, AlterarSenhaTest) e o login também não apara.
+    for (const nova of [' NovaSenha#2026', 'NovaSenha#2026 ', 'Nova Senha 2026']) {
+        assert.deepEqual(validarCamposDeSenha({ ...valida, nova_senha: nova, nova_senha_confirmation: nova }), {}, nova);
     }
-    // No meio vale.
-    assert.deepEqual(validarCamposDeSenha({ ...valida, nova_senha: 'Nova Senha 2026', nova_senha_confirmation: 'Nova Senha 2026' }), {});
+    // O espaço conta no tamanho mínimo, como no servidor: sete letras e um espaço dão oito caracteres.
+    assert.deepEqual(validarCamposDeSenha({ ...valida, nova_senha: 'Senha12 ', nova_senha_confirmation: 'Senha12 ' }), {});
 });
 
 test('primeiro_campo_com_erro_segue_a_ordem_da_tela', () => {

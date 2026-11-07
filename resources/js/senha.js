@@ -23,9 +23,6 @@ export function validarCamposDeSenha({ senha_atual = '', nova_senha = '', nova_s
         erros.nova_senha = 'Digite a nova senha.';
     } else if ([...nova_senha].length < MINIMO_DA_SENHA) {
         erros.nova_senha = `A nova senha precisa ter pelo menos ${MINIMO_DA_SENHA} caracteres.`;
-    } else if (nova_senha !== nova_senha.trim()) {
-        // O servidor apara o espaço das pontas desta senha (TrimStrings) e o login não: ela nunca bateria na entrada.
-        erros.nova_senha = 'A nova senha não pode começar nem terminar com espaço.';
     } else if (nova_senha === senha_atual) {
         erros.nova_senha = 'A nova senha precisa ser diferente da atual.';
     }

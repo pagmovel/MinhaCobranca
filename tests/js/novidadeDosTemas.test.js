@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { textoDaNovidade, textoDoLugar } from '../../resources/js/novidadeDosTemas.js';
+import { ref } from 'vue';
+import { acompanharUsuarioDaNovidade, textoDaNovidade, textoDoLugar } from '../../resources/js/novidadeDosTemas.js';
 
 test('casca_lateral_aponta_para_o_canto_de_baixo_do_menu', () => {
     assert.equal(textoDoLugar('lateral'), 'no canto de baixo do menu');
@@ -28,4 +29,21 @@ test('frase_do_popup_traz_o_lugar_e_a_quantidade_de_temas', () => {
         textoDaNovidade('superior', 6),
         'Clique no seu nome, no canto de cima, à direita, e escolha entre 6 temas. Também dá para alterar a senha ali.',
     );
+});
+
+test('outro_usuario_na_mesma_aba_nao_herda_a_dispensa_do_anterior', () => {
+    const dispensada = ref(false);
+    const ultimo = ref(null);
+    const visita = (id) => acompanharUsuarioDaNovidade(id, { dispensada, ultimo });
+
+    visita(1);
+    dispensada.value = true; // o usuário 1 fechou o popup
+    visita(1); // outra tela do mesmo usuário: continua dispensada
+    assert.equal(dispensada.value, true);
+
+    visita(null); // sair
+    assert.equal(dispensada.value, false);
+    dispensada.value = true;
+    visita(2); // entrar com outro usuário
+    assert.equal(dispensada.value, false);
 });

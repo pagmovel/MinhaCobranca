@@ -36,11 +36,16 @@ const estilo = ref({});
 // cumpriu o papel e fecha, para o ponto saltar ou mudar de cor à vista (aberto, ele cobriria o salto).
 const etapaDe = (linha) => (linha.situacao === 'paga' ? 'recebida' : linha.enviado ? 'aguardando' : 'enviar');
 
+let versao = 0; // a carga inicial e a do evento `success` podem se cruzar: só a mais nova vale
 async function carregar() {
+    const minha = ++versao;
     if (!cobranca.value) {
         estado.value = 'carregando';
     }
     const resposta = await buscarJson(`/painel/cobrancas/${props.id}`);
+    if (minha !== versao) {
+        return;
+    }
     if (resposta.dados) {
         const mudou = cobranca.value && etapaDe(cobranca.value) !== etapaDe(resposta.dados);
         cobranca.value = resposta.dados;
@@ -152,6 +157,7 @@ onMounted(() => {
     });
 });
 onBeforeUnmount(() => {
+    versao++; // resposta que chegar depois de fechado não fecha nem mexe em nada
     cancelAnimationFrame(quadro);
     observador?.disconnect();
     pararDeOuvir();

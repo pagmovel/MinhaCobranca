@@ -188,9 +188,9 @@ test('mesmo_tema_grava_e_nao_pede_nada_de_diferente', async () => {
 
 /**
  * Cenário da visita do Inertia que muda o usuário (login e saída), ou do Voltar do navegador (`tipo: 'history'`),
- * sem navegador. `confirmadoAntes` é o último tema que o servidor confirmou.
+ * sem navegador. `confirmadoAntes` é o último tema que o servidor confirmou (`null`: não havia ninguém logado).
  */
-function visita(temaNaPagina, usuario, emTrocaNaVisita = null, { tipo = 'visit', confirmadoAntes = null } = {}) {
+function visita(temaNaPagina, usuario, emTrocaNaVisita = null, { tipo = 'visit', confirmadoAntes = temaNaPagina } = {}) {
     const dataset = { tema: temaNaPagina };
     const fontesPedidas = [];
     const props = [];
@@ -278,4 +278,17 @@ test('voltar_a_uma_tela_sem_usuario_nao_aplica_o_confirmado', () => {
 
     assert.equal(dataset.tema, 'talao');
     assert.deepEqual(props, []);
+});
+
+test('sair_e_entrar_como_usuario_do_talao_busca_as_fontes_do_talao_mesmo_sem_o_tema_mudar', () => {
+    // A tela de entrada já estava em Talão (dataset), mas a carga da página foi em outro tema: as fontes do Talão não estão no <head>.
+    const { dataset, fontesPedidas } = visita('talao', { tema: 'talao' }, null, { confirmadoAntes: null });
+
+    assert.equal(dataset.tema, 'talao');
+    assert.deepEqual(fontesPedidas, ['talao']);
+});
+
+test('navegar_sem_mudar_de_tema_nem_de_usuario_nao_busca_fontes', () => {
+    assert.deepEqual(visita('talao', { tema: 'talao' }).fontesPedidas, []);
+    assert.deepEqual(visita('regua', { tema: 'regua' }, null, { tipo: 'history' }).fontesPedidas, []);
 });

@@ -34,7 +34,7 @@ const ativo = (href) => page.url.startsWith(href);
                 type="button"
                 class="grid size-[30px] place-items-center rounded-full bg-carbono text-xs font-semibold text-sobre-acao focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono"
                 :class="pulsando ? 'pulsar-botao' : ''"
-                :aria-label="usuario.name"
+                :aria-label="`Minha conta, ${usuario.name}`"
                 data-botao-do-usuario
                 aria-haspopup="dialog"
                 :aria-expanded="painelAberto"

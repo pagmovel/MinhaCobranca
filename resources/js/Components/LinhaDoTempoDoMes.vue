@@ -237,8 +237,8 @@ watch(() => props.dados, () => {
 }, { flush: 'pre' });
 watch(() => props.dados, async () => {
     await nextTick();
-    if (semMovimento() || !antes.size) {
-        return;
+    if (semMovimento() || !antes.size || !grade.value || !rolagem.value) {
+        return; // sem movimento, nada a animar ou o componente já saiu da tela (troca de tema no Painel)
     }
     const base = grade.value.getBoundingClientRect();
     for (const botao of rolagem.value.querySelectorAll('[data-ponto]')) {
@@ -285,6 +285,9 @@ function voar(botao, dx, dy, de, para) {
 }
 
 function desenharArco(de, para, bojo) {
+    if (!arcos.value) {
+        return;
+    }
     const caminho = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     caminho.setAttribute('d', `M${de.x} ${de.y} Q${(de.x + para.x) / 2 + bojo} ${Math.min(de.y, para.y) - 72} ${para.x} ${para.y}`);
     caminho.setAttribute('pathLength', '1');
