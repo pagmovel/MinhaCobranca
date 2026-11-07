@@ -115,7 +115,7 @@ Os protótipos usam dados fictícios em memória. No app:
 
 ## Fase 1: dados e rotas (Marco 1)
 
-### Tarefa 1.1: enum, `.env`, colunas e modelo. Estado: pendente
+### Tarefa 1.1: enum, `.env`, colunas e modelo. Estado: concluída (testes verdes; migração ainda não rodada no Postgres; `npm run build` não se aplica a esta tarefa PHP)
 - **Criar** `TemaVisual` (`string`): cada caso entra na tarefa do seu tema; **começa só com `Talao = 'talao'`**. Métodos: `rotulo(): string`, `descricao(): string`, `casca(): string` (`lateral|superior`), `painel(): string` (`empilhado|colunas|mosaico|regua`), `comLinhaDoTempo(): bool`, `amostra(): array` (4 hex para a miniatura), `fontes(): array`, `static padrao(): self` (lê `config('temas.padrao')`, cai em `Talao` se inválido), `static paraOFront(): array`.
 - **Criar** `config/temas.php` com `'padrao' => env('TEMA_PADRAO', 'talao')`; documentar `TEMA_PADRAO=talao` no `.env.example`.
 - **Migração:** `tema` string(20) NOT NULL default `'talao'` e `novidade_temas_vista` boolean NOT NULL default `false`. Os usuários antigos ficam com o visual atual e com o popup pendente.

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Enums\FamiliaModelo;
 use App\Enums\StatusUsuario;
+use App\Enums\TemaVisual;
 use App\Support\DiasUteis;
 use App\Support\Ufs;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -41,6 +43,29 @@ class User extends Authenticatable
         'name', 'documento', 'telefone', 'logradouro', 'numero', 'bairro', 'cidade', 'uf', 'cep',
     ];
 
+    protected static function booted(): void
+    {
+        // Sem default em $attributes de propósito: o tema novo vem do .env e a novidade dos temas já nasce vista.
+        static::creating(function (User $usuario) {
+            $usuario->tema = $usuario->getAttributes()['tema'] ?? TemaVisual::padrao();
+            $usuario->novidade_temas_vista ??= true;
+        });
+    }
+
+    /**
+     * Tema como enum. Não é um cast de enum puro porque `from()` estoura com valor desconhecido (coluna
+     * corrompida, caso removido do enum) e isso derrubaria toda página: aqui cai no Talão.
+     *
+     * @return Attribute<TemaVisual, TemaVisual|string>
+     */
+    protected function tema(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $valor) => TemaVisual::tryFrom((string) $valor) ?? TemaVisual::Talao,
+            set: fn (TemaVisual|string $valor) => $valor instanceof TemaVisual ? $valor->value : $valor,
+        );
+    }
+
     /**
      * @return array<string, string>
      */
@@ -56,6 +81,7 @@ class User extends Authenticatable
             'dias_aviso' => 'integer',
             'dias_aviso_contrato' => 'integer',
             'apresentacao_vista' => 'boolean',
+            'novidade_temas_vista' => 'boolean',
         ];
     }
 
