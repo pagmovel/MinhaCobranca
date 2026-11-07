@@ -4,9 +4,38 @@
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
-## 0. RETOMAR AQUI — estado em 2026-11-05 (as seções 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
+## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.000 Filtros da lista no main e Fase 28 planejada (2026-11-05, ler primeiro)
+### 0.0000 Fase 29 (temas visuais) planejada, esperando o comando do Marcos (2026-11-06, ler primeiro)
+
+- `main` = `origin/main` (`b54835f`). Nada desta data mexe em código de produção nem em banco. Árvore com 2 arquivos não
+  rastreados em `docs/` (`modelos-painel.html`, `painel-lista.html`): protótipos **não escolhidos**; perguntar se apaga.
+  Os testes não foram rodados nesta sessão (último registro: 889 PHP + 294 JS verdes, na seção 0.000).
+- **O que o Marcos pediu:** redesenhar o Painel ("está muito simples e feio", "os cards quadrados é o que tem no projeto,
+  quero algo bem mais moderno"). Foram feitos protótipos HTML **locais** em `docs/`, com dados fictícios. Escolhidos:
+  `modelo-b-painel`, `painel-escuro` (refeito em "papel e tinta"), `painel-bento`, `painel-linha-do-tempo` (menu
+  responsivo com "Mais ▾") e `painel-bento-timeline`. Eles viram **6 temas** (Talão = o atual, Fluxo, Livro-caixa,
+  Mosaico, Régua, Almanaque), escolhidos clicando no nome do usuário (painel lateral à direita, com lista de temas,
+  alterar senha e sair). `.env` `TEMA_PADRAO` define o tema dos novos; usuários antigos veem um popup da novidade; a
+  escolha fica em `users.tema` (coluna nova, sem tabela nova).
+- **Plano:** `.claude/plans/2026-11-06-temas-visuais.md` (27 tarefas, 9 fases, 4 marcos, **todas pendentes**).
+  **Não implementar sem o comando do Marcos.** Falta ele escolher o marco (recomendado: M1, painel do usuário com senha
+  e sair) e o modo de execução (recomendado: subagentes, modelo `sonnet`). A seção 7 do plano tem 7 decisões dele
+  (nomes, "Sair" só no painel, rosa do Livro-caixa, sessões após trocar a senha, popup só para antigos, pastas novas,
+  linha do tempo só do mês corrente). Três `[A VERIFICAR]` no plano: Tailwind v4 com variáveis por tema (tarefa 3.1),
+  fontes só do tema ativo (3.3) e rótulo `usuario.*` na Auditoria (2.1).
+- **Preferências do Marcos para telas (valem para qualquer redesenho):** nada com "cara de IA/slop" (o escuro azul-noite
+  com néon e vidro foi recusado por isso); efeitos que chamam a atenção, sempre desligados em `prefers-reduced-motion`;
+  protótipo em arquivo local, **nunca** Claude Artifacts nem serviço externo (o plugin Superdesign envia código para
+  fora; ele escolheu local). Dados reais só entram na tela de verdade, nunca nos protótipos.
+- **Pegadinhas desta sessão:** "Vencendo" no Painel não é etapa, é marca nas pendentes (o primeiro protótipo contou o
+  dinheiro duas vezes); `--virtual-time-budget` do Chromium captura a abertura no meio da animação, então as capturas
+  dos protótipos usaram `playwright-core` (`/home/marcos/.hermes/tools/playwright-node/node_modules/playwright-core`)
+  com o Chromium de `~/.cache/ms-playwright/chromium-1248/`, esperando em tempo real; o smoke test oficial do projeto
+  continua sendo o **browser-agent**. `xdg-open` não confirma se o navegador abriu.
+- A Fase 28 (agentes pelo MCP) continua planejada e sem comando; a seção 0.000 abaixo segue valendo.
+
+### 0.000 Filtros da lista no main e Fase 28 planejada (2026-11-05)
 
 - `main` = `origin/main`, árvore limpa, nenhum branch aberto. 889 PHP + 294 JS verdes, build ok. Nada desta data tem
   migração.
