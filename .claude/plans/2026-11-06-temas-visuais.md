@@ -128,7 +128,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - `app.blade.php`: `<html data-tema="...">` do usuário logado, `talao` para visitante.
 - **Testes** (`tests/Feature/Temas/CompartilhamentoDoTemaTest.php`): `test_html_traz_data_tema_do_usuario`, `test_visitante_recebe_talao`, `test_tema_corrompido_no_banco_vira_talao`, `test_novidade_nao_aparece_com_um_unico_tema`.
 
-### Tarefa 1.3: rotas de preferência. Estado: pendente
+### Tarefa 1.3: rotas de preferência. Estado: concluída (testes verdes; sem front nesta tarefa)
 - `PUT /perfil/tema` → `PerfilController@tema(TemaRequest)`; `POST /perfil/novidade-temas` → `PerfilController@novidadeDosTemas` (mesmo molde de `/perfil/apresentacao`). Ambas no grupo `auth` + `conta.aprovada`.
 - `TemaRequest`: `tema` obrigatório, `Rule::enum(TemaVisual::class)`; mensagens em pt-BR.
 - **Testes** (`TrocaDeTemaTest.php`): `test_troca_para_tema_valido`, `test_recusa_tema_inexistente`, `test_visitante_vai_para_o_login`, `test_conta_pendente_nao_troca`, `test_troca_nao_altera_outros_campos`, `test_marca_novidade_como_vista`.

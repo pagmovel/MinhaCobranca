@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FamiliaModelo;
+use App\Enums\TemaVisual;
 use App\Enums\TipoAvisoModelo;
 use App\Enums\TipoChavePix;
 use App\Http\Requests\PerfilRequest;
+use App\Http\Requests\TemaRequest;
 use App\Models\ChavePix;
 use App\Models\Feriado;
 use App\Services\AjusteDeVencimentos;
@@ -93,6 +95,24 @@ class PerfilController extends Controller
     {
         $usuario = $request->user();
         $usuario->apresentacao_vista = true;
+        $usuario->save();
+
+        return back();
+    }
+
+    public function tema(TemaRequest $request): RedirectResponse
+    {
+        $usuario = $request->user();
+        $usuario->tema = $request->enum('tema', TemaVisual::class);
+        $usuario->save();
+
+        return back();
+    }
+
+    public function novidadeDosTemas(Request $request): RedirectResponse
+    {
+        $usuario = $request->user();
+        $usuario->novidade_temas_vista = true;
         $usuario->save();
 
         return back();
