@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { lerTokens, razaoDeContraste, tokensDoTema } from '../../resources/js/contraste.js';
 
 const MINIMO = 4.5;
@@ -10,18 +10,32 @@ const MINIMO = 4.5;
  * Para ampliar: acrescente o par aqui; ele vale para o Talão (`app.css`) e para todo `resources/css/temas/*.css`.
  */
 const PARES = [
+    // Texto sobre o fundo da página (papel) e sobre a superfície (cartão, lista, modal, campo).
     ['--color-grafite', '--color-papel'],
     ['--color-grafite', '--color-superficie'],
+    ['--color-carbono', '--color-papel'],
     ['--color-carbono', '--color-superficie'],
+    ['--color-tinta-verde', '--color-papel'],
     ['--color-tinta-verde', '--color-superficie'],
+    ['--color-tinta-vermelha', '--color-papel'],
     ['--color-tinta-vermelha', '--color-superficie'],
+    ['--color-tinta-laranja', '--color-papel'],
     ['--color-tinta-laranja', '--color-superficie'],
+    // Ação: texto do botão sobre carbono e sobre a cor de cada etapa (pílulas cheias da linha do tempo).
     ['--color-sobre-acao', '--color-carbono'],
+    ['--color-sobre-acao', '--color-etapa-enviar'],
+    ['--color-sobre-acao', '--color-etapa-aguardando'],
+    ['--color-sobre-acao', '--color-etapa-recebida'],
     // `text-white` literal sobre vermelho (contador do menu e `.botao-perigo-confirmar`): o branco não é token.
     ['#FFFFFF', '--color-tinta-vermelha'],
+    // Etapas como texto ou contorno sobre a superfície e sobre o fundo da página.
     ['--color-etapa-enviar', '--color-superficie'],
     ['--color-etapa-aguardando', '--color-superficie'],
     ['--color-etapa-recebida', '--color-superficie'],
+    ['--color-etapa-enviar', '--color-papel'],
+    ['--color-etapa-aguardando', '--color-papel'],
+    ['--color-etapa-recebida', '--color-papel'],
+    // Menu: texto sobre o fundo e sobre o item ativo/hover.
     ['--color-menu-texto', '--color-menu-fundo'],
     ['--color-menu-texto', '--color-menu-ativo'],
 ];
@@ -82,12 +96,22 @@ test('talao_passa_nos_pares_de_texto', () => {
     verificarPares(lerTokens(cssBase), 'talao');
 });
 
+const pastaDosTemas = caminho('resources/css/temas/');
+const arquivosDosTemas = readdirSync(pastaDosTemas).filter((nome) => nome.endsWith('.css'));
+
 test('todos_os_temas_passam_nos_pares_de_texto', () => {
-    const pasta = caminho('resources/css/temas/');
-    if (!existsSync(pasta)) {
-        return; // A pasta nasce com o primeiro tema (tarefa 3.2 em diante).
+    assert.ok(arquivosDosTemas.length > 0, 'nenhum tema em resources/css/temas');
+    for (const arquivo of arquivosDosTemas) {
+        verificarPares(tokensDoTema(cssBase, readFileSync(new URL(arquivo, pastaDosTemas), 'utf8')), arquivo);
     }
-    for (const arquivo of readdirSync(pasta).filter((nome) => nome.endsWith('.css'))) {
-        verificarPares(tokensDoTema(cssBase, readFileSync(new URL(arquivo, pasta), 'utf8')), arquivo);
+});
+
+test('cada_tema_define_os_proprios_tokens_de_cor', () => {
+    // Token que o tema esquece herda o do Talão em silêncio e destoa da paleta (ex.: menu azul-marinho com texto escuro).
+    const tokensDosPares = new Set(PARES.flat().filter((token) => token.startsWith('--')));
+    for (const arquivo of arquivosDosTemas) {
+        const proprios = lerTokens(readFileSync(new URL(arquivo, pastaDosTemas), 'utf8'));
+        const faltando = [...tokensDosPares].filter((token) => !proprios[token]);
+        assert.deepEqual(faltando, [], `${arquivo}: tokens de cor herdados do Talão por esquecimento`);
     }
 });

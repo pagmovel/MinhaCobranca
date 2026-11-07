@@ -240,12 +240,14 @@ Os protótipos usam dados fictícios em memória. No app:
 ### Tarefa 7.3: `PainelRegua` e tema Régua. Estado: pendente
 - Caso `Regua`; `regua.css`; casca **superior** com o menu "Mais ▾" (`menuResponsivo`, tarefa 3.4); abertura: linha se desenha, pontos caem; baixa: ponto salta até o dia do pagamento.
 - **Testes:** contraste; `test_tema_regua_e_aceito_na_troca`. Smoke test em 1920, 1280, 860, 390 e 320: nenhum item do menu fica escondido e a página não rola de lado.
+- **Base pronta (2026-11-07, commits `24873a2` e o seguinte; o Estado acima NÃO mudou):** feitos o caso `Regua` do enum (casca `superior`, painel `regua`, sem linha do tempo, `descricao`, `amostra`, `fontes`: Bricolage Grotesque 700 e 800 + Figtree 400 a 700), as famílias no `vite.config.js` (o `npm run build` baixou do Bunny), `resources/css/temas/regua.css` (todos os tokens do protótipo, importado no `app.css`), os pares de contraste (passam sem mudar cor) e `test_tema_regua_e_aceito_na_troca` e `test_html_traz_data_tema_regua`. **Falta** a parte de interface: `PainelRegua`, `MenuSuperior` com o "Mais ▾", as animações e o smoke test. Limites a lembrar: (1) o Bunny não serve o eixo de largura, então **não usar `font-stretch`** (os títulos saem na largura normal; compensar com `tracking-tight` e tamanho menor); (2) `--font-estreita` da Régua é o Figtree, não a Bricolage; (3) o protótipo tem `--linha-forte` (borda de botão e campo) e `--faixa` (fundo da faixa do mês) sem token no app.
 
 ## Fase 8: Almanaque (Marco 4)
 
 ### Tarefa 8.1: Mosaico com linha do tempo. Estado: pendente
 - Caso `Almanaque`: `PainelMosaico` com `comLinhaDoTempo` (sem os blocos "Semana à frente" e "Recebido por dia"; `LinhaDoTempoDoMes` em largura total entre a fileira de cima e a lista). `almanaque.css` herda os tokens do Mosaico. A página nunca rola sozinha ao dar baixa.
 - **Testes:** contraste; `test_tema_almanaque_e_aceito_na_troca`.
+- **Base pronta (2026-11-07, commits `24873a2` e o seguinte; o Estado acima NÃO mudou):** feitos o caso `Almanaque` do enum (casca `lateral`, painel `mosaico`, com linha do tempo, `descricao`, `amostra`, `fontes`: Bricolage Grotesque 700 e 800 + Onest 400 a 700), as famílias no `vite.config.js`, `resources/css/temas/almanaque.css` (tokens do protótipo `painel-bento-timeline.html`, já com `--raio-bloco: 28px` e `--sombra-bloco`; o "herda os tokens do Mosaico" acima não se aplica porque o Mosaico não entra nesta execução), os pares de contraste e `test_tema_almanaque_e_aceito_na_troca` e `test_html_traz_data_tema_almanaque`. **Falta** `PainelMosaico` com a linha do tempo e o smoke test. **Atenção na 3.4:** o item ativo do menu usa `text-carbono`, que no Almanaque (`#3B47C4` sobre o ativo `#2C3768`) dá 1,56:1; é preciso o token `--color-menu-texto-ativo` (Almanaque `#FFFFFF`) e o par no teste de contraste. Mesmos limites de fonte da 7.3 (sem `font-stretch`; `--font-estreita` = Onest).
 
 ## Fase 9: fechamento
 

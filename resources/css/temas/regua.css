@@ -1,5 +1,34 @@
-/* Tema Régua (docs/painel-linha-do-tempo.html). Só variáveis: regra de classe aqui vence qualquer utilidade do Tailwind. */
+/*
+ * Tema Régua (protótipo docs/painel-linha-do-tempo.html): fundo azul-gelo, menu claro no topo, Bricolage Grotesque
+ * nos títulos e números, Figtree no texto. SÓ variáveis: regra de classe aqui, fora de @layer, vence qualquer
+ * utilidade do Tailwind. Os nomes do protótipo estão ao lado de cada valor.
+ */
 html[data-tema='regua'] {
+    --color-papel: #F7F9FC; /* --papel */
+    --color-grafite: #0F1B33; /* --tinta */
+    --color-carbono: #3B47C4; /* --acao */
+    --color-linha: #D5DCE9; /* --linha */
+    --color-superficie: #FFFFFF;
+    --color-sobre-acao: #FFFFFF;
+
+    --color-menu-fundo: #FFFFFF; /* .topo-app */
+    --color-menu-texto: #46526F; /* --apagado: link do menu */
+    --color-menu-ativo: #F0F3FA; /* hover do menu */
+    --color-menu-linha: #D5DCE9; /* --linha */
+
+    --color-etapa-enviar: #3B47C4; /* --enviar */
+    --color-etapa-aguardando: #B45309; /* --aguardando */
+    --color-etapa-recebida: #0F766E; /* --recebido */
+
+    --color-tinta-verde: #0F766E; /* --recebido */
+    --color-tinta-vermelha: #9F1F17; /* --vermelho */
+    --color-tinta-laranja: #9A3412; /* --laranja */
+
+    --raio-controle: 8px; /* .botao */
+    --raio-bloco: 10px; /* popover e menu "Mais" */
+    --sombra-bloco: none; /* a Régua separa por linha, não por sombra */
+
+    /* Texto em Figtree; a Bricolage Grotesque (títulos e números) só existe na largura normal: ver a skill "recibos". */
     --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
     --font-estreita: 'Figtree', ui-sans-serif, system-ui, sans-serif;
     --font-titulo: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, system-ui, sans-serif;

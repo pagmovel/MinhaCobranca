@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+/* Temas (Fase 29): só variáveis sob html[data-tema='x']; o Talão é o @theme abaixo. */
+@import './temas/regua.css';
+@import './temas/almanaque.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
