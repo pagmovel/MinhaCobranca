@@ -19,7 +19,10 @@ const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 const editando = ref(null); // id do feriado em edição, 'novo' para inclusão
 const confirmando = ref(null);
 const ajustando = ref(false);
-const form = useForm({ descricao: '', tipo: 'anual', dia: '', mes: '', data: '' });
+// O campo da data única não pode se chamar `data`: é um método do próprio `useForm` (o Inertia o sobrescreve e o
+// envio quebra com "form.data is not a function"). O servidor continua recebendo `data`, pelo `transform`.
+const form = useForm({ descricao: '', tipo: 'anual', dia: '', mes: '', data_unica: '' });
+form.transform(({ data_unica: data, ...campos }) => ({ ...campos, data }));
 
 /** O feriado novo entra como uma linha a mais no fim da lista: o formulário aparece onde a pessoa clicou. */
 const linhas = computed(() => (editando.value === 'novo' ? [...props.feriados, { id: 'novo' }] : props.feriados));
@@ -44,7 +47,7 @@ async function abrir(feriado = null) {
     form.tipo = feriado?.tipo ?? 'anual';
     form.dia = feriado?.dia ?? '';
     form.mes = feriado?.mes ?? '';
-    form.data = feriado?.data ?? '';
+    form.data_unica = feriado?.data ?? '';
     confirmando.value = null;
     editando.value = feriado ? feriado.id : 'novo';
     await nextTick();
@@ -104,7 +107,7 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
         <!-- Região viva sempre presente, só com a frase-resumo (lista e botão ficam fora do anúncio). -->
         <p class="sr-only" aria-live="polite">{{ vencimentos.length ? `${resumoAjuste}.` : '' }}</p>
         <Transition name="surgir">
-            <div v-if="vencimentos.length" class="flex flex-col gap-3 border border-carbono/40 bg-white px-4 py-3">
+            <div v-if="vencimentos.length" class="flex flex-col gap-3 border border-carbono/40 bg-superficie px-4 py-3">
                 <p class="text-sm font-semibold">{{ resumoAjuste }}</p>
                 <p class="text-sm text-grafite/80">
                     Ainda não foram enviadas. Ajustar muda o vencimento para o próximo dia útil e refaz o recibo com o mesmo número.
@@ -127,7 +130,7 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
             </div>
         </Transition>
 
-        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-superficie">
             <li v-for="feriado in linhas" :key="feriado.id" :class="editando === feriado.id ? 'bg-papel' : ''">
                 <form
                     v-if="editando === feriado.id"
@@ -157,7 +160,7 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
                         </Campo>
                     </template>
                     <Campo v-else-if="form.tipo === 'unico'" id="feriado_data" rotulo="Data" :erro="form.errors.data" class="sm:col-span-3">
-                        <input id="feriado_data" v-model="form.data" type="date" class="entrada" required>
+                        <input id="feriado_data" v-model="form.data_unica" type="date" class="entrada" required>
                     </Campo>
                     <p v-else class="font-estreita text-xs text-grafite/70 sm:col-span-6">
                         A data muda todo ano (60 dias depois da Páscoa) e é calculada sozinha.

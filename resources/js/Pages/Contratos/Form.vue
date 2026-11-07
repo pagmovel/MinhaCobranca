@@ -175,7 +175,7 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
             <Campo id="cliente_id" rotulo="Cliente" :erro="form.errors.cliente_id" class="sm:col-span-6">
                 <CampoCliente :form="form" :inicial="clienteAtual" :opcoes="cadastroRapido" @escolhido="cliente = $event" />
             </Campo>
-            <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+            <p v-if="semItens" role="status" class="border border-carbono/40 bg-superficie px-4 py-2 text-sm sm:col-span-6">
                 Este contrato ainda não tem itens (valor atual: R$ {{ contrato.valor }}). Inclua pelo menos um; ao salvar, o
                 valor passa a ser a soma dos itens.
             </p>
@@ -275,7 +275,7 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
             <Transition name="surgir" mode="out-in">
                 <section v-if="mudaPeriodos && modo === 'corrigir'" key="corrigir" class="grid gap-3 sm:col-span-6">
                     <h2 class="text-lg font-semibold">Corrigir o contrato</h2>
-                    <div v-if="contrato.cobrancas_pendentes.length" class="grid gap-2 border border-tinta-vermelha/40 bg-white p-4 text-sm">
+                    <div v-if="contrato.cobrancas_pendentes.length" class="grid gap-2 border border-tinta-vermelha/40 bg-superficie p-4 text-sm">
                         <p>
                             {{ contrato.cobrancas_pendentes.length === 1 ? 'Esta cobrança pendente será cancelada' : 'Estas cobranças pendentes serão canceladas' }}
                             (o número do recibo não volta) e o contrato passa a gerar pelos dados novos:
@@ -318,7 +318,7 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                 </section>
                 <section v-else-if="mudaPeriodos" key="recomecar" class="grid gap-3 sm:col-span-6">
                     <h2 class="text-lg font-semibold">Recomeçar o contrato</h2>
-                    <p v-if="!liberadoParaCriar" class="border border-carbono bg-white px-4 py-3 text-sm">
+                    <p v-if="!liberadoParaCriar" class="border border-carbono bg-superficie px-4 py-3 text-sm">
                         {{ avisoBloqueioDeCriacao }}
                         <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
                     </p>
@@ -361,7 +361,7 @@ const confirmarRenovacaoVencido = () => formRenovacaoVencido.post(`/contratos/${
                 Este contrato venceu em {{ dataBr(contrato.data_fim) }} e não gera mais cobranças. Renovar encerra este
                 contrato e cria um novo, com os mesmos dados — ajuste os itens e os preços se precisar.
             </p>
-            <p v-if="!liberadoParaCriar" class="sm:col-span-6 border border-carbono bg-white px-4 py-3 text-sm">
+            <p v-if="!liberadoParaCriar" class="sm:col-span-6 border border-carbono bg-superficie px-4 py-3 text-sm">
                 {{ avisoBloqueioDeCriacao }}
                 <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
             </p>

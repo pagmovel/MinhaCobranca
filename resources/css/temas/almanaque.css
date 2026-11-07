@@ -1,0 +1,67 @@
+/*
+ * Tema Almanaque (protótipo docs/painel-bento-timeline.html): o bento. Menu lateral azul-marinho, blocos de cantos
+ * bem arredondados, Bricolage Grotesque nos títulos e números, Onest no texto. SÓ variáveis: regra de classe aqui,
+ * fora de @layer, vence qualquer utilidade do Tailwind. Os nomes do protótipo estão ao lado de cada valor.
+ */
+html[data-tema='almanaque'] {
+    --color-papel: #F2F3F8; /* --fundo */
+    --color-grafite: #0B0F22; /* --tinta (protótipo #161B33, escurecida: o `text-grafite/60` sobre o papel passa de 4,36 para 4,85) */
+    --color-carbono: #3B47C4; /* --acao */
+    --color-linha: #DCE0EC; /* --linha */
+    --color-superficie: #FFFFFF; /* .lista, .mes, .vencidas */
+    --color-sobre-acao: #FFFFFF;
+
+    --color-apagado: #4B5470; /* --apagado */
+    --color-faixa: #FFFFFF; /* a linha do tempo fica dentro do bloco branco, sem faixa própria */
+    --color-fim-de-semana: #EDEFF8; /* --sombra-fds */
+    --color-feriado: #FFF0CC; /* --sombra-fer */
+    --color-linha-forte: #C7CDDF; /* --linha-forte */
+
+    --color-menu-fundo: #18214A; /* --menu */
+    --color-menu-texto: #C3CCEB; /* --menu-texto */
+    --color-menu-ativo: #2C3768; /* --menu-ativo */
+    --color-menu-texto-ativo: #FFFFFF; /* .menu a[aria-current] */
+    --color-menu-logo: var(--color-ouro); /* .marca svg usa --ouro */
+    --color-menu-linha: #2C3768; /* borda do rodapé do menu (usa --menu-ativo) */
+    --color-contador-fundo: #F2B544; /* .contador usa --ouro */
+    --color-contador-texto: #18214A; /* .contador usa --menu */
+
+    /* Blocos do Painel (PainelMosaico). O anel fica sobre o bloco Dinheiro (azul de ação): tons claros dos três estados. */
+    --color-hoje-fundo: #FFEEDD; /* .hoje */
+    --color-anel-recebida: #7DE3D1; /* arco "recebida" do anel */
+    --color-anel-aguardando: #F6BE5A;
+    --color-anel-enviar: #AEB4F0;
+
+    /* Itens do menu lateral em pílula, com ícone (o Talão não define estas: ícone escondido, item reto e sem altura mínima). */
+    --menu-icone-exibicao: block; /* .menu a svg */
+    --marca-folga: 8px; /* respiro entre o nome do sistema e o avatar no cabeçalho do celular */
+    --menu-lista-px: 8px; /* alinha o ícone com o logo (20px da borda) */
+    --menu-lista-gap: 2px; /* .menu ul */
+    --menu-item-altura: 44px; /* .menu a */
+    --menu-item-px: 12px;
+    --menu-item-gap: 12px;
+    --menu-item-raio: 12px;
+    --contador-largura: 22px; /* .contador */
+    --contador-altura: 22px;
+
+    --color-etapa-enviar: #3B47C4; /* --enviar */
+    --color-etapa-aguardando: #B45309; /* --aguardando */
+    --color-etapa-recebida: #0F766E; /* --recebido */
+
+    --color-tinta-verde: #0F766E; /* --recebido */
+    --color-tinta-vermelha: #9F1F17; /* --vermelho */
+    --color-tinta-laranja: #9A3412; /* --laranja */
+
+    --logo-exibicao: block; /* recibo em SVG ao lado do nome, no menu lateral */
+    --marca-exibicao: flex; /* nome do sistema em linha com o logo (no Talão é block) */
+
+    --raio-controle: 14px; /* .botao (os campos do protótipo usam 12px) */
+    --raio-bloco: 28px; /* .lista, .mes, .dinheiro */
+    --sombra-bloco: 0 1px 2px rgba(22, 27, 51, 0.04), 0 24px 44px -34px rgba(22, 27, 51, 0.3); /* .mes */
+
+    /* Texto em Onest; a Bricolage Grotesque (títulos e números) só existe na largura normal: ver a skill "recibos". */
+    --font-sans: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-estreita: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-titulo: 'Bricolage Grotesque', 'Onest', ui-sans-serif, system-ui, sans-serif;
+    --font-numeros: 'Bricolage Grotesque', 'Onest', ui-sans-serif, system-ui, sans-serif;
+}

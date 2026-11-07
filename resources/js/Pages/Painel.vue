@@ -1,13 +1,13 @@
 <script setup>
 import { computed } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import CamadaApp from '../Layouts/CamadaApp.vue';
-import ListaDoPainel from '../Components/ListaDoPainel.vue';
-import BlocoVencendo from '../Components/BlocoVencendo.vue';
-import BotaoEnviar from '../Components/BotaoEnviar.vue';
-import BaixaInline from '../Components/BaixaInline.vue';
 import CoachDeConfiguracao from '../Components/CoachDeConfiguracao.vue';
-import PagamentoInline from '../Components/PagamentoInline.vue';
+import PainelEmpilhado from '../Components/Painel/PainelEmpilhado.vue';
+import PainelMosaico from '../Components/Painel/PainelMosaico.vue';
+import PainelRegua from '../Components/Painel/PainelRegua.vue';
+import { componenteDoPainel } from '../temas.js';
+import { usarTema } from '../usarTema.js';
 
 defineProps({
     mes: { type: String, required: true },
@@ -26,49 +26,17 @@ defineProps({
 // computed(), não uma const direta: page.props.progresso é substituído a cada visita do Inertia, e só um
 // computed continua reativo a essa troca.
 const progresso = computed(() => usePage().props.progresso);
+
+// Nome da composição (de temas.js) para o componente. shortcut: `colunas` (Fluxo e Livro-caixa) ainda não existe e
+// cai no Talão pelo `?? PainelEmpilhado`; `mosaico` é a variante com linha do tempo (Almanaque).
+const composicoes = { empilhado: PainelEmpilhado, mosaico: PainelMosaico, regua: PainelRegua };
+const { atual } = usarTema();
+const composicao = computed(() => composicoes[componenteDoPainel(atual.value?.painel)] ?? PainelEmpilhado);
 </script>
 
 <template>
     <CamadaApp>
         <CoachDeConfiguracao v-if="progresso" :progresso="progresso" />
-        <h1 class="text-2xl font-semibold">{{ mes }}</h1>
-        <p class="mt-1 text-lg tabular-nums">R$ {{ resumo.recebido }} recebidos de R$ {{ resumo.previsto }} previstos</p>
-
-        <p v-if="!perfilCompleto" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
-            Complete seu perfil para emitir recibos.
-            <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
-        </p>
-        <p v-if="vencimentosEmDiaNaoUtil" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
-            {{ vencimentosEmDiaNaoUtil === 1 ? '1 cobrança em aberto vence' : `${vencimentosEmDiaNaoUtil} cobranças em aberto vencem` }}
-            em sábado, domingo ou feriado.
-            <Link href="/perfil#feriados" class="font-semibold text-carbono underline">Ver e ajustar</Link>
-        </p>
-        <p v-if="contratosParaRenovar" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
-            {{ contratosParaRenovar === 1 ? '1 contrato encerra' : `${contratosParaRenovar} contratos encerram` }}
-            nos próximos dias.
-            <Link href="/contratos" class="font-semibold text-carbono underline">Ver contratos</Link>
-        </p>
-
-        <BlocoVencendo :dias-aviso="diasAviso" :modelos="modelosMensagem" :prestador="prestadorNome" />
-
-        <!-- Cada lista carrega por conta própria (/painel/dados); depois de uma ação, as três recarregam. -->
-        <ListaDoPainel
-            v-slot="{ cobranca }"
-            lista="para_enviar"
-            titulo="Para enviar"
-            :vazio="`Nada para enviar agora. Cobranças novas aparecem aqui ${diasAntecedencia} dias antes do vencimento.`"
-        >
-            <BotaoEnviar v-if="cobranca.recibo" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-        </ListaDoPainel>
-
-        <ListaDoPainel v-slot="{ cobranca }" lista="aguardando" titulo="Aguardando pagamento" vazio="Nenhuma cobrança enviada esperando pagamento.">
-            <BaixaInline :cobranca-id="cobranca.id" :valor-centavos="cobranca.valor_centavos" :vencimento-iso="cobranca.vencimento_iso" :regras="cobranca.regras" />
-            <PagamentoInline :cobranca-id="cobranca.id" :pagamento="cobranca.pagamento" :chaves-pix="chavesPix" :formas-pagamento="formasPagamento" />
-            <BotaoEnviar v-if="cobranca.recibo" rotulo="Reenviar" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-        </ListaDoPainel>
-
-        <ListaDoPainel v-slot="{ cobranca }" lista="recebidas" titulo="Recebidas no mês" vazio="Nenhum pagamento registrado neste mês.">
-            <BotaoEnviar v-if="cobranca.recibo" rotulo="Enviar recibo pago" :cobranca-id="cobranca.id" :pdf-url="cobranca.recibo.pdf_url" :nome-arquivo="cobranca.recibo.pdf_nome" />
-        </ListaDoPainel>
+        <component :is="composicao" v-bind="$props" />
     </CamadaApp>
 </template>

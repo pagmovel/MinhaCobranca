@@ -34,7 +34,7 @@ const esc = () => {
             ⋯
         </button>
         <Transition name="surgir">
-            <div v-if="aberto" class="absolute right-0 z-10 mt-1 flex w-56 flex-col border border-linha bg-white py-1 shadow-sm">
+            <div v-if="aberto" class="absolute right-0 z-10 mt-1 flex w-56 flex-col border border-linha bg-superficie py-1 shadow-sm">
                 <slot :fechar="fechar" />
             </div>
         </Transition>

@@ -7,7 +7,7 @@ import { RELATORIOS as relatorios } from '../../relatorios.js';
 <template>
     <CamadaApp>
         <h1 class="mb-6 text-2xl font-semibold">Relatórios</h1>
-        <ul class="divide-y divide-linha border border-linha bg-white">
+        <ul class="divide-y divide-linha border border-linha bg-superficie">
             <li v-for="relatorio in relatorios" :key="relatorio.tipo">
                 <Link :href="`/relatorios/${relatorio.tipo}`" class="block px-4 py-3 hover:bg-papel">
                     <span class="font-semibold">{{ relatorio.titulo }}</span>

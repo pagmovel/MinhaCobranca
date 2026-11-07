@@ -25,7 +25,7 @@ function proximoCampo() {
 </script>
 
 <template>
-    <div v-if="temHolofote && seletorAtual" class="fixed inset-x-4 bottom-20 z-30 border border-carbono bg-white p-3 text-sm shadow-lg sm:max-w-xs" role="status">
+    <div v-if="temHolofote && seletorAtual" class="fixed inset-x-4 bottom-20 z-30 border border-carbono bg-superficie p-3 text-sm shadow-lg sm:max-w-xs" role="status">
         <p>{{ textoAtual }}</p>
         <div class="mt-2 flex gap-3">
             <button v-if="form && campos.length > 1" type="button" class="font-semibold underline" @click="proximoCampo">Próximo campo</button>

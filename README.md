@@ -27,6 +27,27 @@ independentemente do banco configurado (`phpunit.xml`).
     php artisan app:criar-admin seu@email.com --nome="Seu Nome"
     npm run build
 
+## Temas visuais
+
+Cada usuário escolhe a aparência do sistema clicando no próprio nome (painel lateral à direita, seção
+"Aparência"). A troca é imediata, sem recarregar a página, e fica gravada em `users.tema`. Quem já usava o
+sistema vê um aviso da novidade uma vez.
+
+| Tema (`id`) | Visual |
+|---|---|
+| Talão (`talao`) | O visual de sempre: menu lateral claro e o painel em duas listas. |
+| Régua (`regua`) | Menu no topo e o mês numa linha do tempo, com cada cobrança no dia do vencimento. |
+| Almanaque (`almanaque`) | Menu lateral azul-marinho, painel em blocos de cantos bem arredondados e a linha do tempo do mês. |
+
+**Variável de ambiente `TEMA_PADRAO`:** tema de quem se cadastra daqui para frente (`talao`, `regua` ou
+`almanaque`; padrão `talao`). Valor desconhecido cai no Talão. É lida em `config/temas.php` (o `.env.example` já
+traz a linha) e não muda o tema de quem já tem conta. Em produção a configuração é cacheada na subida do
+container: depois de mudar a variável, reinicie ou refaça o deploy.
+
+As fontes de cada tema são baixadas do Bunny Fonts no `npm run build` (essa etapa precisa de rede) e servidas pelo
+próprio site; a página só carrega as do tema ativo. Para criar um tema novo, ver a skill `recibos`, seção
+"Fase 29: temas visuais".
+
 ## Produção na VPS (Easypanel) — atrás do BunkerWeb
 Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no serviço `bunker` do Easypanel
 (BunkerWeb, WAF), não neste serviço: Traefik → `bunkerweb:8080` → `meus_projetos_gerenciador_cobrancas_app:80`.
@@ -39,6 +60,11 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
 - Métodos liberados no BunkerWeb: `GET|POST|HEAD|PUT|PATCH|DELETE`. Rota nova com outro método (ou webhook de
   gateway de pagamento) precisa ser liberada lá também — senão volta 405/403 do BunkerWeb, não do Laravel.
 - Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
+- **Migração no deploy:** o `CMD` do `Dockerfile` roda `php artisan migrate --force` a cada subida do container
+  (só aplica o que está pendente; decisão do Marcos, reafirmada em 2026-11-07; travado por
+  `tests/Unit/DockerfileMigraNoDeployTest.php`). Não há passo manual de migração. A da Fase 29 (temas) só
+  adiciona duas colunas em `users` (`tema` e `novidade_temas_vista`), nenhuma tabela. Depois do deploy, defina
+  `TEMA_PADRAO` no `.env` de produção se quiser outro tema para os usuários novos.
 - **Versão do PHP fixa no `Dockerfile`** (`php:8.4.27-apache-bookworm`, desde 2026-10-25, correção do PHP2Shell:
   CVE-2026-109618 e CVE-2026-109619). A tag móvel `8.4-apache-bookworm` pode reaproveitar uma imagem antiga em cache.
   Ao sair release de segurança do PHP: trocar o número no `Dockerfile`, conferir a tag no Docker Hub e fazer o deploy
@@ -48,9 +74,11 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
 
 ## Testes
     php artisan test
+    node --test 'tests/js/**/*.test.js' 'resources/js/**/*.test.js'
 
 ## Ferramentas do Claude Code usadas no desenvolvimento
-- **superpowers** (plugin): brainstorming, planos e execução com TDD.
+- **superpowers** (plugin): brainstorming, planos e execução com TDD (a Fase 29 foi executada por subagentes,
+  com `subagent-driven-development`).
 - **frontend-design** (plugin): direção visual das telas.
 - **context-mode** (plugin/MCP): leitura e execução de comandos com economia de contexto.
 - **laravel-boost** (pacote dev + MCP): guidelines, skills e ferramentas do Laravel.

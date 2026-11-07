@@ -63,7 +63,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
                 <CampoCliente :form="form" :inicial="clienteAtual" :desativado="travado" :opcoes="cadastroRapido" @escolhido="cliente = $event" />
             </Campo>
             <p v-if="travado" class="font-estreita text-xs text-grafite/70 sm:col-span-6">Cliente e período vêm do contrato.</p>
-            <p v-if="semItens" role="status" class="border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+            <p v-if="semItens" role="status" class="border border-carbono/40 bg-superficie px-4 py-2 text-sm sm:col-span-6">
                 Esta cobrança é anterior ao catálogo (valor atual: R$ {{ cobranca.valor }}). Inclua pelo menos um item; ao salvar,
                 o valor passa a ser a soma dos itens.
             </p>
@@ -81,7 +81,7 @@ const salvar = () => (props.cobranca ? form.put(`/cobrancas/${props.cobranca.id}
             <!-- Região viva sempre presente: o leitor de tela só anuncia mudança numa região que já existia. -->
             <p class="sr-only" aria-live="polite">{{ diaUtil ? `${diaUtil.aviso} Próximo dia útil: ${diaUtil.proximo_rotulo}.` : '' }}</p>
             <Transition name="surgir">
-                <p v-if="diaUtil" class="flex flex-wrap items-center gap-2 border border-carbono/40 bg-white px-4 py-2 text-sm sm:col-span-6">
+                <p v-if="diaUtil" class="flex flex-wrap items-center gap-2 border border-carbono/40 bg-superficie px-4 py-2 text-sm sm:col-span-6">
                     <span>{{ diaUtil.aviso }} Próximo dia útil: {{ diaUtil.proximo_rotulo }}.</span>
                     <button type="button" class="botao-secundario" @click="form.vencimento = diaUtil.proximo">Usar {{ diaUtil.proximo_rotulo }}</button>
                 </p>

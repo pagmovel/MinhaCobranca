@@ -49,7 +49,7 @@ class AuditoriaController extends Controller
                 'motivo' => $registro->motivo,
                 'link' => match (true) {
                     $registro->alvo_tipo === 'contrato' => "/contratos/{$registro->alvo_id}/edit",
-                    isset($vencimentos[$registro->alvo_id]) => '/cobrancas?mes='.CarbonImmutable::parse($vencimentos[$registro->alvo_id])->format('Y-m'),
+                    $registro->alvo_tipo === 'cobranca' && isset($vencimentos[$registro->alvo_id]) => '/cobrancas?mes='.CarbonImmutable::parse($vencimentos[$registro->alvo_id])->format('Y-m'),
                     default => null,
                 },
             ])->all(),

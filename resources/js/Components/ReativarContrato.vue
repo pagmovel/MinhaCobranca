@@ -41,7 +41,7 @@ function oQueAcontece(acao) {
 </script>
 
 <template>
-    <div class="aparecer grid gap-2 border border-carbono/40 bg-white p-4 text-sm">
+    <div class="aparecer grid gap-2 border border-carbono/40 bg-superficie p-4 text-sm">
         <p class="font-medium">O que "Salvar contrato" vai desfazer</p>
         <p v-if="carregando" class="text-grafite/70">Montando a prévia…</p>
         <Transition name="surgir">

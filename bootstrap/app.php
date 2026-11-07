@@ -24,12 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'progresso' => GarantirProgressoDeConfiguracao::class,
         ]);
         $middleware->redirectUsersTo('/painel');
+        // O login não apara a senha (campo `password`, que o Laravel já poupa). Os campos da troca de senha precisam do
+        // mesmo tratamento: aparados, quem tem espaço nas pontas da senha nunca conseguiria trocá-la.
+        $middleware->trimStrings(except: ['senha_atual', 'nova_senha', 'nova_senha_confirmation']);
         // Em produção o app fica atrás do proxy do EasyPanel (Traefik), que termina o HTTPS: sem isso o Laravel gera
         // links http:// para os assets do Vite e o navegador bloqueia como conteúdo misto. Só faixas privadas (rede
         // Docker): '*' confiaria em qualquer IP e o cliente forjaria o X-Forwarded-For para furar o throttle do login.
         $middleware->trustProxies(at: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Erro de validação devolve o formulário ao navegador pela sessão (`_old_input`, no banco): senha digitada não pode ir junto.
+        $exceptions->dontFlash(['senha', 'senha_atual', 'nova_senha', 'nova_senha_confirmation']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

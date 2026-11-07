@@ -43,7 +43,7 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
         <p class="mt-1 mb-6 text-sm text-grafite/80">Estes dados aparecem como prestador em todos os recibos novos.</p>
 
         <form class="flex max-w-3xl flex-col gap-8" @submit.prevent="salvar">
-            <fieldset class="grid gap-4 sm:grid-cols-6">
+            <fieldset class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-6">
                 <legend class="mb-2 text-sm font-semibold">Prestador</legend>
                 <Campo id="name" rotulo="Nome ou razão social" :erro="form.errors.name" class="sm:col-span-4">
                     <input id="name" v-model="form.name" class="entrada" required>
@@ -69,7 +69,7 @@ const salvar = () => form.post('/perfil', { preserveScroll: true });
 
             <CamposEndereco :form="form" :ufs="ufs" obrigatorio />
 
-            <fieldset class="grid gap-4 sm:grid-cols-6">
+            <fieldset class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-6">
                 <legend class="mb-2 text-sm font-semibold">Recibos</legend>
                 <Campo id="modelo_padrao" rotulo="Modelo sugerido para clientes novos" :erro="form.errors.modelo_padrao" class="sm:col-span-3">
                     <select id="modelo_padrao" v-model="form.modelo_padrao" class="entrada">

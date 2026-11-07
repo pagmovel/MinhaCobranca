@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UsuarioController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\SenhaController;
 use App\Http\Controllers\AvisoWhatsappController;
 use App\Http\Controllers\ChavePixController;
 use App\Http\Controllers\ClienteController;
@@ -32,11 +33,16 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/sair', [LoginController::class, 'destroy']);
     Route::get('/painel', PainelController::class)->name('painel');
     Route::get('/painel/dados', [PainelController::class, 'dados']);
+    Route::get('/painel/mes', [PainelController::class, 'mes']);
+    Route::get('/painel/cobrancas/{cobranca}', [PainelController::class, 'cobranca']);
 
     Route::get('/perfil', [PerfilController::class, 'edit']);
     Route::post('/perfil', [PerfilController::class, 'update']);
     Route::get('/perfil/logo', [PerfilController::class, 'logo']);
     Route::post('/perfil/apresentacao', [PerfilController::class, 'apresentacao']);
+    Route::put('/perfil/tema', [PerfilController::class, 'tema']);
+    Route::get('/perfil/tema/{tema}/fontes', [PerfilController::class, 'fontesDoTema']);
+    Route::post('/perfil/novidade-temas', [PerfilController::class, 'novidadeDosTemas']);
     Route::post('/perfil/chaves-pix', [ChavePixController::class, 'store']);
     Route::put('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'update']);
     Route::delete('/perfil/chaves-pix/{chave}', [ChavePixController::class, 'destroy']);
@@ -95,7 +101,9 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
     Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);
-    // Pedem a senha: limite de tentativas por usuário.
+    // Pedem a senha: limite de tentativas por usuário. A troca de senha tem contador próprio (prefixo "senha"); sem ele,
+    // o contador seria o mesmo das consultas de CEP e CNPJ e 7 consultas no minuto já bloqueariam a troca.
+    Route::put('/perfil/senha', [SenhaController::class, 'atualizar'])->middleware('throttle:6,1,senha');
     Route::middleware('throttle:6,1')->group(function () {
         Route::post('/cobrancas/{cobranca}/corrigir-pagamento', [CobrancaController::class, 'corrigirPagamento']);
         Route::post('/cobrancas/{cobranca}/desfazer-baixa', [CobrancaController::class, 'desfazerBaixa']);

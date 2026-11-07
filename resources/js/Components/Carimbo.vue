@@ -17,7 +17,7 @@ const atual = computed(() => estilos[props.situacao]);
 </script>
 
 <template>
-    <span class="carimbo inline-block min-w-32 -rotate-6 rounded-sm border-2 px-2 py-0.5 text-center text-xs font-bold whitespace-nowrap uppercase" :class="atual[1]">
+    <span class="carimbo inline-block min-w-32 -rotate-6 rounded-(--raio-controle) border-2 px-2 py-0.5 text-center text-xs font-bold whitespace-nowrap uppercase" :class="atual[1]">
         {{ atual[0] }}
     </span>
 </template>
