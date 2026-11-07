@@ -136,10 +136,10 @@ const sair = () => router.post('/sair');
                                     <span class="block font-titulo text-base font-semibold">Alterar senha</span>
                                     <span class="block text-sm text-grafite/70">Troque a senha de acesso</span>
                                 </span>
-                                <!-- Caixa com seta: abre uma janela por cima. -->
-                                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="flex-none text-grafite/60">
-                                    <path d="M6.5 3H4a1.5 1.5 0 0 0-1.5 1.5v7.5A1.5 1.5 0 0 0 4 13.5h7.5A1.5 1.5 0 0 0 13 12V9.5" />
-                                    <path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5" />
+                                <!-- Chave: o assunto da linha é a senha (a caixa com seta de "link externo" sugeria sair da página). -->
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="flex-none text-grafite/60">
+                                    <circle cx="5.5" cy="10.5" r="3" />
+                                    <path d="M7.7 8.3 13.5 2.5M11.5 4.5l1.8 1.8M9.6 6.4l1.5 1.5" />
                                 </svg>
                             </button>
                             <div role="status">
