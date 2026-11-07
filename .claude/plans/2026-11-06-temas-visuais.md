@@ -13,9 +13,9 @@
 
 ---
 
-## Andamento (atualizado em 2026-11-07, 12:00)
+## Andamento (atualizado em 2026-11-07, 13:20)
 
-**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (19 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **15 estão prontas, 2 em andamento e 6 faltam**. Estamos entre o **Marco 2** (fundação visual feita; falta o seletor de temas e o popup) e o **Marco 3/4** (linha do tempo, Mosaico/Almanaque e Régua, ainda não começados).
+**Onde estamos:** Fase 29 em execução no branch `feature/temas-visuais` (24 commits à frente do `main`; **não mesclado, não enviado**, nada em produção). Das 23 tarefas do escopo, **17 estão prontas e 6 faltam**; nenhum agente em andamento. Os **Marcos 1 e 2** do escopo estão prontos (painel do usuário com senha, seletor de temas, popup e fundação visual); faltam os **Marcos 3 e 4** (linha do tempo, Mosaico/Almanaque e Régua), a conferência geral e a documentação final.
 
 | Fase | Tarefa | Estado | Commit |
 |---|---|---|---|
@@ -25,14 +25,14 @@
 | 2 painel do usuário | 2.1 alterar senha (back-end) | pronta | `b7d7414`, `1c948aa` |
 | | 2.2 painel lateral e "Sair" | pronta | `47f7a69` |
 | | 2.3 formulário de senha | pronta | `48151fc` |
-| | 2.4 seletor de tema | **em andamento** | `6481d9d` (parte: `usarTema`) |
+| | 2.4 seletor de tema, sem recarregar | pronta | `6481d9d`, `ad4f0d0` |
 | 3 fundação visual | 3.1 inventário | pronta | `3ee011b` |
 | | 3.2 tokens, Talão idêntico | pronta | `0cc8820` |
 | | 3.3 fontes por tema | pronta | `e5a0fbe` |
 | | 3.4 cascas e menu responsivo | pronta | `3c60af3` |
 | | 3.5 guarda de contraste | pronta (feita ao longo da 3.1, 3.2, 3.4 e da base dos temas) | `c53199c` e seguintes |
 | 4 Painel e popup | 4.1 Painel extraído | pronta | `6af185f` |
-| | 4.5 popup da novidade | **em andamento** | |
+| | 4.5 popup da novidade | pronta | `25502c3` |
 | 5 dados do mês | 5.1 `GET /painel/mes` | pronta | `79fdee0` |
 | | 5.2 `GET /painel/cobrancas/{id}` | pronta | `da91134` |
 | 6 Mosaico | 6.1 `PainelMosaico` (variante Almanaque) | falta | |
@@ -44,7 +44,7 @@
 | | 9.2 documentação final | falta | |
 
 **O que falta, em ordem:**
-1. Terminar a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
+1. **Feitas:** a 2.4 (seletor, com troca de tema **sem recarregar** a página) e a 4.5 (popup para os usuários antigos).
 2. 7.2 e 7.3: a linha do tempo e a composição da Régua (menu superior já existe).
 3. 6.1 e 8.1: o Mosaico em blocos com a linha do tempo, que é o Almanaque (faltam também os ícones e as pílulas do menu do protótipo e o contador dourado).
 4. 9.1 e 9.2: matriz de conferência (3 temas, telas logadas, 1440 e 390 px), documentação, merge `--no-ff` no `main` e push.
@@ -52,12 +52,15 @@
 
 **Já feito fora do código:** migração das colunas `tema` e `novidade_temas_vista` rodada no **Postgres local** (12 usuários antigos ficaram com `talao` e a novidade pendente). **Nada** foi feito em produção.
 
-**Testes agora:** PHP 961 verdes; JS 350 (um teste instável apareceu e sumiu enquanto o agente da 2.4 editava; reconferir ao fim dela).
+**Testes agora:** PHP 962 verdes e JS 375 verdes (conferidos por quem coordena, depois do último commit).
 
 **Fora desta execução (pendentes para o futuro):** os temas Fluxo, Livro-caixa e Mosaico (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos "Semana à frente" e "Recebido por dia".
 
 **Achados que pedem atenção do Marcos:**
+- **Corrigido (`803acd9`):** a troca de senha aparava espaços nas pontas (`TrimStrings`), e quem tinha espaço na senha nunca conseguia trocá-la. **Aberto:** o campo `senha` das baixas e correções ainda é aparado (mesmo defeito para esse tipo de senha); não mexi por mudar uma tela antiga.
 - Defeito antigo, não corrigido: `desfazer-baixa` e `corrigir-pagamento` dão erro 500 se alguém mandar `senha[]=x`.
+- Fontes do Vite em dobro (woff2 e woff por peso; a página usa o `.woff`): os preloads de woff2 são em parte inúteis. Já era assim; tamanho não medido.
+- Há um servidor do Vite na porta 5173 (`public/hot`) que não é de nenhum agente despachado, talvez o `npm run dev` do Marcos; não encerrei.
 - Contraste do Talão: 11 textos `text-grafite/60` (4,05:1) e 1 `/50` (3,06:1) ficam abaixo de 4,5:1. Não mexi no Talão.
 - As fontes estáticas do Bunny não têm eixo de largura: os títulos da Bricolage saem mais largos que nos protótipos da Régua.
 - `docs/modelos-painel.html` e `docs/painel-lista.html` continuam sem commit (protótipos não escolhidos). Apagar?

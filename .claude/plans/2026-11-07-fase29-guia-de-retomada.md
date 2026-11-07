@@ -5,7 +5,18 @@ Para quem retoma depois de compactar a conversa ou numa sessão nova. Ler junto 
 O briefing comum que os agentes recebem está em `.claude/plans/2026-11-07-fase29-briefing-dos-agentes.md` (cópia do
 arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 
-## 1. Situação em 2026-11-07, ~12:45
+## 1. Situação (atualizada em 2026-11-07, 13:20)
+
+> **Atualização:** o subagente `a4f6fb1c95cf12464` **terminou**: 2.3, 2.4 e 4.5 estão commitadas (`48151fc`, `ad4f0d0`,
+> `25502c3`) e conferidas por quem coordena. **Não há nenhum subagente em andamento e a árvore está limpa** (só os dois
+> protótipos `docs/` não escolhidos). O branch tem **24 commits** à frente do `main` (o último, `803acd9`, corrige o
+> `TrimStrings` da troca de senha). **PHP 962 e JS 375 verdes.** Faltam só os despachos A, B, C e D da seção 2. Os
+> pontos abaixo sobre o agente e os arquivos não commitados valem como **histórico**. Um servidor do Vite na porta 5173
+> (`public/hot`, PIDs `vite`) estava no ar e **não é de nenhum agente despachado**: pode ser o `npm run dev` do Marcos;
+> não encerrar. Ele faz o app usar o servidor de desenvolvimento em vez do `npm run build`; os agentes de interface devem
+> provar numa cópia da árvore ou avisar.
+
+### Histórico (12:45)
 
 - Branch `feature/temas-visuais`, **20 commits à frente do `main`**, nada enviado ao `origin`, nada em produção.
 - **Há um subagente rodando:** `a4f6fb1c95cf12464` (modelo `sonnet`), tarefas **2.4** (seletor de tema, com troca **sem
@@ -27,7 +38,7 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 
 ## 2. O que ainda falta e como despachar (um despacho por vez no navegador; tarefas dependem das anteriores)
 
-Ordem: terminar 2.4 e 4.5; depois **A**, **B**, **C**, **D**; depois merge. Cada despacho segue o checklist da seção 3.
+Ordem: 2.4 e 4.5 já feitas; agora **A**, **B**, **C**, **D**; depois merge. Cada despacho segue o checklist da seção 3.
 
 **A. Tarefas 7.2 e 7.3: linha do tempo e tema Régua** (um agente, um commit por tarefa).
 - `LinhaDoTempoDoMes.vue`: usa `GET /painel/mes` (resposta: `mes, hoje, dias, feriados{dia:nome}, fim_de_semana[], pontos[]
