@@ -6,9 +6,13 @@ sem depender do histórico.
 
 ## 0. RETOMAR AQUI — estado em 2026-11-07 (as seções 0.00000, 0.0000, 0.000 e 0.00 valem; as demais são histórico de 2026-10-12)
 
-### 0.00000 Fase 29 (temas visuais) EM EXECUÇÃO, ler primeiro (2026-11-07, 12:00)
+### 0.00000 Fase 29 (temas visuais) EM EXECUÇÃO, ler primeiro (2026-11-07, 12:45)
 
-- **Onde estamos:** execução no branch **`feature/temas-visuais`** (19 commits à frente do `main`; **não mesclado, não
+- **Guia de retomada e de despacho (ler antes de tudo):** `.claude/plans/2026-11-07-fase29-guia-de-retomada.md`. Traz o
+  agente que ainda estava rodando (`a4f6fb1c95cf12464`, tarefas 2.4 e 4.5, com trabalho **não commitado** na árvore),
+  o que cada despacho que falta deve conter (7.2 e 7.3; 6.1 e 8.1; 9.1; 9.2), o checklist das regras globais para
+  todo prompt de subagente e as decisões já tomadas.
+- **Onde estamos:** execução no branch **`feature/temas-visuais`** (20 commits à frente do `main`; **não mesclado, não
   enviado, nada em produção**). O quadro tarefa a tarefa está na seção **"Andamento"** do plano
   `.claude/plans/2026-11-06-temas-visuais.md`. Resumo: das 23 tarefas do escopo, 15 prontas, 2 em andamento (2.4 seletor
   de tema e 4.5 popup) e 6 faltando (6.1, 7.2, 7.3, 8.1, 9.1, 9.2).
