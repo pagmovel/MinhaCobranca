@@ -201,8 +201,11 @@ ul > .lista-leave-active {
     from { background-color: color-mix(in srgb, var(--color-tinta-verde) 18%, transparent); }
     to { background-color: transparent; }
 }
+/* Sem `forwards`: com o preenchimento final o Chrome mantém `transform` no elemento depois da animação e ele vira o
+   bloco de contenção de todo `position: fixed` lá dentro (o Coach e o Holofote saíam do canto da janela e iam para o
+   fim do conteúdo, fora da tela nos Painéis longos dos temas novos). O estado final já é o natural (opacidade 1). */
 .aparecer {
-    animation: aparecer 220ms ease both;
+    animation: aparecer 220ms ease backwards;
 }
 .destacar {
     animation: destacar 700ms ease;
