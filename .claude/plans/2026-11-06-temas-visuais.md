@@ -123,7 +123,7 @@ Os protótipos usam dados fictícios em memória. No app:
 - **Testes** (`tests/Feature/Temas/TemaDoUsuarioTest.php`): `test_usuario_novo_nasce_com_o_tema_do_env` (`config(['temas.padrao' => ...])`), `test_env_invalido_cai_no_talao`, `test_usuario_novo_nasce_sem_novidade_pendente`, `test_cast_devolve_o_enum`, `test_tema_nao_e_preenchivel_em_massa`.
 - **Banco:** antes do `migrate`, mostrar alvo, `migrate:status`, contagem e comando literal; só então `php artisan migrate`.
 
-### Tarefa 1.2: compartilhar no Inertia e no HTML. Estado: pendente
+### Tarefa 1.2: compartilhar no Inertia e no HTML. Estado: concluída (testes verdes; sem front nesta tarefa)
 - `HandleInertiaRequests`: `auth.user.tema` (valor, com fallback `Talao`), `temas` (`TemaVisual::paraOFront()`), `mostrarNovidadeTemas` = apresentação já vista **e** novidade não vista **e** mais de um caso no enum.
 - `app.blade.php`: `<html data-tema="...">` do usuário logado, `talao` para visitante.
 - **Testes** (`tests/Feature/Temas/CompartilhamentoDoTemaTest.php`): `test_html_traz_data_tema_do_usuario`, `test_visitante_recebe_talao`, `test_tema_corrompido_no_banco_vira_talao`, `test_novidade_nao_aparece_com_um_unico_tema`.

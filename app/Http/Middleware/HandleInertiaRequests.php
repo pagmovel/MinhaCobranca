@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\StatusUsuario;
+use App\Enums\TemaVisual;
 use App\Enums\TipoChavePix;
 use App\Models\User;
 use App\Support\ProgressoDeConfiguracao;
@@ -42,8 +43,12 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => fn () => $request->user()?->only('id', 'name', 'email', 'is_admin'),
+                'user' => fn () => ($usuario = $request->user()) ? [
+                    ...$usuario->only('id', 'name', 'email', 'is_admin'),
+                    'tema' => $usuario->tema->value,
+                ] : null,
             ],
+            'temas' => fn () => TemaVisual::paraOFront(),
             'pendentes' => fn () => $request->user()?->is_admin
                 ? User::where('status', StatusUsuario::Pendente)->count()
                 : 0,
@@ -54,14 +59,21 @@ class HandleInertiaRequests extends Middleware
                 'erro' => fn () => $request->session()->get('erro'),
             ],
             'progresso' => fn () => $request->user() ? ProgressoDeConfiguracao::de($request->user()) : null,
-            'mostrarApresentacao' => function () use ($request) {
-                $usuario = $request->user();
-                if (! $usuario || $usuario->apresentacao_vista) {
-                    return false;
-                }
-
-                return ! ProgressoDeConfiguracao::de($usuario)['liberado'];
-            },
+            'mostrarApresentacao' => fn () => $this->deveMostrarApresentacao($request->user()),
+            // Popup dos temas: só quem já existia, com mais de um tema para escolher e nunca por cima da apresentação.
+            'mostrarNovidadeTemas' => fn () => ($usuario = $request->user()) !== null
+                && ! $usuario->novidade_temas_vista
+                && count(TemaVisual::cases()) > 1
+                && ! $this->deveMostrarApresentacao($usuario),
         ];
+    }
+
+    private function deveMostrarApresentacao(?User $usuario): bool
+    {
+        if (! $usuario || $usuario->apresentacao_vista) {
+            return false;
+        }
+
+        return ! ProgressoDeConfiguracao::de($usuario)['liberado'];
     }
 }
