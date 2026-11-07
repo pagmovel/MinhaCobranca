@@ -14,6 +14,8 @@ html[data-tema='almanaque'] {
     --color-menu-fundo: #18214A; /* --menu */
     --color-menu-texto: #C3CCEB; /* --menu-texto */
     --color-menu-ativo: #2C3768; /* --menu-ativo */
+    --color-menu-texto-ativo: #FFFFFF; /* .menu a[aria-current] */
+    --color-menu-logo: var(--color-ouro); /* .marca svg usa --ouro */
     --color-menu-linha: #2C3768; /* borda do rodapé do menu (usa --menu-ativo) */
 
     --color-etapa-enviar: #3B47C4; /* --enviar */
@@ -23,6 +25,9 @@ html[data-tema='almanaque'] {
     --color-tinta-verde: #0F766E; /* --recebido */
     --color-tinta-vermelha: #9F1F17; /* --vermelho */
     --color-tinta-laranja: #9A3412; /* --laranja */
+
+    --logo-exibicao: block; /* recibo em SVG ao lado do nome, no menu lateral */
+    --marca-exibicao: flex; /* nome do sistema em linha com o logo (no Talão é block) */
 
     --raio-controle: 14px; /* .botao (os campos do protótipo usam 12px) */
     --raio-bloco: 28px; /* .lista, .mes, .dinheiro */

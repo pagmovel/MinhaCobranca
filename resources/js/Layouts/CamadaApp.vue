@@ -1,87 +1,40 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { itemBloqueado } from '../progresso.js';
+import { usePage } from '@inertiajs/vue3';
+import { itensDoMenu } from '../menuPrincipal.js';
+import { usarTema } from '../usarTema.js';
+import MenuLateral from '../Components/MenuLateral.vue';
+import MenuSuperior from '../Components/MenuSuperior.vue';
 import ModalBoasVindas from '../Components/ModalBoasVindas.vue';
 
 const page = usePage();
 const usuario = computed(() => page.props.auth.user);
 const flash = computed(() => page.props.flash);
-const menuAberto = ref(false);
+const itens = computed(() => itensDoMenu(page.props.progresso, usuario.value?.is_admin, page.props.pendentes));
 
-const itens = computed(() => [
-    { href: '/painel', rotulo: 'Painel' },
-    { href: '/cobrancas', rotulo: 'Cobranças', bloqueado: itemBloqueado('/cobrancas', page.props.progresso) },
-    { href: '/contratos', rotulo: 'Contratos', bloqueado: itemBloqueado('/contratos', page.props.progresso) },
-    { href: '/clientes', rotulo: 'Clientes', bloqueado: itemBloqueado('/clientes', page.props.progresso) },
-    { href: '/produtos-servicos', rotulo: 'Produtos e serviços', bloqueado: itemBloqueado('/produtos-servicos', page.props.progresso) },
-    { href: '/relatorios', rotulo: 'Relatórios' },
-    { href: '/auditoria', rotulo: 'Auditoria' },
-    { href: '/perfil', rotulo: 'Meu perfil' },
-    ...(usuario.value?.is_admin
-        ? [{ href: '/admin/usuarios', rotulo: 'Usuários', contador: page.props.pendentes }]
-        : []),
-]);
+// A casca vem do tema. Só o `<nav>` troca: o `<main>` fica sempre no mesmo lugar da árvore, então trocar de casca
+// não remonta a página nem apaga um formulário preenchido.
+const { atual } = usarTema();
+const superior = computed(() => atual.value?.casca === 'superior');
+const menu = computed(() => (superior.value ? MenuSuperior : MenuLateral));
 
-const ativo = (href) => page.url.startsWith(href);
-const sair = () => router.post('/sair');
+const painelAberto = ref(false);
+function abrirPainel(evento) {
+    // Safari e Firefox no Mac não focam o botão no clique; sem isso o painel não saberia a quem devolver o foco.
+    evento.currentTarget.focus();
+    painelAberto.value = true;
+}
 </script>
 
 <template>
-    <div class="min-h-screen md:grid md:grid-cols-[13rem_1fr]">
-        <header class="flex items-center justify-between border-b border-menu-linha bg-menu-fundo px-4 py-3 text-menu-texto md:hidden">
-            <span class="font-semibold">Gerenciador de Cobranças</span>
-            <button
-                type="button"
-                class="botao-secundario px-3 py-1"
-                :aria-expanded="menuAberto"
-                aria-controls="menu-principal"
-                @click="menuAberto = !menuAberto"
-            >
-                Menu
-            </button>
-        </header>
-
-        <nav
-            id="menu-principal"
-            aria-label="Principal"
-            :class="[menuAberto ? 'block' : 'hidden', 'border-b border-menu-linha bg-menu-fundo text-menu-texto md:block md:border-b-0 md:border-r']"
-        >
-            <p class="hidden px-5 pt-6 pb-4 font-semibold md:block">Gerenciador de Cobranças</p>
-            <ul class="flex flex-col py-2">
-                <li v-for="item in itens" :key="item.href">
-                    <span
-                        v-if="item.bloqueado"
-                        class="flex items-center justify-between px-5 py-2 text-sm text-grafite/50"
-                        :title="item.href === '/contratos' || item.href === '/cobrancas'
-                            ? 'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.'
-                            : 'Complete seu perfil (dados do prestador, uma chave PIX e um modelo de mensagem) antes de cadastrar produtos, serviços ou clientes.'"
-                    >
-                        🔒 {{ item.rotulo }}
-                    </span>
-                    <Link
-                        v-else
-                        :href="item.href"
-                        class="flex items-center justify-between px-5 py-2 text-sm hover:bg-menu-ativo"
-                        :class="ativo(item.href) ? 'bg-menu-ativo font-semibold text-carbono' : ''"
-                        :aria-current="ativo(item.href) ? 'page' : undefined"
-                        @click="menuAberto = false"
-                    >
-                        {{ item.rotulo }}
-                        <span
-                            v-if="item.contador"
-                            class="rounded-full bg-tinta-vermelha px-2 text-xs font-semibold text-white"
-                            :aria-label="`${item.contador} cadastros aguardando liberação`"
-                        >{{ item.contador }}</span>
-                    </Link>
-                </li>
-                <li>
-                    <button type="button" class="w-full px-5 py-2 text-left text-sm hover:bg-menu-ativo" @click="sair">
-                        Sair
-                    </button>
-                </li>
-            </ul>
-        </nav>
+    <div :class="superior ? 'min-h-screen' : 'min-h-screen md:grid md:grid-cols-[13rem_1fr]'">
+        <component
+            :is="menu"
+            :itens="itens"
+            :usuario="usuario"
+            :painel-aberto="painelAberto"
+            @abrir-painel="abrirPainel"
+        />
 
         <main class="w-full min-w-0 px-4 py-6 md:px-8">
             <Transition name="surgir">

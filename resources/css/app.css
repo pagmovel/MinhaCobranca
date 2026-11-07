@@ -27,7 +27,10 @@
     --color-menu-fundo: #FFFFFF;
     --color-menu-texto: #1F2933;
     --color-menu-ativo: #F5F7F9; /* fundo do item ativo e do hover */
+    --color-menu-texto-ativo: #2F3C9E; /* texto do item ativo (e do hover da barra superior); no Talão é o carbono, temas escuros trocam */
     --color-menu-linha: #C9D1DA;
+    --color-menu-logo: var(--color-carbono); /* cor do recibo (logo) no menu */
+    --color-ouro: #F2B544; /* ponto de aviso do "Mais" da barra superior (item escondido com contador) */
     --color-etapa-enviar: #3B47C4; /* sem uso ainda: os painéis novos */
     --color-etapa-aguardando: #B45309;
     --color-etapa-recebida: #0F766E;
@@ -35,6 +38,15 @@
     --raio-controle: var(--radius-sm); /* .entrada, .botao*, Carimbo, Etiqueta, esqueleto de carregamento */
     --raio-bloco: 0; /* sem uso ainda: valor neutro (os blocos do Talão têm cantos retos) */
     --sombra-bloco: none; /* sem uso ainda: sombra não vem de variável, o componente precisa usar shadow-(--sombra-bloco) */
+
+    /*
+     * Logo (recibo em SVG) do menu: só aparece nos temas que o pedem. O componente LogoRecibo usa
+     * `display: var(--logo-exibicao, none)` e o nome do sistema usa `display: var(--marca-exibicao, block)`; o tema
+     * que quer o logo define `--logo-exibicao: block` e `--marca-exibicao: flex` (nome ao lado do logo). No Talão,
+     * `none` e `block`: o menu continua só com o texto.
+     */
+    --logo-exibicao: none;
+    --marca-exibicao: block;
 }
 
 @layer components {

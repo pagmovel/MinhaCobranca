@@ -38,6 +38,10 @@ const PARES = [
     // Menu: texto sobre o fundo e sobre o item ativo/hover.
     ['--color-menu-texto', '--color-menu-fundo'],
     ['--color-menu-texto', '--color-menu-ativo'],
+    // Item ativo do menu (e hover da barra superior): sobre o fundo do item ativo e sobre o fundo do menu. No Almanaque
+    // o ativo fica sobre um azul escuro: `text-carbono` dava 1,56 (ilegível); por isso o token próprio.
+    ['--color-menu-texto-ativo', '--color-menu-ativo'],
+    ['--color-menu-texto-ativo', '--color-menu-fundo'],
 ];
 
 const caminho = (relativo) => new URL(`../../${relativo}`, import.meta.url);

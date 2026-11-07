@@ -14,6 +14,7 @@ html[data-tema='regua'] {
     --color-menu-fundo: #FFFFFF; /* .topo-app */
     --color-menu-texto: #46526F; /* --apagado: link do menu */
     --color-menu-ativo: #F0F3FA; /* hover do menu */
+    --color-menu-texto-ativo: #0F1B33; /* --tinta: link ativo e hover do menu */
     --color-menu-linha: #D5DCE9; /* --linha */
 
     --color-etapa-enviar: #3B47C4; /* --enviar */
@@ -23,6 +24,8 @@ html[data-tema='regua'] {
     --color-tinta-verde: #0F766E; /* --recebido */
     --color-tinta-vermelha: #9F1F17; /* --vermelho */
     --color-tinta-laranja: #9A3412; /* --laranja */
+
+    --logo-exibicao: block; /* recibo em SVG ao lado do nome, na barra superior (cor: --color-menu-logo = carbono) */
 
     --raio-controle: 8px; /* .botao */
     --raio-bloco: 10px; /* popover e menu "Mais" */

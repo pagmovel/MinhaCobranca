@@ -17,3 +17,10 @@ export function itensDoMenu(progresso, administrador, pendentes) {
         ...(administrador ? [{ href: '/admin/usuarios', rotulo: 'Usuários', contador: pendentes }] : []),
     ];
 }
+
+/** Texto do `title` do item bloqueado (🔒): diz o que falta cadastrar para liberar. */
+export function explicacaoDoBloqueio(href) {
+    return href === '/contratos' || href === '/cobrancas'
+        ? 'Cadastre pelo menos um produto ou serviço e um cliente antes de criar contratos ou cobranças.'
+        : 'Complete seu perfil (dados do prestador, uma chave PIX e um modelo de mensagem) antes de cadastrar produtos, serviços ou clientes.';
+}
