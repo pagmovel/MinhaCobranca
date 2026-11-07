@@ -32,10 +32,44 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 >    **Despacho A FEITO e conferido por quem coordena** (tarefas 7.2 e 7.3, subagente `ad8bf2a466dbcca90`, `sonnet`):
 >    commits `97071a0` (linha do tempo com popover) e `58929b9` (composição Régua). PHP 962 e JS 393 verdes, build ok,
 >    capturas da Régua em 1440 e 390 conferidas. Relatório em `.../scratchpad/relatorio-f29-s7.md`. **Nenhum subagente em
->    andamento (até o despacho B começar).** **Despacho B EM ANDAMENTO** (6.1 e 8.1, Almanaque, subagente
->    `a65e2bcfa40c91e75`, `sonnet`; relatório em `.../scratchpad/relatorio-f29-s8.md`; dois commits). Ao retomar: `git status`
->    (pode haver trabalho dele sem commit), `ListAgents`, ler o relatório; não redespachar enquanto ele estiver vivo.
->    Depois: **C** e **D**.
+>    andamento (até o despacho B começar).** **Despacho B FEITO e conferido por quem coordena** (6.1 e 8.1, Almanaque,
+>    subagente `a65e2bcfa40c91e75`, `sonnet`): commits `9817e58` (Mosaico: blocos Dinheiro/Vencidas/Hoje, anel, abas) e
+>    `9e3f7dd` (menu em pílulas, contador dourado, `sincronizarTemaDaPagina`: o `data-tema` agora acompanha login e
+>    saída; `/perfil` sem rolagem lateral em 390 px). **PHP 965 e JS 414 verdes, build ok**; capturas do Almanaque em
+>    1440 e 390 conferidas. Relatório em `.../scratchpad/relatorio-f29-s8.md`. Ficaram fora do Almanaque: o carimbo
+>    grande "PAGO", o voo da cobrança até a aba e o ponto dourado de novidade na aba (motivos na skill). Achado não
+>    corrigido: erro de console `useForm() data` em `/perfil` (já existia antes, nos 3 temas). O parágrafo "Regra
+>    permanente (Marcos, 2026-11-07)" da skill (deploy migra sozinho) entrou no commit `9e3f7dd`.
+>    **Despacho C EM ANDAMENTO** (9.1, conferência geral no navegador, subagente `aa01e378b5a12b8e9`, `sonnet`; relatório
+>    em `.../scratchpad/relatorio-f29-s9.md`) e, em paralelo, um **revisor somente leitura** do branch inteiro
+>    (`a2337a4f093edd4d4`, `sonnet`; relatório em `.../scratchpad/relatorio-f29-revisao.md`, sem navegador, sem commit).
+>    Ao retomar: `git status`, `ListAgents`, ler os dois relatórios; não redespachar enquanto estiverem vivos. Quando
+>    ambos terminarem: tratar os achados altos e médios do revisor (despachar correção ou corrigir), depois **D**
+>    (documentação final, 9.2), depois o merge.
+>    **Revisor TERMINOU** (relatório `relatorio-f29-revisao.md`; alta: nenhuma; média: 2; baixa: 11; autorização,
+>    rota de fontes, senha, mass assignment, ouvintes e migração sem defeito). Conferi no código que M1 e M2 procedem.
+>    **Despacho C FEITO e conferido por quem coordena** (9.1, subagente `aa01e378b5a12b8e9`): matriz 3 temas × 22
+>    telas × 1440 e 390 = 132 células sem reprovação; prova do foco de revisão 1 ok (exceção do Painel confirmada);
+>    modais acima do painel lateral ok. Quatro commits: `7d3fc73` (**Feriados.vue: bug que já existe no `main`**,
+>    `form.data` sobrescrevia o método `data` do `useForm` e "Cadastrar/Salvar feriado" quebrava com `form.data is not a
+>    function`; `[A VERIFICAR]` se a produção atual está quebrada, não acessei), `0dc6b4d` (Esc/Tab do painel do usuário
+>    com qualquer Modal por cima), `3a60d18` (`.aparecer` com `backwards`: Coach e Holofote voltam ao canto da janela,
+>    também no Talão), `c7f1ea9` (docs). PHP 965 e JS 420 verdes, build ok. Relatório em `.../scratchpad/relatorio-f29-s9.md`.
+>    Não coberto pela matriz: listas vazias, erros de validação, usuário não administrador; Safari, Firefox, leitor de tela.
+>    **Despacho E EM ANDAMENTO** (correções da revisão + contraste dos temas novos; subagente `a0bf56cb61958c5da`,
+>    `sonnet`; relatório em `.../scratchpad/relatorio-f29-s10.md`). Ao retomar: `git status`, `ListAgents`, ler o relatório.
+>    Depois do E: **D** (9.2, documentação final) e o merge. Escopo do E (era "só depois que o C terminar"):
+>    **M1** voltar no histórico restaura as props antigas (Inertia 3.9.0 dispara `navigate` com `type:'history'`,
+>    `usarTema.js` `sincronizarTemaDaPagina` + `app.js:13`) e a tela volta ao tema antigo: provar no navegador e
+>    corrigir guardando o último tema confirmado; **M2** linha do tempo sem teto de pontos por dia
+>    (`linhaDoTempo.js` `empilharPontos`, `LinhaDoTempoDoMes.vue`): limitar a pilha e mostrar "+N" (as listas abaixo
+>    continuam mostrando tudo); e as baixas **1** (`senha.js:26-28` recusa espaço nas pontas e o servidor já não apara),
+>    **2** (fontes do Talão não carregam ao sair e entrar como usuário Talão), **3** (`novidadeDispensada` atravessa a
+>    troca de usuário), **4** (`PopoverDaCobranca.carregar` sem guarda de versão), **10** (`grade.value` sem checar
+>    nulo), **11** (`aria-label` do botão do usuário: "Minha conta, nome"). **Não corrigir, só informar o Marcos:** 5
+>    (regra da etapa triplicada), 6 ("Para avisar" conta cobranças e "Vencendo" conta clientes), 7 ("Previsto"
+>    difere entre temas), 8 (throttles `30,1` e `6,1` compartilham contador, herdado), 9 (corrida da troca de tema,
+>    não reproduzida).
 >    Para o Marcos decidir (do relatório do A): (1) "Previsto em novembro" na Régua = recebido + aguardando + a enviar do
 >    mês (regime de caixa); no Talão é a soma de quem vence no mês, então os dois números diferem; (2) trocar entre Talão
 >    e Régua **na própria tela do Painel** troca a composição inteira: um formulário de baixa aberto numa linha da lista
