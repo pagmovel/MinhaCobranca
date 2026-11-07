@@ -98,9 +98,10 @@ Route::middleware(['auth', 'conta.aprovada'])->group(function () {
     Route::post('/cobrancas/{cobranca}/pagar', [CobrancaController::class, 'pagar']);
     Route::post('/cobrancas/{cobranca}/enviada', [CobrancaController::class, 'marcarEnviada']);
     Route::put('/cobrancas/{cobranca}/pagamento', [CobrancaController::class, 'pagamento']);
-    // Pedem a senha: limite de tentativas por usuário.
+    // Pedem a senha: limite de tentativas por usuário. A troca de senha tem contador próprio (prefixo "senha"); sem ele,
+    // o contador seria o mesmo das consultas de CEP e CNPJ e 7 consultas no minuto já bloqueariam a troca.
+    Route::put('/perfil/senha', [SenhaController::class, 'atualizar'])->middleware('throttle:6,1,senha');
     Route::middleware('throttle:6,1')->group(function () {
-        Route::put('/perfil/senha', [SenhaController::class, 'atualizar']);
         Route::post('/cobrancas/{cobranca}/corrigir-pagamento', [CobrancaController::class, 'corrigirPagamento']);
         Route::post('/cobrancas/{cobranca}/desfazer-baixa', [CobrancaController::class, 'desfazerBaixa']);
     });
