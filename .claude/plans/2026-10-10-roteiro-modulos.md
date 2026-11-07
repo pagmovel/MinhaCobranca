@@ -31,8 +31,8 @@ sem depender do histórico.
   domínio deu **502 por ~3 min** (21:14:41 a 21:17:47 UTC): o BunkerWeb tentava o IP antigo do container (10.11.0.22, o novo
   era 10.11.0.23) e voltou sozinho; o app ficou de pé. O Marcos aplicou **pela UI do bunker** `DNS_RESOLVERS` =
   `127.0.0.11 valid=10s` (Global Settings → General); conferi: `resolver 127.0.0.11 valid=10s ipv6=off;` em
-  `/etc/nginx/http.conf`, `nginx -t` ok, "Successfully reloaded bunkerweb". **`[A VERIFICAR]` no próximo Deploy do app:** se o
-  502 cai para ~10 s. O valor mora no **banco do bunker**, não no compose. Documentado no README ("Produção na VPS"), na
+  `/etc/nginx/http.conf`, `nginx -t` ok, "Successfully reloaded bunkerweb". **Confirmado em 2026-11-07 no Deploy seguinte
+  (depois do BunkerWeb 1.6.17):** o domínio abriu direto, sem 502 (visto a olho pelo Marcos, 1 Deploy). O valor mora no **banco do bunker**, não no compose. Documentado no README ("Produção na VPS"), na
   skill ("Pegadinhas do deploy") e em `/srv/CONTABOO/bunker/README.md`.
 - **Decisões que esperam o Marcos (nenhuma bloqueia o sistema):**
   1. ~~**Atualizar o BunkerWeb 1.6.15 → 1.6.17**~~ **FEITO em 2026-11-07 (~19:05 local), pelo Marcos no Easypanel:** o painel do bunker mostra "Version: 1.6.17 — You are running the latest version" e o log do `bunkerweb` subiu sem `[error]`. Compose local e README do bunker já estão em 1.6.17. **`[A VERIFICAR]`** (ele ainda não respondeu): `cobrancas.smartcontroladoria.com.br` responde, `DNS_RESOLVERS` continua `127.0.0.11 valid=10s`, log do scheduler sem `[ERROR]`. Histórico do plano (estável de 21/10; a 1.6.18 é só candidata). O compose do bunker fixa a

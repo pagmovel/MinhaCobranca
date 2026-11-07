@@ -68,7 +68,7 @@ Desde 2026-10-18 o domínio `cobrancas.smartcontroladoria.com.br` está no servi
   bunker). **Ajuste aplicado em 2026-11-07 (Marcos, pela UI do bunker):** `DNS_RESOLVERS` = `127.0.0.11 valid=10s`
   (Global Settings → General → "DNS resolvers", dois valores). O nginx do bunker agora relê o IP do container a cada
   10 s (`resolver 127.0.0.11 valid=10s ipv6=off;` em `/etc/nginx/http.conf`; recarregado sozinho, sem derrubar os sites).
-  O efeito só se confirma no próximo Deploy do app (esperado: ~10 s de 502 em vez de ~3 min) `[A VERIFICAR]`. Esse valor
+  Confirmado em 2026-11-07 no Deploy do app seguinte (depois do BunkerWeb 1.6.17): o domínio abriu direto, sem 502 (visto a olho, 1 Deploy; antes eram ~3 min). Esse valor
   mora no **banco do bunker**, não no compose: se o bunker for recriado do zero, refazer (ou pôr
   `DNS_RESOLVERS: "127.0.0.11 valid=10s"` no `environment` do `bw-scheduler`). Houve 1 erro igual em 2026-11-05 09:17.
 - Configuração do site, limites e como desfazer: `/srv/CONTABOO/bunker/README.md` (fora deste repositório).
