@@ -105,7 +105,7 @@ const cobrancasDesteContrato = (contrato) => `/cobrancas?${new URLSearchParams({
             @tentar="recarregar"
         >
             <Paginador id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />
-            <div class="border border-linha bg-white transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
+            <div class="border border-linha bg-superficie transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
                 <TransitionGroup tag="table" name="lista" class="block w-full text-sm xl:table">
                     <thead key="cabecalho" class="hidden font-estreita text-xs text-grafite/75 xl:table-header-group">
                         <tr class="border-b border-linha text-left">

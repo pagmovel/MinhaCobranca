@@ -7,6 +7,8 @@
 @theme {
     --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
     --font-estreita: 'Archivo Narrow', 'Archivo', ui-sans-serif, sans-serif;
+    --font-titulo: var(--font-sans);
+    --font-numeros: var(--font-sans);
 
     --color-papel: #F5F7F9;
     --color-grafite: #1F2933;
@@ -15,6 +17,21 @@
     --color-tinta-verde: #2E7D4F;
     --color-tinta-vermelha: #B3261E;
     --color-tinta-laranja: #C2410C;
+
+    /* Tokens semânticos (Fase 29): no Talão valem o que as classes antigas valiam; um tema os sobrescreve sob html[data-tema]. */
+    --color-superficie: #FFFFFF; /* cartão, lista, modal, campo (antes bg-white) */
+    --color-sobre-acao: #FFFFFF; /* texto sobre carbono (antes text-white); sobre vermelho continua text-white */
+    --color-menu-fundo: #FFFFFF;
+    --color-menu-texto: #1F2933;
+    --color-menu-ativo: #F5F7F9; /* fundo do item ativo e do hover */
+    --color-menu-linha: #C9D1DA;
+    --color-etapa-enviar: #3B47C4; /* sem uso ainda: os painéis novos */
+    --color-etapa-aguardando: #B45309;
+    --color-etapa-recebida: #0F766E;
+
+    --raio-controle: var(--radius-sm); /* .entrada, .botao*, Carimbo, Etiqueta, esqueleto de carregamento */
+    --raio-bloco: 0; /* sem uso ainda: valor neutro (os blocos do Talão têm cantos retos) */
+    --sombra-bloco: none; /* sem uso ainda: sombra não vem de variável, o componente precisa usar shadow-(--sombra-bloco) */
 }
 
 @layer components {
@@ -24,25 +41,25 @@
     }
 
     .entrada {
-        @apply w-full rounded-sm border border-linha bg-white px-3 py-2 text-sm text-grafite tabular-nums focus:border-carbono focus:outline-2 focus:outline-carbono/30;
+        @apply w-full rounded-(--raio-controle) border border-linha bg-superficie px-3 py-2 text-sm text-grafite tabular-nums focus:border-carbono focus:outline-2 focus:outline-carbono/30;
     }
 
     .botao {
-        @apply inline-flex items-center justify-center rounded-sm bg-carbono px-4 py-2 text-sm font-semibold text-white hover:bg-carbono/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-(--raio-controle) bg-carbono px-4 py-2 text-sm font-semibold text-sobre-acao hover:bg-carbono/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
     }
 
     .botao-secundario {
-        @apply inline-flex items-center justify-center rounded-sm border border-linha bg-white px-4 py-2 text-sm font-semibold text-grafite hover:bg-papel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-(--raio-controle) border border-linha bg-superficie px-4 py-2 text-sm font-semibold text-grafite hover:bg-papel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-carbono disabled:opacity-50;
     }
 
     /* Ação destrutiva (excluir, cancelar): nunca com a mesma cara de "Editar". */
     .botao-perigo {
-        @apply inline-flex items-center justify-center rounded-sm border border-tinta-vermelha bg-white px-4 py-2 text-sm font-semibold text-tinta-vermelha hover:bg-tinta-vermelha/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-(--raio-controle) border border-tinta-vermelha bg-superficie px-4 py-2 text-sm font-semibold text-tinta-vermelha hover:bg-tinta-vermelha/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
     }
 
     /* Segundo clique, o que de fato apaga: vermelho cheio. */
     .botao-perigo-confirmar {
-        @apply inline-flex items-center justify-center rounded-sm border border-tinta-vermelha bg-tinta-vermelha px-4 py-2 text-sm font-semibold text-white hover:bg-tinta-vermelha/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-(--raio-controle) border border-tinta-vermelha bg-tinta-vermelha px-4 py-2 text-sm font-semibold text-white hover:bg-tinta-vermelha/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tinta-vermelha disabled:opacity-50;
     }
 }
 

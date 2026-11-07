@@ -70,7 +70,7 @@ onBeforeUnmount(() => {
             Conferindo os períodos anteriores…
         </p>
         <Transition name="surgir">
-            <fieldset v-if="anteriores?.quantidade" class="min-w-0 border border-carbono/20 bg-white p-4">
+            <fieldset v-if="anteriores?.quantidade" class="min-w-0 border border-carbono/20 bg-superficie p-4">
                 <legend class="px-1 text-sm font-medium">
                     O início fica no passado: {{ anteriores.quantidade }}
                     {{ anteriores.quantidade === 1 ? 'período já terminou' : 'períodos já terminaram' }}

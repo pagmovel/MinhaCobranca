@@ -110,7 +110,7 @@ const confirmar = () => emit('confirmar', { fim: dataFim.value, em_curso: emCurs
 </script>
 
 <template>
-    <div class="aparecer grid gap-3 border border-tinta-vermelha/40 bg-white p-4">
+    <div class="aparecer grid gap-3 border border-tinta-vermelha/40 bg-superficie p-4">
         <label v-if="editavel" class="grid max-w-xs gap-1 text-sm">
             <span class="font-estreita text-xs font-medium text-grafite/75">Data de fim</span>
             <input v-model="dataFim" type="date" :min="minimo" class="entrada" required>

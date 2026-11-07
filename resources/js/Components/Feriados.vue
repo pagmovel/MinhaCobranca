@@ -104,7 +104,7 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
         <!-- Região viva sempre presente, só com a frase-resumo (lista e botão ficam fora do anúncio). -->
         <p class="sr-only" aria-live="polite">{{ vencimentos.length ? `${resumoAjuste}.` : '' }}</p>
         <Transition name="surgir">
-            <div v-if="vencimentos.length" class="flex flex-col gap-3 border border-carbono/40 bg-white px-4 py-3">
+            <div v-if="vencimentos.length" class="flex flex-col gap-3 border border-carbono/40 bg-superficie px-4 py-3">
                 <p class="text-sm font-semibold">{{ resumoAjuste }}</p>
                 <p class="text-sm text-grafite/80">
                     Ainda não foram enviadas. Ajustar muda o vencimento para o próximo dia útil e refaz o recibo com o mesmo número.
@@ -127,7 +127,7 @@ const ajustar = () => router.post('/perfil/feriados/ajustar', { ids: props.venci
             </div>
         </Transition>
 
-        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-white">
+        <TransitionGroup v-if="linhas.length" tag="ul" name="lista" class="relative divide-y divide-linha border border-linha bg-superficie">
             <li v-for="feriado in linhas" :key="feriado.id" :class="editando === feriado.id ? 'bg-papel' : ''">
                 <form
                     v-if="editando === feriado.id"

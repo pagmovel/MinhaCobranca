@@ -18,7 +18,7 @@ const tons = {
 
 <template>
     <span
-        class="inline-block rounded-sm border font-estreita whitespace-nowrap"
+        class="inline-block rounded-(--raio-controle) border font-estreita whitespace-nowrap"
         :class="[tons[tom], compacta ? 'px-1 text-[0.65rem] leading-none' : 'px-2 py-0.5 text-xs']"
     >{{ texto }}</span>
 </template>

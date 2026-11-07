@@ -13,7 +13,7 @@ const proxima = computed(() => props.progresso.pendencias.find((pendencia) => !p
     <details
         v-if="!progresso.liberado"
         open
-        class="relative mb-4 border border-linha bg-white p-4 shadow-lg sm:fixed sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:z-40 sm:mb-0 sm:w-72"
+        class="relative mb-4 border border-linha bg-superficie p-4 shadow-lg sm:fixed sm:inset-x-auto sm:right-4 sm:top-auto sm:bottom-4 sm:z-40 sm:mb-0 sm:w-72"
     >
         <summary class="cursor-pointer text-sm font-semibold">Primeiros passos</summary>
         <ul class="mt-2 flex flex-col gap-1 text-sm">

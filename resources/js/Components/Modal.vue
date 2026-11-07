@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
                     role="dialog"
                     aria-modal="true"
                     :aria-labelledby="idTitulo"
-                    class="w-full border border-linha bg-white p-6 shadow-lg"
+                    class="w-full border border-linha bg-superficie p-6 shadow-lg"
                     :class="largura"
                 >
                     <div class="mb-4 flex items-start justify-between gap-4">

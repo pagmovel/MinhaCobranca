@@ -69,7 +69,7 @@ function abrirCadastro(texto) {
         </Transition>
 
         <Transition name="surgir">
-            <div v-if="form.itens.length" class="relative overflow-x-auto border border-linha bg-white">
+            <div v-if="form.itens.length" class="relative overflow-x-auto border border-linha bg-superficie">
                 <table class="w-full text-sm">
                     <thead class="font-estreita text-xs text-grafite/75">
                         <tr>

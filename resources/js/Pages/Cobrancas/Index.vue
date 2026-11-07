@@ -240,7 +240,7 @@ async function fecharFaixa() {
                 @click="escolherAba(aba)"
             >
                 {{ ROTULO_DA_ABA[aba] }}
-                <span class="tabular-nums" :class="abaAtiva === aba ? 'text-white/80' : 'text-grafite/60'">
+                <span class="tabular-nums" :class="abaAtiva === aba ? 'text-sobre-acao/80' : 'text-grafite/60'">
                     ({{ valorDaAba(aba).quantidade }} · R$ {{ formatarCentavos(valorDaAba(aba).soma_centavos) }})
                 </span>
             </button>
@@ -299,7 +299,7 @@ async function fecharFaixa() {
                 @por-pagina="escolheuPorPagina"
             />
             <!-- Tabela a partir de 1280 px; abaixo disso, cada cobrança vira um cartão (mesmo HTML, outro display). -->
-            <div class="border border-linha bg-white transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
+            <div class="border border-linha bg-superficie transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
                 <TransitionGroup tag="table" name="lista" class="block w-full text-sm xl:table">
                     <thead key="cabecalho" class="hidden font-estreita text-xs text-grafite/75 xl:table-header-group">
                         <tr class="border-b border-linha text-left">

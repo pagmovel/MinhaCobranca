@@ -36,7 +36,7 @@ const { linhas, resumo, carregando, falha, estado, irPara, recarregar, escolheuP
             <ul
                 :id="`lista-${lista}`"
                 tabindex="-1"
-                class="divide-y divide-linha border border-linha bg-white transition-opacity focus:outline-none"
+                class="divide-y divide-linha border border-linha bg-superficie transition-opacity focus:outline-none"
                 :class="{ 'opacity-60': carregando }"
                 :aria-busy="carregando"
             >

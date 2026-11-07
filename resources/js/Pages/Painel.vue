@@ -34,16 +34,16 @@ const progresso = computed(() => usePage().props.progresso);
         <h1 class="text-2xl font-semibold">{{ mes }}</h1>
         <p class="mt-1 text-lg tabular-nums">R$ {{ resumo.recebido }} recebidos de R$ {{ resumo.previsto }} previstos</p>
 
-        <p v-if="!perfilCompleto" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
+        <p v-if="!perfilCompleto" class="mt-4 border border-carbono bg-superficie px-4 py-3 text-sm">
             Complete seu perfil para emitir recibos.
             <Link href="/perfil" class="font-semibold text-carbono underline">Completar perfil</Link>
         </p>
-        <p v-if="vencimentosEmDiaNaoUtil" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
+        <p v-if="vencimentosEmDiaNaoUtil" class="mt-4 border border-carbono bg-superficie px-4 py-3 text-sm">
             {{ vencimentosEmDiaNaoUtil === 1 ? '1 cobrança em aberto vence' : `${vencimentosEmDiaNaoUtil} cobranças em aberto vencem` }}
             em sábado, domingo ou feriado.
             <Link href="/perfil#feriados" class="font-semibold text-carbono underline">Ver e ajustar</Link>
         </p>
-        <p v-if="contratosParaRenovar" class="mt-4 border border-carbono bg-white px-4 py-3 text-sm">
+        <p v-if="contratosParaRenovar" class="mt-4 border border-carbono bg-superficie px-4 py-3 text-sm">
             {{ contratosParaRenovar === 1 ? '1 contrato encerra' : `${contratosParaRenovar} contratos encerram` }}
             nos próximos dias.
             <Link href="/contratos" class="font-semibold text-carbono underline">Ver contratos</Link>

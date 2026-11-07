@@ -69,7 +69,7 @@ function valor(coluna, conteudo) {
             erro-filtro="Corrija o período acima para ver o relatório."
             @tentar="recarregar"
         >
-            <figure v-if="tipo === 'faturamento'" class="mb-6 border border-linha bg-white p-4">
+            <figure v-if="tipo === 'faturamento'" class="mb-6 border border-linha bg-superficie p-4">
                 <figcaption class="mb-3 flex flex-wrap gap-4 font-estreita text-xs text-grafite/80">
                     <span class="flex items-center gap-2"><span class="inline-block h-2 w-4 bg-linha" /> Previsto</span>
                     <span class="flex items-center gap-2"><span class="inline-block h-2 w-4 bg-tinta-verde" /> Recebido</span>
@@ -86,7 +86,7 @@ function valor(coluna, conteudo) {
             </figure>
 
             <Paginador v-if="paginado" id="paginador-topo" :pagina="filtro.pagina" :por-pagina="filtro.por_pagina" :total="resumo.pagina.total" :carregando="carregando" @ir="irPara($event, { focar: true })" @por-pagina="escolheuPorPagina" />
-            <div class="relative overflow-x-auto border border-linha bg-white transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
+            <div class="relative overflow-x-auto border border-linha bg-superficie transition-opacity" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
                 <table class="w-full text-sm">
                     <caption class="sr-only">{{ cabecalho.titulo }}</caption>
                     <thead class="font-estreita text-xs text-grafite/75">

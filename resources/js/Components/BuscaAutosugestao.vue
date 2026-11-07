@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
                 v-show="aberto"
                 :id="`${id}-lista`"
                 role="listbox"
-                class="absolute z-20 mt-1 max-h-72 w-full overflow-auto border border-linha bg-white shadow-md"
+                class="absolute z-20 mt-1 max-h-72 w-full overflow-auto border border-linha bg-superficie shadow-md"
             >
                 <li v-if="!sugestoes.length && !carregando && texto.trim().length !== 1" role="presentation" class="px-3 py-2 text-sm text-grafite/70">{{ nenhum }}</li>
                 <li

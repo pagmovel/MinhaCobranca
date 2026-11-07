@@ -87,7 +87,7 @@ const excluir = () => router.delete(`/clientes/${props.cliente.id}`);
                 </label>
                 <p v-if="form.errors.modelo" class="text-xs text-tinta-vermelha">{{ form.errors.modelo }}</p>
                 <Transition name="surgir">
-                    <div v-if="modeloMudou" role="status" class="flex flex-col gap-2 border border-carbono/40 bg-white px-4 py-3 text-sm">
+                    <div v-if="modeloMudou" role="status" class="flex flex-col gap-2 border border-carbono/40 bg-superficie px-4 py-3 text-sm">
                         <p v-if="naoEnviadas">
                             {{ cobrancas(naoEnviadas) }} em aberto e ainda não {{ naoEnviadas === 1 ? 'enviada passa' : 'enviadas passam' }}
                             para o modelo novo ao salvar (mesmo número de recibo).

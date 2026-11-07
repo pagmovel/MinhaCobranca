@@ -140,7 +140,7 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
                 />
             </div>
             <Transition name="surgir">
-                <div v-if="textoSemEfeito" class="mt-3 flex flex-wrap items-center gap-2 border border-tinta-laranja bg-white px-3 py-2 text-sm text-tinta-laranja">
+                <div v-if="textoSemEfeito" class="mt-3 flex flex-wrap items-center gap-2 border border-tinta-laranja bg-superficie px-3 py-2 text-sm text-tinta-laranja">
                     <p aria-hidden="true">{{ textoSemEfeito }}</p>
                     <button v-if="oferecerHoje" type="button" class="botao-secundario" @click="usarHoje">Usar a data de hoje</button>
                 </div>
@@ -151,7 +151,7 @@ const confirmar = () => form.transform((dados) => ({ ...dados, ids: elegiveis.va
         <div v-if="elegiveis.length" class="relative mt-4 max-h-64 overflow-auto border border-linha">
             <table class="w-full text-xs tabular-nums">
                 <caption class="sr-only">Prévia da baixa: vencimento, valor, acréscimos, desconto e valor pago de cada cobrança, em reais</caption>
-                <thead class="sticky top-0 bg-white font-estreita text-grafite/80">
+                <thead class="sticky top-0 bg-superficie font-estreita text-grafite/80">
                     <tr class="border-b border-linha text-right">
                         <th scope="col" class="px-2 py-1 text-left font-normal">Cobrança</th>
                         <th scope="col" class="whitespace-nowrap px-2 py-1 font-normal">Vencimento</th>

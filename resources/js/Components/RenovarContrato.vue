@@ -54,7 +54,7 @@ const confirmar = () => emit('confirmar', { data_fim: novaData.value || null });
 </script>
 
 <template>
-    <div class="aparecer grid gap-3 border border-carbono/40 bg-white p-4">
+    <div class="aparecer grid gap-3 border border-carbono/40 bg-superficie p-4">
         <label class="grid max-w-xs gap-1 text-sm">
             <span class="font-estreita text-xs font-medium text-grafite/75">Nova data de fim (vazio = sem fim)</span>
             <input v-model="novaData" type="date" :min="minimo" class="entrada">

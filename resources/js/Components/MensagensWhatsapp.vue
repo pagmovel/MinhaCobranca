@@ -83,7 +83,7 @@ const excluir = (id) => router.delete(`/perfil/mensagens/${id}`, {
             Modelos usados para avisar clientes sobre cobranças vencendo. O marcado como padrão abre pronto na janela de envio.
         </p>
 
-        <ul v-if="linhas().length" class="relative divide-y divide-linha border border-linha bg-white">
+        <ul v-if="linhas().length" class="relative divide-y divide-linha border border-linha bg-superficie">
             <li v-for="modelo in linhas()" :key="modelo.id" :class="editando === modelo.id ? 'bg-papel' : ''">
                 <form
                     v-if="editando === modelo.id"

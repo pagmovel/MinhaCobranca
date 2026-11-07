@@ -28,7 +28,7 @@ const avisando = ref(null);
             <span v-if="resumo" class="font-estreita font-normal text-grafite/70">({{ resumo.total_geral.quantidade }})</span>
         </h2>
         <EstadoDaLista :estado="estado" :falha="falha" carregando="Carregando…" vazio="Nada vencendo nos próximos dias." :linhas="2" @tentar="recarregar">
-            <ul id="lista-vencendo" tabindex="-1" class="divide-y divide-linha border border-linha bg-white transition-opacity focus:outline-none" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
+            <ul id="lista-vencendo" tabindex="-1" class="divide-y divide-linha border border-linha bg-superficie transition-opacity focus:outline-none" :class="{ 'opacity-60': carregando }" :aria-busy="carregando">
                 <li v-for="grupo in linhas" :key="grupo.cliente_id" class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
                     <div class="min-w-0">
                         <p class="font-semibold break-words">{{ grupo.cliente }}</p>

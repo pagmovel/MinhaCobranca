@@ -22,10 +22,10 @@ const salvar = () => form.post(`/produtos-servicos/${props.item.id}/reajuste`);
             próximas cobranças dos contratos marcados; as cobranças já geradas não mudam.
         </p>
 
-        <p v-if="!contratos.length" class="border border-linha bg-white px-4 py-3 text-sm">Nenhum contrato ativo usa este item.</p>
+        <p v-if="!contratos.length" class="border border-linha bg-superficie px-4 py-3 text-sm">Nenhum contrato ativo usa este item.</p>
 
         <form v-else class="flex max-w-3xl flex-col gap-6" @submit.prevent="salvar">
-            <fieldset class="border border-linha bg-white">
+            <fieldset class="border border-linha bg-superficie">
                 <legend class="sr-only">Contratos ativos que usam este item</legend>
                 <label
                     v-for="contrato in contratos"

@@ -29,7 +29,7 @@ const sair = () => router.post('/sair');
 
 <template>
     <div class="min-h-screen md:grid md:grid-cols-[13rem_1fr]">
-        <header class="flex items-center justify-between border-b border-linha bg-white px-4 py-3 md:hidden">
+        <header class="flex items-center justify-between border-b border-menu-linha bg-menu-fundo px-4 py-3 text-menu-texto md:hidden">
             <span class="font-semibold">Gerenciador de Cobranças</span>
             <button
                 type="button"
@@ -45,7 +45,7 @@ const sair = () => router.post('/sair');
         <nav
             id="menu-principal"
             aria-label="Principal"
-            :class="[menuAberto ? 'block' : 'hidden', 'border-b border-linha bg-white md:block md:border-b-0 md:border-r']"
+            :class="[menuAberto ? 'block' : 'hidden', 'border-b border-menu-linha bg-menu-fundo text-menu-texto md:block md:border-b-0 md:border-r']"
         >
             <p class="hidden px-5 pt-6 pb-4 font-semibold md:block">Gerenciador de Cobranças</p>
             <ul class="flex flex-col py-2">
@@ -62,8 +62,8 @@ const sair = () => router.post('/sair');
                     <Link
                         v-else
                         :href="item.href"
-                        class="flex items-center justify-between px-5 py-2 text-sm hover:bg-papel"
-                        :class="ativo(item.href) ? 'bg-papel font-semibold text-carbono' : ''"
+                        class="flex items-center justify-between px-5 py-2 text-sm hover:bg-menu-ativo"
+                        :class="ativo(item.href) ? 'bg-menu-ativo font-semibold text-carbono' : ''"
                         :aria-current="ativo(item.href) ? 'page' : undefined"
                         @click="menuAberto = false"
                     >
@@ -76,7 +76,7 @@ const sair = () => router.post('/sair');
                     </Link>
                 </li>
                 <li>
-                    <button type="button" class="w-full px-5 py-2 text-left text-sm hover:bg-papel" @click="sair">
+                    <button type="button" class="w-full px-5 py-2 text-left text-sm hover:bg-menu-ativo" @click="sair">
                         Sair
                     </button>
                 </li>
@@ -85,12 +85,12 @@ const sair = () => router.post('/sair');
 
         <main class="w-full min-w-0 px-4 py-6 md:px-8">
             <Transition name="surgir">
-                <p v-if="flash.sucesso" :key="flash.sucesso" role="status" class="mb-4 border-l-4 border-tinta-verde bg-white px-4 py-2 text-sm">
+                <p v-if="flash.sucesso" :key="flash.sucesso" role="status" class="mb-4 border-l-4 border-tinta-verde bg-superficie px-4 py-2 text-sm">
                     {{ flash.sucesso }}
                 </p>
             </Transition>
             <Transition name="surgir">
-                <p v-if="flash.erro" :key="flash.erro" role="alert" class="mb-4 border-l-4 border-tinta-vermelha bg-white px-4 py-2 text-sm">
+                <p v-if="flash.erro" :key="flash.erro" role="alert" class="mb-4 border-l-4 border-tinta-vermelha bg-superficie px-4 py-2 text-sm">
                     {{ flash.erro }}
                 </p>
             </Transition>

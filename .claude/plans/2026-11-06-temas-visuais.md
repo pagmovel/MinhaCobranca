@@ -161,8 +161,9 @@ Os protótipos usam dados fictícios em memória. No app:
 - Provar com o build que as utilidades do Tailwind v4 usam `var(--color-*)` (então sobrescrever sob `html[data-tema]` funciona). Contar `bg-white`, `text-white`, `rounded-*`, `shadow-*`, cores soltas (`#...`, `style=`) nas 33 telas/componentes. Anotar o resultado numa seção "Inventário" deste plano. Também ler a skill `recibos` inteira antes de mexer (regra do projeto).
 - **Verificação:** o comando e a saída colados no plano.
 
-### Tarefa 3.2: tokens semânticos, Talão idêntico. Estado: pendente
+### Tarefa 3.2: tokens semânticos, Talão idêntico. Estado: testada (2026-11-07; 36 capturas antes/depois sem diferença de estilo computado, prova do `html[data-tema]` no navegador, 329 testes JS e `npm run build` ok; detalhes na skill, "Acertos (Tarefa 3.2)")
 - Em `@theme`: `--color-superficie`, `--color-sobre-acao`, `--color-menu-fundo|texto|ativo|linha`, `--color-etapa-enviar|aguardando|recebida`, `--raio-controle`, `--raio-bloco`, `--sombra-bloco`, `--font-titulo`, `--font-numeros`; valores do Talão = aparência de hoje. Trocar os usos de `bg-white` por `bg-superficie` e os `rounded-sm` dos controles por `--raio-controle`. `color-scheme` por tema.
+- **Feito nesta execução:** tudo acima **exceto `color-scheme`** (nenhum tema escuro entra agora) e o uso de `--raio-bloco`, `--sombra-bloco`, `--font-titulo|numeros` e `--color-etapa-*` (definidos, sem uso ainda). Os 7 `rounded-sm` soltos também foram para `--raio-controle`. Menu: só as classes atuais do `CamadaApp.vue` trocaram por `bg-menu-fundo`, `border-menu-linha`, `text-menu-texto`, `bg-menu-ativo`; o resto fica para a 3.4.
 - **Verificação:** capturas antes/depois das telas principais no Talão sem diferença visível (browser-agent); testes PHP e JS verdes.
 
 ### Tarefa 3.3: fontes por tema. Estado: pendente

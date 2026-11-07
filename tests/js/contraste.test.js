@@ -11,10 +11,19 @@ const MINIMO = 4.5;
  */
 const PARES = [
     ['--color-grafite', '--color-papel'],
-    ['--color-carbono', '#FFFFFF'],
-    ['--color-tinta-verde', '#FFFFFF'],
-    ['--color-tinta-vermelha', '#FFFFFF'],
-    ['--color-tinta-laranja', '#FFFFFF'],
+    ['--color-grafite', '--color-superficie'],
+    ['--color-carbono', '--color-superficie'],
+    ['--color-tinta-verde', '--color-superficie'],
+    ['--color-tinta-vermelha', '--color-superficie'],
+    ['--color-tinta-laranja', '--color-superficie'],
+    ['--color-sobre-acao', '--color-carbono'],
+    // `text-white` literal sobre vermelho (contador do menu e `.botao-perigo-confirmar`): o branco não é token.
+    ['#FFFFFF', '--color-tinta-vermelha'],
+    ['--color-etapa-enviar', '--color-superficie'],
+    ['--color-etapa-aguardando', '--color-superficie'],
+    ['--color-etapa-recebida', '--color-superficie'],
+    ['--color-menu-texto', '--color-menu-fundo'],
+    ['--color-menu-texto', '--color-menu-ativo'],
 ];
 
 const caminho = (relativo) => new URL(`../../${relativo}`, import.meta.url);
