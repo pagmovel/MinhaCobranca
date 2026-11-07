@@ -16,6 +16,28 @@ arquivo da pasta temporária; **use esta cópia** nos despachos novos).
 > não encerrar. Ele faz o app usar o servidor de desenvolvimento em vez do `npm run build`; os agentes de interface devem
 > provar numa cópia da árvore ou avisar.
 
+> **Atualização 2 (pedidos novos do Marcos, 2026-11-07, depois da atualização acima):**
+> 1. **"Alterar senha" vira popup**, não formulário dentro do painel lateral: no painel do usuário fica só uma
+>    linha-botão; o formulário abre em `ModalAlterarSenha.vue` (usa `Modal.vue` + `FormularioDeSenha.vue`) por cima do
+>    painel. Esc fecha só o popup; clicar fora não fecha; o foco volta à linha-botão; campos limpos ao fechar; sucesso
+>    "Senha alterada." no popup e confirmação no painel; erros e 429 aparecem no popup. Isso revisa a 2.3.
+> 2. **O popup fica no centro da tela**, como o aviso das novidades (`ModalNovidadeTemas`). `Modal.vue` alinhava no topo
+>    (`items-start`, `py-10`): ganha a prop `centralizado` (Boolean, padrão `false`; as janelas antigas não mudam de
+>    posição). Centraliza quando cabe; em tela baixa começa do topo e rola (contêiner com rolagem + painel `m-auto`, não
+>    `items-center` puro). Usada em `ModalAlterarSenha` e `ModalNovidadeTemas`.
+> 3. **FEITO e conferido por quem coordena:** commit `3adae1d` (subagente `a7137c3b4baaeff3b`, `sonnet`). Novos:
+>    `ModalAlterarSenha.vue`, `pilhaDeDialogos.js` (Esc e trava de rolagem por dono; painel em `z-40`, todo `Modal`
+>    acima). **PHP 962 e JS 381 verdes, build ok**; capturas dos 3 temas em 1440x900 e 390x844 mostram o popup no centro.
+>    Relatório em `/tmp/claude-1000/-srv-conteiners-MinhaCobranca/84c5a1aa-b391-4976-961a-ebfec88938e7/scratchpad/relatorio-f29-s6.md`.
+>    **Não há subagente em andamento.** Próximo: despacho **A**.
+>    Pontos em aberto dessa revisão: (a) o aviso "Senha alterada." também aparece no `<main>` por trás do popup (vem do
+>    `back()->with('sucesso')`; tirar mexe no PHP e no `AlterarSenhaTest`); (b) se o usuário cancelar com o envio em
+>    andamento e a senha for trocada, o painel não mostra a confirmação; (c) Safari, Firefox e leitor de tela não
+>    testados; (d) `ModalBoasVindas` aberto junto do painel não foi exercitado; (e) o ícone de "link externo" na linha
+>    "Alterar senha" sugere abrir outra página: trocar por um ícone neutro, se o Marcos achar estranho.
+> 4. **Pergunta aberta ao Marcos, ainda sem resposta:** apagar `docs/modelos-painel.html` e `docs/painel-lista.html`? E
+>    corrigir o 500 com `senha[]=x` e o `trim` do campo `senha` das baixas (seção 5)?
+
 ### Histórico (12:45)
 
 - Branch `feature/temas-visuais`, **20 commits à frente do `main`**, nada enviado ao `origin`, nada em produção.
