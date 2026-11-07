@@ -3,11 +3,12 @@ import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { proximoDaArmadilha, saindoDaArmadilha } from '../armadilhaDeFoco.js';
 import { iniciaisDoNome } from '../iniciais.js';
+import FormularioDeSenha from './FormularioDeSenha.vue';
 
 /**
  * Painel lateral do usuário (abre pelo botão do nome no menu). Mesmo contrato do `Modal.vue`: foco preso dentro,
  * Esc e clique no fundo fecham, o foco volta ao botão que abriu e a rolagem do corpo fica travada.
- * O corpo é em seções; a Tarefa 2.4 põe "Aparência" e a 2.3 "Alterar senha", nesta ordem, e o "Sair" fica no rodapé.
+ * O corpo é em seções ("Aparência" e "Alterar senha", nesta ordem) e o "Sair" fica no rodapé.
  */
 const props = defineProps({
     aberto: { type: Boolean, required: true },
@@ -88,7 +89,8 @@ const sair = () => router.post('/sair');
                     </header>
 
                     <div class="flex-1 divide-y divide-linha overflow-y-auto">
-                        <!-- Seções (cada uma um <section class="px-6 py-5"> com <h3>): Aparência (2.4), Alterar senha (2.3). -->
+                        <!-- Seções (cada uma um <section class="px-6 py-5"> com <h3>), nesta ordem: Aparência (2.4), Alterar senha. -->
+                        <FormularioDeSenha />
                     </div>
 
                     <footer class="border-t border-linha px-6 py-4">
