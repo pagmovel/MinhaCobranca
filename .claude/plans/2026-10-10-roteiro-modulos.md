@@ -1,6 +1,6 @@
 # Roteiro do produto — onde estamos e o que vem (handoff entre sessões)
 
-**Atualizado:** 2026-11-07 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
+**Atualizado:** 2026-11-08 · Ler junto com a skill `.claude/skills/recibos/SKILL.md` (seção "Módulos do produto") e a
 memória `.claude/MEMORY.md`. Este arquivo existe para que uma sessão nova (ou depois de compactar a conversa) retome
 sem depender do histórico.
 
@@ -62,6 +62,15 @@ sem depender do histórico.
   Almanaque; baixa num dia já cheio (6+) não faz o salto; Safari, Firefox, leitor de tela e conta de administrador sem teste.
 - **Futuro, por decisão do Marcos:** temas **Fluxo**, **Livro-caixa** e **Mosaico** (tarefas 4.2, 4.3, 4.4 e 6.2) e os blocos
   "Semana à frente" e "Recebido por dia".
+- **E-mail (2026-11-08): o envio SMTP está no ar.** A VPS e o bunker não têm servidor de e-mail. O app envia pela
+  revenda cPanel (`br4.host.srv.br:465`, `smtps`) como `smart-noreplay@paguemovel.net.br`, com as variáveis `MAIL_*` no
+  Easypanel. O teste de envio para `marcos.ronaldo@gmail.com` chegou (validado pelo Marcos). O passo a passo, os testes e a
+  Fase B (remetente `no-reply@smartcontroladoria.com.br`, que exige domínio no cPanel e DNS na Cloudflare) estão em
+  `docs/configurar-email.md`. **Pendências do Marcos (nenhuma bloqueia):** conferir se o teste caiu no spam; criar o DMARC
+  do `paguemovel.net.br` (`_dmarc` = `v=DMARC1; p=none;`, DNS na icloudzinc); decidir a grafia `noreplay` × `noreply`;
+  Fase B; **decidir o que o sistema vai enviar** (hoje não há nenhuma função que mande e-mail: recibo em PDF, aviso de
+  vencimento ou recuperação de senha). Pegadinha: o modo automático do Claude Code bloqueia `tinker` que envia e-mail na VPS
+  ("Remote Shell Writes"); quem roda o envio de teste é o Marcos.
 - **Regras vivas desta sessão:** VPS só com autorização expressa por mensagem e só para o que ele pediu
   (`ssh -o BatchMode=yes root@207.180.205.211`; leitura direta, gravação só com "sim" por comando); nunca atualizar software
   de produção; subagentes `sonnet` com o parágrafo do context-mode, `ponytail:ponytail lite` e a proibição de VPS; um agente
