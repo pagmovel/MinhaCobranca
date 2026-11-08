@@ -9,8 +9,8 @@ Estados das tarefas: **pendente / concluída / testada / validada**.
 
 - **Não existe servidor de e-mail** na VPS nem no BunkerWeb: nenhuma porta de e-mail escutando, nenhum Postfix,
   Exim ou Dovecot, nenhum container de e-mail. O BunkerWeb só cuida do tráfego web.
-- **O app em produção não envia nada:** `MAIL_MAILER=log` (as mensagens só vão para o log) e remetente
-  `hello@example.com`.
+- **O app em produção não enviava nada:** `MAIL_MAILER=log` (as mensagens só iam para o log) e remetente
+  `hello@example.com`. **Atualização (2026-11-08):** a Fase A foi aplicada e o envio está funcionando.
 - **O sistema ainda não tem nenhuma função que mande e-mail** (nenhum Mailable, Notification ou "esqueci minha
   senha"). Configurar o SMTP é o pré-requisito; o que enviar é outra decisão.
 - **DNS do `smartcontroladoria.com.br`** (Cloudflare, `bonnie`/`drew.ns.cloudflare.com`) está fechado para e-mail:
@@ -31,8 +31,8 @@ Caminho rápido: a conta já existe na revenda e o domínio já tem SPF e DKIM. 
 | A1 | Criar a conta no cPanel | concluída (`smart-noreplay@paguemovel.net.br`) |
 | A2 | Decidir a grafia: `noreplay` ficou com "a"; o comum é `noreply`. Se for corrigir, criar a conta nova antes da A4 | pendente |
 | A3 | Criar o DMARC do `paguemovel.net.br` (DNS na icloudzinc): TXT `_dmarc` = `v=DMARC1; p=none;` | pendente |
-| A4 | Pôr as variáveis no Easypanel (abaixo) e fazer o Deploy | pendente |
-| A5 | Teste de envio para `marcos.ronaldo@gmail.com` (abaixo) e conferir se não caiu no spam | pendente |
+| A4 | Pôr as variáveis no Easypanel (abaixo) e fazer o Deploy | testada (2026-11-08: `config('mail.*')` no container conferido com os valores abaixo, senha preenchida) |
+| A5 | Teste de envio para `marcos.ronaldo@gmail.com` (abaixo) e conferir se não caiu no spam | validada (2026-11-08: o Marcos rodou o `tinker` na VPS e o e-mail "Teste SMTP - Smart Controladoria" chegou) |
 
 Variáveis do Easypanel:
 
@@ -114,7 +114,7 @@ openssl s_client -connect br4.host.srv.br:587 -starttls smtp -servername br4.hos
 ```
 
 Teste de envio, de dentro do container, depois do Deploy com as variáveis novas (**só com autorização expressa do
-Marcos**):
+Marcos**; o modo automático do Claude Code bloqueia esse comando na VPS, então o Marcos roda):
 
 ```bash
 docker exec meus_projetos_gerenciador_cobrancas-app-1 php artisan tinker --execute \
